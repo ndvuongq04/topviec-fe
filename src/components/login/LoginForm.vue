@@ -54,9 +54,7 @@
     <!-- Divider -->
     <div class="relative my-8">
       <div class="absolute inset-0 flex items-center">
-        <div
-          class="w-full border-t border-slate-200 dark:border-slate-700"
-        ></div>
+        <div class="w-full border-t border-slate-200 dark:border-slate-700"></div>
       </div>
       <div class="relative flex justify-center text-xs uppercase">
         <span
@@ -65,14 +63,6 @@
           Hoặc đăng nhập với Email
         </span>
       </div>
-    </div>
-
-    <!-- Error -->
-    <div
-      v-if="error"
-      class="mb-5 px-4 py-3 bg-red-50 border border-red-100 text-red-600 text-sm rounded-lg dark:bg-red-900/20 dark:border-red-800 dark:text-red-400"
-    >
-      {{ error }}
     </div>
 
     <!-- Form -->
@@ -124,7 +114,6 @@
             @click="showPassword = !showPassword"
             class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
           >
-            <!-- Eye open -->
             <svg
               v-if="showPassword"
               xmlns="http://www.w3.org/2000/svg"
@@ -134,18 +123,9 @@
               stroke="currentColor"
               stroke-width="2"
             >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-              />
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-              />
+              <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
             </svg>
-            <!-- Eye closed -->
             <svg
               v-else
               xmlns="http://www.w3.org/2000/svg"
@@ -155,11 +135,7 @@
               stroke="currentColor"
               stroke-width="2"
             >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                d="M13.875 18.825A10.05 10.05 0 0112 19c-4.477 0-8.268-2.943-9.542-7a9.97 9.97 0 012.163-3.592M6.7 6.7A9.953 9.953 0 0112 5c4.477 0 8.268 2.943 9.542 7a9.97 9.97 0 01-1.357 2.574M3 3l18 18"
-              />
+              <path stroke-linecap="round" stroke-linejoin="round" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.477 0-8.268-2.943-9.542-7a9.97 9.97 0 012.163-3.592M6.7 6.7A9.953 9.953 0 0112 5c4.477 0 8.268 2.943 9.542 7a9.97 9.97 0 01-1.357 2.574M3 3l18 18" />
             </svg>
           </button>
         </div>
@@ -173,19 +149,8 @@
       >
         <span v-if="loading" class="flex items-center gap-2">
           <svg class="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
-            <circle
-              class="opacity-25"
-              cx="12"
-              cy="12"
-              r="10"
-              stroke="currentColor"
-              stroke-width="4"
-            />
-            <path
-              class="opacity-75"
-              fill="currentColor"
-              d="M4 12a8 8 0 018-8v8H4z"
-            />
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
           </svg>
           Đang đăng nhập...
         </span>
@@ -206,43 +171,41 @@
 
     <!-- Footer links -->
     <div class="mt-auto pt-10 flex justify-center gap-6 text-xs text-slate-400">
-      <a
-        href="#"
-        class="hover:text-slate-600 dark:hover:text-slate-200 transition"
-        >Điều khoản</a
-      >
-      <a
-        href="#"
-        class="hover:text-slate-600 dark:hover:text-slate-200 transition"
-        >Bảo mật</a
-      >
-      <a
-        href="#"
-        class="hover:text-slate-600 dark:hover:text-slate-200 transition"
-        >Hỗ trợ</a
-      >
+      <a href="#" class="hover:text-slate-600 dark:hover:text-slate-200 transition">Điều khoản</a>
+      <a href="#" class="hover:text-slate-600 dark:hover:text-slate-200 transition">Bảo mật</a>
+      <a href="#" class="hover:text-slate-600 dark:hover:text-slate-200 transition">Hỗ trợ</a>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref } from 'vue'
+import { useAuthStore } from '@/stores/auth.store'
+import { useToast } from '@/composables/useToast'
 
-const props = defineProps<{
-  loading: boolean;
-  error: string | null;
-}>();
+const authStore = useAuthStore()
+const toast = useToast()
 
 const emit = defineEmits<{
-  (e: "submit", payload: { email: string; password: string }): void;
-  (e: "google-login"): void;
-}>();
+  (e: 'google-login'): void
+}>()
 
-const form = ref({ email: "", password: "" });
-const showPassword = ref(false);
+const form = ref({ email: '', password: '' })
+const showPassword = ref(false)
+const loading = ref(false)
 
-function handleLogin() {
-  if (!form.value.email || !form.value.password) return;
-  emit("submit", { ...form.value });
+async function handleLogin() {
+  if (!form.value.email || !form.value.password) return
+
+  try {
+    loading.value = true
+    await authStore.login({ ...form.value })
+    toast.success('Đăng nhập thành công!', 'Chào mừng bạn quay lại TopViec 👋')
+  } catch (err: any) {
+    const msg = err.response?.data?.message ?? 'Đăng nhập thất bại, vui lòng thử lại'
+    toast.error('Đăng nhập thất bại', msg)
+  } finally {
+    loading.value = false
+  }
 }
 </script>
