@@ -1,1 +1,15 @@
 @import "tailwindcss";
+@plugin "@tailwindcss/forms";
+
+@theme {
+  --color-primary: #137fec;
+  --color-primary-content: #ffffff;
+  --color-background-light: #f6f7f8;
+  --color-background-dark: #101922;
+  --color-surface-light: #ffffff;
+  --color-surface-dark: #1e293b;
+  --color-text-main: #1e293b;
+  --color-text-muted: #64748b;
+
+  --font-display: "Spline Sans", sans-serif;
+}

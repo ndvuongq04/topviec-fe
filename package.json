@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vue-tsc -b && vite build",
+    "typecheck": "vue-tsc -b",
+    "build": "node scripts/build.mjs",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -28,6 +29,7 @@
     "zod": "^3.25.76"
   },
   "devDependencies": {
+    "@tailwindcss/forms": "^0.5.11",
     "@tailwindcss/vite": "^4.2.1",
     "@types/node": "^24.10.1",
     "@vitejs/plugin-vue": "^6.0.2",

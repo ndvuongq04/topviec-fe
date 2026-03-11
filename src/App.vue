@@ -1,5 +1,5 @@
 <template>
-  <div>Hello from TopViec</div>
+  <RouterView />
 </template>
 
 <script setup lang="ts">
