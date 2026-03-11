@@ -29,7 +29,7 @@ const router = createRouter({
     {
       path: '/login',
       name: 'login',
-      component: () => import('@/pages/auth/LoginPage.vue'),
+      component: () => import('@/pages/LoginPage.vue'),
       meta: { requiresGuest: true },
     },
 
