@@ -13,7 +13,8 @@ export interface ReqRegisterDTO {
 export interface UserInfo {
   id: string | number
   email: string
-  role: 'candidate' | 'employer' | 'admin'
+  role: 'CANDIDATE' | 'EMPLOYER' | 'ADMIN'
+  emailVerified?: boolean
 }
 
 export interface ResLoginDTO {
@@ -21,6 +22,11 @@ export interface ResLoginDTO {
   user: UserInfo
 }
 
-export interface ResRefreshDTO {
-  accessToken: string
+export interface ReqForgotPasswordDTO {
+  email: string
+}
+
+export interface ReqResetPasswordDTO {
+  token: string
+  newPassword: string
 }

@@ -72,6 +72,7 @@ export const useAuthStore = defineStore('auth', () => {
     const res = await authService.refresh()
     accessToken.value = res.accessToken
     localStorage.setItem('accessToken', res.accessToken)
+
   }
 
   /**
@@ -96,6 +97,25 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+
+  async function forgotPassword(email: string) {
+    await authService.forgotPassword({ email })
+  }
+
+  async function resetPassword(token: string, newPassword: string) {
+    await authService.resetPassword({ token, newPassword })
+    await router.push({ name: 'login' })
+  }
+
+  async function verifyEmail(token: string) {
+    await authService.verifyEmail(token)
+    await router.push({ name: 'login' })
+  }
+
+  async function resendVerifyEmail(email: string) {
+    await authService.resendVerifyEmail({ email })
+  }
+
   return {
     accessToken,
     user,
@@ -105,5 +125,9 @@ export const useAuthStore = defineStore('auth', () => {
     register,
     refreshToken,
     logout,
+    forgotPassword,
+    resetPassword,
+    verifyEmail,
+    resendVerifyEmail,
   }
 })
