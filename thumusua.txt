@@ -1,39 +1,23 @@
 ================================================================================
-GỢI Ý TỔ CHỨC LẠI CẤU TRÚC THƯ MỤC - DỰ ÁN TOPVIEC-FE
-================================================================================
-
-📌 ĐÁNH GIÁ HIỆN TRẠNG
---------------------------------------------------------------------------------
-
-1. Điểm tốt:
-   - Đã tách rõ layouts (candidate, recruiter, admin)
-   - Có thư mục constants, types, services, composables
-   - Components chia theo domain (candidate/job, candidate/company...)
-
-2. Vấn đề cần sửa:
-   - Trang auth nằm lộn xộn: LoginPage.vue có 2 file (pages/ và pages/auth/)
-   - CandidateRegisterPage.vue, EmailVerification.vue, EmailVerifyCallback.vue 
-     nằm ở root của pages/ thay vì trong pages/auth/
-   - Component login/ tách rời auth - khó tìm khi mở rộng
-   - Thiếu utils (đã xóa: date, format, storage, validate)
-   - Router comment dùng employer/EmployerLayout nhưng folder là recruiter/
-
-
-================================================================================
-CẤU TRÚC ĐỀ XUẤT (Feature-based + Flat where appropriate)
+CẤU TRÚC THƯ MỤC HIỆN TẠI - DỰ ÁN TOPVIEC-FE
 ================================================================================
 
 src/
+├── App.vue
+├── main.ts
+├── style.css
+│
 ├── assets/
-│   ├── images/
-│   └── icons/
+│   ├── vue.svg
+│   ├── icons/
+│   │   ├── .gitkeep
+│   │   └── icon-default.svg
+│   └── images/
+│       └── .gitkeep
 │
 ├── components/
-│   ├── auth/                    # Gộp login + register components
-│   │   ├── LoginForm.vue
-│   │   ├── LoginIllustration.vue
-│   │   └── RegisterCard.vue
-│   │
+│   ├── admin/
+│   │   └── note.vue
 │   ├── candidate/
 │   │   ├── company/
 │   │   │   ├── CompanyCard.vue
@@ -45,16 +29,22 @@ src/
 │   │   ├── layout/
 │   │   │   ├── CandidateBottomNav.vue
 │   │   │   └── CandidateHeader.vue
+│   │   ├── register/
+│   │   │   └── RegisterCard.vue
 │   │   └── sidebar/
 │   │       ├── CandidateFilters.vue
 │   │       ├── CandidateNav.vue
 │   │       ├── CandidateProfile.vue
 │   │       └── CandidateSidebar.vue
-│   │
-│   └── ui/                      # Shared UI - dùng chung cho mọi role
-│       ├── ToastContainer.vue
+│   ├── login/
+│   │   ├── LoginForm.vue
+│   │   └── LoginIllustration.vue
+│   ├── recruiter/
+│   │   └── note.vue
+│   └── ui/
 │       ├── EmailVerificationCard.vue
-│       └── EmailVerifyCallbackCard.vue
+│       ├── EmailVerifyCallbackCard.vue
+│       └── ToastContainer.vue
 │
 ├── composables/
 │   └── useToast.ts
@@ -69,126 +59,55 @@ src/
 │   │   └── AdminLayout.vue
 │   ├── candidate/
 │   │   └── CandidateLayout.vue
-│   └── recruiter/               # Giữ recruiter (hoặc đổi employer nếu chuẩn hóa)
+│   └── recruiter/
 │       └── RecruiterLayout.vue
 │
 ├── pages/
-│   ├── auth/                    # TẤT CẢ trang auth gom 1 chỗ
-│   │   ├── LoginPage.vue
-│   │   ├── RegisterPage.vue      # Hoặc CandidateRegisterPage.vue nếu chỉ dành candidate
-│   │   ├── ForgotPasswordPage.vue
+│   ├── admin/
+│   │   ├── HomePage.vue
+│   │   └── note.vue
+│   ├── auth/
 │   │   ├── EmailVerification.vue
-│   │   └── EmailVerifyCallback.vue
-│   │
-│   ├── candidate/               # (Tùy chọn) Nếu muốn rõ hơn - gom trang candidate
-│   │   └── ...                  # Có thể bỏ nếu ít trang
-│   │
-│   ├── company/
-│   │   ├── CompanyListPage.vue
-│   │   └── CompanyDetailPage.vue
-│   │
-│   ├── job/
-│   │   ├── JobListPage.vue
-│   │   ├── JobDetailPage.vue
-│   │   └── JobSearchPage.vue
-│   │
-│   ├── recruiter/
-│   │   ├── DashboardPage.vue
-│   │   ├── PostJobPage.vue
-│   │   ├── ManageJobsPage.vue
-│   │   └── ApplicationsPage.vue
-│   │
-│   ├── home/
+│   │   ├── EmailVerifyCallback.vue
+│   │   └── LoginPage.vue
+│   ├── candidate/
+│   │   ├── CandidateRegisterPage.vue
 │   │   └── HomePage.vue
-│   │
-│   └── error/
-│       ├── NotFoundPage.vue
-│       └── ForbiddenPage.vue
+│   ├── error/
+│   │   ├── ForbiddenPage.vue
+│   │   └── NotFoundPage.vue
+│   └── recruiter/
+│       └── HomePage.vue
 │
 ├── router/
-│   ├── index.ts
 │   ├── guards.ts
-│   └── routes/                  # (Tùy chọn) Tách routes theo module
+│   ├── index.ts
+│   └── routes/
+│       ├── admin.routes.ts
 │       ├── auth.routes.ts
 │       ├── candidate.routes.ts
 │       └── recruiter.routes.ts
 │
 ├── services/
-│   ├── api/                     # (Gợi ý) Base + API clients
-│   │   └── axios.ts
-│   └── auth.service.ts
+│   ├── auth.service.ts
+│   └── axios.ts
 │
 ├── stores/
 │   └── auth.store.ts
 │
 ├── styles/
 │   ├── main.scss
-│   ├── _variables.scss
 │   ├── _mixins.scss
-│   └── _reset.scss
+│   ├── _reset.scss
+│   └── _variables.scss
 │
 ├── types/
 │   ├── auth.types.ts
 │   ├── router.types.ts
 │   └── vue-router.d.ts
 │
-├── utils/                       # Khôi phục khi cần
-│   ├── date.ts
-│   ├── format.ts
-│   ├── storage.ts
-│   └── validate.ts
-│
-├── App.vue
-└── main.ts
+└── utils/
+    (trống)
 
-
-================================================================================
-CÁC BƯỚC THỰC HIỆN ĐỀ XUẤT
-================================================================================
-
-Bước 1: GOM TRANG AUTH
-  - Xóa pages/LoginPage.vue (giữ pages/auth/LoginPage.vue)
-  - Di chuyển CandidateRegisterPage.vue → pages/auth/RegisterPage.vue
-    (hoặc giữ tên CandidateRegisterPage nếu có employer register riêng)
-  - Di chuyển EmailVerification.vue, EmailVerifyCallback.vue → pages/auth/
-  - Cập nhật router import các path mới
-
-Bước 2: GOM COMPONENT AUTH
-  - Di chuyển components/login/ → components/auth/
-  - Di chuyển components/candidate/register/RegisterCard.vue → components/auth/
-  - Cập nhật tất cả import (tìm @/components/login, @/components/candidate/register)
-
-Bước 3: SỬA IMPORT LỖI
-  - Sửa @/components/candidate//register/ → @/components/auth/ (double slash)
-
-Bước 4: (TÙY CHỌN) TÁCH ROUTES
-  - Tạo router/routes/auth.routes.ts, candidate.routes.ts...
-  - Import và merge trong router/index.ts
-
-Bước 5: KHÔI PHỤC UTILS (nếu đã xóa nhầm)
-  - Kiểm tra git history để restore date.ts, format.ts, storage.ts, validate.ts
-  - Hoặc tạo lại khi cần dùng
-
-
-================================================================================
-NGUYÊN TẮC TỔ CHỨC CHO DỄ MỞ RỘNG
-================================================================================
-
-1. Pages: Nhóm theo feature/domain (auth, job, company, recruiter, error)
-2. Components: Nhóm theo ai dùng (candidate, recruiter, auth) + ui chung
-3. Một file một nhiệm vụ: Tránh file quá lớn, tách nhỏ khi > 300 dòng
-4. Đặt tên nhất quán: PascalCase cho component, camelCase cho util/ts
-5. Index barrel: Có thể thêm index.ts trong mỗi thư mục để export gọn
-   VD: components/auth/index.ts export { LoginForm, LoginIllustration, RegisterCard }
-
-
-================================================================================
-LƯU Ý
-================================================================================
-
-- Nên chốt 1 chuẩn: recruiter hay employer trong toàn bộ codebase
-- Khi thêm module mới (ví dụ: notification, chat): tạo thư mục tương ứng 
-  trong pages/, components/, có thể thêm store + service riêng
-- Git: Nên commit từng bước (auth pages → auth components → router) để dễ rollback
 
 ================================================================================

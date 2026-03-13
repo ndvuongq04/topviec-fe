@@ -14,8 +14,9 @@ const PUBLIC_URLS = [
   '/auth/login',
   '/auth/register',
   '/auth/resend-verify-email',
-  '/auth/refresh-token',
+  '/auth/refresh',
   '/auth/forgot-password',
+  '/auth/reset-password',
 ]
 
 // REQUEST INTERCEPTOR - Gắn token vào header

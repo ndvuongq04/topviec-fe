@@ -1,0 +1,15 @@
+import type { RouteRecordRaw } from 'vue-router'
+
+export const candidateRoutes: RouteRecordRaw[] = [
+    {
+        path: '/',
+        component: () => import('@/layouts/candidate/CandidateLayout.vue'),
+        children: [
+            {
+                path: '',
+                name: 'home',
+                component: () => import('@/pages/candidate/HomePage.vue'),
+            },
+        ],
+    },
+]
