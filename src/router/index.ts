@@ -32,6 +32,16 @@ const router = createRouter({
       component: () => import('@/pages/LoginPage.vue'),
       meta: { requiresGuest: true },
     },
+    {
+      path: '/verify-email',
+      name: 'email-verification',
+      component: () => import('@/pages/EmailVerification.vue'),
+    },
+    {
+      path: '/verify-email/callback',
+      name: 'email-verify-callback',
+      component: () => import('@/pages/EmailVerifyCallback.vue'),
+    },
 
     // ─── Employer ────────────────────────────────────────────────
     // {

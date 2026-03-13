@@ -9,6 +9,15 @@ const axiosInstance = axios.create({
   withCredentials: true,
 })
 
+const PUBLIC_URLS = [
+  '/auth/verify-email',
+  '/auth/login',
+  '/auth/register',
+  '/auth/resend-verify-email',
+  '/auth/refresh-token',
+  '/auth/forgot-password',
+]
+
 // REQUEST INTERCEPTOR - Gắn token vào header
 axiosInstance.interceptors.request.use((config) => {
   const token = localStorage.getItem('accessToken')
@@ -38,6 +47,11 @@ axiosInstance.interceptors.response.use(
 
   async (error) => {
     const originalRequest = error.config
+
+    // Bỏ qua interceptor cho các public routes
+    if (PUBLIC_URLS.some((url) => originalRequest.url?.includes(url))) {
+      return Promise.reject(error)
+    }
 
     // Không phải 401 hoặc đã retry rồi → bỏ qua
     if (error.response?.status !== 401 || originalRequest._retry) {

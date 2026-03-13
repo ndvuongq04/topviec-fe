@@ -59,9 +59,16 @@ export const useAuthStore = defineStore('auth', () => {
    * Đăng ký: gọi service → backend có thể trả luôn accessToken + user → lưu state và redirect
    * Nếu backend chỉ trả message thì cần điều chỉnh: không lưu token, redirect về login
    */
+  // async function register(payload: ReqRegisterDTO) {
+  //   await authService.register(payload)
+  //   await router.push({ name: 'login' })
+  // }
   async function register(payload: ReqRegisterDTO) {
     await authService.register(payload)
-    await router.push({ name: 'login' })
+    await router.push({
+      name: 'email-verification',
+      query: { email: payload.email }
+    })
   }
 
   /**
