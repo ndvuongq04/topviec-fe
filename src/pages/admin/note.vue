@@ -1,1 +1,0 @@
-<!-- các thư mục và  Trang dành cho ADMIN nằm ở thư mục này -->
