@@ -10,6 +10,12 @@ export const candidateRoutes: RouteRecordRaw[] = [
                 name: 'home',
                 component: () => import('@/pages/candidate/HomePage.vue'),
             },
+            {
+                path: 'profile',
+                name: 'CandidateProfile',
+                component: () => import('@/pages/candidate/ProfilePage.vue'),
+
+            },
         ],
     },
 ]

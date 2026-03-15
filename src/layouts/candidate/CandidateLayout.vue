@@ -3,7 +3,7 @@
 // Bao gồm: CandidateHeader (top) + CandidateSidebar (left) + <slot> (main content) + AppBottomNav (mobile)
 import CandidateHeader from "@/components/candidate/layout/CandidateHeader.vue";
 import CandidateSidebar from "@/components/candidate/sidebar/CandidateSidebar.vue";
-import CandidateBottomNav from "@/components/candidate/layout/CandidateBottomNav.vue";
+// import CandidateBottomNav from "@/components/candidate/layout/CandidateBottomNav.vue";
 import { RouterView } from "vue-router";
 </script>
 
@@ -19,7 +19,7 @@ import { RouterView } from "vue-router";
       class="layout-container flex grow flex-col md:flex-row max-w-[1440px] mx-auto w-full p-4 gap-6 pt-[73px]"
     >
       <!-- Sidebar trái (ẩn trên mobile) -->
-      <CandidateSidebar />
+      <!-- <CandidateSidebar /> -->
 
       <!-- Nội dung trang (router-view hoặc slot) -->
       <RouterView />
