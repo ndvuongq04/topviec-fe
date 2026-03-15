@@ -11,6 +11,17 @@ export const recruiterRoutes: RouteRecordRaw[] = [
         name: 'recruiter-dashboard',
         component: () => import('@/pages/recruiter/HomePage.vue'),
       },
+      {
+        path: 'company-profile',
+        name: 'recruiter-company-profile',
+        component: () => import('@/pages/recruiter/CompanyProfilePage.vue'),
+      },
+      {
+        path: 'team',
+        name: 'recruiter-team',
+        component: () => import('@/pages/recruiter/TeamPage.vue'),
+      }
+
     ],
   },
 ]
