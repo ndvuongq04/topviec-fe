@@ -24,25 +24,33 @@
               <span class="material-symbols-outlined text-xs">verified</span>
               Đã xác thực
             </span>
+            <!-- Badge bị khóa -->
+            <span
+              v-if="isSuspended"
+              class="bg-red-100 text-red-700 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 uppercase tracking-wider"
+            >
+              <span class="material-symbols-outlined text-xs">block</span>
+              Đang bị khóa
+            </span>
           </div>
           <p class="text-slate-500 dark:text-slate-400 font-medium italic text-sm">{{ employer.industry }}</p>
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-1 pt-2">
             <div class="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
               <span class="material-symbols-outlined text-sm">language</span>
-              {{ employer.website }}
+              {{ employer.website || '—' }}
             </div>
             <div class="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
               <span class="material-symbols-outlined text-sm">mail</span>
-              {{ employer.email }}
+              {{ employer.email || '—' }}
             </div>
             <div class="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
               <span class="material-symbols-outlined text-sm">call</span>
-              {{ employer.phone }}
+              {{ employer.phone || '—' }}
             </div>
             <div class="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
               <span class="material-symbols-outlined text-sm">location_on</span>
-              {{ employer.location }}
+              {{ employer.location || '—' }}
             </div>
           </div>
         </div>
@@ -64,12 +72,23 @@
           <span class="material-symbols-outlined text-sm">report_problem</span>
           Gửi cảnh báo
         </button>
+
+        <!-- Nút Khóa / Mở khóa tuỳ trạng thái -->
         <button
+          v-if="!isSuspended"
           class="px-4 py-2 rounded-lg bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 text-sm font-bold flex items-center gap-2 hover:bg-red-200 transition-colors"
           @click="$emit('block')"
         >
           <span class="material-symbols-outlined text-sm">block</span>
           Khóa tài khoản
+        </button>
+        <button
+          v-else
+          class="px-4 py-2 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-sm font-bold flex items-center gap-2 hover:bg-emerald-200 transition-colors"
+          @click="$emit('unblock')"
+        >
+          <span class="material-symbols-outlined text-sm">lock_open</span>
+          Mở khóa
         </button>
       </div>
 
@@ -89,11 +108,13 @@ defineProps<{
     location: string
     logoUrl?: string
   }
+  isSuspended?: boolean
 }>()
 
 defineEmits<{
   'reset-password': []
   'send-warning': []
   block: []
+  unblock: []
 }>()
 </script>

@@ -21,9 +21,14 @@
         <p class="text-xs text-slate-500 mb-4">Hỗ trợ: PDF, JPG, PNG (Tối đa 5MB)</p>
         <button
           class="px-4 py-2 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-sm font-semibold shadow-sm hover:shadow-md transition-shadow"
+          :disabled="uploading"
           @click.stop="triggerUpload"
         >
-          Chọn tệp
+          <span v-if="uploading" class="flex items-center gap-2">
+            <span class="material-symbols-outlined animate-spin text-sm">progress_activity</span>
+            Đang tải lên...
+          </span>
+          <span v-else>Chọn tệp</span>
         </button>
         <input ref="fileInput" type="file" accept=".pdf,.jpg,.jpeg,.png" class="hidden" @change="onFileChange" />
       </div>
@@ -65,9 +70,11 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   'update:licenseFile': [value: LicenseFile | null]
+  'license-url-change': [url: string]   // emit URL sau khi upload thành công
 }>()
 
 const fileInput = ref<HTMLInputElement | null>(null)
+const uploading = ref(false)
 
 function triggerUpload() { fileInput.value?.click() }
 
@@ -76,17 +83,30 @@ function formatSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
 
-function handleFile(file: File) {
+async function handleFile(file: File) {
   if (file.size > 5 * 1024 * 1024) {
     alert('Tệp vượt quá 5MB!')
     return
   }
+
+  // Hiển thị preview ngay lập tức
   emit('update:licenseFile', {
     name: file.name,
     size: formatSize(file.size),
     uploadedAt: new Date().toLocaleDateString('vi-VN'),
   })
-  // TODO: upload lên server
+
+  // TODO: Upload file lên server (S3/Cloudinary/...) → lấy URL
+  // uploading.value = true
+  // try {
+  //   const url = await uploadService.uploadFile(file)
+  //   emit('license-url-change', url)
+  // } finally {
+  //   uploading.value = false
+  // }
+
+  // Tạm thời dùng object URL để lưu vào businessLicenseUrl
+  emit('license-url-change', URL.createObjectURL(file))
 }
 
 function onFileChange(e: Event) {
@@ -101,6 +121,7 @@ function onDrop(e: DragEvent) {
 
 function removeFile() {
   emit('update:licenseFile', null)
+  emit('license-url-change', '')
   if (fileInput.value) fileInput.value.value = ''
 }
 </script>
