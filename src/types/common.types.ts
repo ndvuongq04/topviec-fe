@@ -5,3 +5,15 @@ export interface RestResponse<T> {
     message: string | string[]
     data: T
 }
+
+export interface PaginationMeta {
+    page: number
+    pageSize: number
+    pages: number
+    totals: number
+}
+
+export interface ResultPaginationDTO<T> {
+    meta: PaginationMeta
+    result: T[]
+}
