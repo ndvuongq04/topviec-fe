@@ -5,7 +5,7 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import router from '@/router'
 import authService from '@/services/auth.service'
-import type { ReqLoginDTO, ReqRegisterDTO, UserInfo } from '@/types/auth.types'
+import type { ReqLoginDTO, ReqRegisterCandidateDTO, ReqRegisterEmployerDTO, UserInfo } from '@/types/auth.types'
 
 /** Đọc accessToken từ localStorage an toàn (tránh lỗi khi SSR hoặc storage bị tắt) */
 const getStoredToken = (): string | null => {
@@ -63,8 +63,16 @@ export const useAuthStore = defineStore('auth', () => {
   //   await authService.register(payload)
   //   await router.push({ name: 'login' })
   // }
-  async function register(payload: ReqRegisterDTO) {
+  async function register(payload: ReqRegisterCandidateDTO) {
     await authService.register(payload)
+    await router.push({
+      name: 'email-verification',
+      query: { email: payload.email }
+    })
+  }
+
+  async function registerEmployer(payload: ReqRegisterEmployerDTO) {
+    await authService.registerEmployer(payload)
     await router.push({
       name: 'email-verification',
       query: { email: payload.email }
@@ -130,6 +138,7 @@ export const useAuthStore = defineStore('auth', () => {
     userRole,
     login,
     register,
+    registerEmployer,
     refreshToken,
     logout,
     forgotPassword,

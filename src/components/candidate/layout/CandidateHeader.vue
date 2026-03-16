@@ -73,6 +73,14 @@ async function handleLogout() {
 
       <!-- Action buttons -->
       <div class="flex gap-3 items-center">
+
+        <router-link
+    to="/recruiter/register"
+    class="hidden lg:flex items-center gap-1 text-primary hover:text-blue-700 text-sm font-bold mr-2 transition-colors"
+  >
+    <span class="material-symbols-outlined text-lg">corporate_fare</span>
+    <span>Nhà tuyển dụng</span>
+  </router-link>
         <!-- Post CV button -->
         <button
           class="flex items-center justify-center rounded-3xl h-10 px-5 bg-primary hover:bg-blue-600 text-white text-sm font-bold leading-normal tracking-wide transition-colors shadow-lg shadow-blue-500/30"

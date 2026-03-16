@@ -2,13 +2,13 @@
 import { ref, computed } from 'vue'
 import { useAuthStore } from '@/stores/auth.store'
 import { useToast } from '@/composables/useToast'
-import type { ReqRegisterDTO } from '@/types/auth.types'
+import type { ReqRegisterCandidateDTO } from '@/types/auth.types'
 
 const authStore = useAuthStore()
 const toast = useToast()
 
 // ─── Form state ─────────────────────────────────────────────────
-const form = ref<ReqRegisterDTO & { confirmPassword: string }>({
+const form = ref<ReqRegisterCandidateDTO & { confirmPassword: string }>({
   email: '',
   password: '',
   confirmPassword: '',
