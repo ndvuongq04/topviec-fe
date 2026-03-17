@@ -18,55 +18,43 @@ const icons: Record<string, string> = {
         <div
           v-for="toast in toasts"
           :key="toast.id"
-          class="pointer-events-auto relative flex items-start gap-3 px-4 py-3.5 rounded-xl shadow-xl border backdrop-blur-sm overflow-hidden cursor-pointer select-none"
+          class="pointer-events-auto flex items-center p-4 bg-white border-l-4 rounded-[8px] shadow-[0_4px_20px_rgba(0,0,0,0.08)] ring-1 ring-black/5 cursor-pointer select-none"
           :class="{
-            'bg-white/95 border-green-200':  toast.type === 'success',
-            'bg-white/95 border-red-200':    toast.type === 'error',
-            'bg-white/95 border-yellow-200': toast.type === 'warning',
-            'bg-white/95 border-blue-200':   toast.type === 'info',
+            'border-[#10b981]':  toast.type === 'success',
+            'border-[#ef4444]':  toast.type === 'error',
+            'border-[#f59e0b]':  toast.type === 'warning',
+            'border-[#3b82f6]':  toast.type === 'info',
           }"
           @click="remove(toast.id)"
         >
-          <!-- Icon -->
+          <!-- Icon Container -->
           <div
-            class="flex-shrink-0 w-9 h-9 rounded-lg flex items-center justify-center"
+            class="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center"
             :class="{
-              'bg-green-100 text-green-600':  toast.type === 'success',
-              'bg-red-100 text-red-600':      toast.type === 'error',
-              'bg-yellow-100 text-yellow-600':toast.type === 'warning',
-              'bg-blue-100 text-blue-600':    toast.type === 'info',
+              'bg-[#10b981]/10 text-[#10b981]':  toast.type === 'success',
+              'bg-[#ef4444]/10 text-[#ef4444]':  toast.type === 'error',
+              'bg-[#f59e0b]/10 text-[#f59e0b]':  toast.type === 'warning',
+              'bg-[#3b82f6]/10 text-[#3b82f6]':  toast.type === 'info',
             }"
           >
             <span class="material-symbols-outlined text-[20px]">{{ icons[toast.type] }}</span>
           </div>
 
           <!-- Content -->
-          <div class="flex-1 min-w-0 pt-0.5">
-            <p class="text-sm font-semibold text-slate-800 leading-snug">{{ toast.title }}</p>
-            <p v-if="toast.message" class="text-xs text-slate-500 mt-0.5 leading-snug">{{ toast.message }}</p>
+          <div class="ml-4 flex-1">
+            <p class="text-sm font-semibold text-gray-900 leading-snug">{{ toast.title }}</p>
+            <p v-if="toast.message" class="text-sm text-gray-500 mt-0.5 leading-snug">{{ toast.message }}</p>
           </div>
 
           <!-- Close -->
           <button
-            class="flex-shrink-0 text-slate-400 hover:text-slate-600 transition-colors pt-0.5"
+            class="ml-auto flex-shrink-0 text-gray-400 hover:text-gray-600 transition-colors pt-0.5"
             @click.stop="remove(toast.id)"
           >
-            <span class="material-symbols-outlined text-[16px]">close</span>
+            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+              <path clip-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" fill-rule="evenodd"></path>
+            </svg>
           </button>
-
-          <!-- Progress bar -->
-          <div class="absolute bottom-0 left-0 right-0 h-0.5">
-            <div
-              class="h-full animate-shrink"
-              :style="{ animationDuration: (toast.duration ?? 4000) + 'ms' }"
-              :class="{
-                'bg-green-400':  toast.type === 'success',
-                'bg-red-400':    toast.type === 'error',
-                'bg-yellow-400': toast.type === 'warning',
-                'bg-blue-400':   toast.type === 'info',
-              }"
-            />
-          </div>
         </div>
       </TransitionGroup>
     </div>
@@ -74,13 +62,11 @@ const icons: Record<string, string> = {
 </template>
 
 <style scoped>
-.toast-enter-active { transition: all 0.35s cubic-bezier(0.21, 1.02, 0.73, 1); }
+/* Slide in from right */
+.toast-enter-active { transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
 .toast-leave-active { transition: all 0.25s cubic-bezier(0.06, 0.71, 0.55, 1); }
 .toast-enter-from, .toast-leave-to {
   opacity: 0;
-  transform: translateX(100%) scale(0.9);
+  transform: translateX(100%);
 }
-
-@keyframes shrink { from { width: 100%; } to { width: 0%; } }
-.animate-shrink { animation: shrink linear forwards; }
 </style>

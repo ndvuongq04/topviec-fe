@@ -26,6 +26,16 @@ export const adminRoutes: RouteRecordRaw[] = [
                 name: 'admin-manage-admins',
                 component: () => import('@/pages/admin/AdminsPage.vue'),
             },
+            {
+                path: 'admins/:id',
+                name: 'admin-detail',
+                component: () => import('@/pages/admin/AdminDetailPage.vue'),
+            },
+            {
+                path: 'admins/:id/edit',
+                name: 'admin-edit',
+                component: () => import('@/pages/admin/AdminEditPage.vue'),
+            },
         ],
     },
 ]
