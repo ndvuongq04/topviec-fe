@@ -12,7 +12,7 @@
         <!-- Modal Header -->
         <div class="px-8 py-6 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-900/50 shrink-0">
           <div class="flex items-center gap-3">
-            <div v-if="icon" class="size-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+            <div v-if="icon" class="size-10 rounded-xl flex items-center justify-center shrink-0" :class="variantClasses.icon">
               <span class="material-symbols-outlined text-xl">{{ icon }}</span>
             </div>
             <div>
@@ -49,7 +49,8 @@
             <button
               :form="formId"
               type="submit"
-              class="bg-primary hover:bg-primary/90 text-white px-6 py-2.5 rounded-xl font-bold text-sm shadow-lg shadow-primary/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              class="px-6 py-2.5 rounded-xl font-bold text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              :class="variantClasses.confirm"
               :disabled="loading"
               @click="$emit('confirm')"
             >
@@ -73,6 +74,7 @@ const props = withDefaults(defineProps<{
   subtitle?: string
   icon?: string
   maxWidth?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl' | '5xl'
+  variant?: 'primary' | 'danger'
   
   // Footer props
   showDefaultFooter?: boolean
@@ -84,6 +86,7 @@ const props = withDefaults(defineProps<{
   formId?: string
 }>(), {
   maxWidth: '2xl',
+  variant: 'primary',
   showDefaultFooter: true,
   cancelText: 'Hủy bỏ',
   confirmText: 'Xác nhận',
@@ -109,6 +112,19 @@ const maxWidthClass = computed(() => {
     '5xl': 'max-w-5xl',
   }
   return map[props.maxWidth] || 'max-w-2xl'
+})
+
+const variantClasses = computed(() => {
+  if (props.variant === 'danger') {
+    return {
+      icon: 'bg-[#963131]/10 text-[#963131]',
+      confirm: 'bg-[#963131] hover:bg-[#963131]/90 text-white shadow-lg shadow-[#963131]/20'
+    }
+  }
+  return {
+    icon: 'bg-primary/10 text-primary',
+    confirm: 'bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20'
+  }
 })
 </script>
 

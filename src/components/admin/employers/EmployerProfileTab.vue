@@ -1,358 +1,251 @@
 <template>
-  <div class="space-y-6">
-
-    <!-- Thông tin cơ bản -->
-    <section class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
-      <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-800">
-        <h3 class="font-bold text-lg flex items-center gap-2">
-          <span class="material-symbols-outlined text-[#963131]">corporate_fare</span>
-          Thông tin cơ bản
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <!-- Left Column: Description and Gallery -->
+    <div class="lg:col-span-2 space-y-8">
+      
+      <!-- Company Description -->
+      <section class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm">
+        <h3 class="text-lg font-bold mb-4 flex items-center gap-2">
+          <span class="material-symbols-outlined text-[#963131]">description</span>
+          Mô tả công ty
         </h3>
-      </div>
-      <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-
-        <div class="space-y-2">
-          <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Tên công ty</label>
-          <input v-model="form.name" type="text" class="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-transparent focus:ring-2 focus:ring-[#963131]/20 focus:border-[#963131] outline-none text-sm transition-all" placeholder="Nhập tên công ty" />
+        <div class="text-slate-600 dark:text-slate-400 text-sm leading-relaxed space-y-4">
+          <p v-if="company.description">{{ company.description }}</p>
+          <p v-else class="italic text-slate-400">Chưa cập nhật mô tả công ty.</p>
         </div>
+      </section>
 
-        <div class="space-y-2">
-          <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Slug</label>
-          <input v-model="form.slug" type="text" class="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-transparent focus:ring-2 focus:ring-[#963131]/20 focus:border-[#963131] outline-none text-sm transition-all" placeholder="ten-cong-ty" />
-          <p class="text-[10px] text-slate-400">Chỉ chứa chữ thường, số và dấu gạch ngang</p>
-        </div>
-
-        <div class="space-y-2">
-          <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Quy mô</label>
-          <select v-model="form.companySize" class="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-transparent focus:ring-2 focus:ring-[#963131]/20 focus:border-[#963131] outline-none text-sm transition-all">
-            <option value="">-- Chọn quy mô --</option>
-            <option :value="CompanySize.SMALL">1–50 nhân viên</option>
-            <option :value="CompanySize.MEDIUM">51–200 nhân viên</option>
-            <option :value="CompanySize.LARGE">201–500 nhân viên</option>
-            <option :value="CompanySize.ENTERPRISE">500+ nhân viên</option>
-          </select>
-        </div>
-
-        <div class="space-y-2">
-          <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Năm thành lập</label>
-          <input v-model.number="form.foundedYear" type="number" min="1900" :max="currentYear" class="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-transparent focus:ring-2 focus:ring-[#963131]/20 focus:border-[#963131] outline-none text-sm transition-all" placeholder="VD: 2010" />
-        </div>
-
-        <div class="space-y-2">
-          <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Mã số thuế</label>
-          <input v-model="form.taxCode" type="text" class="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-transparent focus:ring-2 focus:ring-[#963131]/20 focus:border-[#963131] outline-none text-sm transition-all" placeholder="0123456789" />
-        </div>
-
-      </div>
-    </section>
-
-    <!-- Liên hệ -->
-    <section class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
-      <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-800">
-        <h3 class="font-bold text-lg flex items-center gap-2">
-          <span class="material-symbols-outlined text-[#963131]">contact_page</span>
-          Liên hệ
+      <!-- Cover Image -->
+      <section class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm">
+        <h3 class="text-lg font-bold mb-4 flex items-center gap-2">
+          <span class="material-symbols-outlined text-[#963131]">image</span>
+          Ảnh bìa công ty
         </h3>
-      </div>
-      <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-
-        <div class="space-y-2">
-          <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Website</label>
-          <div class="flex">
-            <span class="inline-flex items-center px-3 rounded-l-lg border border-r-0 border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-500 text-sm select-none">https://</span>
-            <input v-model="form.website" type="text" class="flex-1 px-4 py-2 rounded-r-lg border border-slate-300 dark:border-slate-700 bg-transparent focus:ring-2 focus:ring-[#963131]/20 focus:border-[#963131] outline-none text-sm" placeholder="yourcompany.com" />
-          </div>
-        </div>
-
-        <div class="space-y-2">
-          <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Email</label>
-          <input v-model="form.email" type="email" class="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-transparent focus:ring-2 focus:ring-[#963131]/20 focus:border-[#963131] outline-none text-sm transition-all" placeholder="contact@company.com" />
-        </div>
-
-        <div class="space-y-2">
-          <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Số điện thoại</label>
-          <input v-model="form.phone" type="tel" class="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-transparent focus:ring-2 focus:ring-[#963131]/20 focus:border-[#963131] outline-none text-sm transition-all" placeholder="028 1234 5678" />
-        </div>
-
-        <div class="space-y-2">
-          <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Địa chỉ</label>
-          <input v-model="form.address" type="text" class="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-transparent focus:ring-2 focus:ring-[#963131]/20 focus:border-[#963131] outline-none text-sm transition-all" placeholder="123 Đường ABC, Quận 1, TP.HCM" />
-        </div>
-
-      </div>
-    </section>
-
-    <!-- Mô tả & Văn hóa -->
-    <section class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
-      <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-800">
-        <h3 class="font-bold text-lg flex items-center gap-2">
-          <span class="material-symbols-outlined text-[#963131]">format_quote</span>
-          Mô tả & Văn hóa
-        </h3>
-      </div>
-      <div class="p-6 space-y-6">
-
-        <div class="space-y-2">
-          <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Giới thiệu công ty</label>
-          <textarea
-            v-model="form.description"
-            rows="5"
-            maxlength="5000"
-            class="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-transparent focus:ring-2 focus:ring-[#963131]/20 focus:border-[#963131] outline-none text-sm transition-all resize-none leading-relaxed"
-            placeholder="Mô tả sứ mệnh, lịch sử và văn hóa công ty..."
-          ></textarea>
-          <div class="flex justify-end">
-            <span class="text-xs text-slate-400">{{ form.description.length }} / 5000</span>
-          </div>
-        </div>
-
-        <div class="space-y-2">
-          <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Văn hóa công ty</label>
-          <textarea
-            v-model="form.culture"
-            rows="3"
-            maxlength="2000"
-            class="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-transparent focus:ring-2 focus:ring-[#963131]/20 focus:border-[#963131] outline-none text-sm transition-all resize-none leading-relaxed"
-            placeholder="Mô tả văn hóa, môi trường làm việc..."
-          ></textarea>
-        </div>
-
-      </div>
-    </section>
-
-    <!-- Phúc lợi -->
-    <section class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
-      <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-800">
-        <h3 class="font-bold text-lg flex items-center gap-2">
-          <span class="material-symbols-outlined text-[#963131]">card_giftcard</span>
-          Phúc lợi
-        </h3>
-      </div>
-      <div class="p-6">
-        <div class="flex flex-wrap gap-2">
-          <span
-            v-for="benefit in benefitList"
-            :key="benefit"
-            class="px-3 py-1 bg-[#963131]/10 text-[#963131] rounded-full text-xs font-bold flex items-center gap-1"
-          >
-            {{ benefit }}
-            <button class="material-symbols-outlined text-sm leading-none hover:text-red-700 transition-colors" @click="removeBenefit(benefit)">close</button>
-          </span>
-
-          <template v-if="!showBenefitInput">
-            <button
-              class="px-3 py-1 border border-dashed border-[#963131] text-[#963131] rounded-full text-xs font-bold flex items-center gap-1 hover:bg-[#963131]/5 transition-colors"
-              @click="showBenefitInput = true"
-            >
-              <span class="material-symbols-outlined text-sm">add</span>
-              Thêm phúc lợi
-            </button>
-          </template>
-          <template v-else>
-            <div class="flex items-center gap-2">
-              <input
-                ref="benefitInputRef"
-                v-model="newBenefit"
-                type="text"
-                maxlength="30"
-                class="px-3 py-1 border border-[#963131] rounded-full text-xs outline-none focus:ring-1 focus:ring-[#963131] bg-transparent"
-                placeholder="Nhập phúc lợi..."
-                @keydown.enter="addBenefit"
-                @keydown.esc="cancelBenefit"
-              />
-              <button class="text-[#963131]" @click="addBenefit"><span class="material-symbols-outlined text-sm">check</span></button>
-              <button class="text-slate-400" @click="cancelBenefit"><span class="material-symbols-outlined text-sm">close</span></button>
-            </div>
-          </template>
-        </div>
-      </div>
-    </section>
-
-    <!-- Mạng xã hội -->
-    <section class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
-      <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-800">
-        <h3 class="font-bold text-lg flex items-center gap-2">
-          <span class="material-symbols-outlined text-[#963131]">share</span>
-          Mạng xã hội
-        </h3>
-      </div>
-      <div class="p-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div
-          v-for="social in socialFields"
-          :key="social.key"
-          class="flex items-center gap-2 px-3 py-2 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 focus-within:border-[#963131] focus-within:ring-1 focus-within:ring-[#963131] transition-all"
-        >
-          <span class="material-symbols-outlined text-slate-400 shrink-0">link</span>
-          <input
-            :value="socialValues[social.key]"
-            type="url"
-            class="bg-transparent border-none text-xs focus:ring-0 p-0 w-full outline-none"
-            :placeholder="social.placeholder"
-            @input="onSocialInput(social.key, ($event.target as HTMLInputElement).value)"
+        <div v-if="company.coverUrl" class="w-full aspect-[21/9] rounded-xl overflow-hidden bg-slate-100 border border-slate-200 dark:border-slate-800">
+          <img
+            :src="company.coverUrl"
+            :alt="`Cover image of ${company.name}`"
+            class="w-full h-full object-cover"
+            @error="handleImageError"
           />
         </div>
-      </div>
-    </section>
+        <div v-else class="text-sm text-slate-400 italic">
+          Chưa cập nhật ảnh bìa.
+        </div>
+      </section>
 
-    <!-- Actions -->
-    <div class="flex justify-end gap-3 pt-2">
-      <button
-        class="px-6 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-500 font-bold text-sm hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors disabled:opacity-50"
-        :disabled="saving"
-        @click="resetForm"
-      >
-        Hủy thay đổi
-      </button>
-      <button
-        class="px-8 py-2.5 rounded-xl text-white font-bold text-sm flex items-center gap-2 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
-        style="background-color:#963131; box-shadow: 0 4px 14px rgba(150,49,49,0.25)"
-        :disabled="saving"
-        @click="saveChanges"
-      >
-        <span v-if="saving" class="material-symbols-outlined animate-spin text-[18px]">progress_activity</span>
-        {{ saving ? 'Đang lưu...' : 'Lưu thay đổi' }}
-      </button>
+      <!-- Culture -->
+      <section class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm">
+        <h3 class="text-lg font-bold mb-4 flex items-center gap-2">
+          <span class="material-symbols-outlined text-[#963131]">diversity_3</span>
+          Văn hóa & Môi trường làm việc
+        </h3>
+        <div class="text-slate-600 dark:text-slate-400 text-sm leading-relaxed space-y-4">
+          <p v-if="company.culture">{{ company.culture }}</p>
+          <p v-else class="italic text-slate-400">Chưa cập nhật thông tin văn hóa doanh nghiệp.</p>
+        </div>
+      </section>
+
+      <!-- Social Links (Optional if placed here) -->
+      <section v-if="parsedSocialLinks.length > 0" class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm">
+        <h3 class="text-lg font-bold mb-4 flex items-center gap-2">
+          <span class="material-symbols-outlined text-[#963131]">public</span>
+          Mạng xã hội & Liên kết
+        </h3>
+        <div class="flex flex-wrap gap-3">
+          <a
+            v-for="(link, idx) in parsedSocialLinks"
+            :key="idx"
+            :href="link.url"
+            target="_blank"
+            class="flex items-center gap-2 px-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-medium hover:border-[#963131] hover:text-[#963131] transition-colors"
+          >
+            <span class="material-symbols-outlined text-base">{{ link.icon || 'link' }}</span>
+            {{ link.name || formatUrl(link.url) }}
+          </a>
+        </div>
+      </section>
     </div>
 
+    <!-- Right Column: General Info and Benefits -->
+    <div class="space-y-8">
+      
+      <!-- General Information -->
+      <section class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm">
+        <h3 class="text-lg font-bold mb-6 flex items-center gap-2">
+          <span class="material-symbols-outlined text-[#963131]">info</span>
+          Thông tin chung
+        </h3>
+        <div class="space-y-4">
+          <div>
+            <p class="text-xs text-slate-400 uppercase font-bold tracking-widest mb-1">Mã số thuế</p>
+            <p class="text-sm font-medium">{{ company.taxCode || 'Chưa cập nhật' }}</p>
+          </div>
+          <div class="h-px bg-slate-100 dark:bg-slate-800"></div>
+          <div>
+            <p class="text-xs text-slate-400 uppercase font-bold tracking-widest mb-1">Quy mô công ty</p>
+            <p class="text-sm font-medium">{{ company.companySize || 'Chưa cập nhật' }}</p>
+          </div>
+          <div class="h-px bg-slate-100 dark:bg-slate-800"></div>
+          <div>
+            <p class="text-xs text-slate-400 uppercase font-bold tracking-widest mb-1">Ngành nghề</p>
+            <div v-if="companyIndustryLabel" class="flex flex-wrap gap-2 mt-2">
+              <span class="px-2 py-1 bg-slate-100 dark:bg-slate-800 rounded text-xs">{{ companyIndustryLabel }}</span>
+            </div>
+            <p v-else class="text-sm text-slate-400 italic mt-1">Chưa cập nhật</p>
+          </div>
+          <div class="h-px bg-slate-100 dark:bg-slate-800"></div>
+          <div>
+            <p class="text-xs text-slate-400 uppercase font-bold tracking-widest mb-1">Email liên hệ</p>
+            <a v-if="company.email" :href="`mailto:${company.email}`" class="text-sm font-medium text-[#963131] hover:underline">
+              {{ company.email }}
+            </a>
+            <p v-else class="text-sm text-slate-400 italic">Chưa cập nhật</p>
+          </div>
+          <div class="h-px bg-slate-100 dark:bg-slate-800"></div>
+          <div>
+            <p class="text-xs text-slate-400 uppercase font-bold tracking-widest mb-1">Số điện thoại</p>
+            <a v-if="company.phone" :href="`tel:${company.phone}`" class="text-sm font-medium text-[#963131] hover:underline">
+              {{ company.phone }}
+            </a>
+            <p v-else class="text-sm text-slate-400 italic">Chưa cập nhật</p>
+          </div>
+          <div class="h-px bg-slate-100 dark:bg-slate-800"></div>
+          <div>
+            <p class="text-xs text-slate-400 uppercase font-bold tracking-widest mb-1">Website</p>
+            <a v-if="company.website" :href="company.website" target="_blank" class="text-sm font-medium text-[#963131] hover:underline">
+              {{ formatUrl(company.website) }}
+            </a>
+            <p v-else class="text-sm text-slate-400 italic">Chưa cập nhật</p>
+          </div>
+          <div class="h-px bg-slate-100 dark:bg-slate-800"></div>
+          <div>
+            <p class="text-xs text-slate-400 uppercase font-bold tracking-widest mb-1">Năm thành lập</p>
+            <p class="text-sm font-medium">{{ company.foundedYear || 'Chưa cập nhật' }}</p>
+          </div>
+          <div class="h-px bg-slate-100 dark:bg-slate-800"></div>
+          <div>
+            <p class="text-xs text-slate-400 uppercase font-bold tracking-widest mb-1">Địa chỉ trụ sở</p>
+            <p class="text-sm font-medium leading-relaxed">{{ company.address || 'Chưa cập nhật' }}</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Culture & Benefits -->
+      <!-- <section class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm">
+        <h3 class="text-lg font-bold mb-6 flex items-center gap-2">
+          <span class="material-symbols-outlined text-[#963131]">card_giftcard</span>
+          Văn hóa & Phúc lợi
+        </h3>
+        <div v-if="parsedBenefits.length > 0" class="space-y-4">
+          <div v-for="(benefit, idx) in parsedBenefits" :key="idx" class="flex items-start gap-4">
+            <div class="w-10 h-10 rounded-lg bg-green-50 dark:bg-green-900/20 text-green-600 flex items-center justify-center shrink-0">
+              <span class="material-symbols-outlined">{{ getBenefitIcon(idx) }}</span>
+            </div>
+            <div>
+              <p class="text-sm font-bold">{{ benefit.title || benefit }}</p>
+              <p v-if="benefit.description" class="text-xs text-slate-500 mt-0.5">{{ benefit.description }}</p>
+            </div>
+          </div>
+        </div>
+        <div v-else class="text-sm text-slate-400 italic">
+          Chưa cập nhật phúc lợi.
+        </div>
+      </section> -->
+      
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { reactive, ref, computed, watch, nextTick } from 'vue'
+import { computed } from 'vue'
 import type { ResCompanyDTO } from '@/types/company.types'
-import { CompanySize } from '@/constants/company.constants'
-import { parseBenefits, parseSocialLinks, stringifyBenefits, stringifySocialLinks } from '@/types/company.types'
-import { useToast } from '@/composables/useToast'
-import { useAdminCompanyStore } from '@/stores/adminCompany.store'
 
-type SocialKey = 'linkedin' | 'twitter' | 'facebook'
+const props = defineProps<{
+  company: ResCompanyDTO
+}>()
 
-const props = defineProps<{ company: ResCompanyDTO }>()
+// ─── Constants for UI Mapping ────────────────────────────────────────────────────
+// TODO: Replace with actual industry lookup when available
+const INDUSTRY_MAP: Record<number, string> = {
+  1: 'Công nghệ phần mềm / IT',
+  2: 'Bán lẻ / Tiêu dùng',
+  3: 'Tài chính / Ngân hàng',
+}
 
-const store = useAdminCompanyStore()
-const { success: toastSuccess, error: toastError } = useToast()
-
-const currentYear = new Date().getFullYear()
-const saving = ref(false)
-
-// ─── Form ─────────────────────────────────────────────────────────────────────
-const form = reactive({
-  name:        '',
-  slug:        '',
-  companySize: '' as any,
-  foundedYear: null as number | null,
-  taxCode:     '',
-  website:     '',
-  email:       '',
-  phone:       '',
-  address:     '',
-  description: '',
-  culture:     '',
-  linkedin:    '',
-  twitter:     '',
-  facebook:    '',
+const companyIndustryLabel = computed(() => {
+  return props.company.industryId ? INDUSTRY_MAP[props.company.industryId] : null
 })
 
-const benefitList = ref<string[]>([])
-
-function syncFromProps() {
-  const c = props.company
-  form.name        = c.name        ?? ''
-  form.slug        = c.slug        ?? ''
-  form.companySize = c.companySize ?? ''
-  form.foundedYear = c.foundedYear ?? null
-  form.taxCode     = c.taxCode     ?? ''
-  form.website     = c.website     ?? ''
-  form.email       = c.email       ?? ''
-  form.phone       = c.phone       ?? ''
-  form.address     = c.address     ?? ''
-  form.description = c.description ?? ''
-  form.culture     = c.culture     ?? ''
-
-  const social     = parseSocialLinks(c.socialLinks)
-  form.linkedin    = social.linkedin ?? ''
-  form.twitter     = social.twitter  ?? ''
-  form.facebook    = social.facebook ?? ''
-
-  benefitList.value = parseBenefits(c.benefits)
-}
-
-syncFromProps()
-watch(() => props.company, syncFromProps)
-
-// ─── Benefits ─────────────────────────────────────────────────────────────────
-const showBenefitInput = ref(false)
-const newBenefit       = ref('')
-const benefitInputRef  = ref<HTMLInputElement | null>(null)
-
-async function addBenefit() {
-  const val = newBenefit.value.trim()
-  if (val && !benefitList.value.includes(val)) benefitList.value.push(val)
-  cancelBenefit()
-}
-
-function cancelBenefit() {
-  newBenefit.value = ''
-  showBenefitInput.value = false
-}
-
-function removeBenefit(b: string) {
-  benefitList.value = benefitList.value.filter(x => x !== b)
-}
-
-watch(showBenefitInput, async (v) => {
-  if (v) { await nextTick(); benefitInputRef.value?.focus() }
-})
-
-// ─── Social ───────────────────────────────────────────────────────────────────
-const socialFields: { key: SocialKey; placeholder: string }[] = [
-  { key: 'linkedin', placeholder: 'LinkedIn URL' },
-  { key: 'twitter',  placeholder: 'Twitter (X) URL' },
-  { key: 'facebook', placeholder: 'Facebook URL' },
-]
-
-const socialValues = computed<Record<SocialKey, string>>(() => ({
-  linkedin: form.linkedin,
-  twitter:  form.twitter,
-  facebook: form.facebook,
-}))
-
-function onSocialInput(key: SocialKey, value: string) {
-  if (key === 'linkedin') form.linkedin = value
-  else if (key === 'twitter')  form.twitter  = value
-  else if (key === 'facebook') form.facebook = value
-}
-
-// ─── Actions ─────────────────────────────────────────────────────────────────
-function resetForm() { syncFromProps() }
-
-async function saveChanges() {
-  saving.value = true
+// ─── Format Helpers ──────────────────────────────────────────────────────────────
+function formatUrl(url: string) {
   try {
-    await store.adminUpdateCompany(props.company.id, {
-      name:        form.name        || null,
-      slug:        form.slug        || null,
-      companySize: form.companySize || null,
-      foundedYear: form.foundedYear,
-      taxCode:     form.taxCode     || null,
-      website:     form.website     || null,
-      email:       form.email       || null,
-      phone:       form.phone       || null,
-      address:     form.address     || null,
-      description: form.description || null,
-      culture:     form.culture     || null,
-      benefits:    benefitList.value.length ? stringifyBenefits(benefitList.value) : null,
-      socialLinks: stringifySocialLinks({
-        ...(form.linkedin ? { linkedin: form.linkedin } : {}),
-        ...(form.twitter  ? { twitter:  form.twitter  } : {}),
-        ...(form.facebook ? { facebook: form.facebook } : {}),
-      }) || null,
-    })
-    toastSuccess('Lưu thành công', `Hồ sơ ${form.name} đã được cập nhật`)
-  } catch {
-    toastError('Lưu thất bại', store.error ?? undefined)
-  } finally {
-    saving.value = false
+    const obj = new URL(url)
+    return obj.hostname.replace('www.', '')
+  } catch (e) {
+    return url
   }
+}
+
+function handleImageError(event: Event) {
+  const target = event.target as HTMLImageElement
+  target.src = 'https://placehold.co/1200x500/e2e8f0/94a3b8?text=Image+Not+Found'
+}
+
+// ─── Social Links Processing ───────────────────────────────────────────────────
+const parsedSocialLinks = computed<any[]>(() => {
+  if (!props.company.socialLinks) return []
+  try {
+    const parsed = JSON.parse(props.company.socialLinks)
+    if (Array.isArray(parsed)) {
+      return parsed.map(link => {
+        // Basic icon guessing based on URL
+        let icon = 'link'
+        const urlStr = link.url?.toLowerCase() || ''
+        if (urlStr.includes('facebook.com')) icon = 'facebook'
+        if (urlStr.includes('linkedin.com')) icon = 'work'
+        if (urlStr.includes('youtube.com')) icon = 'video_library'
+        if (urlStr.includes('twitter.com') || urlStr.includes('x.com')) icon = 'forum'
+        
+        return {
+          name: link.name || formatUrl(link.url),
+          url: link.url,
+          icon: link.icon || icon
+        }
+      })
+    }
+  } catch (e) {
+    // If it's just a raw single URL instead of a JSON array
+    if (props.company.socialLinks.trim().startsWith('http')) {
+       return [{ name: formatUrl(props.company.socialLinks), url: props.company.socialLinks, icon: 'link' }]
+    }
+  }
+  return []
+})
+
+// ─── Benefits Processing ─────────────────────────────────────────────────────────
+const parsedBenefits = computed<any[]>(() => {
+  if (!props.company.benefits) return []
+  try {
+    const parsed = JSON.parse(props.company.benefits)
+    if (Array.isArray(parsed) && parsed.length > 0) {
+      // Logic mapping if parsed is just strings
+      return parsed.map((item) => {
+        if (typeof item === 'string') {
+          return { title: item, description: '' }
+        }
+        return item
+      })
+    }
+  } catch (e) {
+    return [{ title: props.company.benefits, description: '' }]
+  }
+
+  return []
+})
+
+function getBenefitIcon(idx: number) {
+  const icons = ['health_and_safety', 'flight_takeoff', 'payments', 'school', 'redeem', 'favorite']
+  return icons[idx % icons.length]
 }
 </script>

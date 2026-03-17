@@ -56,32 +56,88 @@
 
       <!-- Fields -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-8">
-        <div class="space-y-2">
+        
+        <!-- Tên công ty -->
+        <div class="space-y-2 md:col-span-2">
           <label class="text-sm font-semibold text-slate-700 dark:text-slate-300">Tên công ty</label>
           <input
             :value="companyName"
             type="text"
-            class="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-transparent focus:ring-2 focus:ring-primary focus:border-transparent outline-none text-sm"
+            class="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-transparent focus:ring-2 focus:ring-primary focus:border-transparent outline-none text-sm trans-all"
+            :class="{ '!border-red-500 !ring-red-500/20': errors?.companyName }"
             placeholder="Nhập tên công ty"
             @input="$emit('update:companyName', ($event.target as HTMLInputElement).value)"
           />
+          <p v-if="errors?.companyName" class="text-[11px] text-red-500 mt-1">{{ errors.companyName }}</p>
         </div>
+
+        <!-- Lĩnh vực -->
         <div class="space-y-2">
           <label class="text-sm font-semibold text-slate-700 dark:text-slate-300">Lĩnh vực</label>
           <select
             :value="industry"
-            class="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 focus:ring-2 focus:ring-primary focus:border-transparent outline-none text-sm appearance-none"
+            class="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 focus:ring-2 focus:ring-primary focus:border-transparent outline-none text-sm appearance-none trans-all"
+            :class="{ '!border-red-500 !ring-red-500/20': errors?.industry }"
             @change="$emit('update:industry', ($event.target as HTMLSelectElement).value)"
           >
             <option value="">-- Chọn lĩnh vực --</option>
-            <option value="Software Development">Phát triển phần mềm</option>
-            <option value="Financial Services">Dịch vụ tài chính</option>
-            <option value="E-commerce">Thương mại điện tử</option>
-            <option value="Healthcare Tech">Công nghệ y tế</option>
-            <option value="Education Tech">Công nghệ giáo dục</option>
-            <option value="Manufacturing">Sản xuất</option>
+            <option value="1">Phát triển phần mềm</option>
+            <option value="2">Dịch vụ tài chính</option>
+            <option value="3">Thương mại điện tử</option>
+            <option value="4">Công nghệ y tế</option>
+            <option value="5">Công nghệ giáo dục</option>
+            <option value="6">Sản xuất</option>
           </select>
+          <p v-if="errors?.industry" class="text-[11px] text-red-500 mt-1">{{ errors.industry }}</p>
         </div>
+
+        <!-- Quy mȏ nhȃn sự -->
+        <div class="space-y-2">
+          <label class="text-sm font-semibold text-slate-700 dark:text-slate-300">Quy mô nhân sự</label>
+          <select
+            :value="companySize"
+            class="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 focus:ring-2 focus:ring-primary focus:border-transparent outline-none text-sm appearance-none trans-all"
+            :class="{ '!border-red-500 !ring-red-500/20': errors?.companySize }"
+            @change="$emit('update:companySize', ($event.target as HTMLSelectElement).value as CompanySize)"
+          >
+            <option value="">-- Chọn quy mô --</option>
+            <option value="1-50">1-50 nhân viên</option>
+            <option value="51-200">51-200 nhân viên</option>
+            <option value="201-500">201-500 nhân viên</option>
+            <option value="500+">Trên 500 nhân viên</option>
+          </select>
+          <p v-if="errors?.companySize" class="text-[11px] text-red-500 mt-1">{{ errors.companySize }}</p>
+        </div>
+
+        <!-- Mã số thuế -->
+        <div class="space-y-2">
+          <label class="text-sm font-semibold text-slate-700 dark:text-slate-300">Mã số thuế</label>
+          <input
+            :value="taxCode"
+            type="text"
+            class="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-transparent focus:ring-2 focus:ring-primary focus:border-transparent outline-none text-sm trans-all"
+            :class="{ '!border-red-500 !ring-red-500/20': errors?.taxCode }"
+            placeholder="Ví dụ: 0312xxxxxx"
+            @input="$emit('update:taxCode', ($event.target as HTMLInputElement).value)"
+          />
+          <p v-if="errors?.taxCode" class="text-[11px] text-red-500 mt-1">{{ errors.taxCode }}</p>
+        </div>
+
+        <!-- Năm thành lập -->
+        <div class="space-y-2">
+          <label class="text-sm font-semibold text-slate-700 dark:text-slate-300">Năm thành lập</label>
+          <input
+            :value="foundedYear"
+            type="number"
+            min="1900"
+            class="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-transparent focus:ring-2 focus:ring-primary focus:border-transparent outline-none text-sm trans-all"
+            :class="{ '!border-red-500 !ring-red-500/20': errors?.foundedYear }"
+            placeholder="Ví dụ: 2010"
+            @input="$emit('update:foundedYear', Number(($event.target as HTMLInputElement).value))"
+          />
+          <p v-if="errors?.foundedYear" class="text-[11px] text-red-500 mt-1">{{ errors.foundedYear }}</p>
+        </div>
+
       </div>
 
     </div>
@@ -90,17 +146,25 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import { CompanySize } from '@/types/company.types'
 
 defineProps<{
   companyName: string
   industry: string
+  companySize: CompanySize | ''
+  taxCode: string
+  foundedYear: number | ''
   coverUrl: string
   logoUrl: string
+  errors?: Record<string, string>
 }>()
 
 const emit = defineEmits<{
   'update:companyName': [value: string]
   'update:industry': [value: string]
+  'update:companySize': [value: CompanySize | '']
+  'update:taxCode': [value: string]
+  'update:foundedYear': [value: number | '']
   'update:coverUrl': [value: string]
   'update:logoUrl': [value: string]
 }>()

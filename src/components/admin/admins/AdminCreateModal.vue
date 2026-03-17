@@ -8,6 +8,7 @@
     loading-text="Đang tạo..."
     :loading="submitting"
     form-id="create-admin-form"
+    variant="danger"
     @close="$emit('close')"
   >
     <form class="space-y-8" @submit.prevent="handleSubmit" id="create-admin-form">
@@ -27,7 +28,7 @@
             <input
               id="admin-name"
               v-model="form.fullName"
-              class="w-full px-4 py-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all outline-none shadow-sm"
+              class="w-full px-4 py-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-4 focus:ring-[#963131]/10 focus:border-[#963131] transition-all outline-none shadow-sm"
               placeholder="VD: Nguyễn Văn A"
               type="text"
               required
@@ -42,7 +43,7 @@
             <input
               id="admin-email"
               v-model="form.email"
-              class="w-full px-4 py-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all outline-none shadow-sm"
+              class="w-full px-4 py-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-4 focus:ring-[#963131]/10 focus:border-[#963131] transition-all outline-none shadow-sm"
               placeholder="admin@topviec.vn"
               type="email"
               required
@@ -58,7 +59,7 @@
               <input
                 id="admin-password"
                 v-model="form.password"
-                class="w-full pl-4 pr-12 py-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all outline-none shadow-sm"
+                class="w-full pl-4 pr-12 py-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-4 focus:ring-[#963131]/10 focus:border-[#963131] transition-all outline-none shadow-sm"
                 placeholder="••••••••"
                 :type="showPassword ? 'text' : 'password'"
                 required
@@ -92,16 +93,16 @@
             :key="role.value"
             class="relative flex items-start gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all duration-200"
             :class="form.adminRole === role.value 
-              ? 'border-primary bg-primary/5 shadow-sm shadow-primary/10' 
+              ? 'border-[#963131] bg-[#963131]/5 shadow-sm shadow-[#963131]/10' 
               : 'border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-slate-300 dark:hover:border-slate-700'"
           >
             <div class="pt-0.5">
               <div 
                 class="flex items-center justify-center size-5 rounded-full border-2 transition-colors"
-                :class="form.adminRole === role.value ? 'border-primary' : 'border-slate-300'"
+                :class="form.adminRole === role.value ? 'border-[#963131]' : 'border-slate-300'"
               >
                 <div 
-                  class="size-2.5 rounded-full bg-primary transition-transform"
+                  class="size-2.5 rounded-full bg-[#963131] transition-transform"
                   :class="form.adminRole === role.value ? 'scale-100' : 'scale-0'"
                 ></div>
               </div>
@@ -115,10 +116,10 @@
             />
             <div class="flex-1">
               <div class="flex items-center gap-2 mb-1">
-                <span class="material-symbols-outlined text-[18px]" :class="form.adminRole === role.value ? 'text-primary' : 'text-slate-400'">
+                <span class="material-symbols-outlined text-[18px]" :class="form.adminRole === role.value ? 'text-[#963131]' : 'text-slate-400'">
                   {{ role.icon }}
                 </span>
-                <p class="text-sm font-bold" :class="form.adminRole === role.value ? 'text-primary' : 'text-slate-900 dark:text-slate-100'">
+                <p class="text-sm font-bold" :class="form.adminRole === role.value ? 'text-[#963131]' : 'text-slate-900 dark:text-slate-100'">
                   {{ role.label }}
                 </p>
               </div>

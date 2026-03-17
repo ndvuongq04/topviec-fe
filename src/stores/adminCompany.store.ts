@@ -3,12 +3,12 @@ import { ref } from 'vue'
 import { adminCompanyService } from '@/services/company.service'
 import type {
     ResCompanyDTO,
-    ReqUpdateCompanyDTO,
-    ReqVerifyCompanyDTO,
-    ReqSuspendCompanyDTO,
+    ReqAdminUpdateCompanyDTO,
     ResultPaginationDTO,
     PaginationMeta,
+    ReqCreateCompanyDTO,
 } from '@/types/company.types'
+import type { ReqRegisterEmployerDTO } from '@/types/auth.types'
 
 export const useAdminCompanyStore = defineStore('adminCompany', () => {
     // ─── State ──────────────────────────────────────────────────────────────────
@@ -20,7 +20,12 @@ export const useAdminCompanyStore = defineStore('adminCompany', () => {
 
     // ─── Helpers ────────────────────────────────────────────────────────────────
     function setError(err: unknown) {
-        error.value = (err as any)?.response?.data?.message ?? 'Có lỗi xảy ra. Vui lòng thử lại.'
+        const msg = (err as any)?.response?.data?.message
+        if (typeof msg === 'object' && msg !== null) {
+            error.value = Object.values(msg).join(', ')
+        } else {
+            error.value = msg ?? 'Có lỗi xảy ra. Vui lòng thử lại.'
+        }
     }
 
     function applyPagination(data: ResultPaginationDTO<ResCompanyDTO>) {
@@ -28,11 +33,29 @@ export const useAdminCompanyStore = defineStore('adminCompany', () => {
         meta.value = data.meta
     }
 
+    /** POST /admin/companies */
+    async function createCompany(payload: ReqRegisterEmployerDTO) {
+        loading.value = true
+        error.value = null
+        try {
+            const newCompany = await adminCompanyService.createCompany(payload)
+            companies.value.unshift(newCompany)
+            return newCompany
+        } catch (err) {
+            setError(err)
+            throw err
+        } finally {
+            loading.value = false
+        }
+    }
+
     // ─── Actions ────────────────────────────────────────────────────────────────
 
     /** GET /admin/companies */
     async function fetchAllCompanies(params?: {
         status?: string
+        verificationStatus?: string
+        keyword?: string
         page?: number
         size?: number
     }) {
@@ -48,19 +71,8 @@ export const useAdminCompanyStore = defineStore('adminCompany', () => {
         }
     }
 
-    /** GET /admin/companies/pending-verification */
-    async function fetchPendingVerification(params?: { page?: number; size?: number }) {
-        loading.value = true
-        error.value = null
-        try {
-            const data = await adminCompanyService.getPendingVerification(params)
-            applyPagination(data)
-        } catch (err) {
-            setError(err)
-        } finally {
-            loading.value = false
-        }
-    }
+
+
 
     /** GET /admin/companies/{id} */
     async function fetchById(id: number) {
@@ -75,12 +87,16 @@ export const useAdminCompanyStore = defineStore('adminCompany', () => {
         }
     }
 
-    /** PATCH /admin/companies/{id}/verify */
-    async function verifyCompany(id: number, payload: ReqVerifyCompanyDTO) {
+    /** PATCH /admin/companies/{id} (action: verify) */
+    async function verifyCompany(id: number, approved: boolean, rejectionReason?: string | null) {
         loading.value = true
         error.value = null
         try {
-            const updated = await adminCompanyService.verifyCompany(id, payload)
+            const updated = await adminCompanyService.adminUpdateCompany(id, {
+                action: 'verify',
+                approved,
+                rejectionReason
+            })
             _updateInList(updated)
             if (selectedCompany.value?.id === id) selectedCompany.value = updated
         } catch (err) {
@@ -91,12 +107,15 @@ export const useAdminCompanyStore = defineStore('adminCompany', () => {
         }
     }
 
-    /** PATCH /admin/companies/{id}/suspend */
-    async function suspendCompany(id: number, payload: ReqSuspendCompanyDTO) {
+    /** PATCH /admin/companies/{id} (action: suspend) */
+    async function suspendCompany(id: number, suspendedReason: string) {
         loading.value = true
         error.value = null
         try {
-            const updated = await adminCompanyService.suspendCompany(id, payload)
+            const updated = await adminCompanyService.adminUpdateCompany(id, {
+                action: 'suspend',
+                suspendedReason
+            })
             _updateInList(updated)
             if (selectedCompany.value?.id === id) selectedCompany.value = updated
         } catch (err) {
@@ -107,12 +126,14 @@ export const useAdminCompanyStore = defineStore('adminCompany', () => {
         }
     }
 
-    /** PATCH /admin/companies/{id}/unsuspend */
+    /** PATCH /admin/companies/{id} (action: unsuspend) */
     async function unsuspendCompany(id: number) {
         loading.value = true
         error.value = null
         try {
-            const updated = await adminCompanyService.unsuspendCompany(id)
+            const updated = await adminCompanyService.adminUpdateCompany(id, {
+                action: 'unsuspend'
+            })
             _updateInList(updated)
             if (selectedCompany.value?.id === id) selectedCompany.value = updated
         } catch (err) {
@@ -123,8 +144,8 @@ export const useAdminCompanyStore = defineStore('adminCompany', () => {
         }
     }
 
-    /** PUT /admin/companies/{id} */
-    async function adminUpdateCompany(id: number, payload: ReqUpdateCompanyDTO) {
+    /** PATCH /admin/companies/{id} (update details) */
+    async function adminUpdateCompany(id: number, payload: ReqAdminUpdateCompanyDTO) {
         loading.value = true
         error.value = null
         try {
@@ -176,7 +197,7 @@ export const useAdminCompanyStore = defineStore('adminCompany', () => {
         loading,
         error,
         fetchAllCompanies,
-        fetchPendingVerification,
+        createCompany,
         fetchById,
         verifyCompany,
         suspendCompany,

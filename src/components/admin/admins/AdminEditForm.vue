@@ -1,15 +1,15 @@
 <template>
-  <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-primary/10 p-6">
+  <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-[#963131]/10 p-6">
     <h3 class="text-lg font-bold mb-6 flex items-center gap-2">
-      <span class="material-symbols-outlined text-primary">person</span>
+      <span class="material-symbols-outlined text-[#963131]">person</span>
       Thông tin chung
     </h3>
     <div class="flex flex-col md:flex-row gap-8">
       <!-- Avatar -->
       <div class="flex flex-col items-center gap-4">
         <div class="relative">
-          <div class="w-32 h-32 rounded-full bg-primary/10 border-2 border-dashed border-primary/30 flex items-center justify-center overflow-hidden">
-            <span class="text-primary text-3xl font-bold">{{ initials }}</span>
+          <div class="w-32 h-32 rounded-full bg-[#963131]/10 border-2 border-dashed border-[#963131]/30 flex items-center justify-center overflow-hidden">
+            <span class="text-[#963131] text-3xl font-bold">{{ initials }}</span>
           </div>
         </div>
         <p class="text-xs text-slate-500 text-center">
@@ -23,7 +23,7 @@
           <label class="text-sm font-semibold">Họ và tên</label>
           <input
             :value="fullName"
-            class="w-full rounded-lg border-slate-200 focus:ring-primary focus:border-primary"
+            class="w-full rounded-lg border-slate-200 focus:ring-[#963131] focus:border-[#963131]"
             type="text"
             @input="$emit('update:fullName', ($event.target as HTMLInputElement).value)"
           />
@@ -41,7 +41,7 @@
           <label class="text-sm font-semibold">Phòng ban</label>
           <select
             :value="department"
-            class="w-full rounded-lg border-slate-200 focus:ring-primary focus:border-primary"
+            class="w-full rounded-lg border-slate-200 focus:ring-[#963131] focus:border-[#963131]"
             @change="$emit('update:department', ($event.target as HTMLSelectElement).value)"
           >
             <option value="">— Chọn phòng ban —</option>

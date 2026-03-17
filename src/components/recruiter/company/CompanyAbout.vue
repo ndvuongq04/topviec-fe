@@ -11,13 +11,35 @@
         <textarea
           :value="description"
           rows="4"
-          class="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-transparent focus:ring-2 focus:ring-primary focus:border-transparent outline-none text-sm resize-none leading-relaxed"
-          placeholder="Mô tả sứ mệnh, lịch sử và văn hóa công ty..."
+          class="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-transparent focus:ring-2 focus:ring-primary focus:border-transparent outline-none text-sm resize-none leading-relaxed trans-all"
+          :class="{ '!border-red-500 !ring-red-500/20': errors?.description }"
+          placeholder="Mô tả sứ mệnh, lịch sử và tổng quan công ty..."
           maxlength="2000"
           @input="$emit('update:description', ($event.target as HTMLTextAreaElement).value)"
         ></textarea>
-        <div class="flex justify-end">
+        <div class="flex justify-between items-center mt-1">
+          <p v-if="errors?.description" class="text-[11px] text-red-500">{{ errors.description }}</p>
+          <div v-else></div>
           <span class="text-xs text-slate-400">{{ description.length }} / 2000 ký tự</span>
+        </div>
+      </div>
+
+      <!-- Văn hóa -->
+      <div class="space-y-2">
+        <label class="text-sm font-semibold text-slate-700 dark:text-slate-300">Văn hóa & Môi trường làm việc</label>
+        <textarea
+          :value="culture"
+          rows="4"
+          class="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-transparent focus:ring-2 focus:ring-primary focus:border-transparent outline-none text-sm resize-none leading-relaxed trans-all"
+          :class="{ '!border-red-500 !ring-red-500/20': errors?.culture }"
+          placeholder="Chia sẻ về văn hóa làm việc, môi trường và con người tại công ty..."
+          maxlength="2000"
+          @input="$emit('update:culture', ($event.target as HTMLTextAreaElement).value)"
+        ></textarea>
+        <div class="flex justify-between items-center mt-1">
+          <p v-if="errors?.culture" class="text-[11px] text-red-500">{{ errors.culture }}</p>
+          <div v-else></div>
+          <span class="text-xs text-slate-400">{{ culture?.length || 0 }} / 2000 ký tự</span>
         </div>
       </div>
 
@@ -79,12 +101,15 @@ import { ref, nextTick } from 'vue'
 
 const props = defineProps<{
   description: string
+  culture: string
   benefits: string[]
+  errors?: Record<string, string>
 }>()
 
 const emit = defineEmits<{
   'update:description': [value: string]
-  'update:benefits': [value: string[]]
+  'update:culture':     [value: string]
+  'update:benefits':    [value: string[]]
 }>()
 
 const showInput   = ref(false)

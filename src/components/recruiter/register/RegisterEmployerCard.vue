@@ -95,7 +95,7 @@ async function handleRegister() {
     // Tách confirmPassword ra khỏi payload gửi lên server
     const { confirmPassword, ...payload } = form.value
     await authStore.registerEmployer(payload)
-    toast.success('Đăng ký thành công!', 'Chào mừng quý đối tác đến với TopViec')
+        toast.success('Đăng ký thành công!', 'Vui lòng kiểm tra email để xác thực tài khoản')
   } catch (err: any) {
     const msg = err.response?.data?.message ?? 'Đăng ký thất bại, vui lòng thử lại'
     toast.error('Lỗi đăng ký', msg)

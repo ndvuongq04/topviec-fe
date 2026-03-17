@@ -2,17 +2,17 @@
   <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
     <div class="p-6 h-full flex flex-col">
       <h3 class="text-lg font-bold mb-6 flex items-center gap-2">
-        <span class="material-symbols-outlined text-primary">security</span>
+        <span class="material-symbols-outlined text-[#963131]">security</span>
         Bảo mật &amp; Đăng nhập
       </h3>
 
       <!-- 2FA Status -->
-      <div class="mb-6 p-4 rounded-lg bg-primary/5 border border-primary/10 flex items-center justify-between">
+      <div class="mb-6 p-4 rounded-lg bg-[#963131]/5 border border-[#963131]/10 flex items-center justify-between">
         <div class="flex items-center gap-3">
-          <span class="material-symbols-outlined text-primary">verified_user</span>
+          <span class="material-symbols-outlined text-[#963131]">verified_user</span>
           <span class="text-sm font-medium">Xác thực 2 lớp (2FA)</span>
         </div>
-        <span class="text-xs font-bold text-primary uppercase">Đã bật</span>
+        <span class="text-xs font-bold text-[#963131] uppercase">Đã bật</span>
       </div>
 
       <!-- Login History -->

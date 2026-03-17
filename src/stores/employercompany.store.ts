@@ -15,7 +15,14 @@ export const useEmployerCompanyStore = defineStore('employerCompany', () => {
 
     // ─── Helpers ────────────────────────────────────────────────────────────────
     function setError(err: unknown) {
-        error.value = (err as any)?.response?.data?.message ?? 'Có lỗi xảy ra. Vui lòng thử lại.'
+        const data = (err as any)?.response?.data
+        if (data?.message && typeof data.message === 'object') {
+            // Lấy lỗi đầu tiên nếu message là object (validation errors)
+            const firstError = Object.values(data.message)[0]
+            error.value = String(firstError)
+        } else {
+            error.value = data?.message ?? 'Có lỗi xảy ra. Vui lòng thử lại.'
+        }
     }
 
     // ─── Actions ────────────────────────────────────────────────────────────────
@@ -47,19 +54,7 @@ export const useEmployerCompanyStore = defineStore('employerCompany', () => {
         }
     }
 
-    /** PUT /employer/company */
-    async function updateMyCompany(payload: ReqUpdateCompanyDTO) {
-        loading.value = true
-        error.value = null
-        try {
-            company.value = await employerCompanyService.updateMyCompany(payload)
-        } catch (err) {
-            setError(err)
-            throw err
-        } finally {
-            loading.value = false
-        }
-    }
+
 
     /** Reset khi logout */
     function reset() {
@@ -74,7 +69,6 @@ export const useEmployerCompanyStore = defineStore('employerCompany', () => {
         error,
         fetchMyCompany,
         createCompany,
-        updateMyCompany,
         reset,
     }
 })

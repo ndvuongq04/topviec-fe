@@ -10,6 +10,7 @@ export { CompanySize, CompanyStatus, VerificationStatus }
 export interface ReqCreateCompanyDTO {
     slug: string
     name: string
+    password?: string
     logoUrl?: string | null
     coverUrl?: string | null
     description: string
@@ -28,7 +29,7 @@ export interface ReqCreateCompanyDTO {
     socialLinks?: string | null
 }
 
-/** PUT /employer/company  |  PUT /admin/companies/{id} */
+/** PATCH /employer/companies/{id} */
 export interface ReqUpdateCompanyDTO {
     slug?: string | null
     name?: string | null
@@ -49,6 +50,34 @@ export interface ReqUpdateCompanyDTO {
     benefits?: string | null
     socialLinks?: string | null
 }
+
+/**  PATCH /admin/companies/{id} */
+export interface ReqAdminUpdateCompanyDTO {
+    slug?: string | null
+    name?: string | null
+    logoUrl?: string | null
+    coverUrl?: string | null
+    description?: string | null
+    industryId?: number | null
+    companySize?: CompanySize | null
+    foundedYear?: number | null
+    website?: string | null
+    email?: string | null
+    phone?: string | null
+    address?: string | null
+    provinceId?: number | null
+    taxCode?: string | null
+    businessLicenseUrl?: string | null
+    culture?: string | null
+    benefits?: string | null
+    socialLinks?: string | null
+
+    action?: 'verify' | 'suspend' | 'unsuspend'
+    approved?: boolean
+    rejectionReason?: string | null
+    suspendedReason?: string | null
+}
+
 
 /** PATCH /admin/companies/{id}/verify */
 export interface ReqVerifyCompanyDTO {

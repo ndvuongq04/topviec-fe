@@ -28,24 +28,25 @@
         </span>
       </div>
 
-      <!-- Error banner -->
-      <div v-if="store.error" class="flex items-center gap-3 px-5 py-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl text-red-600 dark:text-red-400 text-sm">
-        <span class="material-symbols-outlined text-[18px]">error</span>
-        {{ store.error }}
-      </div>
 
       <!-- Thông tin cơ bản -->
       <CompanyBasicInfo
         v-model:company-name="form.companyName"
         v-model:industry="form.industry"
+        v-model:company-size="form.companySize"
+        v-model:tax-code="form.taxCode"
+        v-model:founded-year="form.foundedYear"
         v-model:cover-url="form.coverUrl"
         v-model:logo-url="form.logoUrl"
+        :errors="errors"
       />
 
       <!-- Giới thiệu & Văn hóa -->
       <CompanyAbout
         v-model:description="form.description"
+        v-model:culture="form.culture"
         v-model:benefits="form.benefits"
+        :errors="errors"
       />
 
       <!-- Xác minh doanh nghiệp -->
@@ -56,26 +57,17 @@
 
       <!-- Liên hệ & Mạng xã hội -->
       <CompanyContact
+        v-model:email="form.email"
+        v-model:phone="form.phone"
         v-model:website="form.website"
+        v-model:province-id="form.provinceId"
         v-model:address="form.address"
         v-model:linkedin="form.linkedin"
         v-model:twitter="form.twitter"
         v-model:facebook="form.facebook"
+        :errors="errors"
       />
 
-      <!-- Toast -->
-      <Transition name="fade">
-        <div
-          v-if="toast.show"
-          class="fixed bottom-6 right-6 z-50 flex items-center gap-3 px-5 py-3 rounded-2xl shadow-xl text-sm font-medium"
-          :class="toast.type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'"
-        >
-          <span class="material-symbols-outlined text-[18px]">
-            {{ toast.type === 'success' ? 'check_circle' : 'error' }}
-          </span>
-          {{ toast.message }}
-        </div>
-      </Transition>
 
       <!-- Actions bottom -->
       <div class="flex justify-end gap-3 pt-6 pb-12">
@@ -101,55 +93,70 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref, computed, onMounted, watch } from 'vue'
+import { reactive, computed, onMounted, watch } from 'vue'
 import CompanyBasicInfo from '@/components/recruiter/company/CompanyBasicInfo.vue'
 import CompanyAbout from '@/components/recruiter/company/CompanyAbout.vue'
 import CompanyVerification from '@/components/recruiter/company/CompanyVerification.vue'
 import CompanyContact from '@/components/recruiter/company/CompanyContact.vue'
 import { useEmployerCompanyStore } from '@/stores/employercompany.store'
-import { VerificationStatus, CompanyStatus } from '@/constants/company.constants'
+import { VerificationStatus, CompanyStatus, CompanySize } from '@/types/company.types'
 import { parseBenefits, parseSocialLinks, stringifyBenefits, stringifySocialLinks } from '@/types/company.types'
 import type { LicenseFile } from '@/components/recruiter/company/CompanyVerification.vue'
+import { useToast } from '@/composables/useToast'
 
 const store = useEmployerCompanyStore()
+const toast = useToast()
 
 // ─── Form state ──────────────────────────────────────────────────────────────
 const form = reactive({
   companyName:        '',
   industry:           '',
+  companySize:        '' as CompanySize | '',
+  taxCode:            '',
+  foundedYear:        '' as number | '',
   coverUrl:           '',
   logoUrl:            '',
   description:        '',
+  culture:            '',
   benefits:           [] as string[],
   businessLicenseUrl: '',
   licenseFile:        null as LicenseFile | null,
+  email:              '',
+  phone:              '',
   website:            '',
+  provinceId:         '' as number | '',
   address:            '',
   linkedin:           '',
   twitter:            '',
   facebook:           '',
 })
 
-// ─── Toast ───────────────────────────────────────────────────────────────────
-const toast = ref({ show: false, type: 'success' as 'success' | 'error', message: '' })
+const errors = reactive<Record<string, string>>({})
 
-function showToast(type: 'success' | 'error', message: string) {
-  toast.value = { show: true, type, message }
-  setTimeout(() => { toast.value.show = false }, 3000)
+function clearErrors() {
+  Object.keys(errors).forEach(key => delete errors[key])
 }
 
 // ─── Sync form ← store ───────────────────────────────────────────────────────
 function syncFromStore() {
+  clearErrors()
   const c = store.company
   if (!c) return
 
   form.companyName        = c.name ?? ''
+  form.companySize        = c.companySize ?? ''
+  form.taxCode            = c.taxCode ?? ''
+  form.foundedYear        = c.foundedYear ?? ''
   form.coverUrl           = c.coverUrl ?? ''
   form.logoUrl            = c.logoUrl ?? ''
   form.description        = c.description ?? ''
+  form.culture            = c.culture ?? ''
   form.benefits           = parseBenefits(c.benefits)
   form.businessLicenseUrl = c.businessLicenseUrl ?? ''
+  form.email              = c.email ?? ''
+  form.phone              = c.phone ?? ''
   form.website            = c.website ?? ''
+  form.provinceId         = c.provinceId ?? ''
   form.address            = c.address ?? ''
 
   // Parse socialLinks JSON → các fields riêng
@@ -211,18 +218,82 @@ const statusBarStyle = computed(() => {
 })
 
 // ─── Actions ─────────────────────────────────────────────────────────────────
+function validateForm() {
+  clearErrors()
+  let isValid = true
+
+  const setError = (field: string, msg: string) => {
+    errors[field] = msg
+    if (isValid) {
+      toast.error(msg)
+      isValid = false
+    }
+  }
+
+  if (!form.companyName.trim()) {
+    setError('companyName', 'Vui lòng nhập tên công ty')
+  }
+  if (!form.industry) {
+    setError('industry', 'Vui lòng chọn lĩnh vực hoạt động')
+  }
+  if (!form.companySize) {
+    setError('companySize', 'Vui lòng chọn quy mô công ty')
+  }
+  if (!form.taxCode.trim()) {
+    setError('taxCode', 'Vui lòng nhập mã số thuế')
+  }
+  
+  if (form.foundedYear) {
+    const currentYear = new Date().getFullYear()
+    if (form.foundedYear < 1900) {
+      setError('foundedYear', 'Năm thành lập không hợp lệ (tối thiểu 1900)')
+    } else if (form.foundedYear > currentYear) {
+      setError('foundedYear', `Năm thành lập không được lớn hơn năm hiện tại (${currentYear})`)
+    }
+  }
+
+  if (form.description.length < 100) {
+    setError('description', 'Mô tả công ty tối thiểu 100 ký tự')
+  }
+  if (!form.email.trim()) {
+    setError('email', 'Vui lòng nhập email liên hệ')
+  } else {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(form.email)) {
+      setError('email', 'Email không hợp lệ')
+    }
+  }
+  if (!form.phone.trim()) {
+    setError('phone', 'Vui lòng nhập số điện thoại')
+  }
+  if (!form.address.trim()) {
+    setError('address', 'Vui lòng nhập địa chỉ công ty')
+  }
+
+  return isValid
+}
+
 function discardDraft() {
   syncFromStore()
 }
 
 async function publishProfile() {
+  if (!validateForm()) return
+
   const payload = {
     name:               form.companyName,
+    companySize:        form.companySize || null,
+    taxCode:            form.taxCode || null,
+    foundedYear:        form.foundedYear ? Number(form.foundedYear) : null,
     coverUrl:           form.coverUrl   || null,
     logoUrl:            form.logoUrl    || null,
-    description:        form.description,
-    industryId:         form.industry   ? Number(form.industry) : undefined,
+    description:        form.description || null,
+    culture:            form.culture || null,
+    industryId:         form.industry   ? Number(form.industry) : null,
+    email:              form.email || null,
+    phone:              form.phone || null,
     website:            form.website    || null,
+    provinceId:         form.provinceId ? Number(form.provinceId) : null,
     address:            form.address    || null,
     businessLicenseUrl: form.businessLicenseUrl || null,
     benefits:           form.benefits.length ? stringifyBenefits(form.benefits) : null,
@@ -235,7 +306,7 @@ async function publishProfile() {
 
   try {
     if (store.company) {
-      await store.updateMyCompany(payload)
+      await store.updateMyCompany(payload as any)
     } else {
       // Tạo mới — cần thêm slug và các field bắt buộc
       await store.createCompany({
@@ -244,11 +315,12 @@ async function publishProfile() {
         name:        form.companyName,
         description: form.description,
         industryId:  Number(form.industry),
+        companySize: form.companySize
       } as any)
     }
-    showToast('success', 'Lưu hồ sơ thành công!')
+    toast.success('Lưu hồ sơ thành công!')
   } catch {
-    showToast('error', store.error ?? 'Lưu thất bại, vui lòng thử lại.')
+    toast.error(store.error ?? 'Lưu thất bại, vui lòng thử lại.')
   }
 }
 

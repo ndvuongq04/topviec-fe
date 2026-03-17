@@ -82,7 +82,7 @@ async function handleRegister() {
     loading.value = true
     const { confirmPassword, ...payload } = form.value
     await authStore.register(payload)
-    toast.success('Đăng ký thành công!', 'Chào mừng bạn đến với TopViec ')
+    toast.success('Đăng ký thành công!', 'Vui lòng kiểm tra email để xác thực tài khoản')
   } catch (err: any) {
     const msg = err.response?.data?.message ?? 'Đăng ký thất bại, vui lòng thử lại'
     toast.error('Đăng ký thất bại', msg)
