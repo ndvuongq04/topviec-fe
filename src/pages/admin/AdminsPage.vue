@@ -2,145 +2,192 @@
   <div class="space-y-8">
 
     <!-- Header -->
-    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div class="flex flex-wrap items-center justify-between gap-4">
       <div>
-        <h2 class="text-3xl font-bold">Quản lý danh sách Admin</h2>
-        <p class="text-slate-500 dark:text-slate-400 mt-1">Phân quyền và quản lý tài khoản quản trị hệ thống</p>
+        <h2 class="text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight">Quản lý tài khoản Admin</h2>
+        <p class="text-slate-500 text-sm mt-1">Quản lý phân quyền và giám sát hoạt động của các nhân sự vận hành hệ thống.</p>
       </div>
       <button
-        class="inline-flex items-center gap-2 bg-[#963131] text-white px-5 py-2.5 rounded-lg font-medium shadow-lg hover:bg-[#963131]/90 transition-all"
-        style="box-shadow: 0 4px 14px rgba(150,49,49,0.25)"
-        @click="openAddModal"
+        class="bg-primary hover:bg-primary/90 text-white px-5 py-2.5 rounded-lg font-bold text-sm flex items-center gap-2 shadow-lg shadow-primary/20 transition-all"
+        @click="showCreateModal = true"
       >
-        <span class="material-symbols-outlined text-sm">add</span>
+        <span class="material-symbols-outlined text-lg">person_add</span>
         Thêm Admin mới
       </button>
     </div>
 
-    <!-- KPI Cards -->
-    <AdminKpiCards :kpis="kpis" />
+    <!-- Table Card -->
+    <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden">
 
-    <!-- Table card -->
-    <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
-
-      <!-- Filters -->
+      <!-- Filters & Tabs -->
       <AdminListFilters
-        v-model:search="filters.search"
-        v-model:role="filters.role"
-        v-model:status="filters.status"
-        @export-csv="exportCsv"
+        :search="filters.search"
+        @search="onSearch"
+        v-model:activeTab="filters.adminRole"
+        v-model:sort="filters.sort"
+        :total-count="store.meta.totals"
       />
+
+      <!-- Loading -->
+      <div v-if="store.loading" class="flex items-center justify-center py-20">
+        <div class="text-slate-400 text-sm flex items-center gap-2">
+          <span class="material-symbols-outlined animate-spin">progress_activity</span>
+          Đang tải dữ liệu...
+        </div>
+      </div>
+
+      <!-- Error -->
+      <div v-else-if="store.error" class="flex flex-col items-center justify-center py-20 text-red-500">
+        <span class="material-symbols-outlined text-4xl mb-2">error</span>
+        <p class="text-sm">{{ store.error }}</p>
+        <button class="mt-4 text-sm text-primary font-semibold hover:underline" @click="loadAdmins">
+          Thử lại
+        </button>
+      </div>
 
       <!-- Table -->
       <AdminListTable
-        :admins="filteredAdmins"
-        :total="totalAdmins"
+        v-else
+        :admins="store.admins"
+        :total="store.meta.totals"
         :current-page="currentPage"
         :page-size="pageSize"
+        @view="onView"
         @edit="onEdit"
-        @permissions="onPermissions"
         @toggle-lock="onToggleLock"
         @delete="onDelete"
         @page-change="onPageChange"
       />
-
     </div>
 
+    <!-- Create Modal -->
+    <AdminCreateModal
+      :visible="showCreateModal"
+      :submitting="creating"
+      @close="showCreateModal = false"
+      @submit="onCreateAdmin"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed } from 'vue'
-import AdminKpiCards from '@/components/admin/admins/AdminKpiCards.vue'
+import { ref, watch, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { useAdminUserStore } from '@/stores/adminUser.store'
+import { useToast } from '@/composables/useToast'
+import { useConfirm } from '@/composables/useConfirm'
 import AdminListFilters from '@/components/admin/admins/AdminListFilters.vue'
 import AdminListTable from '@/components/admin/admins/AdminListTable.vue'
-import type { AdminUser } from '@/components/admin/admins/AdminListTable.vue'
+import AdminCreateModal from '@/components/admin/admins/AdminCreateModal.vue'
+import type { ResAdminUser, ReqCreateAdmin } from '@/types/adminUser.types'
 
-const currentPage  = ref(1)
-const pageSize     = ref(4)
-const totalAdmins  = ref(42)
+const router = useRouter()
+const store = useAdminUserStore()
+const toast = useToast()
+const { confirm } = useConfirm()
 
-const kpis = [
-  {
-    label: 'Tổng số Admin',
-    value: 42,
-    note: '+2 tháng này',
-    noteColor: 'text-emerald-600',
-    noteIcon: 'trending_up',
-    iconBg: 'bg-[#963131]/10',
-    iconColor: 'text-[#963131]',
-    icon: 'groups',
-  },
-  {
-    label: 'Đang trực tuyến',
-    value: 12,
-    note: 'Hoạt động ngay bây giờ',
-    noteColor: 'text-slate-500',
-    noteIcon: 'circle',
-    noteIconClass: 'text-emerald-500',
-    iconBg: 'bg-emerald-100',
-    iconColor: 'text-emerald-600',
-    icon: 'online_prediction',
-  },
-  {
-    label: 'Mới trong tháng',
-    value: '05',
-    note: 'Cập nhật 1 giờ trước',
-    noteColor: 'text-slate-500',
-    noteIcon: 'history',
-    iconBg: 'bg-blue-100',
-    iconColor: 'text-blue-600',
-    icon: 'person_add_alt',
-  },
-  {
-    label: 'Chờ kích hoạt 2FA',
-    value: '03',
-    note: 'Yêu cầu bảo mật cao',
-    noteColor: 'text-amber-600',
-    noteIcon: 'warning',
-    iconBg: 'bg-amber-100',
-    iconColor: 'text-amber-600',
-    icon: 'vibration',
-  },
-]
+const pageSize = ref(10)
+const currentPage = ref(1)
+const showCreateModal = ref(false)
+const creating = ref(false)
 
-const filters = reactive({ search: '', role: '', status: '' })
+const filters = ref({
+  search: '',
+  adminRole: '',
+  sort: 'createdAt,desc',
+})
 
-const allAdmins = ref<AdminUser[]>([
-  { id: '#AD-001', name: 'Nguyễn Văn An',  email: 'an.nguyen@topviec.vn', role: 'super',   roleLabel: 'Super Admin',     lastLogin: '10:45 - 24/05/2024', status: 'active'   },
-  { id: '#AD-012', name: 'Lê Thị Mai',      email: 'mai.le@topviec.vn',    role: 'content', roleLabel: 'Content Mod',     lastLogin: 'Hôm qua, 18:20',     status: 'active'   },
-  { id: '#AD-015', name: 'Trần Minh Quân',  email: 'quan.tm@topviec.vn',   role: 'finance', roleLabel: 'Finance Admin',   lastLogin: '15/05/2024',         status: 'offline'  },
-  { id: '#AD-022', name: 'Phạm Văn Hùng',   email: 'hung.pv@topviec.vn',   role: 'support', roleLabel: 'Support Admin',   lastLogin: '02/05/2024',         status: 'locked'   },
-])
+function onSearch(val: string) {
+  filters.value.search = val
+  currentPage.value = 1
+  loadAdmins()
+}
 
-const filteredAdmins = computed(() =>
-  allAdmins.value.filter(a => {
-    const q = filters.search.toLowerCase()
-    if (q && !a.name.toLowerCase().includes(q) && !a.email.toLowerCase().includes(q)) return false
-    if (filters.role   && a.role   !== filters.role)   return false
-    if (filters.status && a.status !== filters.status) return false
-    return true
+watch(() => filters.value.adminRole, () => {
+  currentPage.value = 1
+  loadAdmins()
+})
+
+watch(() => filters.value.sort, () => {
+  currentPage.value = 1
+  loadAdmins()
+})
+
+onMounted(() => {
+  loadAdmins()
+})
+
+async function loadAdmins() {
+  await store.fetchAllAdmins({
+    keyword: filters.value.search || undefined,
+    adminRole: filters.value.adminRole || undefined,
+    page: currentPage.value - 1, // Spring page is 0-indexed
+    size: pageSize.value,
+    sort: filters.value.sort || undefined,
   })
-)
-
-function openAddModal() {
-  // TODO: mở modal thêm admin
-}
-
-function exportCsv() {
-  // TODO: export CSV
-}
-
-function onEdit(admin: AdminUser)        { console.log('Edit:', admin) }
-function onPermissions(admin: AdminUser) { console.log('Permissions:', admin) }
-function onDelete(admin: AdminUser)      { console.log('Delete:', admin) }
-
-function onToggleLock(admin: AdminUser) {
-  const target = allAdmins.value.find(a => a.id === admin.id)
-  if (target) target.status = target.status === 'locked' ? 'active' : 'locked'
 }
 
 function onPageChange(page: number) {
   currentPage.value = page
+  loadAdmins()
+}
+
+function onView(admin: ResAdminUser) {
+  router.push({ name: 'admin-detail', params: { id: admin.adminUsersId } })
+}
+
+function onEdit(admin: ResAdminUser) {
+  router.push({ name: 'admin-edit', params: { id: admin.adminUsersId } })
+}
+
+async function onToggleLock(admin: ResAdminUser) {
+  const action = admin.isActive ? 'Khóa' : 'Mở khóa'
+  const isConfirmed = await confirm({
+    title: `Xác nhận ${action.toLowerCase()} tài khoản`,
+    message: `Bạn có chắc muốn ${action.toLowerCase()} tài khoản "${admin.fullName}" không?`,
+    confirmText: action,
+    confirmColor: admin.isActive ? 'red' : 'primary',
+    icon: admin.isActive ? 'block' : 'lock_open'
+  })
+  if (!isConfirmed) return
+
+  try {
+    await store.toggleActive(admin.adminUsersId)
+    toast.success('Thành công!', `Đã ${action.toLowerCase()} tài khoản "${admin.fullName}"`)
+  } catch {
+    toast.error('Lỗi!', store.error || `Không thể ${action.toLowerCase()} tài khoản`)
+  }
+}
+
+async function onDelete(admin: ResAdminUser) {
+  const isConfirmed = await confirm({
+    title: 'Xác nhận xóa tài khoản',
+    message: `Bạn có chắc chắn muốn xóa tài khoản "${admin.fullName}"? Thao tác này sẽ xóa vĩnh viễn dữ liệu và không thể hoàn tác.`,
+    confirmText: 'Xác nhận xóa',
+    confirmColor: 'red',
+    icon: 'warning'
+  })
+  if (!isConfirmed) return
+
+  try {
+    await store.deleteAdmin(admin.adminUsersId)
+    toast.success('Thành công!', `Đã xóa tài khoản "${admin.fullName}"`)
+  } catch {
+    toast.error('Lỗi!', store.error || 'Không thể xóa tài khoản')
+  }
+}
+
+async function onCreateAdmin(payload: ReqCreateAdmin) {
+  creating.value = true
+  try {
+    await store.createAdmin(payload)
+    showCreateModal.value = false
+    loadAdmins()
+    toast.success('Thành công!', 'Đã tạo tài khoản admin mới')
+  } catch {
+    toast.error('Lỗi!', store.error || 'Không thể tạo tài khoản admin')
+  } finally {
+    creating.value = false
+  }
 }
 </script>

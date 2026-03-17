@@ -1,99 +1,152 @@
 <template>
   <div>
     <div class="overflow-x-auto">
-      <table class="w-full text-left">
-        <thead class="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800">
-          <tr>
-            <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">ID</th>
-            <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Admin</th>
-            <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Vai trò</th>
-            <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Đăng nhập cuối</th>
-            <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Trạng thái</th>
-            <th class="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">Thao tác</th>
+      <table class="w-full text-left border-collapse">
+        <thead>
+          <tr
+            class="bg-slate-50/50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800"
+          >
+            <th
+              class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider"
+            >
+              MÃ ID
+            </th>
+            <th
+              class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider"
+            >
+              HỌ TÊN &amp; EMAIL
+            </th>
+            <th
+              class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider"
+            >
+              VAI TRÒ
+            </th>
+            <th
+              class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider"
+            >
+              TRẠNG THÁI
+            </th>
+            <th
+              class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider"
+            >
+              NGÀY TẠO
+            </th>
+            <th
+              class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right"
+            >
+              HÀNH ĐỘNG
+            </th>
           </tr>
         </thead>
-        <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+        <tbody class="divide-y divide-slate-200 dark:divide-slate-800">
           <tr
             v-for="admin in admins"
-            :key="admin.id"
-            class="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors"
-            :class="{ 'opacity-60': admin.status === 'locked' }"
+            :key="admin.adminUsersId"
+            class="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors"
           >
             <!-- ID -->
-            <td class="px-6 py-4 text-sm text-slate-500 font-mono">{{ admin.id }}</td>
+            <td class="px-6 py-4 text-sm font-mono text-slate-400">
+              #AD-{{ admin.adminUsersId }}
+            </td>
 
-            <!-- Admin info -->
+            <!-- Name & Email -->
             <td class="px-6 py-4">
               <div class="flex items-center gap-3">
                 <div
-                  class="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold shrink-0 border border-slate-200 dark:border-slate-700"
-                  :class="admin.status === 'locked'
-                    ? 'bg-slate-200 dark:bg-slate-700 text-slate-400 grayscale'
-                    : 'bg-[#963131]/10 text-[#963131]'"
+                  class="size-9 rounded-full flex items-center justify-center text-sm font-bold shrink-0"
+                  :class="
+                    admin.isActive
+                      ? 'bg-primary/10 text-primary'
+                      : 'bg-slate-200 dark:bg-slate-700 text-slate-400'
+                  "
                 >
-                  {{ initials(admin.name) }}
+                  {{ initials(admin.fullName) }}
                 </div>
                 <div>
-                  <p class="text-sm font-semibold">{{ admin.name }}</p>
-                  <p class="text-xs text-slate-500">{{ admin.email }}</p>
+                  <p
+                    class="text-sm font-bold text-slate-900 dark:text-slate-100 leading-none"
+                  >
+                    {{ admin.fullName }}
+                  </p>
+                  <p class="text-xs text-slate-500 mt-1">{{ admin.email }}</p>
                 </div>
               </div>
             </td>
 
-            <!-- Vai trò -->
+            <!-- Role -->
             <td class="px-6 py-4">
-              <span class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase" :class="roleStyle(admin.role)">
-                {{ admin.roleLabel }}
+              <span
+                class="px-2.5 py-1 text-[10px] font-black uppercase rounded-full border"
+                :class="[
+                  roleStyle(admin.adminRole).bg,
+                  roleStyle(admin.adminRole).text,
+                  roleStyle(admin.adminRole).border,
+                ]"
+              >
+                {{ roleLabel(admin.adminRole) }}
               </span>
             </td>
 
-            <!-- Đăng nhập cuối -->
-            <td class="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">{{ admin.lastLogin }}</td>
-
-            <!-- Trạng thái -->
+            <!-- Status -->
             <td class="px-6 py-4">
-              <div class="flex items-center gap-1.5" :class="statusColor(admin.status)">
-                <span v-if="admin.status === 'locked'" class="material-symbols-outlined text-xs">lock</span>
-                <span v-else class="w-1.5 h-1.5 rounded-full" :class="admin.status === 'active' ? 'bg-emerald-500' : 'bg-slate-300'"></span>
-                <span class="text-sm font-medium">{{ statusLabel(admin.status) }}</span>
-              </div>
+              <span
+                class="flex items-center gap-1.5 text-xs font-semibold"
+                :class="
+                  admin.isActive
+                    ? 'text-green-600 dark:text-green-400'
+                    : 'text-red-600 dark:text-red-400'
+                "
+              >
+                <span
+                  class="w-1.5 h-1.5 rounded-full"
+                  :class="admin.isActive ? 'bg-green-500' : 'bg-red-500'"
+                ></span>
+                {{ admin.isActive ? "Đang hoạt động" : "Bị khóa" }}
+              </span>
             </td>
 
-            <!-- Thao tác -->
+            <!-- Created Date -->
+            <td class="px-6 py-4 text-sm text-slate-500">
+              {{ formatDate(admin.createdAt) }}
+            </td>
+
+            <!-- Actions -->
             <td class="px-6 py-4 text-right">
-              <div class="flex justify-end gap-1">
+              <div class="flex items-center justify-end gap-1">
                 <button
-                  class="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                  class="p-1.5 text-slate-400 hover:text-primary transition-colors"
+                  title="Xem chi tiết"
+                  @click="$emit('view', admin)"
+                >
+                  <span class="material-symbols-outlined text-lg"
+                    >visibility</span
+                  >
+                </button>
+                <button
+                  class="p-1.5 text-slate-400 hover:text-blue-600 transition-colors"
                   title="Chỉnh sửa"
                   @click="$emit('edit', admin)"
                 >
                   <span class="material-symbols-outlined text-lg">edit</span>
                 </button>
-                <button
-                  class="p-1.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/20 rounded-lg transition-colors"
-                  title="Phân quyền"
-                  @click="$emit('permissions', admin)"
-                >
-                  <span class="material-symbols-outlined text-lg">security</span>
-                </button>
-                <button
-                  class="p-1.5 rounded-lg transition-colors"
-                  :class="admin.status === 'locked'
-                    ? 'text-emerald-500 hover:text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-900/20'
-                    : 'text-slate-400 hover:text-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800'"
-                  :title="admin.status === 'locked' ? 'Mở khóa' : 'Khóa'"
+                <!-- <button
+                  class="p-1.5 transition-colors"
+                  :class="admin.isActive
+                    ? 'text-slate-400 hover:text-orange-600'
+                    : 'text-green-600 hover:bg-green-50 rounded'"
+                  :title="admin.isActive ? 'Khóa tài khoản' : 'Mở khóa tài khoản'"
                   @click="$emit('toggle-lock', admin)"
                 >
                   <span class="material-symbols-outlined text-lg">
-                    {{ admin.status === 'locked' ? 'lock_open' : 'lock' }}
+                    {{ admin.isActive ? 'lock' : 'lock_open' }}
                   </span>
-                </button>
+                </button> -->
                 <button
-                  class="p-1.5 text-slate-400 hover:text-[#963131] hover:bg-[#963131]/5 rounded-lg transition-colors"
+                  class="p-1.5 text-slate-400 hover:text-red-600 transition-colors"
                   title="Xóa"
                   @click="$emit('delete', admin)"
                 >
-                  <span class="material-symbols-outlined text-lg">delete_outline</span>
+                  <span class="material-symbols-outlined text-lg">delete</span>
                 </button>
               </div>
             </td>
@@ -101,8 +154,13 @@
 
           <!-- Empty state -->
           <tr v-if="admins.length === 0">
-            <td colspan="6" class="px-6 py-12 text-center text-slate-400 text-sm">
-              <span class="material-symbols-outlined text-4xl block mb-2">manage_accounts</span>
+            <td
+              colspan="6"
+              class="px-6 py-12 text-center text-slate-400 text-sm"
+            >
+              <span class="material-symbols-outlined text-4xl block mb-2"
+                >manage_accounts</span
+              >
               Không tìm thấy admin nào
             </td>
           </tr>
@@ -111,27 +169,41 @@
     </div>
 
     <!-- Pagination -->
-    <div class="px-6 py-4 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between">
-      <p class="text-sm text-slate-500">
-        Hiển thị {{ rangeStart }}–{{ rangeEnd }} trên {{ total }} kết quả
+    <div
+      class="p-6 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between"
+    >
+      <p class="text-xs text-slate-500 font-medium">
+        Hiển thị
+        <span class="text-slate-900 dark:text-white"
+          >{{ rangeStart }} - {{ rangeEnd }}</span
+        >
+        trong số
+        <span class="text-slate-900 dark:text-white">{{ total }}</span>
+        quản trị viên
       </p>
-      <div class="flex items-center gap-1">
+      <div class="flex items-center gap-2">
         <button
-          class="p-2 rounded-lg border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+          class="size-8 flex items-center justify-center rounded-lg border border-slate-200 dark:border-slate-700 text-slate-400 hover:bg-slate-50 disabled:opacity-50"
           :disabled="currentPage <= 1"
           @click="$emit('page-change', currentPage - 1)"
         >
-          <span class="material-symbols-outlined text-sm">chevron_left</span>
+          <span class="material-symbols-outlined text-xl leading-none"
+            >chevron_left</span
+          >
         </button>
 
         <template v-for="page in visiblePages" :key="page">
-          <span v-if="page === '...'" class="px-2 text-slate-400 text-sm">...</span>
+          <span v-if="page === '...'" class="px-1 text-slate-400 text-sm"
+            >...</span
+          >
           <button
             v-else
-            class="px-3.5 py-1.5 rounded-lg text-sm font-medium transition-colors"
-            :class="page === currentPage
-              ? 'bg-[#963131] text-white'
-              : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'"
+            class="size-8 flex items-center justify-center rounded-lg text-xs font-bold transition-colors"
+            :class="
+              page === currentPage
+                ? 'bg-primary text-white shadow-sm'
+                : 'border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'
+            "
             @click="$emit('page-change', page as number)"
           >
             {{ page }}
@@ -139,11 +211,13 @@
         </template>
 
         <button
-          class="p-2 rounded-lg border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+          class="size-8 flex items-center justify-center rounded-lg border border-slate-200 dark:border-slate-700 text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
           :disabled="currentPage >= totalPages"
           @click="$emit('page-change', currentPage + 1)"
         >
-          <span class="material-symbols-outlined text-sm">chevron_right</span>
+          <span class="material-symbols-outlined text-xl leading-none"
+            >chevron_right</span
+          >
         </button>
       </div>
     </div>
@@ -151,78 +225,79 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
-
-export interface AdminUser {
-  id: string
-  name: string
-  email: string
-  role: 'super' | 'content' | 'support' | 'finance'
-  roleLabel: string
-  lastLogin: string
-  status: 'active' | 'offline' | 'locked'
-  avatarUrl?: string
-}
+import { computed } from "vue";
+import dayjs from "dayjs";
+import type { ResAdminUser, AdminRole } from "@/types/adminUser.types";
+import { ADMIN_ROLE_LABELS, ADMIN_ROLE_STYLES } from "@/types/adminUser.types";
 
 const props = defineProps<{
-  admins: AdminUser[]
-  total: number
-  currentPage: number
-  pageSize: number
-}>()
+  admins: ResAdminUser[];
+  total: number;
+  currentPage: number;
+  pageSize: number;
+}>();
 
 defineEmits<{
-  edit:          [admin: AdminUser]
-  permissions:   [admin: AdminUser]
-  'toggle-lock': [admin: AdminUser]
-  delete:        [admin: AdminUser]
-  'page-change': [page: number]
-}>()
+  view: [admin: ResAdminUser];
+  edit: [admin: ResAdminUser];
+  "toggle-lock": [admin: ResAdminUser];
+  delete: [admin: ResAdminUser];
+  "page-change": [page: number];
+}>();
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 function initials(name: string) {
-  return name.split(' ').slice(-2).map(w => w[0]).join('').toUpperCase()
+  return name
+    .split(" ")
+    .slice(-2)
+    .map((w) => w[0])
+    .join("")
+    .toUpperCase();
 }
 
-function roleStyle(role: AdminUser['role']) {
-  return {
-    super:   'bg-[#963131]/10 text-[#963131]',
-    content: 'bg-blue-100 text-blue-700',
-    finance: 'bg-purple-100 text-purple-700',
-    support: 'bg-orange-100 text-orange-700',
-  }[role]
+function roleLabel(role: AdminRole) {
+  return ADMIN_ROLE_LABELS[role] ?? role;
 }
 
-function statusLabel(status: AdminUser['status']) {
-  return { active: 'Hoạt động', offline: 'Ngoại tuyến', locked: 'Đã khóa' }[status]
+function roleStyle(role: AdminRole) {
+  return (
+    ADMIN_ROLE_STYLES[role] ?? {
+      bg: "bg-slate-100",
+      text: "text-slate-700",
+      border: "border-slate-200",
+    }
+  );
 }
 
-function statusColor(status: AdminUser['status']) {
-  return {
-    active:  'text-emerald-600',
-    offline: 'text-slate-400',
-    locked:  'text-rose-600',
-  }[status]
+function formatDate(date: string) {
+  return date ? dayjs(date).format("DD/MM/YYYY") : "—";
 }
 
-// ─── Pagination ───────────────────────────────────────────────────────────────
-const totalPages = computed(() => Math.ceil(props.total / props.pageSize))
-const rangeStart = computed(() => (props.currentPage - 1) * props.pageSize + 1)
-const rangeEnd   = computed(() => Math.min(props.currentPage * props.pageSize, props.total))
+// ─── Pagination ─────────────────────────────────────────────────────────────
+const totalPages = computed(() =>
+  Math.max(1, Math.ceil(props.total / props.pageSize)),
+);
+const rangeStart = computed(() =>
+  props.total === 0 ? 0 : (props.currentPage - 1) * props.pageSize + 1,
+);
+const rangeEnd = computed(() =>
+  Math.min(props.currentPage * props.pageSize, props.total),
+);
 
 const visiblePages = computed(() => {
-  const pages: (number | string)[] = []
-  const total = totalPages.value
-  const cur   = props.currentPage
+  const pages: (number | string)[] = [];
+  const total = totalPages.value;
+  const cur = props.currentPage;
   if (total <= 5) {
-    for (let i = 1; i <= total; i++) pages.push(i)
-    return pages
+    for (let i = 1; i <= total; i++) pages.push(i);
+    return pages;
   }
-  pages.push(1)
-  if (cur > 3) pages.push('...')
-  for (let i = Math.max(2, cur - 1); i <= Math.min(total - 1, cur + 1); i++) pages.push(i)
-  if (cur < total - 2) pages.push('...')
-  pages.push(total)
-  return pages
-})
+  pages.push(1);
+  if (cur > 3) pages.push("...");
+  for (let i = Math.max(2, cur - 1); i <= Math.min(total - 1, cur + 1); i++)
+    pages.push(i);
+  if (cur < total - 2) pages.push("...");
+  pages.push(total);
+  return pages;
+});
 </script>
