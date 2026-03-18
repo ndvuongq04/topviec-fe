@@ -50,9 +50,17 @@ export const useAuthStore = defineStore('auth', () => {
     localStorage.setItem('accessToken', res.accessToken)
     localStorage.setItem('user', JSON.stringify(res.user))
 
-    const redirectPath =
-      (router.currentRoute.value.query.redirect as string) ?? '/'
-    await router.push(redirectPath)
+    const redirectPath = (router.currentRoute.value.query.redirect as string)
+    if (redirectPath) {
+      await router.push(redirectPath)
+    } else {
+      const roleHome: Record<string, string> = {
+        ADMIN: 'admin-home',
+        EMPLOYER: 'recruiter-dashboard',
+        CANDIDATE: 'home',
+      }
+      await router.push({ name: roleHome[res.user.role] ?? 'home' })
+    }
   }
 
   /**

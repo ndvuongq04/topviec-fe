@@ -14,6 +14,7 @@ export const candidateRoutes: RouteRecordRaw[] = [
                 path: 'profile',
                 name: 'CandidateProfile',
                 component: () => import('@/pages/candidate/ProfilePage.vue'),
+                meta: { requiresAuth: true, role: 'CANDIDATE' },
 
             },
         ],

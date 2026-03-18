@@ -4,7 +4,7 @@ export const recruiterRoutes: RouteRecordRaw[] = [
   {
     path: '/recruiter',
     component: () => import('@/layouts/recruiter/RecruiterLayout.vue'),
-    // meta: { requiresAuth: true, role: 'recruiter' },
+    meta: { requiresAuth: true, role: 'EMPLOYER' },
     children: [
       {
         path: '',
