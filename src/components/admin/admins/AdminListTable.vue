@@ -56,7 +56,7 @@
                   class="size-9 rounded-full flex items-center justify-center text-sm font-bold shrink-0"
                   :class="
                     admin.isActive
-                      ? 'bg-primary/10 text-primary'
+                      ? 'bg-[#963131]/10 text-[#963131]'
                       : 'bg-slate-200 dark:bg-slate-700 text-slate-400'
                   "
                 >
@@ -114,7 +114,7 @@
             <td class="px-6 py-4 text-right">
               <div class="flex items-center justify-end gap-1">
                 <button
-                  class="p-1.5 text-slate-400 hover:text-primary transition-colors"
+                  class="p-1.5 text-slate-400 hover:text-[#963131] transition-colors"
                   title="Xem chi tiết"
                   @click="$emit('view', admin)"
                 >
@@ -123,7 +123,7 @@
                   >
                 </button>
                 <button
-                  class="p-1.5 text-slate-400 hover:text-blue-600 transition-colors"
+                  class="p-1.5 text-slate-400 hover:text-[#963131] transition-colors"
                   title="Chỉnh sửa"
                   @click="$emit('edit', admin)"
                 >
@@ -201,7 +201,7 @@
             class="size-8 flex items-center justify-center rounded-lg text-xs font-bold transition-colors"
             :class="
               page === currentPage
-                ? 'bg-primary text-white shadow-sm'
+                ? 'bg-[#963131] text-white shadow-sm'
                 : 'border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'
             "
             @click="$emit('page-change', page as number)"

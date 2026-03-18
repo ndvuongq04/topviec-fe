@@ -6,23 +6,25 @@ export function setupGuards(router: Router) {
     router.beforeEach((to) => {
         const authStore = useAuthStore()
 
+        // 1. Check Auth
         if (to.meta.requiresAuth && !authStore.isAuthenticated) {
             return { name: 'login', query: { redirect: to.fullPath } }
         }
 
-        // check quyền nếu trang yêu cầu guest nhưng user đã đăng nhập thì chuyển hướng về trang home tương ứng với role
-        // if (to.meta.requiresGuest && authStore.isAuthenticated) {
-        //     const roleHome: Record<string, string> = {
-        //         admin: 'admin-home',
-        //         employer: 'employer-dashboard',
-        //         candidate: 'home',
-        //     }
-        //     const role = authStore.userRole ?? 'candidate'
-        //     return { name: roleHome[role] ?? 'home' }
-        // }
+        // 2. Check Guest (Redirect if already logged in)
+        if (to.meta.requiresGuest && authStore.isAuthenticated) {
+            const roleHome: Record<string, string> = {
+                ADMIN: 'admin-home',
+                EMPLOYER: 'recruiter-dashboard',
+                CANDIDATE: 'home',
+            }
+            const role = authStore.userRole ?? 'CANDIDATE'
+            return { name: roleHome[role] ?? 'home' }
+        }
 
-        // if (to.meta.role && authStore.userRole !== to.meta.role) {
-        //     return { name: 'not-found' }
-        // }
+        // 3. Check Role Permission
+        if (to.meta.role && authStore.isAuthenticated && authStore.userRole !== to.meta.role) {
+            return { name: 'forbidden' }
+        }
     })
 }

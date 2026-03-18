@@ -3,11 +3,11 @@ import type { RestResponse } from '@/types/common.types'
 import type {
     ReqCreateCompanyDTO,
     ReqUpdateCompanyDTO,
-    ReqVerifyCompanyDTO,
-    ReqSuspendCompanyDTO,
+    ReqAdminUpdateCompanyDTO,
     ResCompanyDTO,
     ResultPaginationDTO,
 } from '@/types/company.types'
+import type { ReqRegisterEmployerDTO } from '@/types/auth.types'
 
 // ─── Employer endpoints (/employer/company) ───────────────────────────────────
 
@@ -31,11 +31,11 @@ const employerCompanyService = {
     },
 
     /**
-     * PUT /employer/company
+     * PATCH /employer/company
      * Cập nhật hồ sơ công ty.
      */
     async updateMyCompany(payload: ReqUpdateCompanyDTO): Promise<ResCompanyDTO> {
-        const res = await axiosInstance.put<RestResponse<ResCompanyDTO>>('/employer/company', payload)
+        const res = await axiosInstance.patch<RestResponse<ResCompanyDTO>>('/employer/company', payload)
         return res.data.data
     },
 }
@@ -49,6 +49,8 @@ const adminCompanyService = {
      */
     async getAllCompanies(params?: {
         status?: string
+        verificationStatus?: string
+        keyword?: string
         page?: number
         size?: number
         sort?: string
@@ -61,19 +63,14 @@ const adminCompanyService = {
     },
 
     /**
-     * GET /admin/companies/pending-verification
-     * Danh sách công ty chờ duyệt hồ sơ.
-     */
-    async getPendingVerification(params?: {
-        page?: number
-        size?: number
-    }): Promise<ResultPaginationDTO<ResCompanyDTO>> {
-        const res = await axiosInstance.get<RestResponse<ResultPaginationDTO<ResCompanyDTO>>>(
-            '/admin/companies/pending-verification',
-            { params }
-        )
+ * POST /admin/companies
+ * Admin tạo công ty mới.
+ */
+    async createCompany(payload: ReqRegisterEmployerDTO): Promise<ResCompanyDTO> {
+        const res = await axiosInstance.post<RestResponse<ResCompanyDTO>>('/admin/companies', payload)
         return res.data.data
     },
+
 
     /**
      * GET /admin/companies/{id}
@@ -85,46 +82,11 @@ const adminCompanyService = {
     },
 
     /**
-     * PATCH /admin/companies/{id}/verify
-     * Duyệt hoặc từ chối hồ sơ.
+     * PATCH /admin/companies/{id}
+     * Admin cập nhật thông tin, phê duyệt, khóa, mở khóa công ty.
      */
-    async verifyCompany(id: number, payload: ReqVerifyCompanyDTO): Promise<ResCompanyDTO> {
+    async adminUpdateCompany(id: number, payload: ReqAdminUpdateCompanyDTO): Promise<ResCompanyDTO> {
         const res = await axiosInstance.patch<RestResponse<ResCompanyDTO>>(
-            `/admin/companies/${id}/verify`,
-            payload
-        )
-        return res.data.data
-    },
-
-    /**
-     * PATCH /admin/companies/{id}/suspend
-     * Suspend công ty vi phạm.
-     */
-    async suspendCompany(id: number, payload: ReqSuspendCompanyDTO): Promise<ResCompanyDTO> {
-        const res = await axiosInstance.patch<RestResponse<ResCompanyDTO>>(
-            `/admin/companies/${id}/suspend`,
-            payload
-        )
-        return res.data.data
-    },
-
-    /**
-     * PATCH /admin/companies/{id}/unsuspend
-     * Mở khóa công ty.
-     */
-    async unsuspendCompany(id: number): Promise<ResCompanyDTO> {
-        const res = await axiosInstance.patch<RestResponse<ResCompanyDTO>>(
-            `/admin/companies/${id}/unsuspend`
-        )
-        return res.data.data
-    },
-
-    /**
-     * PUT /admin/companies/{id}
-     * Admin sửa thông tin công ty bất kỳ.
-     */
-    async adminUpdateCompany(id: number, payload: ReqUpdateCompanyDTO): Promise<ResCompanyDTO> {
-        const res = await axiosInstance.put<RestResponse<ResCompanyDTO>>(
             `/admin/companies/${id}`,
             payload
         )

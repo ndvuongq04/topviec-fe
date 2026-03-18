@@ -48,15 +48,37 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { useAuthStore } from '@/stores/auth.store'
+
+const authStore = useAuthStore()
 
 const searchQuery = ref('')
 
-// TODO: lấy từ auth store
-const adminName   = 'Nguyễn Văn Admin'
-const adminRole   = 'Super Admin'
-const adminAvatar = ''
+// Lấy thông tin từ store thực tế
+const adminName = computed(() => {
+  if (!authStore.user) return 'Admin'
+  // Fallback về email nếu user không có trường name
+  return (authStore.user as any).name || authStore.user.email || 'Admin'
+})
 
-const initials = computed(() =>
-  adminName.split(' ').slice(-2).map(w => w[0]).join('').toUpperCase()
-)
+const adminRole = computed(() => {
+  if (!authStore.userRole) return 'Admin'
+  return authStore.userRole.replace('_', ' ').toUpperCase()
+})
+
+const adminAvatar = computed(() => {
+  return (authStore.user as any)?.avatarUrl || '' // Nếu backend có trả về avatarUrl
+})
+
+const initials = computed(() => {
+   const name = adminName.value
+   if (name.includes('@')) {
+     return name.substring(0, 2).toUpperCase()
+   }
+   const parts = name.split(' ')
+   if (parts.length >= 2) {
+     return (parts[parts.length - 2][0] + parts[parts.length - 1][0]).toUpperCase()
+   }
+   return name.substring(0, 2).toUpperCase()
+})
 </script>

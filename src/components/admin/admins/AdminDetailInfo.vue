@@ -2,16 +2,16 @@
   <div class="lg:col-span-2 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
     <div class="p-6">
       <h3 class="text-lg font-bold mb-6 flex items-center gap-2">
-        <span class="material-symbols-outlined text-primary">person</span>
+        <span class="material-symbols-outlined text-[#963131]">person</span>
         Thông tin cá nhân
       </h3>
       <div class="flex flex-col md:flex-row gap-8">
         <!-- Avatar -->
         <div class="flex flex-col items-center gap-4">
           <div class="relative">
-            <div class="w-32 h-32 rounded-full border-4 border-primary/10 p-1">
+            <div class="w-32 h-32 rounded-full border-4 border-[#963131]/10 p-1">
               <div
-                class="w-full h-full rounded-full bg-primary/10 flex items-center justify-center text-primary text-3xl font-bold"
+                class="w-full h-full rounded-full bg-[#963131]/10 flex items-center justify-center text-[#963131] text-3xl font-bold"
               >
                 {{ initials }}
               </div>
@@ -39,7 +39,7 @@
           </div>
           <div class="space-y-1">
             <p class="text-xs font-semibold text-slate-400 uppercase">Vai trò</p>
-            <p class="font-medium text-primary">{{ roleLabel }}</p>
+            <p class="font-medium text-[#963131]">{{ roleLabel }}</p>
           </div>
           <div class="space-y-1">
             <p class="text-xs font-semibold text-slate-400 uppercase">Email</p>

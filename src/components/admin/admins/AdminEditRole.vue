@@ -1,19 +1,19 @@
 <template>
-  <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-primary/10 p-6">
+  <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-[#963131]/10 p-6">
     <h3 class="text-lg font-bold mb-6 flex items-center gap-2">
-      <span class="material-symbols-outlined text-primary">verified_user</span>
+      <span class="material-symbols-outlined text-[#963131]">verified_user</span>
       Phân quyền quản trị
     </h3>
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
       <label
         v-for="role in roles"
         :key="role.value"
-        class="relative flex flex-col p-4 border rounded-xl cursor-pointer hover:border-primary group transition-all"
-        :class="{ 'border-primary bg-primary/5': modelValue === role.value }"
+        class="relative flex flex-col p-4 border rounded-xl cursor-pointer hover:border-[#963131] group transition-all"
+        :class="{ 'border-[#963131] bg-[#963131]/5': modelValue === role.value }"
       >
         <input
           :checked="modelValue === role.value"
-          class="absolute top-4 right-4 text-primary focus:ring-primary h-4 w-4"
+          class="absolute top-4 right-4 text-[#963131] focus:ring-[#963131] h-4 w-4"
           name="admin-role"
           type="radio"
           :value="role.value"
@@ -21,7 +21,7 @@
         />
         <span
           class="material-symbols-outlined mb-2"
-          :class="modelValue === role.value ? 'text-primary' : 'text-slate-400 group-hover:text-primary'"
+          :class="modelValue === role.value ? 'text-[#963131]' : 'text-slate-400 group-hover:text-[#963131]'"
         >
           {{ role.icon }}
         </span>

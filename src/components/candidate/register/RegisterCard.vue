@@ -2,13 +2,13 @@
 import { ref, computed } from 'vue'
 import { useAuthStore } from '@/stores/auth.store'
 import { useToast } from '@/composables/useToast'
-import type { ReqRegisterDTO } from '@/types/auth.types'
+import type { ReqRegisterCandidateDTO } from '@/types/auth.types'
 
 const authStore = useAuthStore()
 const toast = useToast()
 
 // ─── Form state ─────────────────────────────────────────────────
-const form = ref<ReqRegisterDTO & { confirmPassword: string }>({
+const form = ref<ReqRegisterCandidateDTO & { confirmPassword: string }>({
   email: '',
   password: '',
   confirmPassword: '',
@@ -82,7 +82,7 @@ async function handleRegister() {
     loading.value = true
     const { confirmPassword, ...payload } = form.value
     await authStore.register(payload)
-    toast.success('Đăng ký thành công!', 'Chào mừng bạn đến với TopViec ')
+    toast.success('Đăng ký thành công!', 'Vui lòng kiểm tra email để xác thực tài khoản')
   } catch (err: any) {
     const msg = err.response?.data?.message ?? 'Đăng ký thất bại, vui lòng thử lại'
     toast.error('Đăng ký thất bại', msg)

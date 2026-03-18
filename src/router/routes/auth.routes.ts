@@ -5,20 +5,20 @@ export const authRoutes: RouteRecordRaw[] = [
         path: '/login',
         name: 'login',
         component: () => import('@/pages/auth/LoginPage.vue'),
-        // meta: { requiresGuest: true },
+        meta: { requiresGuest: true },
     },
     {
         path: '/register',
         name: 'candidate-register',
         component: () => import('@/pages/candidate/CandidateRegisterPage.vue'),
-        // meta: { requiresGuest: true },
+        meta: { requiresGuest: true },
     },
-    // {
-    //     path: '/employer/register',
-    //     name: 'employer-register',
-    //     component: () => import('@/pages/employer/EmployerRegisterPage.vue'),
-    //     meta: { requiresGuest: true },
-    // },
+    {
+        path: '/recruiter/register',
+        name: 'employer-register',
+        component: () => import('@/pages/recruiter/EmployerRegisterPage.vue'),
+        meta: { requiresGuest: true },
+    },
     {
         path: '/verify-email',
         name: 'email-verification',

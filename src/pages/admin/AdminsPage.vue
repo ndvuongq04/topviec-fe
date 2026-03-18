@@ -8,7 +8,7 @@
         <p class="text-slate-500 text-sm mt-1">Quản lý phân quyền và giám sát hoạt động của các nhân sự vận hành hệ thống.</p>
       </div>
       <button
-        class="bg-primary hover:bg-primary/90 text-white px-5 py-2.5 rounded-lg font-bold text-sm flex items-center gap-2 shadow-lg shadow-primary/20 transition-all"
+        class="bg-[#963131] hover:bg-[#963131]/90 text-white px-5 py-2.5 rounded-lg font-bold text-sm flex items-center gap-2 shadow-lg shadow-[#963131]/20 transition-all"
         @click="showCreateModal = true"
       >
         <span class="material-symbols-outlined text-lg">person_add</span>
@@ -40,7 +40,7 @@
       <div v-else-if="store.error" class="flex flex-col items-center justify-center py-20 text-red-500">
         <span class="material-symbols-outlined text-4xl mb-2">error</span>
         <p class="text-sm">{{ store.error }}</p>
-        <button class="mt-4 text-sm text-primary font-semibold hover:underline" @click="loadAdmins">
+        <button class="mt-4 text-sm text-[#963131] font-semibold hover:underline" @click="loadAdmins">
           Thử lại
         </button>
       </div>
@@ -146,7 +146,7 @@ async function onToggleLock(admin: ResAdminUser) {
     title: `Xác nhận ${action.toLowerCase()} tài khoản`,
     message: `Bạn có chắc muốn ${action.toLowerCase()} tài khoản "${admin.fullName}" không?`,
     confirmText: action,
-    confirmColor: admin.isActive ? 'red' : 'primary',
+    confirmColor: admin.isActive ? 'red' : 'danger',
     icon: admin.isActive ? 'block' : 'lock_open'
   })
   if (!isConfirmed) return

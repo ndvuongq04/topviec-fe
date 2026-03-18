@@ -19,7 +19,8 @@
         :key="item.to"
         :to="item.to"
         class="flex items-center gap-3 px-4 py-3 rounded-lg text-white/80 hover:text-white hover:bg-white/5 transition-colors"
-        active-class="!bg-white/10 !text-white font-medium"
+        :active-class="item.to === '/admin' ? '' : '!bg-white/10 !text-white font-medium'"
+        exact-active-class="!bg-white/10 !text-white font-medium"
       >
         <span class="material-symbols-outlined">{{ item.icon }}</span>
         <span>{{ item.label }}</span>
@@ -41,9 +42,9 @@
 </template>
 
 <script setup lang="ts">
-import { useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores/auth.store'
 
-const router = useRouter()
+const authStore = useAuthStore()
 
 const navItems = [
   { to: '/admin',            icon: 'dashboard',            label: 'Dashboard' },
@@ -58,7 +59,6 @@ const navItems = [
 ]
 
 async function handleLogout() {
-  // TODO: gọi auth store logout
-  router.push({ name: 'login' })
+  await authStore.logout()
 }
 </script>

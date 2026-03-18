@@ -5,9 +5,16 @@ export interface ReqLoginDTO {
   password: string
 }
 
-export interface ReqRegisterDTO {
+export interface ReqRegisterCandidateDTO {
   email: string
   password: string
+}
+
+export interface ReqRegisterEmployerDTO {
+  email: string
+  password: string
+  companyName: string
+  companySlug: string
 }
 
 export interface UserInfo {

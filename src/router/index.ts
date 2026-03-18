@@ -14,6 +14,11 @@ const router = createRouter({
     ...recruiterRoutes,
     ...adminRoutes,
     {
+      path: '/forbidden',
+      name: 'forbidden',
+      component: () => import('@/pages/error/ForbiddenPage.vue'),
+    },
+    {
       path: '/:pathMatch(.*)*',
       name: 'not-found',
       component: () => import('@/pages/error/NotFoundPage.vue'),

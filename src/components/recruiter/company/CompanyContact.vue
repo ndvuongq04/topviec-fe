@@ -7,6 +7,34 @@
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 
+        <!-- Email -->
+        <div class="space-y-2">
+          <label class="text-sm font-semibold text-slate-700 dark:text-slate-300">Email liên hệ</label>
+          <input
+            :value="email"
+            type="email"
+            class="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-transparent focus:ring-2 focus:ring-primary focus:border-transparent outline-none text-sm trans-all"
+            :class="{ '!border-red-500 !ring-red-500/20': errors?.email }"
+            placeholder="contact@company.com"
+            @input="emit('update:email', ($event.target as HTMLInputElement).value)"
+          />
+          <p v-if="errors?.email" class="text-[11px] text-red-500 mt-1">{{ errors.email }}</p>
+        </div>
+
+        <!-- Phone -->
+        <div class="space-y-2">
+          <label class="text-sm font-semibold text-slate-700 dark:text-slate-300">Số điện thoại</label>
+          <input
+            :value="phone"
+            type="tel"
+            class="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-transparent focus:ring-2 focus:ring-primary focus:border-transparent outline-none text-sm trans-all"
+            :class="{ '!border-red-500 !ring-red-500/20': errors?.phone }"
+            placeholder="0123 456 789"
+            @input="emit('update:phone', ($event.target as HTMLInputElement).value)"
+          />
+          <p v-if="errors?.phone" class="text-[11px] text-red-500 mt-1">{{ errors.phone }}</p>
+        </div>
+
         <!-- Website -->
         <div class="space-y-2">
           <label class="text-sm font-semibold text-slate-700 dark:text-slate-300">Website chính thức</label>
@@ -24,16 +52,37 @@
           </div>
         </div>
 
-        <!-- Địa chỉ -->
+        <!-- Tỉnh/Thành phố -->
         <div class="space-y-2">
-          <label class="text-sm font-semibold text-slate-700 dark:text-slate-300">Địa chỉ văn phòng</label>
+          <label class="text-sm font-semibold text-slate-700 dark:text-slate-300">Tỉnh/Thành phố</label>
+          <select
+            :value="provinceId"
+            class="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 focus:ring-2 focus:ring-primary focus:border-transparent outline-none text-sm appearance-none trans-all"
+            :class="{ '!border-red-500 !ring-red-500/20': errors?.provinceId }"
+            @change="emit('update:provinceId', Number(($event.target as HTMLSelectElement).value) || '')"
+          >
+            <option value="">-- Chọn tỉnh/thành phố --</option>
+            <option value="1">Hà Nội</option>
+            <option value="2">Hồ Chí Minh</option>
+            <option value="3">Đà Nẵng</option>
+            <option value="4">Cần Thơ</option>
+            <option value="5">Hải Phòng</option>
+          </select>
+          <p v-if="errors?.provinceId" class="text-[11px] text-red-500 mt-1">{{ errors.provinceId }}</p>
+        </div>
+
+        <!-- Địa chỉ -->
+        <div class="space-y-2 md:col-span-2">
+          <label class="text-sm font-semibold text-slate-700 dark:text-slate-300">Địa chỉ chi tiết</label>
           <input
             :value="address"
             type="text"
-            class="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-transparent focus:ring-2 focus:ring-primary focus:border-transparent outline-none text-sm"
-            placeholder="123 Đường ABC, Quận 1, TP.HCM"
+            class="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-transparent focus:ring-2 focus:ring-primary focus:border-transparent outline-none text-sm trans-all"
+            :class="{ '!border-red-500 !ring-red-500/20': errors?.address }"
+            placeholder="Số 123 Đường ABC, Phường X, Quận Y"
             @input="emit('update:address', ($event.target as HTMLInputElement).value)"
           />
+          <p v-if="errors?.address" class="text-[11px] text-red-500 mt-1">{{ errors.address }}</p>
         </div>
 
       </div>
@@ -71,19 +120,26 @@ import { computed } from 'vue'
 type SocialKey = 'linkedin' | 'twitter' | 'facebook'
 
 const props = defineProps<{
+  email: string
+  phone: string
   website: string
+  provinceId: number | ''
   address: string
   linkedin: string
   twitter: string
   facebook: string
+  errors?: Record<string, string>
 }>()
 
 const emit = defineEmits<{
-  'update:website':  [value: string]
-  'update:address':  [value: string]
-  'update:linkedin': [value: string]
-  'update:twitter':  [value: string]
-  'update:facebook': [value: string]
+  'update:email':      [value: string]
+  'update:phone':      [value: string]
+  'update:website':    [value: string]
+  'update:provinceId': [value: number | '']
+  'update:address':    [value: string]
+  'update:linkedin':   [value: string]
+  'update:twitter':    [value: string]
+  'update:facebook':   [value: string]
 }>()
 
 const socialFields: { key: SocialKey; placeholder: string }[] = [

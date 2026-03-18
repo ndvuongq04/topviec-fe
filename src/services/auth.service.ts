@@ -3,7 +3,8 @@ import axiosInstance from './axios'
 import type { RestResponse } from '@/types/common.types'
 import type {
     ReqLoginDTO,
-    ReqRegisterDTO,
+    ReqRegisterCandidateDTO,
+    ReqRegisterEmployerDTO,
     ReqForgotPasswordDTO,
     ReqResetPasswordDTO,
     ResLoginDTO
@@ -15,8 +16,11 @@ const authService = {
         return res.data.data
     },
 
-    async register(payload: ReqRegisterDTO): Promise<void> {
+    async register(payload: ReqRegisterCandidateDTO): Promise<void> {
         await axiosInstance.post<RestResponse<null>>('/auth/register/candidate', payload)
+    },
+    async registerEmployer(payload: ReqRegisterEmployerDTO): Promise<void> {
+        await axiosInstance.post<RestResponse<null>>('/auth/register/employer', payload)
     },
 
     async refresh(): Promise<ResLoginDTO> {

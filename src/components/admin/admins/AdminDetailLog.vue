@@ -3,10 +3,10 @@
     <!-- Header -->
     <div class="p-6 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
       <h3 class="text-lg font-bold flex items-center gap-2">
-        <span class="material-symbols-outlined text-primary">history</span>
+        <span class="material-symbols-outlined text-[#963131]">history</span>
         Nhật ký hoạt động (System Log)
       </h3>
-      <button class="text-primary text-sm font-semibold hover:underline">Tải dữ liệu log (.csv)</button>
+      <button class="text-[#963131] text-sm font-semibold hover:underline">Tải dữ liệu log (.csv)</button>
     </div>
 
     <!-- Table -->
@@ -56,7 +56,7 @@
 
     <!-- Footer -->
     <div class="p-4 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-200 dark:border-slate-800 flex justify-center">
-      <button class="text-sm font-semibold text-slate-500 hover:text-primary transition-colors flex items-center gap-2">
+      <button class="text-sm font-semibold text-slate-500 hover:text-[#963131] transition-colors flex items-center gap-2">
         Xem tất cả nhật ký
         <span class="material-symbols-outlined text-[18px]">expand_more</span>
       </button>

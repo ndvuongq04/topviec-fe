@@ -5,7 +5,7 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import router from '@/router'
 import authService from '@/services/auth.service'
-import type { ReqLoginDTO, ReqRegisterDTO, UserInfo } from '@/types/auth.types'
+import type { ReqLoginDTO, ReqRegisterCandidateDTO, ReqRegisterEmployerDTO, UserInfo } from '@/types/auth.types'
 
 /** Đọc accessToken từ localStorage an toàn (tránh lỗi khi SSR hoặc storage bị tắt) */
 const getStoredToken = (): string | null => {
@@ -50,9 +50,17 @@ export const useAuthStore = defineStore('auth', () => {
     localStorage.setItem('accessToken', res.accessToken)
     localStorage.setItem('user', JSON.stringify(res.user))
 
-    const redirectPath =
-      (router.currentRoute.value.query.redirect as string) ?? '/'
-    await router.push(redirectPath)
+    const redirectPath = (router.currentRoute.value.query.redirect as string)
+    if (redirectPath) {
+      await router.push(redirectPath)
+    } else {
+      const roleHome: Record<string, string> = {
+        ADMIN: 'admin-home',
+        EMPLOYER: 'recruiter-dashboard',
+        CANDIDATE: 'home',
+      }
+      await router.push({ name: roleHome[res.user.role] ?? 'home' })
+    }
   }
 
   /**
@@ -63,8 +71,16 @@ export const useAuthStore = defineStore('auth', () => {
   //   await authService.register(payload)
   //   await router.push({ name: 'login' })
   // }
-  async function register(payload: ReqRegisterDTO) {
+  async function register(payload: ReqRegisterCandidateDTO) {
     await authService.register(payload)
+    await router.push({
+      name: 'email-verification',
+      query: { email: payload.email }
+    })
+  }
+
+  async function registerEmployer(payload: ReqRegisterEmployerDTO) {
+    await authService.registerEmployer(payload)
     await router.push({
       name: 'email-verification',
       query: { email: payload.email }
@@ -130,6 +146,7 @@ export const useAuthStore = defineStore('auth', () => {
     userRole,
     login,
     register,
+    registerEmployer,
     refreshToken,
     logout,
     forgotPassword,

@@ -7,7 +7,7 @@
         :key="tab.value"
         class="px-6 py-4 text-sm font-medium border-b-2 transition-colors"
         :class="activeTab === tab.value
-          ? 'font-bold border-primary text-primary'
+          ? 'font-bold border-[#963131] text-[#963131]'
           : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 border-transparent'"
         @click="$emit('update:activeTab', tab.value)"
       >
@@ -23,7 +23,7 @@
           <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg">search</span>
           <input
             :value="search"
-            class="w-full pl-10 pr-4 py-2 text-sm border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 rounded-lg focus:ring-primary/20 focus:border-primary"
+            class="w-full pl-10 pr-4 py-2 text-sm border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 rounded-lg focus:ring-[#963131]/20 focus:border-[#963131]"
             placeholder="Tìm tên, email, ID... (Nhấn Enter để tìm)"
             type="text"
             @keyup.enter="$emit('search', ($event.target as HTMLInputElement).value)"
@@ -34,7 +34,7 @@
         <span class="text-xs text-slate-500 font-medium">Sắp xếp theo:</span>
         <select
           :value="sort"
-          class="text-sm border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 rounded-lg focus:ring-primary/20"
+          class="text-sm border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 rounded-lg focus:ring-[#963131]/20"
           @change="$emit('update:sort', ($event.target as HTMLSelectElement).value)"
         >
           <option value="createdAt,desc">Ngày tạo gần nhất</option>

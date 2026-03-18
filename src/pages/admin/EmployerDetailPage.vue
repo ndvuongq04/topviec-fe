@@ -1,195 +1,173 @@
 <template>
   <div class="space-y-6">
 
-    <!-- Breadcrumb -->
+    <!-- Breadcrumbs -->
     <nav class="flex items-center gap-2 text-sm">
-      <router-link to="/admin/employers" class="text-slate-500 hover:text-[#963131] transition-colors">
+      <router-link
+        :to="{ name: 'admin-employers' }"
+        class="text-slate-500 hover:text-[#963131] transition-colors"
+      >
         Quản lý Nhà Tuyển Dụng
       </router-link>
       <span class="material-symbols-outlined text-xs text-slate-400">chevron_right</span>
-      <span class="font-medium">{{ store.selectedCompany?.name ?? 'Chi tiết NTT' }}</span>
+      <span class="text-slate-900 dark:text-slate-100 font-medium">Chi tiết NTD</span>
     </nav>
 
-    <!-- Loading -->
-    <div v-if="store.loading && !store.selectedCompany" class="flex justify-center py-20">
-      <span class="material-symbols-outlined animate-spin text-[#963131] text-4xl">progress_activity</span>
+    <!-- Profile Header -->
+    <EmployerProfileHeader
+      v-if="store.selectedCompany"
+      :company="store.selectedCompany"
+      @reset-password="onResetPassword"
+      @warn="onWarn"
+      @suspend="onSuspend"
+    />
+
+    <!-- Stats Cards -->
+    <EmployerStatsCards :stats="stats" />
+
+    <!-- Tabs -->
+    <EmployerDetailTabs
+      v-model:active-tab="activeTab"
+      :tabs="tabs"
+    />
+
+    <!-- Tab Content -->
+    <EmployerProfileTab
+      v-if="activeTab === 'profile' && store.selectedCompany"
+      :company="store.selectedCompany"
+    />
+
+    <EmployerLicensePanel
+      v-else-if="activeTab === 'license' && store.selectedCompany"
+      :company="store.selectedCompany"
+      @approve="onApprove"
+      @reject="onReject"
+      @request-supplement="onRequestSupplement"
+    />
+
+    <div v-else-if="!store.selectedCompany" class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-12 text-center text-slate-400">
+      <p class="text-sm">Đang tải dữ liệu...</p>
     </div>
 
-    <!-- Error -->
-    <div v-else-if="store.error" class="flex items-center gap-3 px-5 py-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl text-red-600 dark:text-red-400 text-sm">
-      <span class="material-symbols-outlined text-[18px]">error</span>
-      {{ store.error }}
+    <div v-else class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-12 text-center text-slate-400">
+      <span class="material-symbols-outlined text-4xl block mb-2">construction</span>
+      <p class="text-sm">Nội dung tab "{{ tabs.find(t => t.key === activeTab)?.label }}" đang được phát triển...</p>
     </div>
-
-    <template v-else-if="store.selectedCompany">
-
-      <!-- Profile header -->
-      <EmployerProfileHeader
-        :employer="profileHeaderData!"
-        :is-suspended="store.selectedCompany.status === CompanyStatus.SUSPENDED"
-        @reset-password="onResetPassword"
-        @send-warning="onSendWarning"
-        @block="onBlock"
-        @unblock="onUnblock"
-      />
-
-      <!-- Stats -->
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div
-          v-for="stat in summaryStats"
-          :key="stat.label"
-          class="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 flex items-center gap-4"
-        >
-          <div class="p-3 rounded-lg" :class="stat.iconBg">
-            <span class="material-symbols-outlined" :class="stat.iconColor">{{ stat.icon }}</span>
-          </div>
-          <div>
-            <p class="text-xs text-slate-500 uppercase font-bold tracking-wider">{{ stat.label }}</p>
-            <p class="text-xl font-bold">{{ stat.value }}</p>
-          </div>
-        </div>
-      </div>
-
-      <!-- Tabs -->
-      <div class="border-b border-slate-200 dark:border-slate-800">
-        <div class="flex gap-8 px-2">
-          <button
-            v-for="tab in tabs"
-            :key="tab.key"
-            class="py-4 text-sm font-bold relative transition-colors"
-            :class="activeTab === tab.key
-              ? 'text-[#963131] border-b-2 border-[#963131]'
-              : 'text-slate-500 hover:text-[#963131]'"
-            @click="activeTab = tab.key"
-          >
-            {{ tab.label }}
-          </button>
-        </div>
-      </div>
-
-      <!-- Tab content -->
-      <EmployerProfileTab
-        v-if="activeTab === 'profile'"
-        :company="store.selectedCompany"
-      />
-      <EmployerLicenseTab
-        v-else-if="activeTab === 'license'"
-        :company="store.selectedCompany"
-        @approve="onApprove"
-        @reject="onReject"
-      />
-      <div v-else class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-12 text-center text-slate-400 text-sm">
-        <span class="material-symbols-outlined text-4xl block mb-2 text-slate-300">construction</span>
-        Tính năng đang được phát triển
-      </div>
-
-    </template>
 
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
+import { ref, onMounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import EmployerProfileHeader from '@/components/admin/employers/EmployerProfileHeader.vue'
-import EmployerLicenseTab from '@/components/admin/employers/EmployerLicenseTab.vue'
+import EmployerStatsCards from '@/components/admin/employers/EmployerStatsCards.vue'
+import EmployerDetailTabs from '@/components/admin/employers/EmployerDetailTabs.vue'
+import EmployerLicensePanel from '@/components/admin/employers/EmployerLicensePanel.vue'
 import EmployerProfileTab from '@/components/admin/employers/EmployerProfileTab.vue'
 import { useAdminCompanyStore } from '@/stores/adminCompany.store'
-import { CompanyStatus, VerificationStatus } from '@/constants/company.constants'
 import { useToast } from '@/composables/useToast'
+import type { StatItem } from '@/components/admin/employers/EmployerStatsCards.vue'
 
 const route = useRoute()
+const router = useRouter()
 const store = useAdminCompanyStore()
-const { success: toastSuccess, error: toastError, warning: toastWarning, info: toastInfo } = useToast()
+const toast = useToast()
 
+const companyId = Number(route.params.id)
+
+onMounted(async () => {
+  if (!companyId) return
+  await store.fetchById(companyId)
+  if (store.error) {
+    toast.error('Lỗi', 'Không tìm thấy công ty này.')
+    router.push({ name: 'admin-employers' })
+  }
+})
+
+// ─── Stats ───────────────────────────────────────────────────────────────────────
+const stats: StatItem[] = [
+  {
+    label: 'Tin đã đăng',
+    value: 145,
+    icon: 'post_add',
+    iconBg: 'bg-blue-50 dark:bg-blue-900/20',
+    iconColor: 'text-blue-600',
+  },
+  {
+    label: 'CV đã nhận',
+    value: '2,482',
+    icon: 'description',
+    iconBg: 'bg-green-50 dark:bg-green-900/20',
+    iconColor: 'text-green-600',
+  },
+  {
+    label: 'Gói dịch vụ',
+    value: 'Gói VIP Pro',
+    icon: 'diamond',
+    iconBg: 'bg-[#963131]/10',
+    iconColor: 'text-[#963131]',
+  },
+]
+
+// ─── Tabs ────────────────────────────────────────────────────────────────────────
 const activeTab = ref('profile')
 const tabs = [
   { key: 'profile',  label: 'Hồ sơ công ty' },
   { key: 'license',  label: 'Giấy phép & Xác thực' },
   { key: 'activity', label: 'Lịch sử hoạt động' },
-  { key: 'payments', label: 'Lịch sử thanh toán' },
+  { key: 'payment',  label: 'Lịch sử thanh toán' },
 ]
 
-// ─── Fetch ────────────────────────────────────────────────────────────────────
-onMounted(() => {
-  const id = Number(route.params.id)
-  if (id) store.fetchById(id)
-})
-
-// ─── Map store.selectedCompany → EmployerProfileHeader props ─────────────────
-const profileHeaderData = computed(() => {
-  const c = store.selectedCompany
-  if (!c) return null
-  return {
-    name:     c.name,
-    industry: String(c.industryId ?? '—'),
-    verified: c.verificationStatus === VerificationStatus.VERIFIED,
-    website:  c.website  ?? '—',
-    email:    c.email    ?? '—',
-    phone:    c.phone    ?? '—',
-    location: c.address  ?? '—',
-    logoUrl:  c.logoUrl  ?? '',
-  }
-})
-
-// ─── Summary stats ────────────────────────────────────────────────────────────
-const summaryStats = [
-  { icon: 'post_add',    label: 'Tin đã đăng', value: '—', iconBg: 'bg-blue-50 dark:bg-blue-900/20',       iconColor: 'text-blue-600'    },
-  { icon: 'description', label: 'CV đã nhận',  value: '—', iconBg: 'bg-emerald-50 dark:bg-emerald-900/20', iconColor: 'text-emerald-600' },
-  { icon: 'diamond',     label: 'Gói dịch vụ', value: '—', iconBg: 'bg-[#963131]/10',                      iconColor: 'text-[#963131]'   },
-]
-
-// ─── Actions ─────────────────────────────────────────────────────────────────
+// ─── Event handlers ──────────────────────────────────────────────────────────────
 function onResetPassword() {
-  toastSuccess('Đã gửi email reset mật khẩu', 'Kiểm tra hộp thư của NTT')
+  toast.info('Tính năng', 'Reset mật khẩu đang được phát triển.')
 }
 
-function onSendWarning() {
-  toastWarning('Đã gửi cảnh báo', 'Thông báo đã được gửi đến NTT')
+function onWarn() {
+  toast.info('Tính năng', 'Gửi cảnh báo đang được phát triển.')
 }
 
-async function onBlock() {
-  const id = store.selectedCompany?.id
-  if (!id) return
+async function onSuspend() {
+  if (!store.selectedCompany) return
   try {
-    const reason = prompt('Nhập lý do khóa tài khoản:') ?? 'Vi phạm quy định hệ thống'
-    await store.suspendCompany(id, { suspendedReason: reason })
-    toastSuccess('Đã khóa tài khoản', store.selectedCompany?.name)
-  } catch {
-    toastError('Khóa tài khoản thất bại', store.error ?? undefined)
-  }
-}
-
-async function onUnblock() {
-  const id = store.selectedCompany?.id
-  if (!id) return
-  try {
-    await store.unsuspendCompany(id)
-    toastSuccess('Đã mở khóa tài khoản', store.selectedCompany?.name)
-  } catch {
-    toastError('Mở khóa thất bại', store.error ?? undefined)
+    if (store.selectedCompany.status === 'suspended') {
+      await store.unsuspendCompany(store.selectedCompany.id)
+      toast.success('Thành công', 'Đã mở khóa công ty.')
+    } else {
+      await store.suspendCompany(store.selectedCompany.id, 'Admin khóa tài khoản')
+      toast.success('Thành công', 'Đã khóa công ty.')
+    }
+  } catch (err) {
+    toast.error('Thất bại', store.error || 'Có lỗi xảy ra.')
   }
 }
 
 async function onApprove() {
-  const id = store.selectedCompany?.id
-  if (!id) return
+  if (!store.selectedCompany) return
   try {
-    await store.verifyCompany(id, { approved: true })
-    toastSuccess('Phê duyệt thành công', `${store.selectedCompany?.name} đã được xác minh`)
-  } catch {
-    toastError('Phê duyệt thất bại', store.error ?? undefined)
+    await store.verifyCompany(store.selectedCompany.id, true)
+    toast.success('Phê duyệt thành công', 'Công ty đã được xác thực.')
+  } catch (err) {
+    toast.error('Thất bại', store.error || 'Không thể phê duyệt.')
   }
 }
 
 async function onReject(reason: string) {
-  const id = store.selectedCompany?.id
-  if (!id) return
-  try {
-    await store.verifyCompany(id, { approved: false, rejectionReason: reason })
-    toastInfo('Đã từ chối hồ sơ', 'NTT sẽ nhận được thông báo')
-  } catch {
-    toastError('Từ chối thất bại', store.error ?? undefined)
+  if (!store.selectedCompany) return
+  if (!reason.trim()) {
+    toast.warning('Chú ý', 'Vui lòng nhập lý do từ chối.')
+    return
   }
+  try {
+    await store.verifyCompany(store.selectedCompany.id, false, reason)
+    toast.success('Từ chối thành công', 'Đã từ chối xác thực công ty.')
+  } catch (err) {
+    toast.error('Thất bại', store.error || 'Không thể từ chối.')
+  }
+}
+
+function onRequestSupplement() {
+  toast.info('Tính năng', 'Yêu cầu bổ sung hồ sơ đang được phát triển.')
 }
 </script>

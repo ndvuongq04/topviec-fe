@@ -19,7 +19,12 @@ export const useAdminUserStore = defineStore('adminUser', () => {
 
     // ─── Helpers ────────────────────────────────────────────────────────────────
     function setError(err: unknown) {
-        error.value = (err as any)?.response?.data?.message ?? 'Có lỗi xảy ra. Vui lòng thử lại.'
+        const msg = (err as any)?.response?.data?.message
+        if (typeof msg === 'object' && msg !== null) {
+            error.value = Object.values(msg).join(', ')
+        } else {
+            error.value = msg ?? 'Có lỗi xảy ra. Vui lòng thử lại.'
+        }
     }
 
     function applyPagination(data: ResultPaginationDTO<ResAdminUser>) {
