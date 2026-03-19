@@ -105,48 +105,19 @@
       </div>
     </div>
 
-    <!-- Upload CV -->
-    <div class="bg-white dark:bg-surface-dark p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm">
-      <h3 class="font-bold text-text-main dark:text-white mb-4 flex items-center gap-2">
-        <span class="material-symbols-outlined text-primary">description</span>
-        CV của tôi
-      </h3>
-
-      <div
-        class="border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-2xl p-6 flex flex-col items-center justify-center text-center hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer group"
-        @click="triggerCvUpload"
-      >
-        <div class="h-10 w-10 bg-primary/10 text-primary rounded-full flex items-center justify-center mb-2 group-hover:bg-primary/20 transition-colors">
-          <span class="material-symbols-outlined">cloud_upload</span>
-        </div>
-        <p class="text-sm font-medium text-text-main dark:text-white">Tải lên CV mới</p>
-        <p class="text-xs text-text-muted mt-1">PDF, DOCX tối đa 5MB</p>
-        <input ref="cvInput" type="file" accept=".pdf,.docx" class="hidden" @change="onCvChange" />
-      </div>
-
-      <div v-if="cvFile" class="mt-4 flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-slate-800">
-        <div class="h-10 w-10 bg-white dark:bg-slate-700 rounded-xl flex items-center justify-center shadow-sm text-red-500">
-          <span class="material-symbols-outlined">picture_as_pdf</span>
-        </div>
-        <div class="flex-1 min-w-0">
-          <p class="text-sm font-medium text-text-main dark:text-white truncate">{{ cvFile.name }}</p>
-          <p class="text-xs text-text-muted">{{ cvFile.addedAt }}</p>
-        </div>
-        <button class="text-text-muted hover:text-red-500 transition-colors" @click="removeCv">
-          <span class="material-symbols-outlined text-[18px]">delete</span>
-        </button>
-      </div>
-    </div>
-
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useCandidateProfileStore } from '@/stores/candidateProfile.store'
+import { useToast } from '@/composables/useToast'
 import { JobSeekingStatus, PreferredWorkType } from '@/constants/candidateProfile.constants'
 
 const store = useCandidateProfileStore()
+const toast = useToast()
+
+defineEmits(['switch-tab'])
 const profile = computed(() => store.profile)
 
 // ─── Avatar ───────────────────────────────────────────────────────────────────
@@ -207,30 +178,15 @@ const salaryLabel = computed(() => {
   return ''
 })
 
-// ─── CV ───────────────────────────────────────────────────────────────────────
+// ─── Avatar Upload ────────────────────────────────────────────────────────────
 const avatarInput = ref<HTMLInputElement | null>(null)
-const cvInput     = ref<HTMLInputElement | null>(null)
-const cvFile      = ref<{ name: string; addedAt: string } | null>(null)
 
 function triggerAvatarUpload() { avatarInput.value?.click() }
-function triggerCvUpload()     { cvInput.value?.click() }
 
 function onAvatarChange(e: Event) {
   const file = (e.target as HTMLInputElement).files?.[0]
   if (!file) return
   localAvatarPreview.value = URL.createObjectURL(file)
   // TODO: upload file lên server → lấy URL → store.updateProfile({ avatarUrl })
-}
-
-function onCvChange(e: Event) {
-  const file = (e.target as HTMLInputElement).files?.[0]
-  if (!file) return
-  cvFile.value = { name: file.name, addedAt: 'Vừa thêm' }
-  // TODO: gọi API upload CV
-}
-
-function removeCv() {
-  cvFile.value = null
-  // TODO: gọi API xóa CV
 }
 </script>

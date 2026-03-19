@@ -51,10 +51,12 @@
           <ProfileCard
             :full-name="store.profile?.fullName"
             :avatar-url="store.profile?.avatarUrl ?? ''"
+            @switch-tab="activeTab = $event"
           />
         </div>
         <div class="lg:col-span-2">
           <PersonalInfoTab v-if="activeTab === 'personal'" />
+          <CvsTab v-else-if="activeTab === 'cvs'" />
           <JobAlertsTab v-else-if="activeTab === 'alerts'" />
           <PrivacySettingsTab v-else-if="activeTab === 'privacy'" />
         </div>
@@ -68,16 +70,20 @@
 import { ref, computed, onMounted } from 'vue'
 import ProfileCard from '@/components/candidate/profile/ProfileCard.vue'
 import PersonalInfoTab from '@/components/candidate/profile/PersonalInfoTab.vue'
+import CvsTab from '@/components/candidate/profile/CvsTab.vue'
 import JobAlertsTab from '@/components/candidate/profile/JobAlertsTab.vue'
 import PrivacySettingsTab from '@/components/candidate/profile/PrivacySettingsTab.vue'
 import { useCandidateProfileStore } from '@/stores/candidateProfile.store'
+import { useCvsStore } from '@/stores/cvs.store'
 
 const store = useCandidateProfileStore()
+const cvsStore = useCvsStore()
 
-const activeTab = ref<'personal' | 'alerts' | 'privacy'>('personal')
+const activeTab = ref<'personal' | 'cvs' | 'alerts' | 'privacy'>('personal')
 
 const tabs = [
   { key: 'personal', label: 'Thông tin cá nhân' },
+  { key: 'cvs',      label: 'CV của tôi' },
   { key: 'alerts',   label: 'Thông báo việc làm' },
   { key: 'privacy',  label: 'Cài đặt quyền riêng tư' },
 ] as const
@@ -87,5 +93,6 @@ const profileStrength = computed(() => store.profile?.profileCompletionPct ?? 0)
 
 onMounted(() => {
   store.fetchMyProfile()
+  cvsStore.fetchMyCvs()
 })
 </script>
