@@ -3,6 +3,7 @@
 // Tái sử dụng ở trang Companies, trang chủ
 interface CompanyCardProps {
   id: number;
+  slug: string;
   name: string;
   logoUrl: string;
   openJobs: number;
@@ -17,18 +18,26 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <div
-    class="min-w-[200px] flex flex-col items-center gap-3 p-4 bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800 rounded-3xl hover:border-primary/30 hover:shadow-md transition-all"
+  <router-link
+    :to="{ name: 'CompanyDetail', params: { slug: props.slug } }"
+    class="min-w-[200px] flex flex-col items-center gap-3 p-4 bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800 rounded-3xl hover:border-primary/30 hover:shadow-md transition-all cursor-pointer"
   >
     <!-- Logo công ty -->
     <div
       class="h-14 w-14 rounded-full bg-slate-50 dark:bg-slate-800 flex items-center justify-center p-2"
     >
       <img
+        v-if="props.logoUrl"
         :alt="props.name"
         :src="props.logoUrl"
         class="w-full h-full object-contain"
       />
+      <div
+        v-else
+        class="w-full h-full flex items-center justify-center bg-primary/10 text-primary font-bold text-xl rounded-full"
+      >
+        {{ props.name.charAt(0) }}
+      </div>
     </div>
 
     <!-- Tên + số job -->
@@ -53,5 +62,5 @@ const emit = defineEmits<{
     >
       {{ props.isFollowing ? "Đang theo dõi" : "Theo dõi" }}
     </button>
-  </div>
+  </router-link>
 </template>
