@@ -81,9 +81,9 @@ const emit = defineEmits<{
 }>()
 
 const workTypes = [
-  { label: 'Toàn thời gian', value: 'fulltime' },
-  { label: 'Bán thời gian', value: 'parttime' },
-  { label: 'Thực tập', value: 'intern' },
-  { label: 'Remote', value: 'remote' },
+  { label: 'Toàn thời gian', value: 'FULL_TIME' },
+  { label: 'Bán thời gian', value: 'PART_TIME' },
+  { label: 'Thực tập', value: 'INTERN' },
+  { label: 'Remote', value: 'REMOTE' },
 ]
 </script>

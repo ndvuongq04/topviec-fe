@@ -20,9 +20,14 @@
             class="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-700 focus:ring-primary/10 outline-none text-sm"
             @change="updateLocation(i, 'city', ($event.target as HTMLSelectElement).value)"
           >
-            <option value="hanoi">Hà Nội</option>
-            <option value="hcm">TP. Hồ Chí Minh</option>
-            <option value="danang">Đà Nẵng</option>
+            <option value="">-- Chọn tỉnh/thành phố --</option>
+            <option value="1">Hà Nội</option>
+            <option value="2">TP. Hồ Chí Minh</option>
+            <option value="3">Đà Nẵng</option>
+            <option value="4">Hải Phòng</option>
+            <option value="5">Cần Thơ</option>
+            <option value="6">Bình Dương</option>
+            <option value="7">Đồng Nai</option>
           </select>
         </div>
         <div class="md:col-span-7">
@@ -80,7 +85,7 @@ function updateLocation(index: number, field: keyof LocationItem, value: string)
 }
 
 function addLocation() {
-  emit('update:modelValue', [...props.modelValue, { city: 'hanoi', address: '' }])
+  emit('update:modelValue', [...props.modelValue, { city: '1', address: '' }])
 }
 
 function removeLocation(index: number) {

@@ -16,20 +16,20 @@
           v-for="job in jobs"
           :key="job.id"
           class="hover:bg-slate-50/80 dark:hover:bg-slate-800/30 transition-colors"
-          :class="job.status === 'expired' ? 'bg-slate-50/30 dark:bg-slate-800/10' : ''"
+          :class="job.status?.toLowerCase() === 'expired' ? 'bg-slate-50/30 dark:bg-slate-800/10' : ''"
         >
           <!-- Vị trí -->
           <td class="px-6 py-5">
             <div class="flex flex-col">
               <span
                 class="font-bold"
-                :class="job.status === 'expired'
+                :class="job.status?.toLowerCase() === 'expired'
                   ? 'text-slate-400 dark:text-slate-500 line-through'
                   : 'text-slate-800 dark:text-slate-200'"
               >
                 {{ job.title }}
               </span>
-              <span class="text-xs text-slate-500">ID: {{ job.code }} • {{ job.type }}</span>
+              <span class="text-xs text-slate-500">ID: TV-{{ job.id }} • {{ job.workType }}</span>
             </div>
           </td>
 
@@ -45,77 +45,71 @@
 
           <!-- Lượt xem -->
           <td class="px-6 py-5 text-sm text-slate-600 dark:text-slate-400">
-            {{ job.views ? job.views.toLocaleString('vi-VN') : '--' }}
+            {{ job.viewCount ? job.viewCount.toLocaleString('vi-VN') : '0' }}
           </td>
 
           <!-- Ứng tuyển -->
           <td class="px-6 py-5">
             <div class="flex items-center gap-1">
-              <span class="font-bold text-primary">{{ job.applications }}</span>
+              <span class="font-bold text-primary">0</span> <!-- Backend missing applications count yet -->
               <span class="text-xs text-slate-400">ứng viên</span>
             </div>
           </td>
 
           <!-- Ngày hết hạn -->
-          <td class="px-6 py-5 text-sm text-slate-600 dark:text-slate-400">{{ job.expiryDate }}</td>
+          <td class="px-6 py-5 text-sm text-slate-600 dark:text-slate-400">
+            {{ job.deadline ? new Date(job.deadline).toLocaleDateString('vi-VN') : 'N/A' }}
+          </td>
 
           <!-- Thao tác -->
           <td class="px-6 py-5 text-right">
-            <!-- Active actions -->
-            <div v-if="job.status === 'active'" class="flex items-center justify-end gap-2">
+            <div class="flex items-center justify-end gap-2">
+              
               <button
+                v-if="['expired', 'closed'].includes(job.status?.toLowerCase())"
+                class="p-2 hover:bg-primary/10 rounded-lg text-primary transition-colors"
+                title="Gia hạn/Đăng lại"
+                @click="$emit('extend', job)"
+              >
+                <span class="material-symbols-outlined text-xl">update</span>
+              </button>
+
+              <button
+                v-if="isEditable(job.status)"
                 class="p-2 hover:bg-primary/10 rounded-lg text-primary transition-colors"
                 title="Chỉnh sửa"
                 @click="$emit('edit', job)"
               >
                 <span class="material-symbols-outlined text-xl">edit</span>
               </button>
+
               <button
+                v-if="job.status?.toLowerCase() === 'published'"
                 class="p-2 hover:bg-orange-100 dark:hover:bg-orange-900/30 rounded-lg text-orange-600 transition-colors"
                 title="Tạm dừng"
                 @click="$emit('pause', job)"
               >
                 <span class="material-symbols-outlined text-xl">pause_circle</span>
               </button>
+
               <button
+                v-if="job.status?.toLowerCase() === 'paused'"
+                class="p-2 hover:bg-green-100 dark:hover:bg-green-900/30 rounded-lg text-green-600 transition-colors"
+                title="Mở lại"
+                @click="$emit('resume', job)"
+              >
+                <span class="material-symbols-outlined text-xl">play_circle</span>
+              </button>
+
+              <button
+                v-if="['published', 'paused', 'pending'].includes(job.status?.toLowerCase())"
                 class="p-2 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg text-red-600 transition-colors"
                 title="Đóng tin"
                 @click="$emit('close', job)"
               >
                 <span class="material-symbols-outlined text-xl">cancel</span>
               </button>
-            </div>
 
-            <!-- Pending actions -->
-            <div v-else-if="job.status === 'pending'" class="flex items-center justify-end gap-2">
-              <button
-                class="p-2 hover:bg-primary/10 rounded-lg text-primary transition-colors"
-                title="Chỉnh sửa"
-                @click="$emit('edit', job)"
-              >
-                <span class="material-symbols-outlined text-xl">edit</span>
-              </button>
-              <button class="p-2 text-slate-300 cursor-not-allowed" title="Chưa thể tạm dừng" disabled>
-                <span class="material-symbols-outlined text-xl">pause_circle</span>
-              </button>
-              <button
-                class="p-2 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg text-red-600 transition-colors"
-                title="Đóng tin"
-                @click="$emit('close', job)"
-              >
-                <span class="material-symbols-outlined text-xl">cancel</span>
-              </button>
-            </div>
-
-            <!-- Expired actions -->
-            <div v-else class="flex items-center justify-end gap-2">
-              <button
-                class="p-2 hover:bg-primary/10 rounded-lg text-primary transition-colors"
-                title="Đăng lại"
-                @click="$emit('refresh', job)"
-              >
-                <span class="material-symbols-outlined text-xl">refresh</span>
-              </button>
               <button
                 class="p-2 hover:bg-primary/10 rounded-lg text-primary transition-colors"
                 title="Xem chi tiết"
@@ -132,44 +126,31 @@
 </template>
 
 <script setup lang="ts">
-export interface JobPosting {
-  id: number
-  title: string
-  code: string
-  type: string
-  status: 'active' | 'pending' | 'expired'
-  views: number | null
-  applications: number
-  expiryDate: string
-}
+import type { ResJobPostingDetail, JobPostingStatus } from '@/types/jobPosting.types'
+import { JOB_POSTING_STATUS_BADGE, JOB_POSTING_STATUS_LABELS } from '@/constants/jobPosting.constants'
 
 defineProps<{
-  jobs: JobPosting[]
+  jobs: ResJobPostingDetail[]
 }>()
 
 defineEmits<{
-  edit: [job: JobPosting]
-  pause: [job: JobPosting]
-  close: [job: JobPosting]
-  refresh: [job: JobPosting]
-  view: [job: JobPosting]
+  edit: [job: ResJobPostingDetail]
+  pause: [job: ResJobPostingDetail]
+  resume: [job: ResJobPostingDetail]
+  close: [job: ResJobPostingDetail]
+  extend: [job: ResJobPostingDetail]
+  view: [job: ResJobPostingDetail]
 }>()
 
-function statusClass(status: JobPosting['status']): string {
-  const map: Record<string, string> = {
-    active: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
-    pending: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
-    expired: 'bg-slate-200 text-slate-600 dark:bg-slate-800 dark:text-slate-400',
-  }
-  return map[status] ?? ''
+function statusClass(status: string): string {
+  return JOB_POSTING_STATUS_BADGE[status?.toLowerCase() as JobPostingStatus] || 'bg-slate-100 text-slate-700'
 }
 
-function statusLabel(status: JobPosting['status']): string {
-  const map: Record<string, string> = {
-    active: 'Đang tuyển',
-    pending: 'Chờ duyệt',
-    expired: 'Hết hạn',
-  }
-  return map[status] ?? status
+function statusLabel(status: string): string {
+  return JOB_POSTING_STATUS_LABELS[status?.toLowerCase() as JobPostingStatus] || status
+}
+
+function isEditable(status: string) {
+  return ['draft', 'pending', 'published', 'paused', 'rejected'].includes(status?.toLowerCase())
 }
 </script>

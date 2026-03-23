@@ -30,10 +30,13 @@
           class="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-700 focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all outline-none"
           @change="emit('update:modelValue', { ...modelValue, industry: ($event.target as HTMLSelectElement).value })"
         >
-          <option value="it">Công nghệ thông tin</option>
-          <option value="marketing">Marketing</option>
-          <option value="finance">Tài chính - Ngân hàng</option>
-          <option value="design">Thiết kế - Đồ họa</option>
+          <option value="">-- Chọn ngành nghề --</option>
+          <option value="1">Công nghệ thông tin</option>
+          <option value="2">Marketing</option>
+          <option value="3">Tài chính - Ngân hàng</option>
+          <option value="4">Thiết kế - Đồ họa</option>
+          <option value="5">Kinh doanh - Bán hàng</option>
+          <option value="6">Nhân sự</option>
         </select>
       </div>
 
@@ -45,10 +48,11 @@
           class="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-700 focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all outline-none"
           @change="emit('update:modelValue', { ...modelValue, level: ($event.target as HTMLSelectElement).value })"
         >
-          <option value="staff">Nhân viên</option>
-          <option value="senior">Trưởng nhóm / Senior</option>
-          <option value="manager">Quản lý / Manager</option>
-          <option value="executive">Giám đốc / Executive</option>
+          <option value="">-- Chọn cấp bậc --</option>
+          <option value="1">Nhân viên</option>
+          <option value="2">Trưởng nhóm / Senior</option>
+          <option value="3">Quản lý / Manager</option>
+          <option value="4">Giám đốc / Executive</option>
         </select>
       </div>
 

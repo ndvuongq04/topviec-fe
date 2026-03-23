@@ -79,8 +79,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
-import { useRoute } from 'vue-router'
+import { ref, onMounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { useToast } from '@/composables/useToast'
+import { useEmployerJobPostingStore } from '@/stores/employerJobPosting.store'
+import { employerJobPostingService } from '@/services/jobPosting.service'
+import type { ReqUpdateJobPostingDTO } from '@/types/jobPosting.types'
+
 import CreateJobBasicInfo from '@/components/recruiter/jobs/CreateJobBasicInfo.vue'
 import CreateJobDetails from '@/components/recruiter/jobs/CreateJobDetails.vue'
 import CreateJobSkills from '@/components/recruiter/jobs/CreateJobSkills.vue'
@@ -95,53 +100,164 @@ import type { LocationItem } from '@/components/recruiter/jobs/CreateJobLocation
 import type { AdvancedData } from '@/components/recruiter/jobs/CreateJobAdvanced.vue'
 
 const route = useRoute()
+const router = useRouter()
+const toast = useToast()
+const jobStore = useEmployerJobPostingStore()
 const jobId = route.params.id as string
+const loading = ref(false)
+const fetching = ref(true)
 
-// Mock: dữ liệu đã có sẵn (sẽ thay bằng API call)
 const basicInfo = ref<BasicInfoData>({
-  title: 'Senior Frontend Engineer',
-  industry: 'it',
-  level: 'senior',
-  quantity: 3,
-  deadline: '2023-11-15',
+  title: '',
+  industry: '',
+  level: '',
+  quantity: 1,
+  deadline: '',
 })
 
 const details = ref<DetailsData>({
-  description: 'Chúng tôi đang tìm kiếm một Senior Frontend Engineer tài năng để gia nhập đội ngũ phát triển sản phẩm cốt lõi.',
-  requirements: '- Ít nhất 4 năm kinh nghiệm với Frontend (React/Vue/Angular)\n- Nắm vững HTML5, CSS3 và JavaScript (ES6+)\n- Có kinh nghiệm với TypeScript',
-  benefits: '- Lương cạnh tranh + Thưởng tháng 13\n- Bảo hiểm sức khỏe cao cấp (PVI)\n- 15 ngày phép năm',
+  description: '',
+  requirements: '',
+  benefits: '',
 })
 
 const skills = ref<SkillsData>({
-  skills: ['ReactJS', 'TypeScript', 'TailwindCSS', 'Next.js'],
-  expMin: 4,
-  expMax: 8,
+  skills: [],
+  expMin: 0,
+  expMax: null,
 })
 
 const salary = ref<SalaryData>({
-  salaryMin: '1500',
-  salaryMax: '2500',
+  salaryMin: '',
+  salaryMax: '',
   negotiable: false,
-  workType: 'fulltime',
+  workType: 'FULL_TIME',
 })
 
-const locations = ref<LocationItem[]>([
-  { city: 'hcm', address: 'Quận 1, TP. Hồ Chí Minh' },
-])
+const locations = ref<LocationItem[]>([])
 
 const advanced = ref<AdvancedData>({
-  featured: true,
+  featured: false,
   urgent: false,
 })
 
-function onUpdate() {
-  console.log('Update job:', jobId, {
-    basicInfo: basicInfo.value,
-    details: details.value,
-    skills: skills.value,
-    salary: salary.value,
-    locations: locations.value,
-    advanced: advanced.value,
-  })
+onMounted(async () => {
+  try {
+    fetching.value = true
+    const job = await employerJobPostingService.getById(jobId)
+
+    basicInfo.value = {
+      title: job.title,
+      industry: job.industryId?.toString() || '1',
+      level: job.levelId?.toString() || '1',
+      quantity: job.headcount,
+      deadline: job.deadline ? job.deadline.split('T')[0] : '', // format YYYY-MM-DD
+    }
+
+    details.value = {
+      description: job.description,
+      requirements: job.requirements,
+      benefits: job.benefits || '',
+    }
+
+    skills.value = {
+      skills: (job.skills || []).map(s => s.skillName || s.skillId.toString()), // Mapping temporary name
+      expMin: job.experienceYearsMin,
+      expMax: job.experienceYearsMax,
+    }
+
+    salary.value = {
+      salaryMin: job.salaryMin?.toString() || '',
+      salaryMax: job.salaryMax?.toString() || '',
+      negotiable: job.salaryNegotiable,
+      workType: job.workType || 'FULL_TIME',
+    }
+
+    locations.value = (job.locations || []).map(l => ({
+      city: l.provinceId?.toString() || '1',
+      address: l.addressDetail || '',
+    }))
+    if (locations.value.length === 0) locations.value.push({ city: '1', address: '' })
+
+    advanced.value = {
+      featured: job.isFeatured,
+      urgent: job.isUrgent,
+    }
+  } catch (error: any) {
+    toast.error('Lỗi', 'Không thể tải thông tin tin tuyển dụng để chỉnh sửa')
+    router.push('/recruiter/jobs')
+  } finally {
+    fetching.value = false
+  }
+})
+
+function validateForm(): boolean {
+  if (!basicInfo.value.title.trim()) { toast.error('Lỗi', 'Vui lòng nhập tiêu đề'); return false }
+  if (!basicInfo.value.industry) { toast.error('Lỗi', 'Vui lòng chọn ngành nghề'); return false }
+  if (!basicInfo.value.level) { toast.error('Lỗi', 'Vui lòng chọn cấp bậc'); return false }
+  if (!basicInfo.value.quantity || basicInfo.value.quantity < 1) { toast.error('Lỗi', 'Số lượng tuyển phải >= 1'); return false }
+  if (!basicInfo.value.deadline) { toast.error('Lỗi', 'Vui lòng chọn hạn nộp hồ sơ'); return false }
+
+  if (!details.value.description.trim()) { toast.error('Lỗi', 'Vui lòng nhập mô tả công việc'); return false }
+  if (!details.value.requirements.trim()) { toast.error('Lỗi', 'Vui lòng nhập yêu cầu ứng viên'); return false }
+
+  if (skills.value.expMin === null || skills.value.expMin < 0) { toast.error('Lỗi', 'Kinh nghiệm tối thiểu không hợp lệ'); return false }
+
+  if (!salary.value.negotiable) {
+    if (!salary.value.salaryMin && !salary.value.salaryMax) {
+      toast.error('Lỗi', 'Vui lòng nhập mức lương hoặc chọn thỏa thuận')
+      return false
+    }
+  }
+  
+  if (!locations.value.length) { toast.error('Lỗi', 'Vui lòng thêm ít nhất 1 địa điểm làm việc'); return false }
+
+  return true
+}
+
+function buildPayload(): ReqUpdateJobPostingDTO {
+  return {
+    title: basicInfo.value.title,
+    description: details.value.description,
+    requirements: details.value.requirements,
+    benefits: details.value.benefits || undefined,
+    industryId: parseInt(basicInfo.value.industry) || 1,
+    levelId: parseInt(basicInfo.value.level) || 1,
+    experienceYearsMin: skills.value.expMin || 0,
+    experienceYearsMax: skills.value.expMax || undefined,
+    salaryMin: salary.value.salaryMin ? parseInt(salary.value.salaryMin) : undefined,
+    salaryMax: salary.value.salaryMax ? parseInt(salary.value.salaryMax) : undefined,
+    salaryNegotiable: salary.value.negotiable,
+    workType: salary.value.workType || 'FULL_TIME',
+    headcount: basicInfo.value.quantity || 1,
+    deadline: basicInfo.value.deadline ? new Date(basicInfo.value.deadline).toISOString() : new Date().toISOString(),
+    locations: locations.value.map(loc => ({
+      provinceId: parseInt(loc.city) || 1,
+      addressDetail: loc.address || undefined,
+      isRemote: false
+    })),
+    skills: skills.value.skills.map((s, idx) => ({
+      skillId: idx + 1,
+      isRequired: true,
+    })),
+    isFeatured: advanced.value.featured,
+    isUrgent: advanced.value.urgent,
+  }
+}
+
+async function onUpdate() {
+  if (!validateForm()) return
+
+  try {
+    loading.value = true
+    const payload = buildPayload()
+    await jobStore.updateJob(jobId, payload)
+    toast.success('Thành công', 'Cập nhật tin tuyển dụng thành công')
+    router.push(`/recruiter/jobs/${jobId}`)
+  } catch (error: any) {
+    toast.error('Lỗi', jobStore.error || 'Không thể cập nhật tin tuyển dụng')
+  } finally {
+    loading.value = false
+  }
 }
 </script>

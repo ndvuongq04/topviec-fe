@@ -1,5 +1,22 @@
 <template>
   <div class="lg:col-span-2 space-y-8">
+    <!-- Kỹ năng yêu cầu -->
+    <section v-if="skills && skills.length" class="bg-white dark:bg-slate-800 p-8 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+      <h2 class="text-lg font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-2">
+        <span class="w-1.5 h-6 bg-primary rounded-full"></span>
+        Kỹ năng chuyên môn
+      </h2>
+      <div class="flex flex-wrap gap-2">
+        <span
+          v-for="(skill, i) in skills"
+          :key="i"
+          class="px-4 py-2 bg-sky-50 dark:bg-sky-900/30 text-sky-700 dark:text-sky-300 rounded-xl text-sm font-semibold border border-sky-100 dark:border-sky-800/50"
+        >
+          {{ skill }}
+        </span>
+      </div>
+    </section>
+
     <!-- Mô tả công việc -->
     <section class="bg-white dark:bg-slate-800 p-8 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
       <h2 class="text-lg font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-2">
@@ -58,5 +75,6 @@ defineProps<{
   descriptionList: string[]
   requirements: string[]
   benefits: BenefitItem[]
+  skills?: string[]
 }>()
 </script>
