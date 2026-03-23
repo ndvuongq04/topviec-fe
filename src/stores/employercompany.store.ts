@@ -56,6 +56,20 @@ export const useEmployerCompanyStore = defineStore('employerCompany', () => {
 
 
 
+    /** PATCH /employer/company */
+    async function updateMyCompany(payload: ReqUpdateCompanyDTO) {
+        loading.value = true
+        error.value = null
+        try {
+            company.value = await employerCompanyService.updateMyCompany(payload)
+        } catch (err) {
+            setError(err)
+            throw err
+        } finally {
+            loading.value = false
+        }
+    }
+
     /** Reset khi logout */
     function reset() {
         company.value = null
@@ -69,6 +83,7 @@ export const useEmployerCompanyStore = defineStore('employerCompany', () => {
         error,
         fetchMyCompany,
         createCompany,
+        updateMyCompany,
         reset,
     }
 })

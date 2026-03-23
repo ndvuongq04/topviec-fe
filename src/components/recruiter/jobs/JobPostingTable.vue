@@ -102,7 +102,7 @@
               </button>
 
               <button
-                v-if="['published', 'paused', 'pending'].includes(job.status?.toLowerCase())"
+                v-if="['published', 'paused', 'pending_approval', 'active'].includes(job.status?.toLowerCase())"
                 class="p-2 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg text-red-600 transition-colors"
                 title="Đóng tin"
                 @click="$emit('close', job)"
@@ -151,6 +151,6 @@ function statusLabel(status: string): string {
 }
 
 function isEditable(status: string) {
-  return ['draft', 'pending', 'published', 'paused', 'rejected'].includes(status?.toLowerCase())
+  return ['draft', 'pending_approval', 'published', 'paused', 'rejected'].includes(status?.toLowerCase())
 }
 </script>

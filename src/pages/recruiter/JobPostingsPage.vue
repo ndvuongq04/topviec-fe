@@ -157,7 +157,7 @@ async function fetchJobs() {
     summaryStats.value = {
       total: totalItems.value || jobs.value.length,
       active: jobs.value.filter(j => j.status?.toLowerCase() === 'published').length,
-      pending: jobs.value.filter(j => j.status?.toLowerCase() === 'pending').length,
+      pending: jobs.value.filter(j => j.status?.toLowerCase() === 'pending_approval').length,
       expired: jobs.value.filter(j => j.status?.toLowerCase() === 'expired').length,
     }
   }

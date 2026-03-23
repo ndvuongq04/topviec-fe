@@ -36,6 +36,16 @@ export const adminRoutes: RouteRecordRaw[] = [
                 name: 'admin-edit',
                 component: () => import('@/pages/admin/AdminEditPage.vue'),
             },
+            {
+                path: 'moderation',
+                name: 'admin-moderation',
+                component: () => import('@/pages/admin/AdminJobPostingsPage.vue'),
+            },
+            {
+                path: 'moderation/:id',
+                name: 'admin-job-posting-detail',
+                component: () => import('@/pages/admin/AdminJobPostingDetailPage.vue'),
+            },
         ],
     },
 ]

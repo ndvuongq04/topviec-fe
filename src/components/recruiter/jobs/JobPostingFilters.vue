@@ -30,7 +30,7 @@
 </template>
 
 <script setup lang="ts">
-export type FilterStatus = 'all' | 'published' | 'pending' | 'paused' | 'expired' | 'closed' | 'draft' | 'rejected'
+export type FilterStatus = 'all' | 'published' | 'pending_approval' | 'paused' | 'expired' | 'closed' | 'draft' | 'rejected'
 
 defineProps<{
   search: string
@@ -45,7 +45,7 @@ defineEmits<{
 const tabs: { label: string; value: FilterStatus }[] = [
   { label: 'Tất cả', value: 'all' },
   { label: 'Đang tuyển', value: 'published' },
-  { label: 'Chờ duyệt', value: 'pending' },
+  { label: 'Chờ duyệt', value: 'pending_approval' },
   { label: 'Tạm dừng', value: 'paused' },
   { label: 'Hết hạn', value: 'expired' },
 ]

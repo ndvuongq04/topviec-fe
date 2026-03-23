@@ -1,6 +1,6 @@
 <template>
   <div class="flex justify-center">
-    <div class="w-full max-w-4xl pt-6 pb-16">
+    <div class="w-full max-w-7xl pt-6 pb-16">
       <!-- Header Actions -->
       <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
         <div>

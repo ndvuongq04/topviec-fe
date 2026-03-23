@@ -73,7 +73,7 @@ export interface ResJobPostingDetail {
   workType: string
   headcount: number
   deadline: string
-  status: 'draft' | 'pending' | 'published' | 'paused' | 'closed' | 'expired' | 'rejected'
+  status: 'draft' | 'pending_approval' | 'published' | 'paused' | 'closed' | 'expired' | 'rejected'
   isFeatured: boolean
   isUrgent: boolean
   viewCount: number

@@ -1,5 +1,5 @@
 <template>
-  <div class="max-w-4xl mx-auto px-8 py-10 space-y-8">
+  <div class="max-w-7xl mx-auto px-8 py-10 space-y-8">
 
     <!-- Loading lần đầu -->
     <div v-if="store.loading && !store.company" class="flex justify-center py-20">

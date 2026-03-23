@@ -58,7 +58,7 @@
       </button>
 
       <button
-        v-if="['published', 'paused', 'pending', 'active'].includes(status?.toLowerCase())"
+        v-if="['published', 'paused', 'pending_approval', 'active'].includes(status?.toLowerCase())"
         class="flex items-center gap-2 px-4 py-2 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 rounded-lg font-semibold hover:bg-red-100 dark:hover:bg-red-900/30 transition-all cursor-pointer"
         @click="$emit('close')"
       >
@@ -91,7 +91,7 @@ const statusClasses = computed(() => {
   const map: Record<string, string> = {
     active: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
     published: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
-    pending: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
+    pending_approval: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
     paused: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400',
     expired: 'bg-slate-200 text-slate-600 dark:bg-slate-800 dark:text-slate-400',
     closed: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
@@ -103,7 +103,7 @@ const dotClass = computed(() => {
   const map: Record<string, string> = {
     active: 'bg-green-500 animate-pulse',
     published: 'bg-green-500 animate-pulse',
-    pending: 'bg-amber-500',
+    pending_approval: 'bg-amber-500',
     paused: 'bg-orange-500',
     expired: 'bg-slate-400',
     closed: 'bg-red-500',
@@ -115,7 +115,7 @@ const statusLabel = computed(() => {
   const map: Record<string, string> = {
     active: 'Đang tuyển',
     published: 'Đang tuyển',
-    pending: 'Chờ duyệt',
+    pending_approval: 'Chờ duyệt',
     paused: 'Tạm dừng',
     expired: 'Hết hạn',
     closed: 'Đã đóng',
