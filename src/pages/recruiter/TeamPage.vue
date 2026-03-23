@@ -19,7 +19,6 @@
     <!-- Stats -->
     <TeamStats :stats="stats" />
 
-    <!-- Table -->
     <TeamTable
       :members="filteredMembers"
       :total="totalMembers"
@@ -28,89 +27,192 @@
       @edit="onEdit"
       @delete="onDelete"
       @search="onSearch"
+      @filter="onFilter"
       @page-change="onPageChange"
+    />
+
+    <!-- Modals -->
+    <InviteMemberModal
+      :visible="isInviteModalOpen"
+      :loading="memberStore.loading"
+      @close="isInviteModalOpen = false"
+      @confirm="handleInvite"
+    />
+
+    <UpdatePermissionModal
+      :visible="isUpdateModalOpen"
+      :member="selectedMember"
+      :loading="memberStore.loading"
+      @close="isUpdateModalOpen = false"
+      @confirm="handleUpdatePermission"
     />
 
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import TeamStats from '@/components/recruiter/team/TeamStats.vue'
 import TeamTable from '@/components/recruiter/team/TeamTable.vue'
-import type { TeamMember } from '@/components/recruiter/team/TeamTable.vue'
+import InviteMemberModal from '@/components/recruiter/team/InviteMemberModal.vue'
+import UpdatePermissionModal from '@/components/recruiter/team/UpdatePermissionModal.vue'
+import { useEmployerMemberStore } from '@/stores/employerMember.store'
+import { useRoleStore } from '@/stores/role.store'
+import { useConfirm } from '@/composables/useConfirm'
+import type { ResCompanyMember } from '@/types/companyMember.types'
+import { MEMBER_ROLE, MEMBER_STATUS } from '@/constants/companyMember.constants'
+import { useToast } from '@/composables/useToast'
 
 // ─── State ───────────────────────────────────────────────────────────────────
-const searchQuery  = ref('')
-const currentPage  = ref(1)
-const pageSize     = ref(4)
-const totalMembers = ref(24)
+const memberStore = useEmployerMemberStore()
+const roleStore = useRoleStore()
+const toast = useToast()
 
-const stats = [
+const searchQuery = ref('')
+const filterRole   = ref('')
+const filterStatus = ref('')
+const currentPage  = ref(1) // 1-based for UI
+const pageSize     = ref(10)
+
+const isInviteModalOpen = ref(false)
+const isUpdateModalOpen = ref(false)
+const selectedMember    = ref<any>(null)
+
+const { confirm } = useConfirm()
+
+onMounted(() => {
+  roleStore.fetchDefaultPermissions()
+  fetchMembers()
+})
+
+async function fetchMembers() {
+  await memberStore.getMembers({
+    page: currentPage.value - 1, // 0-based for BE
+    size: pageSize.value,
+    keyword: searchQuery.value || undefined,
+    role: filterRole.value || undefined,
+    status: filterStatus.value || undefined
+  })
+}
+
+// Watchers for automatic refetch
+watch([currentPage, searchQuery, filterRole, filterStatus], () => {
+  fetchMembers()
+})
+
+const totalMembers = computed(() => memberStore.members?.meta.totals ?? 0)
+
+const stats = computed(() => [
   {
     icon: 'groups',
     label: 'Tổng số thành viên',
-    value: 24,
-    trend: '+2%',
+    value: totalMembers.value,
+    trend: '+0%',
     trendUp: true,
-    trendNote: 'so với tháng trước',
+    trendNote: 'cập nhật mới nhất',
     iconBg: 'bg-primary/10',
     iconColor: 'text-primary',
   },
   {
     icon: 'check_circle',
     label: 'Đang hoạt động',
-    value: 20,
+    value: memberStore.members?.result.filter(m => m.status === MEMBER_STATUS.ACTIVE).length ?? 0,
     trend: '0%',
     trendUp: null,
-    trendNote: 'không thay đổi',
+    trendNote: 'hiện tại',
     iconBg: 'bg-emerald-100',
     iconColor: 'text-emerald-600',
   },
   {
     icon: 'hourglass_empty',
     label: 'Chờ xác nhận',
-    value: 4,
-    trend: '-1%',
+    value: memberStore.members?.result.filter(m => m.status === MEMBER_STATUS.PENDING).length ?? 0,
+    trend: '0%',
     trendUp: false,
-    trendNote: 'đã được giải quyết',
+    trendNote: 'đang chờ',
     iconBg: 'bg-amber-100',
     iconColor: 'text-amber-600',
   },
-]
+])
 
-// Dữ liệu mẫu — thay bằng API sau
-const allMembers: TeamMember[] = [
-  { id: 1, name: 'Nguyễn Thu Hà',  email: 'ha.nguyen@topviec.vn',   role: 'admin',     status: 'active',  joinedAt: '12/10/2023' },
-  { id: 2, name: 'Trần Minh Tâm',  email: 'tam.tran@topviec.vn',    role: 'recruiter', status: 'active',  joinedAt: '15/01/2024' },
-  { id: 3, name: 'Phạm Diệu Linh', email: 'linh.pham@topviec.vn',   role: 'viewer',    status: 'pending', joinedAt: '22/02/2024' },
-  { id: 4, name: 'Lê Thanh Hải',   email: 'hai.le@topviec.vn',      role: 'recruiter', status: 'active',  joinedAt: '05/03/2024' },
-]
+// Mapping backend Response to TeamTable's expected TeamMember interface
+const tableMembers = computed(() => {
+  return (memberStore.members?.result ?? []).map((m: ResCompanyMember) => ({
+    id: m.userId, // Using userId for identification
+    name: m.email.split('@')[0], // Fallback if name is missing
+    email: m.email,
+    role: m.roleName as any, // Changed to use roleName
+    status: m.status as any,
+    joinedAt: new Date(m.createdAt).toLocaleDateString('vi-VN'),
+    actions: m.actions || {}
+  }))
+})
 
-const filteredMembers = computed(() =>
-  allMembers.filter(m =>
-    m.name.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-    m.email.toLowerCase().includes(searchQuery.value.toLowerCase())
-  )
-)
+// filteredMembers computed is no longer needed as search is done on BE
+const filteredMembers = computed(() => tableMembers.value)
 
 // ─── Actions ─────────────────────────────────────────────────────────────────
 function openInviteModal() {
-  // TODO: mở modal mời thành viên
+  isInviteModalOpen.value = true
 }
 
-function onEdit(member: TeamMember) {
-  // TODO: mở modal chỉnh sửa
-  console.log('Edit:', member)
+async function handleInvite(data: any) {
+  try {
+    await memberStore.addMember(data)
+    toast.success('Đã gửi lời mời thành công')
+    isInviteModalOpen.value = false
+    fetchMembers()
+  } catch (err) {
+    toast.error(memberStore.error || 'Có lỗi xảy ra')
+  }
 }
 
-function onDelete(member: TeamMember) {
-  // TODO: xác nhận và xóa
-  console.log('Delete:', member)
+function onEdit(member: any) {
+  selectedMember.value = member
+  isUpdateModalOpen.value = true
+}
+
+async function handleUpdatePermission(data: any) {
+  if (!selectedMember.value) return
+  try {
+    await memberStore.updateMemberPermission(selectedMember.value.id, data)
+    toast.success('Đã cập nhật quyền thành công')
+    isUpdateModalOpen.value = false
+    fetchMembers()
+  } catch (err) {
+    toast.error(memberStore.error || 'Có lỗi xảy ra')
+  }
+}
+
+async function onDelete(member: any) {
+  selectedMember.value = member
+  const ok = await confirm({
+    title: 'Xóa thành viên',
+    message: `Bạn có chắc chắn muốn xóa thành viên ${member.email} khỏi công ty? Hành động này không thể hoàn tác.`,
+    confirmText: 'Xóa thành viên',
+    confirmColor: 'red',
+    icon: 'delete_forever'
+  })
+
+  if (ok) {
+    try {
+      await memberStore.removeMember(member.id)
+      toast.success('Đã xóa thành viên thành công')
+      fetchMembers()
+    } catch (err) {
+      toast.error(memberStore.error || 'Có lỗi xảy ra')
+    }
+  }
 }
 
 function onSearch(query: string) {
   searchQuery.value = query
+  currentPage.value = 1
+}
+
+function onFilter(filters: { role: string, status: string }) {
+  filterRole.value = filters.role
+  filterStatus.value = filters.status
   currentPage.value = 1
 }
 
