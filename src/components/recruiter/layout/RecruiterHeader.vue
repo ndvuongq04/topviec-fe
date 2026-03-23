@@ -26,13 +26,13 @@
       </button>
 
       <!-- Tạo tin -->
-      <button
-        class="bg-primary text-white px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 hover:bg-primary/90 transition-colors"
-        @click="$emit('create-job')"
+      <router-link
+        to="/recruiter/jobs/create"
+        class="bg-primary text-white px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 hover:bg-primary/90 transition-colors cursor-pointer"
       >
         <span class="material-symbols-outlined text-lg">add</span>
         Tạo tin mới
-      </button>
+      </router-link>
     </div>
   </header>
 </template>
