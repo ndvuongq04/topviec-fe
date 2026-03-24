@@ -28,11 +28,11 @@
               <div class="font-bold text-slate-900 dark:text-slate-100 text-sm max-w-sm truncate" :title="job.title">
                 {{ job.title }}
               </div>
-              <div class="text-xs text-slate-500 mt-1 flex gap-2">
+              <!-- <div class="text-xs text-slate-500 mt-1 flex gap-2">
                 <span>SL: {{ job.headcount }}</span>
                 <span>•</span>
                 <span class="text-[#963131]">{{ job.isUrgent ? 'Tuyển gấp' : '' }}</span>
-              </div>
+              </div> -->
             </td>
 
             <!-- WorkType -->
