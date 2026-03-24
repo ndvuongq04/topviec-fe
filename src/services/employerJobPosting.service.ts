@@ -72,6 +72,15 @@ export const employerJobPostingService = {
   },
 
   /**
+   * PATCH /employer/job-postings/{id}/pending-approval
+   * Gửi duyệt tin tuyển dụng.
+   */
+  async pendingApproval(id: number | string): Promise<ResJobPostingDetail> {
+    const res = await axiosInstance.patch<RestResponse<ResJobPostingDetail>>(`${BASE_URL}/${id}/pending-approval`)
+    return res.data.data
+  },
+
+  /**
    * PATCH /api/v1/employer/job-postings/{id}/extend
    */
   async extendJob(id: number | string, payload: ReqExtendJobPostDTO): Promise<ResJobPostingDetail> {

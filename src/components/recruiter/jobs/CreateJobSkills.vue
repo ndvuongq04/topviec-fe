@@ -17,15 +17,15 @@
             :key="i"
             class="inline-flex items-center gap-1 px-3 py-1 bg-primary/10 text-primary text-sm font-medium rounded-full"
           >
-            {{ skill }}
+            {{ skill.name }}
             <span class="material-symbols-outlined text-sm cursor-pointer" @click="removeSkill(i)">close</span>
           </span>
-          <input
-            v-model="newSkill"
-            class="flex-1 bg-transparent border-none focus:ring-0 text-sm p-1 outline-none min-w-[120px]"
-            placeholder="Thêm kỹ năng..."
-            type="text"
-            @keydown.enter.prevent="addSkill"
+          <SearchableSelect
+            v-model="selectedSkillId"
+            :options="skillOptions"
+            placeholder="-- Chọn thêm kỹ năng --"
+            class="flex-1 min-w-[200px]"
+            @change="addSkill"
           />
         </div>
       </div>
@@ -62,10 +62,17 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted, computed } from 'vue'
+import { useSkillStore } from '@/stores/skill.store'
+import SearchableSelect from '@/components/ui/SearchableSelect.vue'
+
+export interface SkillItem {
+  id: number
+  name: string
+}
 
 export interface SkillsData {
-  skills: string[]
+  skills: SkillItem[]
   expMin: number | null
   expMax: number | null
 }
@@ -78,17 +85,35 @@ const emit = defineEmits<{
   'update:modelValue': [value: SkillsData]
 }>()
 
-const newSkill = ref('')
+const skillStore = useSkillStore()
 
-function addSkill() {
-  const value = newSkill.value.trim()
-  if (value && !props.modelValue.skills.includes(value)) {
+const skillOptions = computed(() => {
+  return skillStore.skills.map(s => ({ id: s.id.toString(), name: s.name }))
+})
+
+onMounted(() => {
+  if (skillStore.skills.length === 0) {
+    skillStore.fetchSkills({ size: 100 })
+  }
+})
+
+const selectedSkillId = ref('')
+
+function addSkill(option?: { id: string | number, name: string }) {
+  if (!option) return
+  const id = parseInt(option.id.toString())
+  
+  if (!props.modelValue.skills.some(s => s.id === id)) {
     emit('update:modelValue', {
       ...props.modelValue,
-      skills: [...props.modelValue.skills, value],
+      skills: [...props.modelValue.skills, { id, name: option.name }],
     })
-    newSkill.value = ''
   }
+  
+  // Try to reset selection after a small tick so the SearchableSelect UI clears
+  setTimeout(() => {
+    selectedSkillId.value = ''
+  }, 10)
 }
 
 function removeSkill(index: number) {

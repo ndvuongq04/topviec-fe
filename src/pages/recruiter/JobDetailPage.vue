@@ -20,6 +20,7 @@
       :is-featured="job.isFeatured"
       :is-urgent="job.isUrgent"
       @edit="onEdit"
+      @pendingApproval="onPendingApproval"
       @pause="onPause"
       @resume="onResume"
       @close="onClose"
@@ -109,7 +110,7 @@ const locationString = computed(() => {
   return job.value.locations.map(l => {
     let str = ''
     if (l.addressDetail) str += l.addressDetail + ', '
-    str += l.provinceName || provinceMap[l.provinceId] || `Tỉnh ID: ${l.provinceId}`
+    str += (l as any).provinceName || provinceMap[l.provinceId] || `Tỉnh ID: ${l.provinceId}`
     return str
   }).join(' • ')
 })
@@ -152,24 +153,8 @@ const stats = computed<JobStat[]>(() => {
 const generalInfo = computed<GeneralInfoItem[]>(() => {
   if (!job.value) return []
   
-  const industryMap: Record<number, string> = {
-    1: 'Công nghệ thông tin',
-    2: 'Marketing',
-    3: 'Tài chính - Ngân hàng',
-    4: 'Thiết kế - Đồ họa',
-    5: 'Kinh doanh - Bán hàng',
-    6: 'Nhân sự'
-  }
-  
-  const levelMap: Record<number, string> = {
-    1: 'Nhân viên',
-    2: 'Trưởng nhóm / Senior',
-    3: 'Quản lý / Manager',
-    4: 'Giám đốc / Executive'
-  }
-  
-  const industryName = industryMap[job.value.industryId] || `Ngành ID: ${job.value.industryId}`
-  const levelName = levelMap[job.value.levelId] || `Cấp bậc ID: ${job.value.levelId}`
+  const industryName = job.value.industry?.name || 'Chưa cập nhật'
+  const levelName = job.value.level?.name || 'Chưa cập nhật'
 
   const expStr = job.value.experienceYearsMax 
     ? `${job.value.experienceYearsMin} - ${job.value.experienceYearsMax} năm` 
@@ -218,6 +203,25 @@ const timeline = computed<TimelineEvent[]>(() => {
 
 function onEdit() {
   router.push(`/recruiter/jobs/${jobId}/edit`)
+}
+async function onPendingApproval() {
+  const isConfirmed = await confirm({
+    title: 'Xác nhận gửi duyệt',
+    message: `Bạn có chắc chắn muốn gửi duyệt tin "${job.value?.title}" không?`,
+    confirmText: 'Gửi duyệt',
+    cancelText: 'Hủy bỏ',
+    confirmColor: 'primary',
+    icon: 'send'
+  })
+  if (!isConfirmed) return
+
+  try {
+    await jobStore.pendingApproval(jobId)
+    toast.success('Thành công', 'Đã gửi duyệt tin tuyển dụng')
+    fetchJob()
+  } catch (error: any) {
+    toast.error('Lỗi', jobStore.error || 'Không thể gửi duyệt tin')
+  }
 }
 async function onPause() {
   try {

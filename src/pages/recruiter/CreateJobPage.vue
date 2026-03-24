@@ -172,8 +172,8 @@ function buildPayload(): ReqCreateJobPostingDTO {
       addressDetail: loc.address || undefined,
       isRemote: false // default false for now
     })),
-    skills: skills.value.skills.map((s, idx) => ({
-      skillId: idx + 1, // mapping dummy tags to IDs
+    skills: skills.value.skills.map((s) => ({
+      skillId: s.id,
       isRequired: true,
     })),
     isFeatured: advanced.value.featured,

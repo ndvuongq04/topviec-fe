@@ -15,20 +15,12 @@
         class="grid grid-cols-1 md:grid-cols-12 gap-4"
       >
         <div class="md:col-span-4">
-          <select
-            :value="loc.city"
-            class="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-700 focus:ring-primary/10 outline-none text-sm"
-            @change="updateLocation(i, 'city', ($event.target as HTMLSelectElement).value)"
-          >
-            <option value="">-- Chọn tỉnh/thành phố --</option>
-            <option value="1">Hà Nội</option>
-            <option value="2">TP. Hồ Chí Minh</option>
-            <option value="3">Đà Nẵng</option>
-            <option value="4">Hải Phòng</option>
-            <option value="5">Cần Thơ</option>
-            <option value="6">Bình Dương</option>
-            <option value="7">Đồng Nai</option>
-          </select>
+          <SearchableSelect
+            :model-value="loc.city"
+            :options="locationOptions"
+            placeholder="-- Chọn tỉnh/thành phố --"
+            @update:model-value="updateLocation(i, 'city', $event.toString())"
+          />
         </div>
         <div class="md:col-span-7">
           <input
@@ -65,6 +57,10 @@
 </template>
 
 <script setup lang="ts">
+import { onMounted, computed } from 'vue'
+import { useLocationStore } from '@/stores/location.store'
+import SearchableSelect from '@/components/ui/SearchableSelect.vue'
+
 export interface LocationItem {
   city: string
   address: string
@@ -93,4 +89,16 @@ function removeLocation(index: number) {
   updated.splice(index, 1)
   emit('update:modelValue', updated)
 }
+
+const locationStore = useLocationStore()
+
+const locationOptions = computed(() => {
+  return locationStore.locations.map(l => ({ id: l.id.toString(), name: l.name }))
+})
+
+onMounted(() => {
+  if (locationStore.locations.length === 0) {
+    locationStore.fetchLocations({ size: 100 })
+  }
+})
 </script>

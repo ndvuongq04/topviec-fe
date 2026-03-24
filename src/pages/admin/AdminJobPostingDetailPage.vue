@@ -93,7 +93,7 @@
             <div class="flex flex-wrap gap-x-6 gap-y-2 text-sm text-slate-600 dark:text-slate-400">
               <div class="flex items-center gap-2">
                 <span class="material-symbols-outlined text-lg opacity-70">corporate_fare</span>
-                Công ty ID: {{ job.companyId }}
+                Công ty: <span class="font-semibold">{{ job.company?.name || '---' }}</span>
               </div>
               <div class="flex items-center gap-2">
                 <span class="material-symbols-outlined text-lg opacity-70">work</span>
@@ -118,6 +118,22 @@
         
         <!-- Left Column: JD -->
         <div class="lg:col-span-2 space-y-6">
+          <div v-if="job.skills && job.skills.length" class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-6 md:p-8">
+            <h3 class="text-lg font-black text-slate-900 dark:text-slate-100 mb-4 flex items-center gap-2">
+              <span class="material-symbols-outlined text-[#963131]">psychology</span>
+              Kỹ năng chuyên môn
+            </h3>
+            <div class="flex flex-wrap gap-2">
+              <span
+                v-for="s in job.skills"
+                :key="s.id"
+                class="px-3 py-1.5 bg-slate-50 dark:bg-slate-800/50 text-slate-700 dark:text-slate-300 rounded-lg text-sm font-medium border border-slate-200 dark:border-slate-700"
+              >
+                {{ s.skillName || `ID: ${s.skillId}` }}
+              </span>
+            </div>
+          </div>
+
           <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-6 md:p-8">
             <h3 class="text-lg font-black text-slate-900 dark:text-slate-100 mb-4 flex items-center gap-2">
               <span class="material-symbols-outlined text-[#963131]">description</span>
@@ -157,12 +173,12 @@
             
             <dl class="space-y-4 text-sm">
               <div class="flex justify-between gap-4">
-                <dt class="text-slate-500 font-medium whitespace-nowrap">Ngành nghề (ID)</dt>
-                <dd class="text-slate-900 dark:text-slate-100 font-medium text-right">{{ job.industryId }}</dd>
+                <dt class="text-slate-500 font-medium whitespace-nowrap">Ngành nghề</dt>
+                <dd class="text-slate-900 dark:text-slate-100 font-medium text-right">{{ job.industry?.name || '---' }}</dd>
               </div>
               <div class="flex justify-between gap-4">
-                <dt class="text-slate-500 font-medium whitespace-nowrap">Cấp bậc (ID)</dt>
-                <dd class="text-slate-900 dark:text-slate-100 font-medium text-right">{{ job.levelId }}</dd>
+                <dt class="text-slate-500 font-medium whitespace-nowrap">Cấp bậc</dt>
+                <dd class="text-slate-900 dark:text-slate-100 font-medium text-right">{{ job.level?.name || '---' }}</dd>
               </div>
               <div class="flex justify-between gap-4">
                 <dt class="text-slate-500 font-medium whitespace-nowrap">Số lượng tuyển</dt>

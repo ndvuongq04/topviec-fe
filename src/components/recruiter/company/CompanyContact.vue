@@ -55,19 +55,12 @@
         <!-- Tỉnh/Thành phố -->
         <div class="space-y-2">
           <label class="text-sm font-semibold text-slate-700 dark:text-slate-300">Tỉnh/Thành phố</label>
-          <select
-            :value="provinceId"
-            class="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 focus:ring-2 focus:ring-primary focus:border-transparent outline-none text-sm appearance-none trans-all"
-            :class="{ '!border-red-500 !ring-red-500/20': errors?.provinceId }"
-            @change="emit('update:provinceId', Number(($event.target as HTMLSelectElement).value) || '')"
-          >
-            <option value="">-- Chọn tỉnh/thành phố --</option>
-            <option value="1">Hà Nội</option>
-            <option value="2">Hồ Chí Minh</option>
-            <option value="3">Đà Nẵng</option>
-            <option value="4">Cần Thơ</option>
-            <option value="5">Hải Phòng</option>
-          </select>
+          <SearchableSelect
+            :model-value="provinceId"
+            :options="locationOptions"
+            placeholder="-- Chọn tỉnh/thành phố --"
+            @update:model-value="emit('update:provinceId', Number($event) || '')"
+          />
           <p v-if="errors?.provinceId" class="text-[11px] text-red-500 mt-1">{{ errors.provinceId }}</p>
         </div>
 
@@ -115,7 +108,21 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
+import SearchableSelect from '@/components/ui/SearchableSelect.vue'
+import { useLocationStore } from '@/stores/location.store'
+
+const locationStore = useLocationStore()
+
+const locationOptions = computed(() => {
+  return locationStore.locations.map(l => ({ id: l.id.toString(), name: l.name }))
+})
+
+onMounted(() => {
+  if (locationStore.locations.length === 0) {
+    locationStore.fetchLocations({ size: 100 })
+  }
+})
 
 type SocialKey = 'linkedin' | 'twitter' | 'facebook'
 

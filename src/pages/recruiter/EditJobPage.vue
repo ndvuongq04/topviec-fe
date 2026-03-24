@@ -148,8 +148,8 @@ onMounted(async () => {
 
     basicInfo.value = {
       title: job.title,
-      industry: job.industryId?.toString() || '1',
-      level: job.levelId?.toString() || '1',
+      industry: job.industry?.id?.toString() || '1',
+      level: job.level?.id?.toString() || '1',
       quantity: job.headcount,
       deadline: job.deadline ? job.deadline.split('T')[0] : '', // format YYYY-MM-DD
     }
@@ -161,7 +161,7 @@ onMounted(async () => {
     }
 
     skills.value = {
-      skills: (job.skills || []).map(s => (s as any).skillName || s.skillId.toString()), // Mapping temporary name
+      skills: (job.skills || []).map(s => ({ id: s.skillId, name: (s as any).skillName || `Kỹ năng ${s.skillId}` })),
       expMin: job.experienceYearsMin,
       expMax: job.experienceYearsMax ?? null,
     }
@@ -236,8 +236,8 @@ function buildPayload(): ReqUpdateJobPostingDTO {
       addressDetail: loc.address || undefined,
       isRemote: false
     })),
-    skills: skills.value.skills.map((s, idx) => ({
-      skillId: idx + 1,
+    skills: skills.value.skills.map((s) => ({
+      skillId: s.id,
       isRequired: true,
     })),
     isFeatured: advanced.value.featured,

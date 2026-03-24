@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { employerJobPostingService } from '@/services/jobPosting.service'
+import { employerJobPostingService } from '@/services/employerJobPosting.service'
 import type {
     ReqCreateJobPostingDTO,
     ReqUpdateJobPostingDTO,
@@ -92,6 +92,22 @@ export const useEmployerJobPostingStore = defineStore('employerJobPosting', () =
             _updateInList(updated)
             if (selectedJob.value?.id === updated.id) selectedJob.value = updated
             return updated
+        } catch (err) {
+            setError(err)
+            throw err
+        } finally {
+            loading.value = false
+        }
+    }
+
+    /** Gửi duyệt tin */
+    async function pendingApproval(id: number | string) {
+        loading.value = true
+        error.value = null
+        try {
+            const updated = await employerJobPostingService.pendingApproval(id)
+            _updateInList(updated)
+            if (selectedJob.value?.id === updated.id) selectedJob.value = updated
         } catch (err) {
             setError(err)
             throw err
@@ -201,6 +217,7 @@ export const useEmployerJobPostingStore = defineStore('employerJobPosting', () =
         fetchJobs,
         fetchJobById,
         updateJob,
+        pendingApproval,
         pauseJob,
         resumeJob,
         closeJob,

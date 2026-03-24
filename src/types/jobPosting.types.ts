@@ -71,8 +71,26 @@ export interface ResJobPostLocationDTO {
 export interface ResJobPostSkillDTO {
     id: number
     skillId: number
+    skillName: string
     isRequired: boolean
     proficiencyMin?: number
+}
+
+export interface JobPostCompanyDTO {
+    id: number
+    name: string
+    logoUrl?: string
+    address?: string
+}
+
+export interface JobPostIndustryDTO {
+    id: number
+    name: string
+}
+
+export interface JobPostLevelDTO {
+    id: number
+    name: string
 }
 
 
@@ -85,9 +103,9 @@ export interface ResJobPostingDetail {
     description: string
     requirements: string
     benefits?: string
-    companyId: number
-    industryId: number
-    levelId: number
+    company: JobPostCompanyDTO
+    industry: JobPostIndustryDTO
+    level: JobPostLevelDTO
     experienceYearsMin: number
     experienceYearsMax?: number
     salaryMin?: number
@@ -112,9 +130,9 @@ export interface ResJobPostingSummary {
     id: number
     title: string
     slug: string
-    companyId: number
-    industryId: number
-    levelId: number
+    company: JobPostCompanyDTO
+    industry: JobPostIndustryDTO
+    level: JobPostLevelDTO
     workType: string
     status: JobPostingStatus
     salaryMin?: number

@@ -39,6 +39,7 @@
       <JobPostingTable
         :jobs="jobs"
         @edit="onEdit"
+        @pendingApproval="onPendingApproval"
         @pause="onPause"
         @resume="onResume"
         @close="onClose"
@@ -185,6 +186,26 @@ onMounted(() => {
 // Handlers
 function onEdit(job: ResJobPostingDetail) {
   router.push(`/recruiter/jobs/${job.id}/edit`)
+}
+
+async function onPendingApproval(job: ResJobPostingDetail) {
+  const isConfirmed = await confirm({
+    title: 'Xác nhận gửi duyệt',
+    message: `Bạn có chắc chắn muốn gửi duyệt tin "${job.title}" không? Sau khi gửi, tin sẽ chuyển sang trạng thái "Chờ duyệt".`,
+    confirmText: 'Gửi duyệt',
+    cancelText: 'Hủy bỏ',
+    confirmColor: 'primary',
+    icon: 'send'
+  })
+  if (!isConfirmed) return
+
+  try {
+    await jobStore.pendingApproval(job.id)
+    toast.success('Thành công', 'Đã gửi duyệt tin tuyển dụng')
+    fetchJobs()
+  } catch (error: any) {
+    toast.error('Lỗi', jobStore.error || 'Không thể gửi duyệt tin')
+  }
 }
 
 async function onPause(job: ResJobPostingDetail) {

@@ -40,6 +40,15 @@
       </button>
 
       <button
+        v-if="status?.toLowerCase() === 'draft'"
+        class="flex items-center gap-2 px-4 py-2 bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 rounded-lg font-semibold hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-all cursor-pointer"
+        @click="$emit('pendingApproval')"
+      >
+        <span class="material-symbols-outlined text-lg">send</span>
+        Gửi duyệt
+      </button>
+
+      <button
         v-if="['active', 'published'].includes(status?.toLowerCase())"
         class="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-orange-600 dark:text-orange-500 rounded-lg font-semibold hover:bg-orange-50 dark:hover:bg-slate-700 transition-all cursor-pointer"
         @click="$emit('pause')"
@@ -82,6 +91,7 @@ const props = defineProps<{
 
 defineEmits<{
   edit: []
+  pendingApproval: []
   pause: []
   resume: []
   close: []

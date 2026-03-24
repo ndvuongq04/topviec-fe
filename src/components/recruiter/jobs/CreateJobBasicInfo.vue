@@ -25,35 +25,23 @@
       <!-- Ngành nghề -->
       <div>
         <label class="block text-sm font-semibold text-slate-900 dark:text-slate-100 mb-2">Ngành nghề</label>
-        <select
-          :value="modelValue.industry"
-          class="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-700 focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all outline-none"
-          @change="emit('update:modelValue', { ...modelValue, industry: ($event.target as HTMLSelectElement).value })"
-        >
-          <option value="">-- Chọn ngành nghề --</option>
-          <option value="1">Công nghệ thông tin</option>
-          <option value="2">Marketing</option>
-          <option value="3">Tài chính - Ngân hàng</option>
-          <option value="4">Thiết kế - Đồ họa</option>
-          <option value="5">Kinh doanh - Bán hàng</option>
-          <option value="6">Nhân sự</option>
-        </select>
+        <SearchableSelect
+          :model-value="modelValue.industry"
+          :options="industryOptions"
+          placeholder="-- Chọn ngành nghề --"
+          @update:model-value="emit('update:modelValue', { ...modelValue, industry: $event.toString() })"
+        />
       </div>
 
       <!-- Cấp bậc -->
       <div>
         <label class="block text-sm font-semibold text-slate-900 dark:text-slate-100 mb-2">Cấp bậc</label>
-        <select
-          :value="modelValue.level"
-          class="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-700 focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all outline-none"
-          @change="emit('update:modelValue', { ...modelValue, level: ($event.target as HTMLSelectElement).value })"
-        >
-          <option value="">-- Chọn cấp bậc --</option>
-          <option value="1">Nhân viên</option>
-          <option value="2">Trưởng nhóm / Senior</option>
-          <option value="3">Quản lý / Manager</option>
-          <option value="4">Giám đốc / Executive</option>
-        </select>
+        <SearchableSelect
+          :model-value="modelValue.level"
+          :options="levelOptions"
+          placeholder="-- Chọn cấp bậc --"
+          @update:model-value="emit('update:modelValue', { ...modelValue, level: $event.toString() })"
+        />
       </div>
 
       <!-- Số lượng tuyển -->
@@ -91,6 +79,11 @@
 </template>
 
 <script setup lang="ts">
+import { onMounted, computed } from 'vue'
+import { useLevelStore } from '@/stores/level.store'
+import { useIndustryStore } from '@/stores/industry.store'
+import SearchableSelect from '@/components/ui/SearchableSelect.vue'
+
 export interface BasicInfoData {
   title: string
   industry: string
@@ -106,4 +99,26 @@ defineProps<{
 const emit = defineEmits<{
   'update:modelValue': [value: BasicInfoData]
 }>()
+
+
+
+const levelStore = useLevelStore()
+const industryStore = useIndustryStore()
+
+const industryOptions = computed(() => {
+  return industryStore.industries.map(i => ({ id: i.id.toString(), name: i.name }))
+})
+
+const levelOptions = computed(() => {
+  return levelStore.levels.map(l => ({ id: l.id.toString(), name: l.name }))
+})
+
+onMounted(() => {
+  if (levelStore.levels.length === 0) {
+    levelStore.fetchLevels({ size: 100 })
+  }
+  if (industryStore.industries.length === 0) {
+    industryStore.fetchIndustries({ size: 100 })
+  }
+})
 </script>

@@ -66,6 +66,15 @@
             <div class="flex items-center justify-end gap-2">
               
               <button
+                v-if="job.status?.toLowerCase() === 'draft'"
+                class="p-2 hover:bg-amber-100 dark:hover:bg-amber-900/30 rounded-lg text-amber-600 transition-colors"
+                title="Gửi duyệt"
+                @click="$emit('pendingApproval', job)"
+              >
+                <span class="material-symbols-outlined text-xl">send</span>
+              </button>
+
+              <button
                 v-if="['expired', 'closed'].includes(job.status?.toLowerCase())"
                 class="p-2 hover:bg-primary/10 rounded-lg text-primary transition-colors"
                 title="Gia hạn/Đăng lại"
@@ -135,6 +144,7 @@ defineProps<{
 
 defineEmits<{
   edit: [job: ResJobPostingDetail]
+  pendingApproval: [job: ResJobPostingDetail]
   pause: [job: ResJobPostingDetail]
   resume: [job: ResJobPostingDetail]
   close: [job: ResJobPostingDetail]
