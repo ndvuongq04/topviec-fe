@@ -79,6 +79,7 @@ export interface ResJobPostSkillDTO {
 export interface JobPostCompanyDTO {
     id: number
     name: string
+    slug: string
     logoUrl?: string
     address?: string
 }

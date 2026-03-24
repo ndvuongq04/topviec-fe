@@ -1,15 +1,32 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref, onMounted } from "vue";
+import { useLevelStore } from "@/stores/level.store";
 
+const levelStore = useLevelStore();
 const jobTypes = ref({ fullTime: false, freelance: false, remote: false });
-const experience = ref({ fresher: false, junior: true, senior: false });
+const experience = ref<Record<number, boolean>>({});
 const salaryRange = ref(50);
 
 function clearAll() {
   jobTypes.value = { fullTime: false, freelance: false, remote: false };
-  experience.value = { fresher: false, junior: false, senior: false };
+  // Reset experience selection
+  Object.keys(experience.value).forEach((key) => {
+    experience.value[Number(key)] = false;
+  });
   salaryRange.value = 50;
 }
+
+onMounted(async () => {
+  if (levelStore.levels.length === 0) {
+    await levelStore.fetchLevels();
+  }
+  // Khởi tạo state checkbox cho từng level
+  levelStore.levels.forEach((level) => {
+    if (experience.value[level.id] === undefined) {
+      experience.value[level.id] = false;
+    }
+  });
+});
 </script>
 
 <template>
@@ -104,39 +121,33 @@ function clearAll() {
       >
         Kinh nghiệm
       </h4>
-      <label class="flex items-center gap-2 cursor-pointer group">
-        <input
-          v-model="experience.fresher"
-          type="checkbox"
-          class="rounded border-slate-300 accent-primary h-4 w-4 cursor-pointer"
-        />
-        <span
-          class="text-sm text-text-main dark:text-gray-300 group-hover:text-primary transition-colors"
-          >Fresher</span
+
+      <div v-if="levelStore.loading" class="flex flex-col gap-2">
+        <div
+          v-for="i in 3"
+          :key="i"
+          class="h-4 w-24 bg-slate-100 dark:bg-slate-800 animate-pulse rounded"
+        ></div>
+      </div>
+
+      <template v-else>
+        <label
+          v-for="level in levelStore.levels"
+          :key="level.id"
+          class="flex items-center gap-2 cursor-pointer group"
         >
-      </label>
-      <label class="flex items-center gap-2 cursor-pointer group">
-        <input
-          v-model="experience.junior"
-          type="checkbox"
-          class="rounded border-slate-300 accent-primary h-4 w-4 cursor-pointer"
-        />
-        <span
-          class="text-sm text-text-main dark:text-gray-300 group-hover:text-primary transition-colors"
-          >Junior</span
-        >
-      </label>
-      <label class="flex items-center gap-2 cursor-pointer group">
-        <input
-          v-model="experience.senior"
-          type="checkbox"
-          class="rounded border-slate-300 accent-primary h-4 w-4 cursor-pointer"
-        />
-        <span
-          class="text-sm text-text-main dark:text-gray-300 group-hover:text-primary transition-colors"
-          >Senior</span
-        >
-      </label>
+          <input
+            v-model="experience[level.id]"
+            type="checkbox"
+            class="rounded border-slate-300 accent-primary h-4 w-4 cursor-pointer"
+          />
+          <span
+            class="text-sm text-text-main dark:text-gray-300 group-hover:text-primary transition-colors"
+          >
+            {{ level.name }}
+          </span>
+        </label>
+      </template>
     </div>
   </div>
 </template>

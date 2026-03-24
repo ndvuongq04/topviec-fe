@@ -1,96 +1,48 @@
 <script setup lang="ts">
 // JobList: Grid hiển thị danh sách JobCard
 // Bao gồm: tiêu đề section + link "View All" + grid responsive
+import { onMounted, computed } from "vue";
 import JobCard from "@/components/candidate/job/JobCard.vue";
+import { usePublicJobPostingStore } from "@/stores/publicJobPosting.store";
 
-// Dữ liệu tạm (sau này thay bằng API call từ store/service)
-const jobs = [
-  {
-    id: 1,
-    title: "Senior Product Designer",
-    company: "Shopee Vietnam",
-    logoUrl:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuCbv5UoTkk7bNaOkqwb82yNLvv9LnYnyhsQa86lCBQr2lPoUS1Gx3_UnfiA0F-PfarFev8ZDr6M4OyKaojjSi7LMwoz53Ha5uXg1g2RaVikGHTjrKnqmSUe6_POc9CIg9VSqt1-t49OmH1BRxI8Da3jinrKda-7wcA2hAzyXwTK4T-Urtd7hdfjDM1qLKqWjovzEj_w0ijuYiD9SIAze_jLzwDI-l8SQjoblKq0NSrcs2k7IdPNV5SZxzl2CJ4DfwDmFkOljapgcYwd",
-    logoBg: "bg-orange-100",
-    logoBorder: "border-orange-200",
-    tags: ["Full-time", "Senior Level"],
-    salaryMin: "$2,000",
-    salaryMax: "$3,500",
-    location: "Ho Chi Minh City",
-    postedAt: "2 days ago",
-  },
-  {
-    id: 2,
-    title: "Frontend Developer (React)",
-    company: "Grab",
-    logoUrl:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuCwRc6CcpnKRHBzSRJ2NWpp4nCTzJk1x6VTPPkJ2Oz7CDmtL42KYfn7T8F9W3ozOkDLMvaGEcwWzSY8L59olG1XQnHwBD3fI44DzPnZPoOV35fUj5yr-UAaqU7eSzHtLVZvU-kK44BYiPwMmPCgYK4o7lwzBysO55Le5QNIqXWVfhI34e2oy6t-sACKfm0EMXV-aziiElptOlHtzu_85PUTmKpQDzzJjgaJ7D7FqJkgUSoGgw8hdZH0FrYKaAI_aMdp5iMEu8buoI8o",
-    logoBg: "bg-blue-100",
-    logoBorder: "border-blue-200",
-    tags: ["Remote", "Mid Level"],
-    salaryMin: "$1,500",
-    salaryMax: "$2,500",
-    location: "Remote / HCMC",
-    postedAt: "5 hours ago",
-  },
-  {
-    id: 3,
-    title: "Marketing Manager",
-    company: "Spotify",
-    logoUrl:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuCZq6Sl3W6czrZ8TzdkGmaFdrKtF9837jz9u0oEqnbZ5tV76kazkKsUr4JfGrljS1ks2pACsrCwmH8XSvW7L9PTmgITsQJjE2WVY0ySNQLAnlSBDa-hQ2-d6rP6vt8LzCxKYIhf3IgNCVcXxgU5OvtbOo-wrjNREUu5hHQlTYpoipcaKLFdL19w4gNgMDXsqimzo89ZiOhDl6a5yePDqtGs004rdLyw4TuUEPKSEyHHL-BM_Wr1TSaTL_8timVOHa4KUCJ7sPpu_rQg",
-    logoBg: "bg-green-100",
-    logoBorder: "border-green-200",
-    tags: ["Contract", "Manager"],
-    salaryMin: "$2,500",
-    salaryMax: "$4,000",
-    location: "Hanoi",
-    postedAt: "1 day ago",
-  },
-  {
-    id: 4,
-    title: "Data Analyst",
-    company: "MoMo",
-    logoUrl:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuANq6VgrXnFHLLw_WO2dI4iNq-x-oSXlxfg_7D0KZv5I-ztafWhYns3dEqajpnQVN4Vv8v95ZJHTpvYTqnEMvMl7lAl3ogwB_SPbPTxtl3uDMY2HJ1H6_LF-HnrsmDksV9BW7bWIPUp-zYHzWjtwdcOp2nU_uMd-CpL3M8mi8bBHRnRLyZPt0Wnq8888Y2zP3z_yk8VZt_Ae-QJTpoCscEHheSD2-dzPaUUQARbvTfUMYgukMMKW2zS7MrasKxzm9FwMmk0-UAZAzt0",
-    logoBg: "bg-purple-100",
-    logoBorder: "border-purple-200",
-    tags: ["Full-time", "Junior"],
-    salaryMin: "$800",
-    salaryMax: "$1,500",
-    location: "Ho Chi Minh City",
-    postedAt: "",
-    isHot: true,
-  },
-  {
-    id: 5,
-    title: "Content Strategist",
-    company: "Netflix",
-    logoUrl:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuCkKTcEXRhr8naEYK_Z328Tw3vsqoAHfrmLJflFvDI4XT_XMa0K-eZkAq07nFhAwiFFNXPYhJZEeufy9ocuGgUxKLksL3YwXP3PWZLO88KagbWc_FHoEMkMOa3lJenBDAUYf2KcQClr5jo9UtCTypWmqaKhW7M-c31Nxity3EcJk5hggaBlfyMjTNaXn2rAdHiFuzoxpbKSCBuOORUWRKmKP73RgAxyNlyN7JXz2PCpCMzeLGtzsW340Vy4VLItXgm_wYRl7vUGIoYl",
-    logoBg: "bg-red-100",
-    logoBorder: "border-red-200",
-    tags: ["Remote", "Mid Level"],
-    salaryMin: "$1,800",
-    salaryMax: "$3,000",
-    location: "Remote",
-    postedAt: "3 days ago",
-  },
-  {
-    id: 6,
-    title: "Backend Engineer",
-    company: "Stripe",
-    logoUrl:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuBpWtirWjFq-VRC9OLXuMYmTa4uBFMaqmXt0lZ3U-VGGV4IuQq-8Ag5hppZMd52OHNJ4zgzFWxVt7jLRnG4kLvvfvS7QE7sIC9rXTUp4jZ6sfO1P4CXu_pJjEVmGojIFuqwCu2o4r0NHXmDcAowZu8ZnZCXMOjlBA4hsee_6gQ39Rzv5P_qo8PaKc4pv54cLooCvuVHKHKoXLvwdTvFnciFCHNj57Jk6E1ZpEzhrSH0zqSqOeH4Uku9JooqAAioYWenhp8-Vn2HJS0Q",
-    logoBg: "bg-indigo-100",
-    logoBorder: "border-indigo-200",
-    tags: ["Full-time", "Expert"],
-    salaryMin: "$4,000",
-    salaryMax: "$6,000",
-    location: "Singapore / Remote",
-    postedAt: "Just now",
-  },
-];
+const jobStore = usePublicJobPostingStore();
+
+// Map dữ liệu từ API sang JobCardProps
+const mappedJobs = computed(() => {
+  return jobStore.jobs.map((job) => ({
+    id: job.id,
+    title: job.title,
+    company: job.company.name,
+    logoUrl: job.company.logoUrl || "https://via.placeholder.com/150",
+    logoBg: "bg-blue-50", // Mặc định hoặc random theo ID
+    logoBorder: "border-blue-100",
+    tags: [job.workType, job.level.name],
+    salaryMin: job.salaryNegotiable
+      ? "Thỏa thuận"
+      : `$${job.salaryMin?.toLocaleString()}`,
+    salaryMax: job.salaryNegotiable ? "" : `$${job.salaryMax?.toLocaleString()}`,
+    location: "Vietnam", // Summary chưa có location, tạm để fix
+    postedAt: formatDate(job.publishedAt || job.createdAt),
+    isHot: job.isFeatured || job.isUrgent,
+  }));
+});
+
+function formatDate(dateStr: string) {
+  if (!dateStr) return "";
+  const date = new Date(dateStr);
+  const now = new Date();
+  const diffInMs = now.getTime() - date.getTime();
+  const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
+
+  if (diffInDays === 0) return "Just now";
+  if (diffInDays === 1) return "Yesterday";
+  return `${diffInDays} days ago`;
+}
+
+onMounted(async () => {
+  // Lấy danh sách tin mới nhất cho phần "Gợi ý cho bạn"
+  await jobStore.fetchJobs({ size: 6 });
+});
 
 function handleBookmark(id: number) {
   // TODO: gọi store action để lưu job
@@ -115,9 +67,27 @@ function handleBookmark(id: number) {
     </div>
 
     <!-- Grid job cards: 1 cột mobile, 2 cột tablet, 3 cột desktop -->
-    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+    <div
+      v-if="jobStore.loading"
+      class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4"
+    >
+      <div
+        v-for="i in 6"
+        :key="i"
+        class="h-48 bg-slate-100 dark:bg-slate-800 rounded-3xl animate-pulse"
+      ></div>
+    </div>
+
+    <div
+      v-else-if="mappedJobs.length === 0"
+      class="py-12 text-center text-text-muted"
+    >
+      Chưa có tin tuyển dụng nào phù hợp.
+    </div>
+
+    <div v-else class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
       <JobCard
-        v-for="job in jobs"
+        v-for="job in mappedJobs"
         :key="job.id"
         v-bind="job"
         @bookmark="handleBookmark"
