@@ -1,46 +1,42 @@
 <script setup lang="ts">
 // CompanyList: Danh sách công ty scroll ngang
-import { ref } from "vue";
+import { onMounted, watch } from "vue";
 import CompanyCard from "@/components/candidate/company/CompanyCard.vue";
+import { useCandidateCompanyStore } from "@/stores/candidateCompany.store";
+import { useCandidateCompanyFollowStore } from "@/stores/candidateCompanyFollow.store";
+import { useToast } from "@/composables/useToast";
 
-const companies = ref([
-  {
-    id: 1,
-    name: "VNG Corporation",
-    logoUrl:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuB0bnx4_ReIbmoOq3HYCqBm34cYvS9n-72MKOPP9z4bRF8ZfReXWnMWJsL05TsgWnM8EOiDzZie501oLzAlmwPM-s2Jw2bstu1FhlPRUSiX2RW0IzDow8N3HUzWzSFoAvQuOSVgF1SxxJsmS1bYfDJ0UptTGnESkf6s-aSmzdGQHzY2bBi_UqSrW3ZgRj8QKpBSMzhsOjAR9coohQKTMFJQAboAAbClmwQrXKZA4_rVKV1Din8KkamiZX9_Odo767uaYv3EMy-Xk-XQ",
-    openJobs: 12,
-    isFollowing: false,
-  },
-  {
-    id: 2,
-    name: "FPT Software",
-    logoUrl:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuDoPcAmUjwVs4kWAMrbjkEEDBLIqdlvEmyDaSMZwPgOPgWi52mRp44PG9HX9IuI1VaAazp2kvL943l59EkYRLvKbdeqo789Yprizyv0GaKe1fvm9pGKn7RPDKMILUMKR-k5hZeNU4LmPlrYi3GfLGbs6kl-l-yEuhhrr-IkJEwoxFkrmrbznlaYTMgJNeeKIsGAYSa9VWHKWoCoCMEyjbngLGHyTF9lnRQoqY3zuEquCI9KHsZ90tkHde9LbIZI___sVu0_TIDKbSdx",
-    openJobs: 45,
-    isFollowing: false,
-  },
-  {
-    id: 3,
-    name: "Tiki",
-    logoUrl:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuBc-vGtR0aV0TWvyrsQTwdrY_f6-Umq6G7Sbom44ceEuTbaif5RTUlCx6ndPLM7yPqhh62m2v0X2dhC8PNYmkAp6fLRx0JRf53eZM437WH4v0MtJhbZCeH-YxqXhyepIqt7QHdtCG-dDbRSWpcbofCanSPS57Bl5Ii7hzA6XCUMQTvhiRXxcPOMNg3nhpbP8Lo-dMoecoPMvqgyX38VSFgh7ykmTxpzHL7aAHYrrrtZkDnN-q7dgUTIXpZJx52d1WruzqacHCev45rX",
-    openJobs: 8,
-    isFollowing: false,
-  },
-  {
-    id: 4,
-    name: "Mobile World",
-    logoUrl:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuCXe_2mcJZTPbdTlokD7X__xmIFY8DtaIwy1nJLbp3doqBc6o-jpOEN1BnukWAiz1NfxxjzZiqdel6PsS_II2NXnGw4sxTq1p7uOQ_UiA0Ztp54KE4aLX8XhHDG4Aab_fL9hIWIX0quESjlhUYemu3RfyebyVH1cpjF4Tuuh8lqB5634Lrb_6cDisI00b-O5ltw69t-gKL2L1L1RkLfvA6lXNARtietpioGtHZTQ_SIeR_nR-Z8XcqnSIVEmYq6UiqPmm8ZiazvfiIS",
-    openJobs: 21,
-    isFollowing: false,
-  },
-]);
+const companyStore = useCandidateCompanyStore();
+const followStore = useCandidateCompanyFollowStore();
+const toast = useToast();
 
-function handleFollow(id: number) {
-  const company = companies.value.find((c) => c.id === id);
-  if (company) company.isFollowing = !company.isFollowing;
+onMounted(() => {
+  companyStore.fetchPublicCompanies({ size: 10 });
+});
+
+watch(
+  () => companyStore.companies,
+  (newCompanies) => {
+    newCompanies.forEach((company) => {
+      followStore.checkFollowStatus(company.id);
+    });
+  },
+  { immediate: true }
+);
+
+async function handleFollow(id: number) {
+  const isFollowing = followStore.followMap[id];
+  try {
+    if (isFollowing) {
+      await followStore.unfollowCompany(id);
+      toast.success("Đã bỏ theo dõi công ty");
+    } else {
+      await followStore.followCompany(id);
+      toast.success("Đã theo dõi công ty");
+    }
+  } catch (err) {
+    toast.error(followStore.error || "Thao tác thất bại");
+  }
 }
 </script>
 
@@ -52,13 +48,42 @@ function handleFollow(id: number) {
     </h2>
 
     <!-- Scroll ngang -->
-    <div class="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
+    <div
+      v-if="companyStore.loading && companyStore.companies.length === 0"
+      class="flex gap-4 overflow-x-auto pb-4 scrollbar-hide"
+    >
+      <div
+        v-for="i in 4"
+        :key="i"
+        class="min-w-[200px] h-48 bg-slate-100 dark:bg-slate-800 animate-pulse rounded-3xl"
+      ></div>
+    </div>
+
+    <div
+      v-else-if="companyStore.error"
+      class="p-4 rounded-xl bg-red-50 text-red-500 text-sm"
+    >
+      {{ companyStore.error }}
+    </div>
+
+    <div v-else class="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
       <CompanyCard
-        v-for="company in companies"
+        v-for="company in companyStore.companies"
         :key="company.id"
-        v-bind="company"
+        :id="company.id"
+        :slug="company.slug"
+        :name="company.name"
+        :logo-url="company.logoUrl || ''"
+        :open-jobs="0"
+        :is-following="followStore.followMap[company.id] || false"
         @follow="handleFollow"
       />
+      <div
+        v-if="companyStore.companies.length === 0"
+        class="text-slate-400 text-sm py-8"
+      >
+        Chưa có công ty nào nổi bật.
+      </div>
     </div>
   </div>
 </template>

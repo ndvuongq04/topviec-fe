@@ -38,14 +38,15 @@ async function handleLogout() {
     class="fixed top-0 left-0 right-0 z-50 flex items-center justify-between whitespace-nowrap border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-surface-dark px-10 py-3 shadow-sm"
   >
     <!-- Logo -->
-    <div class="flex items-center gap-2 text-primary">
+    <router-link to="/" class="flex items-center gap-2 text-primary">
       <span class="material-symbols-outlined text-3xl">work_history</span>
       <h2
         class="text-text-main dark:text-white text-xl font-bold leading-tight tracking-tight"
       >
         TopViec
       </h2>
-    </div>
+    </router-link>
+
 
     <!-- Right side: nav + actions -->
     <div class="flex flex-1 justify-end gap-8 items-center">
@@ -56,18 +57,6 @@ async function handleLogout() {
           class="text-text-main dark:text-gray-200 text-sm font-medium hover:text-primary transition-colors"
         >
           Tìm việc
-        </router-link>
-        <router-link
-          to="/companies"
-          class="text-text-muted dark:text-gray-400 text-sm font-medium hover:text-primary transition-colors"
-        >
-          Công ty
-        </router-link>
-        <router-link
-          to="/my-cvs"
-          class="text-text-muted dark:text-gray-400 text-sm font-medium hover:text-primary transition-colors"
-        >
-          CV của tôi
         </router-link>
       </nav>
 
@@ -83,15 +72,15 @@ async function handleLogout() {
   </router-link>
         <!-- Post CV button -->
         <button
-          class="flex items-center justify-center rounded-3xl h-10 px-5 bg-primary hover:bg-blue-600 text-white text-sm font-bold leading-normal tracking-wide transition-colors shadow-lg shadow-blue-500/30"
+          class="flex items-center justify-center rounded-3xl h-10 px-5 bg-primary hover:bg-blue-600 text-white text-sm font-bold leading-normal tracking-wide transition-colors shadow-lg shadow-blue-500/30 cursor-pointer"
           @click="router.push('/my-cvs')"
         >
-          <span class="truncate">Đăng CV</span>
+          <span class="truncate">CV online</span>
         </button>
 
         <!-- Notification button -->
         <button
-          class="flex items-center justify-center rounded-full h-10 w-10 bg-slate-100 dark:bg-slate-800 text-text-main dark:text-white hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+          class="flex items-center justify-center rounded-full h-10 w-10 bg-slate-100 dark:bg-slate-800 text-text-main dark:text-white hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors cursor-pointer"
         >
           <span class="material-symbols-outlined text-xl">notifications</span>
         </button>

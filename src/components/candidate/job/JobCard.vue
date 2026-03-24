@@ -2,6 +2,7 @@
 // JobCard: Card hiển thị 1 job
 // Tái sử dụng ở nhiều trang: home, search, saved, applied
 // Props: job object chứa đầy đủ thông tin
+import { RouterLink } from "vue-router";
 
 interface JobCardProps {
   id: number;
@@ -27,14 +28,15 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <div
-    class="group bg-white dark:bg-surface-dark p-5 rounded-3xl border border-slate-200 dark:border-slate-800 hover:border-primary/50 hover:shadow-lg hover:shadow-blue-500/5 transition-all duration-300 relative"
+  <RouterLink
+    :to="`/jobs/${props.id}`"
+    class="group bg-white dark:bg-surface-dark p-5 rounded-3xl border border-slate-200 dark:border-slate-800 hover:border-primary/50 hover:shadow-lg hover:shadow-blue-500/5 transition-all duration-300 relative block"
   >
     <!-- Bookmark button -->
     <div class="absolute top-4 right-4">
       <button
         class="text-slate-300 hover:text-primary transition-colors cursor-pointer"
-        @click="emit('bookmark', props.id)"
+        @click.prevent.stop="emit('bookmark', props.id)"
       >
         <span class="material-symbols-outlined">bookmark</span>
       </button>
@@ -98,5 +100,5 @@ const emit = defineEmits<{
       <span class="material-symbols-outlined text-sm">location_on</span>
       {{ props.location }}
     </div>
-  </div>
+  </RouterLink>
 </template>

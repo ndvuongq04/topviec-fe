@@ -10,17 +10,48 @@
           class="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary text-sm outline-none"
           placeholder="Tìm kiếm theo tên hoặc email..."
           type="text"
-          @input="$emit('search', searchInput)"
+          @keyup.enter="$emit('search', searchInput)"
         />
-      </div>
-      <div class="flex items-center gap-2">
-        <button class="flex items-center gap-2 px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
-          <span class="material-symbols-outlined text-sm">filter_list</span>
-          Lọc
+        <button 
+          class="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-primary transition-colors"
+          @click="$emit('search', searchInput)"
+        >
+          <span class="material-symbols-outlined text-xl">subdirectory_arrow_left</span>
         </button>
-        <button class="flex items-center gap-2 px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
-          <span class="material-symbols-outlined text-sm">download</span>
-          Xuất CSV
+      </div>
+      <div class="flex flex-wrap items-center gap-2">
+        <!-- Filter Role -->
+        <select
+          v-model="filterRole"
+          class="pl-3 pr-8 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm outline-none focus:ring-2 focus:ring-primary appearance-none cursor-pointer"
+          @change="handleFilterChange"
+        >
+          <option value="">Tất cả vai trò</option>
+          <option :value="MEMBER_ROLE.OWNER">Chủ sở hữu</option>
+          <option :value="MEMBER_ROLE.MANAGER">Quản lý</option>
+          <option :value="MEMBER_ROLE.RECRUITER">Nhà tuyển dụng</option>
+          <option :value="MEMBER_ROLE.VIEWER">Người xem</option>
+        </select>
+
+        <!-- Filter Status -->
+        <select
+          v-model="filterStatus"
+          class="pl-3 pr-8 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm outline-none focus:ring-2 focus:ring-primary appearance-none cursor-pointer"
+          @change="handleFilterChange"
+        >
+          <option value="">Tất cả trạng thái</option>
+          <option :value="MEMBER_STATUS.ACTIVE">Đang hoạt động</option>
+          <option :value="MEMBER_STATUS.PENDING">Chờ xác nhận</option>
+          <option :value="MEMBER_STATUS.DEACTIVATED">Đã khóa</option>
+        </select>
+
+        <button 
+          v-if="filterRole || filterStatus || searchInput"
+          class="p-2 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950 rounded-lg transition-colors"
+          title="Xóa lọc"
+          @click="clearFilters"
+        >
+          <span class="material-symbols-outlined text-sm">filter_alt_off</span>
         </button>
       </div>
     </div>
@@ -77,7 +108,7 @@
                   ]"
                 ></span>
                 <span class="text-xs font-medium">
-                  {{ member.status === 'active' ? 'Đang hoạt động' : 'Chờ xác nhận' }}
+                  {{ member.status === 'active' ? 'Đang hoạt động' : member.status === 'pending' ? 'Chờ xác nhận' : 'Đã khóa' }}
                 </span>
               </div>
             </td>
@@ -160,14 +191,16 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { MEMBER_ROLE, MEMBER_STATUS } from '@/constants/companyMember.constants'
 
 export interface TeamMember {
   id: number
   name: string
   email: string
-  role: 'admin' | 'recruiter' | 'viewer'
-  status: 'active' | 'pending'
+  role: 'owner' | 'manager' | 'recruiter' | 'viewer'
+  status: 'active' | 'pending' | 'deactivated'
   joinedAt: string
+  actions?: Record<string, boolean>
   avatarUrl?: string
 }
 
@@ -178,24 +211,45 @@ const props = defineProps<{
   pageSize: number
 }>()
 
-defineEmits<{
+const emit = defineEmits<{
   edit: [member: TeamMember]
   delete: [member: TeamMember]
   search: [query: string]
+  filter: [filters: { role: string, status: string }]
   'page-change': [page: number]
 }>()
 
 const searchInput = ref('')
+const filterRole = ref('')
+const filterStatus = ref('')
+
+function handleFilterChange() {
+  emit('filter', { role: filterRole.value, status: filterStatus.value })
+}
+
+function clearFilters() {
+  searchInput.value = ''
+  filterRole.value = ''
+  filterStatus.value = ''
+  emit('search', '')
+  emit('filter', { role: '', status: '' })
+}
 
 // ─── Role helpers ─────────────────────────────────────────────────────────────
 function roleLabel(role: TeamMember['role']) {
-  return { admin: 'Quản trị viên', recruiter: 'Nhà tuyển dụng', viewer: 'Người xem' }[role]
+  return { 
+    owner: 'Chủ sở hữu', 
+    manager: 'Quản lý', 
+    recruiter: 'Nhà tuyển dụng', 
+    viewer: 'Người xem' 
+  }[role]
 }
 
 function roleStyle(role: TeamMember['role']) {
   return {
-    admin:     'bg-primary/10 text-primary',
-    recruiter: 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300',
+    owner:     'bg-primary/10 text-primary',
+    manager:   'bg-blue-100 dark:bg-blue-900/30 text-blue-600',
+    recruiter: 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600',
     viewer:    'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300',
   }[role]
 }

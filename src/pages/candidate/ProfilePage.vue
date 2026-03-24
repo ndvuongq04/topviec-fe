@@ -58,6 +58,7 @@
           <PersonalInfoTab v-if="activeTab === 'personal'" />
           <CvsTab v-else-if="activeTab === 'cvs'" />
           <JobAlertsTab v-else-if="activeTab === 'alerts'" />
+          <FollowedCompaniesTab v-else-if="activeTab === 'followed'" />
           <PrivacySettingsTab v-else-if="activeTab === 'privacy'" />
         </div>
       </div>
@@ -72,19 +73,23 @@ import ProfileCard from '@/components/candidate/profile/ProfileCard.vue'
 import PersonalInfoTab from '@/components/candidate/profile/PersonalInfoTab.vue'
 import CvsTab from '@/components/candidate/profile/CvsTab.vue'
 import JobAlertsTab from '@/components/candidate/profile/JobAlertsTab.vue'
+import FollowedCompaniesTab from '@/components/candidate/profile/FollowedCompaniesTab.vue'
 import PrivacySettingsTab from '@/components/candidate/profile/PrivacySettingsTab.vue'
 import { useCandidateProfileStore } from '@/stores/candidateProfile.store'
 import { useCvsStore } from '@/stores/cvs.store'
+import { useCandidateCompanyFollowStore } from '@/stores/candidateCompanyFollow.store'
 
 const store = useCandidateProfileStore()
 const cvsStore = useCvsStore()
+const followStore = useCandidateCompanyFollowStore()
 
-const activeTab = ref<'personal' | 'cvs' | 'alerts' | 'privacy'>('personal')
+const activeTab = ref<'personal' | 'cvs' | 'alerts' | 'followed' | 'privacy'>('personal')
 
 const tabs = [
   { key: 'personal', label: 'Thông tin cá nhân' },
   { key: 'cvs',      label: 'CV của tôi' },
   { key: 'alerts',   label: 'Thông báo việc làm' },
+  { key: 'followed', label: 'Công ty theo dõi' },
   { key: 'privacy',  label: 'Cài đặt quyền riêng tư' },
 ] as const
 
