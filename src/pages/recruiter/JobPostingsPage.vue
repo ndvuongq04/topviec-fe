@@ -45,6 +45,7 @@
         @close="onClose"
         @extend="onExtend"
         @view="onView"
+        @candidates="onCandidates"
       />
       <JobPostingPagination
         :current-page="currentPage"
@@ -282,5 +283,9 @@ async function submitExtendJob() {
 
 function onView(job: ResJobPostingDetail) {
   router.push(`/recruiter/jobs/${job.id}`)
+}
+
+function onCandidates(job: ResJobPostingDetail) {
+  router.push({ name: 'recruiter-job-applications', params: { id: job.id } })
 }
 </script>

@@ -41,6 +41,16 @@ export const recruiterRoutes: RouteRecordRaw[] = [
         name: 'recruiter-jobs-edit',
         component: () => import('@/pages/recruiter/EditJobPage.vue'),
       },
+      {
+        path: 'jobs/:id/applications',
+        name: 'recruiter-job-applications',
+        component: () => import('@/pages/recruiter/JobApplicationsPage.vue'),
+      },
+      {
+        path: 'jobs/:id/applications/:applicationId',
+        name: 'recruiter-application-detail',
+        component: () => import('@/pages/recruiter/CandidateApplicationDetailPage.vue'),
+      },
 
     ],
   },

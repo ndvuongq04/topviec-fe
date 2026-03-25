@@ -120,7 +120,15 @@
               </button>
 
               <button
-                class="p-2 hover:bg-primary/10 rounded-lg text-primary transition-colors"
+                class="p-2 hover:bg-indigo-100 dark:hover:bg-indigo-900/30 rounded-lg text-indigo-600 transition-colors cursor-pointer"
+                title="Danh sách ứng viên"
+                @click="$emit('candidates', job)"
+              >
+                <span class="material-symbols-outlined text-xl">group</span>
+              </button>
+
+              <button
+                class="p-2 hover:bg-primary/10 rounded-lg text-primary transition-colors cursor-pointer"
                 title="Xem chi tiết"
                 @click="$emit('view', job)"
               >
@@ -150,6 +158,7 @@ defineEmits<{
   close: [job: ResJobPostingDetail]
   extend: [job: ResJobPostingDetail]
   view: [job: ResJobPostingDetail]
+  candidates: [job: ResJobPostingDetail]
 }>()
 
 function statusClass(status: string): string {
