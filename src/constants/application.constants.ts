@@ -8,6 +8,7 @@ export const APPLICATION_STATUS = {
   REJECTED: 'rejected',
   WITHDRAWN: 'withdrawn',
   EXPIRED: 'expired',
+  CONSIDERING: 'considering',
 } as const;
 
 export type ApplicationStatus = (typeof APPLICATION_STATUS)[keyof typeof APPLICATION_STATUS];
@@ -28,6 +29,7 @@ export const APPLICATION_STATUS_OPTIONS = [
   { value: APPLICATION_STATUS.PENDING, label: 'Đã gửi', color: 'blue' },
   { value: APPLICATION_STATUS.INVITED, label: 'Được mời', color: 'cyan' },
   { value: APPLICATION_STATUS.SEEN, label: 'NTD Đã xem', color: 'purple' },
+  { value: APPLICATION_STATUS.CONSIDERING, label: 'Đang cân nhắc', color: 'purple' },
   { value: APPLICATION_STATUS.INTERVIEWING, label: 'Đang phỏng vấn', color: 'orange' },
   { value: APPLICATION_STATUS.OFFERED, label: 'Gửi đề nghị', color: 'green' },
   { value: APPLICATION_STATUS.HIRED, label: 'Đã tuyển', color: 'success' },

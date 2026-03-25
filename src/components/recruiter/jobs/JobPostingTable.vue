@@ -51,7 +51,7 @@
           <!-- Ứng tuyển -->
           <td class="px-6 py-5">
             <div class="flex items-center gap-1">
-              <span class="font-bold text-primary">0</span> <!-- Backend missing applications count yet -->
+              <span class="font-bold text-primary">{{ job.applicationCount || 0 }}</span>
               <span class="text-xs text-slate-400">ứng viên</span>
             </div>
           </td>

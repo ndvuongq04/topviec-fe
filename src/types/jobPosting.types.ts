@@ -119,6 +119,7 @@ export interface ResJobPostingDetail {
     isFeatured: boolean
     isUrgent: boolean
     viewCount: number
+    applicationCount?: number
     editCount: number
     publishedAt?: string
     createdAt: string
