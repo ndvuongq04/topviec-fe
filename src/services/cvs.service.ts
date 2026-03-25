@@ -87,7 +87,10 @@ const cvsService = {
      * Xem CV công khai qua token
      * GET /cvs/public/:shareToken
      */
-
+    async getPublicCv(shareToken: string): Promise<ResCv> {
+        const res = await axiosInstance.get<RestResponse<ResCv>>(`${BASE_URL}/public/${shareToken}`)
+        return res.data.data
+    },
 }
 
 export default cvsService

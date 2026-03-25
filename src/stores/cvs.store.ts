@@ -38,6 +38,7 @@ export const useCvsStore = defineStore('cvs', () => {
         try {
             const newCv = await cvsService.uploadCv(file, payload)
             cvs.value.unshift(newCv)
+            return newCv
         } catch (err) {
             setError(err)
             throw err

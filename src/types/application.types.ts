@@ -17,6 +17,10 @@ export interface ReqWithdrawApplication {
   withdrawalReason?: string;
 }
 
+export interface ReqUpdateApplicationCv {
+  cvId: number;
+}
+
 // ─── Response ─────────────────────────────────────────────
 
 export interface ResCompanyInfo {

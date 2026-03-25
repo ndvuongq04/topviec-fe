@@ -137,6 +137,17 @@
         </div>
       </div>
     </div>
+
+    <!-- Modal đổi CV -->
+    <ChangeCvModal 
+      v-if="targetApp"
+      :show="showChangeCvModal"
+      :applicationId="targetApp.id"
+      :currentCvId="targetApp.cvId"
+      :jobTitle="targetApp.jobPosting?.title"
+      @close="showChangeCvModal = false"
+      @success="onChangeCvSuccess"
+    />
   </div>
 </template>
 
@@ -145,6 +156,7 @@ import { ref, onMounted } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useApplicationStore } from '@/stores/application.store'
 import { useCvsStore } from '@/stores/cvs.store'
+import ChangeCvModal from './ChangeCvModal.vue'
 import { 
   APPLICATION_STATUS, 
   APPLICATION_STATUS_OPTIONS
@@ -162,6 +174,8 @@ const cvsStore = useCvsStore()
 const { applications, loading, meta } = storeToRefs(applicationStore)
 
 const activeFilter = ref('all')
+const showChangeCvModal = ref(false)
+const targetApp = ref<ResApplication | null>(null)
 
 const filterOptions = [
   { label: 'Tất cả', value: 'all' },
@@ -199,7 +213,12 @@ function handleViewCv(app: ResApplication) {
 }
 
 function handleChangeCv(app: ResApplication) {
-  toast.info('Thông báo', 'Chức năng đổi CV đang được phát triển')
+  targetApp.value = app
+  showChangeCvModal.value = true
+}
+
+function onChangeCvSuccess() {
+  fetchData(meta.value.page)
 }
 
 const handleFilterChange = (value: string) => {

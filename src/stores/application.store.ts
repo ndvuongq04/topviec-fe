@@ -5,7 +5,8 @@ import type {
   ResApplication, 
   ReqApplyJob, 
   ReqBulkApply, 
-  ReqWithdrawApplication 
+  ReqWithdrawApplication,
+  ReqUpdateApplicationCv 
 } from '@/types/application.types';
 import type { PaginationMeta } from '@/types/common.types';
 
@@ -108,6 +109,27 @@ export const useApplicationStore = defineStore('application', () => {
     }
   }
 
+  /** Change application CV */
+  async function updateApplicationCv(applicationId: number, cvId: number) {
+    loading.value = true;
+    error.value = null;
+    try {
+      const data = await applicationService.updateApplicationCv(applicationId, { cvId });
+      
+      const index = applications.value.findIndex(app => app.id === applicationId);
+      if (index !== -1) {
+        applications.value[index] = data;
+      }
+      
+      return data;
+    } catch (err) {
+      setError(err);
+      throw err;
+    } finally {
+      loading.value = false;
+    }
+  }
+
   /** Reset store */
   function reset() {
     applications.value = [];
@@ -128,6 +150,7 @@ export const useApplicationStore = defineStore('application', () => {
     quickApply,
     bulkApply,
     withdraw,
+    updateApplicationCv,
     reset,
   };
 });

@@ -5,7 +5,8 @@ import type {
   ResApplicationPagination, 
   ReqApplyJob, 
   ReqBulkApply, 
-  ReqWithdrawApplication 
+  ReqWithdrawApplication,
+  ReqUpdateApplicationCv 
 } from '@/types/application.types';
 
 const BASE_URL = '/applications';
@@ -48,6 +49,14 @@ const applicationService = {
    */
   async withdraw(applicationId: number, data?: ReqWithdrawApplication): Promise<ResApplication> {
     const res = await axiosInstance.patch<RestResponse<ResApplication>>(`${BASE_URL}/${applicationId}/withdraw`, data);
+    return res.data.data;
+  },
+
+  /**
+   * CN-UV-016: Thay đổi CV ứng tuyển
+   */
+  async updateApplicationCv(applicationId: number, data: ReqUpdateApplicationCv): Promise<ResApplication> {
+    const res = await axiosInstance.patch<RestResponse<ResApplication>>(`${BASE_URL}/${applicationId}/cv`, data);
     return res.data.data;
   },
 };
