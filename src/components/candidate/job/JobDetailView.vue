@@ -5,9 +5,11 @@ import { usePublicJobPostingStore } from "@/stores/publicJobPosting.store";
 import { useCandidateCompanyFollowStore } from "@/stores/candidateCompanyFollow.store";
 import { useSavedJobStore } from "@/stores/savedJob.store";
 import { useAuthStore } from "@/stores/auth.store";
+import { useApplicationStore } from "@/stores/application.store";
 import { useToast } from "@/composables/useToast";
 import ApplyJobModal from "@/components/candidate/job/ApplyJobModal.vue";
 import { useQuickApply } from "@/composables/useQuickApply";
+import { APPLY_METHOD } from "@/constants/application.constants";
 
 interface Props {
   id: number | string;
@@ -18,16 +20,32 @@ const jobStore = usePublicJobPostingStore();
 const followStore = useCandidateCompanyFollowStore();
 const savedJobStore = useSavedJobStore();
 const authStore = useAuthStore();
+const applicationStore = useApplicationStore();
 const toast = useToast();
 const { handleQuickApply } = useQuickApply();
 
 const job = computed(() => jobStore.selectedJob);
 const showApplyModal = ref(false);
 
-const handleApplyConfirm = (cvId: number) => {
-  // Logic to submit application
-  toast.success('Thành công', `Đã nộp hồ sơ ứng tuyển thành công! (CV ID: ${cvId})`);
-  showApplyModal.value = false;
+const handleApplyConfirm = async (cvId: number) => {
+  if (!authStore.isAuthenticated) {
+    toast.info("Vui lòng đăng nhập để ứng tuyển");
+    return;
+  }
+
+  const jobId = Number(props.id);
+  try {
+    await applicationStore.apply(jobId, {
+      cvId,
+      applyMethod: APPLY_METHOD.NORMAL
+    });
+    
+    toast.success('Thành công', `Hồ sơ của bạn đã được gửi tới nhà tuyển dụng thành công!`);
+    showApplyModal.value = false;
+  } catch (err: any) {
+    const message = err?.response?.data?.message || "Có lỗi xảy ra khi nộp hồ sơ. Vui lòng thử lại.";
+    toast.error('Lỗi', message);
+  }
 };
 
 // Helper to handle image URLs
@@ -228,7 +246,7 @@ async function toggleCompanyFollow() {
         <!-- Action buttons -->
         <div class="flex gap-3 w-full md:w-auto shrink-0">
           <button
-            class="flex-1 md:flex-none h-12 px-5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-text-main font-bold flex items-center justify-center gap-2 transition-all"
+            class="flex-1 md:flex-none h-12 px-5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-text-main font-bold flex items-center justify-center gap-2 transition-all cursor-pointer"
             :class="{ 'border-primary text-primary bg-primary/5': isSaved }"
             @click="toggleSave"
           >
@@ -241,7 +259,7 @@ async function toggleCompanyFollow() {
           </button>
           <button
             @click="handleQuickApply(props.id, job.title)"
-            class="hidden md:flex flex-1 md:flex-none h-12 px-6 rounded-xl border border-orange-200 bg-orange-50 hover:bg-orange-100 text-orange-600 font-bold items-center justify-center gap-2 transition-all"
+            class="hidden md:flex flex-1 md:flex-none h-12 px-6 rounded-xl border border-orange-200 bg-orange-50 hover:bg-orange-100 text-orange-600 font-bold items-center justify-center gap-2 transition-all cursor-pointer"
             title="Ứng tuyển nhanh bằng CV mặc định"
           >
             <span class="material-symbols-outlined text-[20px]">bolt</span>
@@ -249,7 +267,7 @@ async function toggleCompanyFollow() {
           </button>
           <button
             @click="showApplyModal = true"
-            class="flex-1 md:flex-none h-12 px-8 rounded-xl bg-primary hover:bg-primary-dark text-white font-bold shadow-lg shadow-primary/25 flex items-center justify-center gap-2 transition-all hover:-translate-y-0.5"
+            class="flex-1 md:flex-none h-12 px-8 rounded-xl bg-primary hover:bg-primary-dark text-white font-bold shadow-lg shadow-primary/25 flex items-center justify-center gap-2 transition-all hover:-translate-y-0.5 cursor-pointer"
           >
             <span>Ứng tuyển</span>
             <span class="material-symbols-outlined text-[20px]"
@@ -383,7 +401,7 @@ async function toggleCompanyFollow() {
             </div>
             <button
               @click="toggleCompanyFollow"
-              class="h-8 px-3 rounded-md text-xs font-bold transition-colors shrink-0"
+              class="h-8 px-3 rounded-md text-xs font-bold transition-colors shrink-0 cursor-pointer"
               :class="
                 isCompanyFollowing
                   ? 'bg-slate-100 text-slate-600 hover:bg-slate-200'

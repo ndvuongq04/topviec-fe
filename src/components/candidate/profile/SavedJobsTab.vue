@@ -114,7 +114,7 @@
             <h4 class="text-sm font-bold text-text-muted mb-3 px-1">Danh sách CV của bạn</h4>
             <div class="space-y-3 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
               <div 
-                v-for="cv in hardcodedCvs" 
+                v-for="cv in cvsStore.cvs" 
                 :key="cv.id"
                 @click="selectedCvId = cv.id"
                 class="group p-4 rounded-2xl border-2 transition-all cursor-pointer flex items-center gap-4"
@@ -126,8 +126,8 @@
                   <span class="material-symbols-outlined text-primary">description</span>
                 </div>
                 <div class="flex-grow">
-                  <p class="font-bold text-sm text-text-main dark:text-white">{{ cv.name }}</p>
-                  <p class="text-xs text-text-muted mt-0.5">Cập nhật: {{ cv.updatedAt }}</p>
+                  <p class="font-bold text-sm text-text-main dark:text-white">{{ cv.title }}</p>
+                  <p class="text-xs text-text-muted mt-0.5">Cập nhật: {{ dayjs(cv.updatedAt).format('DD/MM/YYYY') }}</p>
                 </div>
                 <div 
                   class="w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all"
@@ -196,25 +196,25 @@
 <script setup lang="ts">
 import { onMounted, computed, ref } from 'vue'
 import { useSavedJobStore } from '@/stores/savedJob.store'
+import { useApplicationStore } from '@/stores/application.store'
+import { useCvsStore } from '@/stores/cvs.store'
 import { useToast } from '@/composables/useToast'
 import { useConfirm } from '@/composables/useConfirm'
 import { useQuickApply } from '@/composables/useQuickApply'
 import JobCard from '@/components/candidate/job/JobCard.vue'
+import dayjs from 'dayjs'
 
 const savedJobStore = useSavedJobStore()
+const applicationStore = useApplicationStore()
+const cvsStore = useCvsStore()
 const toast = useToast()
 const { confirm } = useConfirm()
 const { handleQuickApply } = useQuickApply()
+
 const currentPage = ref(0)
 const selectedIds = ref<number[]>([])
 const showBatchApplyModal = ref(false)
-const selectedCvId = ref<number>(1)
-
-const hardcodedCvs = [
-  { id: 1, name: 'CV_Frontend_Developer_2026.pdf', updatedAt: '2 giờ trước' },
-  { id: 2, name: 'NguyenVanA_Product_Manager.pdf', updatedAt: 'Hôm qua' },
-  { id: 3, name: 'Design_Portfolio_Final.pdf', updatedAt: '25/02/2026' },
-]
+const selectedCvId = ref<number | null>(null)
 
 const isAllSelected = computed(() => {
   return mappedJobs.value.length > 0 && selectedIds.value.length === mappedJobs.value.length
@@ -246,15 +246,43 @@ async function handleBatchApply() {
     return
   }
 
+  if (cvsStore.cvs.length === 0) {
+    await cvsStore.fetchMyCvs()
+  }
+
+  if (cvsStore.cvs.length === 0) {
+    toast.warning('Chú ý', 'Bạn cần có ít nhất một CV để ứng tuyển. Vui lòng tạo CV trước.')
+    return
+  }
+
+  // Set default CV or first CV
+  const defaultCv = cvsStore.cvs.find(cv => cv.isDefault) || cvsStore.cvs[0]
+  if (defaultCv) {
+    selectedCvId.value = defaultCv.id
+  }
+
   showBatchApplyModal.value = true
 }
 
 async function confirmBatchApply() {
-  const selectedCv = hardcodedCvs.find(c => c.id === selectedCvId.value)
-  
-  toast.success('Thành công', `Đã gửi đơn ứng tuyển vào ${selectedIds.value.length} vị trí thành công bằng "${selectedCv?.name}"!`)
-  showBatchApplyModal.value = false
-  selectedIds.value = []
+  if (!selectedCvId.value) {
+    toast.warning('Chú ý', 'Vui lòng chọn CV để ứng tuyển')
+    return
+  }
+
+  try {
+    await applicationStore.bulkApply({
+      jobPostIds: selectedIds.value,
+      cvId: selectedCvId.value
+    })
+    
+    toast.success('Thành công', `Đã gửi đơn ứng tuyển vào ${selectedIds.value.length} vị trí thành công!`)
+    showBatchApplyModal.value = false
+    selectedIds.value = []
+  } catch (err: any) {
+    const message = err?.response?.data?.message || 'Có lỗi xảy ra khi ứng tuyển hàng loạt'
+    toast.error('Lỗi', message)
+  }
 }
 
 const mappedJobs = computed(() => {
@@ -264,7 +292,7 @@ const mappedJobs = computed(() => {
       id: job.id,
       title: job.title,
       company: job.company.name,
-      logoUrl: job.company.logoUrl || "https://via.placeholder.com/150",
+      logoUrl: job.company.logoUrl || "/default-company.png",
       logoBg: "bg-blue-50",
       logoBorder: "border-blue-100",
       tags: [job.workType, job.level.name],
@@ -286,14 +314,13 @@ const totalPages = computed(() => savedJobStore.meta.pages)
 
 function formatDate(dateStr: string) {
   if (!dateStr) return "";
-  const date = new Date(dateStr);
-  const now = new Date();
-  const diffInMs = now.getTime() - date.getTime();
-  const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
+  const date = dayjs(dateStr)
+  const now = dayjs()
+  const diffInDays = now.diff(date, 'day')
 
-  if (diffInDays === 0) return "Just now";
-  if (diffInDays === 1) return "Yesterday";
-  return `${diffInDays} days ago`;
+  if (diffInDays === 0) return "Hôm nay";
+  if (diffInDays === 1) return "Hôm qua";
+  return `${diffInDays} ngày trước`;
 }
 
 async function fetchSavedJobs() {
@@ -344,6 +371,7 @@ function changePage(page: number) {
 
 onMounted(() => {
   fetchSavedJobs()
+  cvsStore.fetchMyCvs()
 })
 </script>
 
