@@ -1,11 +1,13 @@
 <script setup lang="ts">
-import { onMounted, computed, watch } from "vue";
+import { onMounted, computed, watch, ref } from "vue";
 import { RouterLink } from "vue-router";
 import { usePublicJobPostingStore } from "@/stores/publicJobPosting.store";
 import { useCandidateCompanyFollowStore } from "@/stores/candidateCompanyFollow.store";
 import { useSavedJobStore } from "@/stores/savedJob.store";
 import { useAuthStore } from "@/stores/auth.store";
 import { useToast } from "@/composables/useToast";
+import ApplyJobModal from "@/components/candidate/job/ApplyJobModal.vue";
+import { useQuickApply } from "@/composables/useQuickApply";
 
 interface Props {
   id: number | string;
@@ -17,8 +19,16 @@ const followStore = useCandidateCompanyFollowStore();
 const savedJobStore = useSavedJobStore();
 const authStore = useAuthStore();
 const toast = useToast();
+const { handleQuickApply } = useQuickApply();
 
 const job = computed(() => jobStore.selectedJob);
+const showApplyModal = ref(false);
+
+const handleApplyConfirm = (cvId: number) => {
+  // Logic to submit application
+  toast.success('Thành công', `Đã nộp hồ sơ ứng tuyển thành công! (CV ID: ${cvId})`);
+  showApplyModal.value = false;
+};
 
 // Helper to handle image URLs
 function getLogoUrl(url?: string | null) {
@@ -230,9 +240,18 @@ async function toggleCompanyFollow() {
             <span>{{ isSaved ? "Đã lưu" : "Lưu" }}</span>
           </button>
           <button
+            @click="handleQuickApply(props.id, job.title)"
+            class="hidden md:flex flex-1 md:flex-none h-12 px-6 rounded-xl border border-orange-200 bg-orange-50 hover:bg-orange-100 text-orange-600 font-bold items-center justify-center gap-2 transition-all"
+            title="Ứng tuyển nhanh bằng CV mặc định"
+          >
+            <span class="material-symbols-outlined text-[20px]">bolt</span>
+            <span>Ứng tuyển nhanh</span>
+          </button>
+          <button
+            @click="showApplyModal = true"
             class="flex-1 md:flex-none h-12 px-8 rounded-xl bg-primary hover:bg-primary-dark text-white font-bold shadow-lg shadow-primary/25 flex items-center justify-center gap-2 transition-all hover:-translate-y-0.5"
           >
-            <span>Ứng tuyển ngay</span>
+            <span>Ứng tuyển</span>
             <span class="material-symbols-outlined text-[20px]"
               >arrow_forward</span
             >
@@ -432,10 +451,28 @@ async function toggleCompanyFollow() {
         <p class="text-xs text-text-secondary">{{ job.company.name }}</p>
       </div>
       <button
+        @click="handleQuickApply(props.id, job.title)"
+        class="h-10 w-10 rounded-lg bg-orange-50 text-orange-500 flex items-center justify-center shrink-0 border border-orange-100 shadow-sm"
+        title="Ứng tuyển nhanh"
+      >
+        <span class="material-symbols-outlined">bolt</span>
+      </button>
+      <button
+        @click="showApplyModal = true"
         class="h-10 px-5 rounded-lg bg-primary hover:bg-primary-dark text-white font-bold text-sm shadow-md shrink-0 transition-colors"
       >
         Ứng tuyển
       </button>
     </div>
+
+    <!-- Apply Modal -->
+    <ApplyJobModal 
+      :show="showApplyModal"
+      :job-title="job.title"
+      :company-name="job.company.name"
+      :company-logo="getLogoUrl(job.company.logoUrl)"
+      @close="showApplyModal = false"
+      @confirm="handleApplyConfirm"
+    />
   </div>
 </template>

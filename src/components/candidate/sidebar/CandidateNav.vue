@@ -5,8 +5,8 @@ const route = useRoute();
 
 const navItems = [
   { name: "Tìm việc",     icon: "work",         path: "/" },
-  { name: "Việc đã lưu",  icon: "bookmark",     path: "/profile?tab=saved" },
-  { name: "Đã ứng tuyển", icon: "send",         path: "/profile?tab=applied" }, // Giả định có tab applied
+  { name: "Việc đã lưu",  icon: "bookmark",     path: "/saved-jobs" },
+  { name: "Đã ứng tuyển", icon: "send",         path: "/applied-jobs" },
   { name: "Phỏng vấn",    icon: "chat_bubble",   path: "/profile?tab=interviews" }, // Giả định
 ];
 </script>

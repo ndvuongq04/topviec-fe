@@ -18,6 +18,8 @@ interface JobCardProps {
   postedAt: string; // '2 days ago', 'Just now'...
   isHot?: boolean; // Badge "Hot"
   isSaved?: boolean; // Trạng thái đã lưu
+  selectable?: boolean; // Hiển thị checkbox để chọn
+  selected?: boolean; // Trạng thái checkbox
 }
 
 const props = defineProps<JobCardProps>();
@@ -25,6 +27,7 @@ const props = defineProps<JobCardProps>();
 // Emit khi bookmark được click
 const emit = defineEmits<{
   bookmark: [id: number];
+  select: [id: number, active: boolean];
 }>();
 </script>
 
@@ -33,15 +36,28 @@ const emit = defineEmits<{
     :to="`/jobs/${props.id}`"
     class="group bg-white dark:bg-surface-dark p-5 rounded-3xl border border-slate-200 dark:border-slate-800 hover:border-primary/50 hover:shadow-lg hover:shadow-blue-500/5 transition-all duration-300 relative block"
   >
-    <!-- Bookmark button -->
-    <div class="absolute top-4 right-4">
+    <!-- Checkbox select (Top Left) -->
+    <div v-if="props.selectable" class="absolute top-4 left-4 z-10">
+      <div 
+        @click.prevent.stop="emit('select', props.id, !props.selected)"
+        class="w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all cursor-pointer"
+        :class="props.selected 
+          ? 'bg-primary border-primary text-white shadow-lg shadow-primary/20' 
+          : 'bg-white/80 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 hover:border-primary'"
+      >
+        <span v-if="props.selected" class="material-symbols-outlined text-sm font-bold">check</span>
+      </div>
+    </div>
+
+    <!-- Bookmark button (Top Right) -->
+    <div class="absolute top-4 right-4 z-10">
       <button
-        class="transition-colors cursor-pointer"
+        class="transition-colors cursor-pointer bg-white/80 dark:bg-slate-800/80 p-1.5 rounded-full border border-slate-100 dark:border-slate-800 shadow-sm"
         :class="props.isSaved ? 'text-primary' : 'text-slate-300 hover:text-primary'"
         @click.prevent.stop="emit('bookmark', props.id)"
       >
         <span 
-          class="material-symbols-outlined"
+          class="material-symbols-outlined text-[20px]"
           :style="props.isSaved ? 'font-variation-settings: \'FILL\' 1' : ''"
         >
           bookmark
@@ -52,7 +68,7 @@ const emit = defineEmits<{
     <!-- Logo + title + company -->
     <div class="flex gap-4 items-start mb-4">
       <div
-        :class="`h-12 w-12 rounded-full ${props.logoBg} flex items-center justify-center shrink-0 border ${props.logoBorder}`"
+        :class="`h-12 w-12 rounded-full ${props.logoBg} flex items-center justify-center shrink-0 border ${props.logoBorder} ${props.selectable ? 'ml-8' : ''}`"
       >
         <img
           :alt="props.company"

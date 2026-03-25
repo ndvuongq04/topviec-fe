@@ -59,7 +59,6 @@
           <CvsTab v-else-if="activeTab === 'cvs'" />
           <JobAlertsTab v-else-if="activeTab === 'alerts'" />
           <FollowedCompaniesTab v-else-if="activeTab === 'followed'" />
-          <SavedJobsTab v-else-if="activeTab === 'saved'" />
           <PrivacySettingsTab v-else-if="activeTab === 'privacy'" />
         </div>
       </div>
@@ -76,7 +75,6 @@ import PersonalInfoTab from '@/components/candidate/profile/PersonalInfoTab.vue'
 import CvsTab from '@/components/candidate/profile/CvsTab.vue'
 import JobAlertsTab from '@/components/candidate/profile/JobAlertsTab.vue'
 import FollowedCompaniesTab from '@/components/candidate/profile/FollowedCompaniesTab.vue'
-import SavedJobsTab from '@/components/candidate/profile/SavedJobsTab.vue'
 import PrivacySettingsTab from '@/components/candidate/profile/PrivacySettingsTab.vue'
 import { useCandidateProfileStore } from '@/stores/candidateProfile.store'
 import { useCvsStore } from '@/stores/cvs.store'
@@ -87,21 +85,20 @@ const cvsStore = useCvsStore()
 const followStore = useCandidateCompanyFollowStore()
 const route = useRoute()
 
-const activeTab = ref<'personal' | 'cvs' | 'alerts' | 'followed' | 'saved' | 'privacy'>('personal')
+const activeTab = ref<'personal' | 'cvs' | 'alerts' | 'followed' | 'privacy'>('personal')
 
 const tabs = [
   { key: 'personal', label: 'Thông tin cá nhân' },
   { key: 'cvs',      label: 'CV của tôi' },
   { key: 'alerts',   label: 'Thông báo việc làm' },
   { key: 'followed', label: 'Công ty theo dõi' },
-  { key: 'saved',    label: 'Việc làm đã lưu' },
   { key: 'privacy',  label: 'Cài đặt quyền riêng tư' },
 ] as const
 
 /** Đồng bộ tab từ URL query param */
 function syncTabFromQuery() {
   const tab = route.query.tab as string
-  if (tab && ['personal', 'cvs', 'alerts', 'followed', 'saved', 'privacy'].includes(tab)) {
+  if (tab && ['personal', 'cvs', 'alerts', 'followed', 'privacy'].includes(tab)) {
     activeTab.value = tab as any
   }
 }
