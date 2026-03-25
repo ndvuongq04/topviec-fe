@@ -17,6 +17,7 @@ interface JobCardProps {
   location: string;
   postedAt: string; // '2 days ago', 'Just now'...
   isHot?: boolean; // Badge "Hot"
+  isSaved?: boolean; // Trạng thái đã lưu
 }
 
 const props = defineProps<JobCardProps>();
@@ -35,10 +36,16 @@ const emit = defineEmits<{
     <!-- Bookmark button -->
     <div class="absolute top-4 right-4">
       <button
-        class="text-slate-300 hover:text-primary transition-colors cursor-pointer"
+        class="transition-colors cursor-pointer"
+        :class="props.isSaved ? 'text-primary' : 'text-slate-300 hover:text-primary'"
         @click.prevent.stop="emit('bookmark', props.id)"
       >
-        <span class="material-symbols-outlined">bookmark</span>
+        <span 
+          class="material-symbols-outlined"
+          :style="props.isSaved ? 'font-variation-settings: \'FILL\' 1' : ''"
+        >
+          bookmark
+        </span>
       </button>
     </div>
 

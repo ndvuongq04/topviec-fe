@@ -4,8 +4,14 @@
 import { onMounted, computed } from "vue";
 import JobCard from "@/components/candidate/job/JobCard.vue";
 import { usePublicJobPostingStore } from "@/stores/publicJobPosting.store";
+import { useSavedJobStore } from "@/stores/savedJob.store";
+import { useToast } from "@/composables/useToast";
+import { useAuthStore } from "@/stores/auth.store";
 
 const jobStore = usePublicJobPostingStore();
+const savedJobStore = useSavedJobStore();
+const authStore = useAuthStore();
+const toast = useToast();
 
 // Map dữ liệu từ API sang JobCardProps
 const mappedJobs = computed(() => {
@@ -19,11 +25,14 @@ const mappedJobs = computed(() => {
     tags: [job.workType, job.level.name],
     salaryMin: job.salaryNegotiable
       ? "Thỏa thuận"
-      : `$${job.salaryMin?.toLocaleString()}`,
-    salaryMax: job.salaryNegotiable ? "" : `$${job.salaryMax?.toLocaleString()}`,
+      : `${((job.salaryMin ?? 0) / 1_000_000).toFixed(0)}tr`,
+    salaryMax: job.salaryNegotiable 
+      ? "" 
+      : job.salaryMax ? `${(job.salaryMax / 1_000_000).toFixed(0)}tr` : "",
     location: "Vietnam", // Summary chưa có location, tạm để fix
     postedAt: formatDate(job.publishedAt || job.createdAt),
     isHot: job.isFeatured || job.isUrgent,
+    isSaved: savedJobStore.isSavedMap[job.id] || false,
   }));
 });
 
@@ -42,11 +51,34 @@ function formatDate(dateStr: string) {
 onMounted(async () => {
   // Lấy danh sách tin mới nhất cho phần "Gợi ý cho bạn"
   await jobStore.fetchJobs({ size: 6 });
+  
+  // Nếu đã login, check status saved cho các job đang hiển thị
+  if (authStore.isAuthenticated) {
+    jobStore.jobs.forEach(job => {
+      savedJobStore.checkIsSaved(job.id);
+    });
+  }
 });
 
-function handleBookmark(id: number) {
-  // TODO: gọi store action để lưu job
-  console.log("Bookmark job:", id);
+async function handleBookmark(id: number) {
+  if (!authStore.isAuthenticated) {
+    toast.info("Vui lòng đăng nhập để lưu việc làm");
+    return;
+  }
+
+  const isAlreadySaved = savedJobStore.isSavedMap[id];
+
+  try {
+    if (isAlreadySaved) {
+      await savedJobStore.unsave(id);
+      toast.info("Đã bỏ lưu việc làm");
+    } else {
+      await savedJobStore.toggleSave(id);
+      toast.success("Đã lưu việc làm thành công");
+    }
+  } catch (err) {
+    toast.error("Không thể thực hiện thao tác. Vui lòng thử lại.");
+  }
 }
 </script>
 

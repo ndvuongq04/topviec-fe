@@ -4,10 +4,10 @@ import { useRoute } from "vue-router";
 const route = useRoute();
 
 const navItems = [
-  { name: "Tìm việc", icon: "work", path: "/" },
-  { name: "Việc đã lưu", icon: "bookmark", path: "/saved" },
-  { name: "Đã ứng tuyển", icon: "send", path: "/applied" },
-  { name: "Phỏng vấn", icon: "chat_bubble", path: "/interviewing" },
+  { name: "Tìm việc",     icon: "work",         path: "/" },
+  { name: "Việc đã lưu",  icon: "bookmark",     path: "/profile?tab=saved" },
+  { name: "Đã ứng tuyển", icon: "send",         path: "/profile?tab=applied" }, // Giả định có tab applied
+  { name: "Phỏng vấn",    icon: "chat_bubble",   path: "/profile?tab=interviews" }, // Giả định
 ];
 </script>
 

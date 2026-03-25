@@ -3,6 +3,8 @@ import { onMounted, computed, watch } from "vue";
 import { RouterLink } from "vue-router";
 import { usePublicJobPostingStore } from "@/stores/publicJobPosting.store";
 import { useCandidateCompanyFollowStore } from "@/stores/candidateCompanyFollow.store";
+import { useSavedJobStore } from "@/stores/savedJob.store";
+import { useAuthStore } from "@/stores/auth.store";
 import { useToast } from "@/composables/useToast";
 
 interface Props {
@@ -12,6 +14,8 @@ const props = defineProps<Props>();
 
 const jobStore = usePublicJobPostingStore();
 const followStore = useCandidateCompanyFollowStore();
+const savedJobStore = useSavedJobStore();
+const authStore = useAuthStore();
 const toast = useToast();
 
 const job = computed(() => jobStore.selectedJob);
@@ -56,16 +60,39 @@ function formatRelativeTime(dateStr?: string) {
 
 const postedAt = computed(() => formatRelativeTime(job.value?.publishedAt || job.value?.createdAt));
 
-const isSaved = ref(false);
+const isSaved = computed(() => {
+  const jobId = Number(props.id);
+  return savedJobStore.isSavedMap[jobId] || false;
+});
 
-function toggleSave() {
-  isSaved.value = !isSaved.value;
+async function toggleSave() {
+  if (!authStore.isAuthenticated) {
+    toast.info("Vui lòng đăng nhập để lưu việc làm");
+    return;
+  }
+
+  const jobId = Number(props.id);
+  try {
+    if (isSaved.value) {
+      await savedJobStore.unsave(jobId);
+      toast.info("Đã bỏ lưu việc làm");
+    } else {
+      await savedJobStore.toggleSave(jobId);
+      toast.success("Đã lưu việc làm thành công");
+    }
+  } catch (err) {
+    toast.error("Thao tác thất bại");
+  }
 }
 
 async function fetchJobData() {
-  await jobStore.fetchJobById(props.id);
+  const jobId = Number(props.id);
+  await jobStore.fetchJobById(jobId);
   if (job.value?.company?.id) {
     followStore.checkFollowStatus(job.value.company.id);
+  }
+  if (authStore.isAuthenticated) {
+    savedJobStore.checkIsSaved(jobId);
   }
 }
 
@@ -99,7 +126,6 @@ async function toggleCompanyFollow() {
   }
 }
 
-import { ref } from "vue";
 </script>
 
 <template>
