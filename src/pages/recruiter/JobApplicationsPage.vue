@@ -87,50 +87,47 @@ function formatDate(dateStr: string) {
 </script>
 
 <template>
-  <div class="space-y-6 pt-6">
+  <div class="space-y-8 pt-6">
     <!-- Header -->
-    <div class="flex items-center justify-between">
-      <div class="flex items-center gap-4">
-        <button
-          @click="router.back()"
-          class="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 transition-colors cursor-pointer"
-        >
-          <span class="material-symbols-outlined">arrow_back</span>
-        </button>
-        <div>
-          <h1 class="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-            Quản lý CV & Sàng lọc
-          </h1>
-          <p class="text-slate-500 text-sm">
-            Vị trí tuyển dụng: {{ applications[0]?.jobTitle || 'Theo dõi và đánh giá hồ sơ ứng viên của bạn' }}
-          </p>
-        </div>
+    <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+      <div>
+        <nav class="flex items-center gap-2 text-xs text-slate-400 mb-2 uppercase tracking-widest font-bold">
+          <router-link to="/recruiter/jobs" class="hover:text-primary transition-colors">Tin tuyển dụng</router-link>
+          <span class="material-symbols-outlined text-[12px]">chevron_right</span>
+          <span class="text-primary">Hồ sơ ứng viên</span>
+        </nav>
+        <h1 class="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+          Quản lý CV & Sàng lọc
+        </h1>
+        <p class="text-slate-500 mt-1 text-sm">
+          {{ applications[0]?.jobTitle || 'Theo dõi và đánh giá hồ sơ ứng viên' }}
+        </p>
       </div>
-      <button class="flex items-center gap-2 px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg font-semibold text-sm hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer">
+      <button class="flex items-center gap-2 px-5 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl font-bold text-sm hover:border-primary transition-all shadow-sm cursor-pointer">
         <span class="material-symbols-outlined text-lg">download</span>
         Xuất báo cáo
       </button>
     </div>
 
     <!-- Summary Cards -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
       <div 
         v-for="card in summaryCards" 
         :key="card.label"
-        class="bg-white dark:bg-slate-900 p-5 rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm flex items-center gap-4"
+        class="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm flex items-center gap-4"
       >
-        <div :class="['p-3 rounded-lg', card.bg]">
+        <div :class="['p-3 rounded-xl', card.bg]">
           <span class="material-symbols-outlined">{{ card.icon }}</span>
         </div>
         <div>
-          <p class="text-xs font-bold text-slate-500 uppercase tracking-tight">{{ card.label }}</p>
+          <p class="text-xs font-bold text-slate-500 uppercase tracking-widest">{{ card.label }}</p>
           <p class="text-2xl font-black text-slate-900 dark:text-white">{{ card.value }}</p>
         </div>
       </div>
     </div>
 
     <!-- Filters -->
-    <div class="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm space-y-4">
+    <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm space-y-4">
       <!-- Status chips -->
       <div class="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
         <button
@@ -142,7 +139,7 @@ function formatDate(dateStr: string) {
             activeStatus === chip.value
               ? 'bg-primary text-white shadow-lg shadow-primary/20'
               : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
-          ]"
+          ] "
         >
           {{ chip.label }}
         </button>
@@ -150,7 +147,7 @@ function formatDate(dateStr: string) {
     </div>
 
     <!-- Candidate Table -->
-    <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden min-h-[400px] relative">
+    <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden min-h-[400px] relative">
       <!-- Loading Overlay -->
       <div v-if="loading" class="absolute inset-0 bg-white/50 dark:bg-slate-900/50 z-10 flex items-center justify-center backdrop-blur-[2px]">
         <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -241,7 +238,7 @@ function formatDate(dateStr: string) {
           <button 
             @click="currentPage--"
             :disabled="currentPage === 1 || loading"
-            class="p-2 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-white dark:hover:bg-slate-800 disabled:opacity-50 cursor-pointer transition-colors"
+            class="p-2 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-white dark:hover:bg-slate-800 disabled:opacity-50 cursor-pointer transition-colors cursor-pointer"
           >
             <span class="material-symbols-outlined">chevron_left</span>
           </button>
@@ -254,7 +251,7 @@ function formatDate(dateStr: string) {
               currentPage === p 
                 ? 'bg-primary text-white shadow-md' 
                 : 'hover:bg-white dark:hover:bg-slate-800 border border-transparent hover:border-slate-200'
-            ]"
+            ] "
           >
             {{ p }}
           </button>

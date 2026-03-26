@@ -13,7 +13,7 @@
           @keyup.enter="$emit('search', searchInput)"
         />
         <button 
-          class="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-primary transition-colors"
+          class="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-primary transition-colors cursor-pointer"
           @click="$emit('search', searchInput)"
         >
           <span class="material-symbols-outlined text-xl">subdirectory_arrow_left</span>
@@ -47,7 +47,7 @@
 
         <button 
           v-if="filterRole || filterStatus || searchInput"
-          class="p-2 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950 rounded-lg transition-colors"
+          class="p-2 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950 rounded-lg transition-colors cursor-pointer"
           title="Xóa lọc"
           @click="clearFilters"
         >
@@ -120,14 +120,14 @@
             <td class="px-6 py-4">
               <div class="flex justify-center items-center gap-2">
                 <button
-                  class="p-1.5 text-slate-400 hover:text-primary hover:bg-primary/10 rounded-lg transition-all"
+                  class="p-1.5 text-slate-400 hover:text-primary hover:bg-primary/10 rounded-lg transition-all cursor-pointer"
                   title="Chỉnh sửa"
                   @click="$emit('edit', member)"
                 >
                   <span class="material-symbols-outlined text-lg">edit</span>
                 </button>
                 <button
-                  class="p-1.5 text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950 rounded-lg transition-all"
+                  class="p-1.5 text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950 rounded-lg transition-all cursor-pointer"
                   title="Xóa"
                   @click="$emit('delete', member)"
                 >
@@ -155,7 +155,7 @@
       </p>
       <div class="flex items-center gap-1">
         <button
-          class="p-1 rounded border border-slate-200 dark:border-slate-700 text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          class="p-1 rounded border border-slate-200 dark:border-slate-700 text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
           :disabled="currentPage <= 1"
           @click="$emit('page-change', currentPage - 1)"
         >
@@ -177,7 +177,7 @@
         </template>
 
         <button
-          class="p-1 rounded border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          class="p-1 rounded border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
           :disabled="currentPage >= totalPages"
           @click="$emit('page-change', currentPage + 1)"
         >

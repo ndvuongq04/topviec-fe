@@ -8,7 +8,7 @@
       </div>
       <router-link
         to="/recruiter/jobs/create"
-        class="bg-primary hover:bg-primary/90 text-white px-6 py-2.5 rounded-lg font-bold text-sm flex items-center gap-2 transition-all shadow-lg shadow-primary/20 cursor-pointer"
+        class="bg-primary hover:bg-primary/90 text-white px-6 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2 transition-all shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-95 cursor-pointer"
       >
         <span class="material-symbols-outlined">add</span>
         Đăng tin mới
@@ -16,13 +16,14 @@
     </div>
 
     <!-- Summary Cards -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
       <JobPostingSummaryCard
         v-for="card in summaryCards"
         :key="card.label"
         :icon="card.icon"
         :label="card.label"
         :value="card.value"
+        :color="card.color"
       />
     </div>
 
@@ -35,7 +36,7 @@
     />
 
     <!-- Job Table + Pagination -->
-    <div class="bg-white dark:bg-slate-900 rounded-xl border border-primary/10 shadow-sm overflow-hidden">
+    <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden">
       <JobPostingTable
         :jobs="jobs"
         @edit="onEdit"
@@ -46,6 +47,8 @@
         @extend="onExtend"
         @view="onView"
         @candidates="onCandidates"
+        @setupInterviews="onSetupInterviews"
+        @offers="onOffers"
       />
       <JobPostingPagination
         :current-page="currentPage"
@@ -73,7 +76,7 @@
           <input
             v-model="newDeadlineDate"
             type="date"
-            class="w-full bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg px-4 py-2.5 text-sm focus:ring-primary/20 focus:border-primary"
+            class="w-full bg-slate-50 dark:bg-slate-800 border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20"
             :min="minDeadlineDate"
           />
           <p class="text-xs text-slate-500 mt-2 flex items-center gap-1">
@@ -138,11 +141,12 @@ const totalPages = computed(() => Math.max(1, Math.ceil(totalItems.value / pageS
 
 // Summary cards
 const summaryCards = computed(() => [
-  { icon: 'work',         label: 'Tổng số tin',  value: summaryStats.value.total },
-  { icon: 'check_circle', label: 'Đang tuyển',   value: summaryStats.value.active },
-  { icon: 'schedule',     label: 'Chờ duyệt',    value: summaryStats.value.pending },
-  { icon: 'warning',      label: 'Hết hạn',      value: summaryStats.value.expired },
+  { icon: 'work',         label: 'Tổng số tin',  value: summaryStats.value.total,   color: 'primary' as const },
+  { icon: 'check_circle', label: 'Đang tuyển',   value: summaryStats.value.active,  color: 'green'   as const },
+  { icon: 'schedule',     label: 'Chờ duyệt',    value: summaryStats.value.pending, color: 'amber'   as const },
+  { icon: 'warning',      label: 'Hết hạn',      value: summaryStats.value.expired, color: 'red'     as const },
 ])
+
 
 async function fetchJobs() {
   await jobStore.fetchJobs({
@@ -287,5 +291,13 @@ function onView(job: ResJobPostingDetail) {
 
 function onCandidates(job: ResJobPostingDetail) {
   router.push({ name: 'recruiter-job-applications', params: { id: job.id } })
+}
+
+function onSetupInterviews(job: ResJobPostingDetail) {
+  router.push({ name: 'recruiter-job-interview-setup', params: { id: job.id } })
+}
+
+function onOffers(job: ResJobPostingDetail) {
+  router.push({ name: 'recruiter-job-offers', params: { id: job.id } })
 }
 </script>

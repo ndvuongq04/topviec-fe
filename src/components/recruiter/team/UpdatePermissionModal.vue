@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <GlobalModal
     :visible="visible"
     title="Chỉnh sửa quyền hạn"
@@ -55,7 +55,7 @@
           </label>
           <button 
             type="button"
-            class="text-[11px] font-bold text-primary hover:underline"
+            class="text-[11px] font-bold text-primary hover:underline cursor-pointer"
             @click="resetPermissions"
           >
             Khôi phục mặc định

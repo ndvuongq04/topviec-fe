@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <section class="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800">
     <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-800">
       <h3 class="font-bold text-lg">Thông tin cơ bản</h3>
@@ -29,7 +29,7 @@
             />
             <button
               v-if="coverUrl"
-              class="absolute bottom-4 right-4 bg-white/90 dark:bg-slate-900/90 p-2 rounded-lg text-primary shadow-sm hover:bg-white transition-colors"
+              class="absolute bottom-4 right-4 bg-white/90 dark:bg-slate-900/90 p-2 rounded-lg text-primary shadow-sm hover:bg-white transition-colors cursor-pointer"
               @click.stop="triggerCoverUpload"
             >
               <span class="material-symbols-outlined">edit</span>

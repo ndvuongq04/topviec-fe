@@ -67,6 +67,15 @@
       </button>
 
       <button
+        v-if="['published', 'paused', 'active', 'closed'].includes(status?.toLowerCase())"
+        class="flex items-center gap-2 px-4 py-2 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 rounded-lg font-semibold hover:bg-emerald-100 dark:hover:bg-emerald-900/30 transition-all cursor-pointer"
+        @click="$emit('offers')"
+      >
+        <span class="material-symbols-outlined text-lg">handshake</span>
+        Quản lý Offer
+      </button>
+
+      <button
         v-if="['published', 'paused', 'pending_approval', 'active'].includes(status?.toLowerCase())"
         class="flex items-center gap-2 px-4 py-2 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 rounded-lg font-semibold hover:bg-red-100 dark:hover:bg-red-900/30 transition-all cursor-pointer"
         @click="$emit('close')"
@@ -95,6 +104,7 @@ defineEmits<{
   pause: []
   resume: []
   close: []
+  offers: []
 }>()
 
 const statusClasses = computed(() => {

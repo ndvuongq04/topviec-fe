@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useEmployerApplicationStore } from '@/stores/employerApplication.store'
@@ -122,7 +122,7 @@ const interactionHistory = computed(() => {
           <!-- Breadcrumb & Actions -->
           <div class="flex justify-between items-center">
             <div class="flex items-center gap-2 text-sm">
-              <span class="text-slate-500 cursor-pointer" @click="router.back()">Ứng viên</span>
+              <router-link :to="`/recruiter/jobs/${jobId}/applications`" class="text-slate-500 hover:text-primary transition-colors">Ứng viên</router-link>
               <span class="material-symbols-outlined text-sm text-slate-400">chevron_right</span>
               <span class="font-bold text-primary">{{ application.candidateName }}</span>
             </div>
@@ -131,7 +131,7 @@ const interactionHistory = computed(() => {
                 <span class="material-symbols-outlined text-lg">download</span>
                 Tải CV
               </a>
-              <button class="flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 text-sm font-semibold transition-all">
+              <button class="flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 text-sm font-semibold transition-all cursor-pointer">
                 <span class="material-symbols-outlined text-lg">print</span>
                 In
               </button>
@@ -158,7 +158,7 @@ const interactionHistory = computed(() => {
         <!-- Right Panel: Evaluation & Action -->
         <section class="w-full md:w-[400px] flex flex-col gap-6">
           <!-- Phân loại & Đánh giá Card -->
-          <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col overflow-hidden">
+          <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col overflow-hidden">
             <div class="p-5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30">
               <h2 class="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
                 <span class="material-symbols-outlined text-primary">assignment_turned_in</span>
@@ -204,7 +204,7 @@ const interactionHistory = computed(() => {
                     @click="rating = i"
                     :disabled="application.status === 'interviewing'"
                     class="transition-transform hover:scale-110 disabled:hover:scale-100"
-                    :class="i <= rating ? 'text-amber-400' : 'text-slate-200 dark:text-slate-700'"
+                    :class="i <= rating ? 'text-amber-400' : 'text-slate-200 dark:text-slate-700' cursor-pointer"
                   >
                     <span class="material-symbols-outlined text-3xl" :style="{ fontVariationSettings: i <= rating ? `'FILL' 1` : `'FILL' 0` }">
                       star
@@ -217,7 +217,7 @@ const interactionHistory = computed(() => {
               <div class="space-y-3">
                 <div class="flex justify-between items-center">
                   <label class="text-sm font-bold text-slate-500 uppercase tracking-tight">Nhãn (Tags)</label>
-                  <button @click="addTag" v-if="application.status !== 'interviewing'" class="text-xs text-primary font-bold hover:underline">+ Thêm mới</button>
+                  <button @click="addTag" v-if="application.status !== 'interviewing'" class="text-xs text-primary font-bold hover:underline cursor-pointer">+ Thêm mới</button>
                 </div>
                 <div class="flex flex-wrap gap-2">
                   <span 
@@ -262,7 +262,7 @@ const interactionHistory = computed(() => {
               <button 
                 @click="saveEvaluation"
                 :disabled="loading || application.status === 'interviewing'"
-                class="w-full bg-primary text-white py-3 rounded-xl font-extrabold text-sm shadow-lg shadow-primary/20 hover:bg-blue-600 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:hover:scale-100"
+                class="w-full bg-primary text-white py-3 rounded-xl font-extrabold text-sm shadow-lg shadow-primary/20 hover:bg-blue-600 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:hover:scale-100 cursor-pointer"
               >
                 <span class="material-symbols-outlined">save</span>
                 {{ loading ? 'Đang lưu...' : 'Lưu Đánh Giá' }}
@@ -270,7 +270,7 @@ const interactionHistory = computed(() => {
               <button 
                 @click="inviteForInterview"
                 :disabled="loading || application.status === 'interviewing'"
-                class="w-full bg-white dark:bg-slate-900 text-primary border-2 border-primary/10 py-3 rounded-xl font-extrabold text-sm hover:bg-primary hover:text-white transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                class="w-full bg-white dark:bg-slate-900 text-primary border-2 border-primary/10 py-3 rounded-xl font-extrabold text-sm hover:bg-primary hover:text-white transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 cursor-pointer"
               >
                 <span class="material-symbols-outlined">calendar_today</span>
                 {{ application.status === 'interviewing' ? 'Đã Mời Phỏng Vấn' : 'Mời Phỏng Vấn' }}
@@ -279,7 +279,7 @@ const interactionHistory = computed(() => {
           </div>
 
           <!-- History sidebar -->
-          <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-5 space-y-4 shadow-sm">
+          <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 space-y-4 shadow-sm">
             <h3 class="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest border-b border-slate-50 dark:border-slate-800 pb-2">Lịch sử tương tác</h3>
             <div class="space-y-4">
               <div v-for="item in interactionHistory" :key="item.time" class="flex gap-3">

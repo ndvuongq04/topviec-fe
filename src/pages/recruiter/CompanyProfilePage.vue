@@ -1,5 +1,5 @@
-<template>
-  <div class="max-w-7xl mx-auto px-8 py-10 space-y-8">
+﻿<template>
+  <div class="space-y-8 pt-6">
 
     <!-- Loading lần đầu -->
     <div v-if="store.loading && !store.company" class="flex justify-center py-20">
@@ -11,7 +11,7 @@
       <!-- Status Bar — hiển thị theo verificationStatus từ API -->
       <div
         v-if="store.company"
-        class="rounded-xl p-4 flex items-center justify-between"
+        class="rounded-2xl p-4 flex items-center justify-between"
         :class="statusBarStyle.bg"
       >
         <div class="flex items-center gap-3">
@@ -72,14 +72,14 @@
       <!-- Actions bottom -->
       <div class="flex justify-end gap-3 pt-6 pb-12">
         <button
-          class="px-8 py-3 border border-slate-300 dark:border-slate-700 rounded-xl text-sm font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+          class="px-8 py-3 border border-slate-300 dark:border-slate-700 rounded-xl text-sm font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
           :disabled="store.loading"
           @click="discardDraft"
         >
           Hủy bỏ
         </button>
         <button
-          class="px-10 py-3 bg-primary text-white rounded-xl text-sm font-bold shadow-xl shadow-primary/30 hover:bg-primary/90 transition-all hover:-translate-y-0.5 disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-2"
+          class="px-10 py-3 bg-primary text-white rounded-xl text-sm font-bold shadow-xl shadow-primary/30 hover:bg-primary/90 transition-all hover:-translate-y-0.5 disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-2 cursor-pointer"
           :disabled="store.loading"
           @click="publishProfile"
         >

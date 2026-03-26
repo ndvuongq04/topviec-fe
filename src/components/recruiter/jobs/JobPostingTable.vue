@@ -1,139 +1,116 @@
 <template>
-  <div class="bg-white dark:bg-slate-900 rounded-xl border border-primary/10 shadow-sm overflow-hidden">
-    <table class="w-full text-left border-collapse">
+  <div>
+    <!-- Empty state -->
+    <div v-if="jobs.length === 0" class="flex flex-col items-center justify-center gap-4 py-20 text-slate-400">
+      <span class="material-symbols-outlined text-6xl">work_off</span>
+      <p class="font-medium">Không tìm thấy tin tuyển dụng nào</p>
+      <p class="text-sm">Thử thay đổi bộ lọc hoặc tạo tin mới</p>
+    </div>
+
+    <!-- Table -->
+    <table v-else class="w-full text-left border-collapse">
       <thead>
-        <tr class="bg-slate-50 dark:bg-slate-800/50 border-b border-primary/10">
-          <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Vị trí tuyển dụng</th>
-          <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Trạng thái</th>
-          <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Lượt xem</th>
-          <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Ứng tuyển</th>
-          <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Ngày hết hạn</th>
-          <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Thao tác</th>
+        <tr class="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-800">
+          <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest">Vị trí tuyển dụng</th>
+          <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest">Trạng thái</th>
+          <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest">Ứng viên</th>
+          <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest hidden md:table-cell">Hạn chót</th>
+          <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest text-right">Thao tác</th>
         </tr>
       </thead>
-      <tbody class="divide-y divide-primary/5">
+      <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
         <tr
           v-for="job in jobs"
           :key="job.id"
-          class="hover:bg-slate-50/80 dark:hover:bg-slate-800/30 transition-colors"
-          :class="job.status?.toLowerCase() === 'expired' ? 'bg-slate-50/30 dark:bg-slate-800/10' : ''"
+          class="group hover:bg-primary/[0.02] dark:hover:bg-slate-800/30 transition-colors"
         >
-          <!-- Vị trí -->
-          <td class="px-6 py-5">
-            <div class="flex flex-col">
+          <!-- Job title + meta -->
+          <td class="px-6 py-4">
+            <div class="flex flex-col gap-1">
               <span
-                class="font-bold"
+                class="font-bold text-base leading-tight"
                 :class="job.status?.toLowerCase() === 'expired'
                   ? 'text-slate-400 dark:text-slate-500 line-through'
                   : 'text-slate-800 dark:text-slate-200'"
               >
                 {{ job.title }}
               </span>
-              <span class="text-xs text-slate-500">ID: TV-{{ job.id }} • {{ job.workType }}</span>
+              <div class="flex items-center gap-2 text-xs text-slate-400">
+                <span class="bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded font-mono">TV-{{ job.id }}</span>
+                <span>•</span>
+                <span>{{ job.workType }}</span>
+                <span v-if="job.viewCount">
+                  <span class="text-slate-300">|</span>
+                  <span class="ml-1">{{ job.viewCount?.toLocaleString('vi-VN') }} lượt xem</span>
+                </span>
+              </div>
             </div>
           </td>
 
-          <!-- Trạng thái -->
-          <td class="px-6 py-5">
+          <!-- Status badge -->
+          <td class="px-6 py-4">
             <span
-              class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold"
+              class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold"
               :class="statusClass(job.status)"
             >
+              <span class="w-1.5 h-1.5 rounded-full bg-current opacity-70"></span>
               {{ statusLabel(job.status) }}
             </span>
           </td>
 
-          <!-- Lượt xem -->
-          <td class="px-6 py-5 text-sm text-slate-600 dark:text-slate-400">
-            {{ job.viewCount ? job.viewCount.toLocaleString('vi-VN') : '0' }}
+          <!-- Candidates -->
+          <td class="px-6 py-4">
+            <button
+              class="flex items-center gap-2 text-sm font-bold hover:text-primary transition-colors cursor-pointer"
+              :class="(job.applicationCount || 0) > 0 ? 'text-primary' : 'text-slate-400'"
+              title="Xem danh sách ứng viên"
+              @click="$emit('candidates', job)"
+            >
+              <span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">group</span>
+              {{ job.applicationCount || 0 }}
+              <span class="font-normal text-xs text-slate-400">CV</span>
+            </button>
           </td>
 
-          <!-- Ứng tuyển -->
-          <td class="px-6 py-5">
-            <div class="flex items-center gap-1">
-              <span class="font-bold text-primary">{{ job.applicationCount || 0 }}</span>
-              <span class="text-xs text-slate-400">ứng viên</span>
-            </div>
+          <!-- Deadline -->
+          <td class="px-6 py-4 hidden md:table-cell">
+            <DeadlineCell :deadline="job.deadline" />
           </td>
 
-          <!-- Ngày hết hạn -->
-          <td class="px-6 py-5 text-sm text-slate-600 dark:text-slate-400">
-            {{ job.deadline ? new Date(job.deadline).toLocaleDateString('vi-VN') : 'N/A' }}
-          </td>
+          <!-- Actions -->
+          <td class="px-6 py-4 text-right">
+            <div class="flex items-center justify-end gap-1 opacity-70 group-hover:opacity-100 transition-opacity">
 
-          <!-- Thao tác -->
-          <td class="px-6 py-5 text-right">
-            <div class="flex items-center justify-end gap-2">
-              
-              <button
-                v-if="job.status?.toLowerCase() === 'draft'"
-                class="p-2 hover:bg-amber-100 dark:hover:bg-amber-900/30 rounded-lg text-amber-600 transition-colors"
-                title="Gửi duyệt"
-                @click="$emit('pendingApproval', job)"
-              >
-                <span class="material-symbols-outlined text-xl">send</span>
-              </button>
+              <!-- View detail — always shown -->
+              <ActionBtn icon="visibility" title="Xem chi tiết" color="primary" @click="$emit('view', job)" />
 
-              <button
-                v-if="['expired', 'closed'].includes(job.status?.toLowerCase())"
-                class="p-2 hover:bg-primary/10 rounded-lg text-primary transition-colors"
-                title="Gia hạn/Đăng lại"
-                @click="$emit('extend', job)"
-              >
-                <span class="material-symbols-outlined text-xl">update</span>
-              </button>
+              <!-- Draft: send for approval -->
+              <ActionBtn v-if="job.status?.toLowerCase() === 'draft'" icon="send" title="Gửi duyệt" color="amber" @click="$emit('pendingApproval', job)" />
 
-              <button
-                v-if="isEditable(job.status)"
-                class="p-2 hover:bg-primary/10 rounded-lg text-primary transition-colors"
-                title="Chỉnh sửa"
-                @click="$emit('edit', job)"
-              >
-                <span class="material-symbols-outlined text-xl">edit</span>
-              </button>
+              <!-- Editable: edit -->
+              <ActionBtn v-if="isEditable(job.status)" icon="edit" title="Chỉnh sửa" color="primary" @click="$emit('edit', job)" />
 
-              <button
-                v-if="job.status?.toLowerCase() === 'published'"
-                class="p-2 hover:bg-orange-100 dark:hover:bg-orange-900/30 rounded-lg text-orange-600 transition-colors"
-                title="Tạm dừng"
-                @click="$emit('pause', job)"
-              >
-                <span class="material-symbols-outlined text-xl">pause_circle</span>
-              </button>
+              <!-- Published: pause -->
+              <ActionBtn v-if="job.status?.toLowerCase() === 'published'" icon="pause_circle" title="Tạm dừng" color="orange" @click="$emit('pause', job)" />
 
-              <button
-                v-if="job.status?.toLowerCase() === 'paused'"
-                class="p-2 hover:bg-green-100 dark:hover:bg-green-900/30 rounded-lg text-green-600 transition-colors"
-                title="Mở lại"
-                @click="$emit('resume', job)"
-              >
-                <span class="material-symbols-outlined text-xl">play_circle</span>
-              </button>
+              <!-- Paused: resume -->
+              <ActionBtn v-if="job.status?.toLowerCase() === 'paused'" icon="play_circle" title="Mở lại" color="green" @click="$emit('resume', job)" />
 
-              <button
+              <!-- Published / Paused / pending: close -->
+              <ActionBtn
                 v-if="['published', 'paused', 'pending_approval', 'active'].includes(job.status?.toLowerCase())"
-                class="p-2 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg text-red-600 transition-colors"
-                title="Đóng tin"
+                icon="cancel" title="Đóng tin" color="red"
                 @click="$emit('close', job)"
-              >
-                <span class="material-symbols-outlined text-xl">cancel</span>
-              </button>
+              />
 
-              <button
-                class="p-2 hover:bg-indigo-100 dark:hover:bg-indigo-900/30 rounded-lg text-indigo-600 transition-colors cursor-pointer"
-                title="Danh sách ứng viên"
-                @click="$emit('candidates', job)"
-              >
-                <span class="material-symbols-outlined text-xl">group</span>
-              </button>
+              <!-- Expired: extend -->
+              <ActionBtn v-if="job.status?.toLowerCase() === 'expired'" icon="update" title="Gia hạn" color="primary" @click="$emit('extend', job)" />
 
-              <button
-                class="p-2 hover:bg-primary/10 rounded-lg text-primary transition-colors cursor-pointer"
-                title="Xem chi tiết"
-                @click="$emit('view', job)"
-              >
-                <span class="material-symbols-outlined text-xl">visibility</span>
-              </button>
+              <!-- Closed: setup interview -->
+              <ActionBtn v-if="job.status?.toLowerCase() === 'closed'" icon="event_available" title="Thiết lập vòng PV" color="indigo" @click="$emit('setupInterviews', job)" />
+
+              <!-- Closed: manage offers -->
+              <ActionBtn v-if="job.status?.toLowerCase() === 'closed'" icon="handshake" title="Quản lý Offer" color="emerald" @click="$emit('offers', job)" />
             </div>
           </td>
         </tr>
@@ -143,12 +120,68 @@
 </template>
 
 <script setup lang="ts">
+import { defineComponent, h } from 'vue'
 import type { ResJobPostingDetail, JobPostingStatus } from '@/types/jobPosting.types'
 import { JOB_POSTING_STATUS_BADGE, JOB_POSTING_STATUS_LABELS } from '@/constants/jobPosting.constants'
 
-defineProps<{
-  jobs: ResJobPostingDetail[]
-}>()
+// ─── Sub-components ──────────────────────────────────────────────────────────
+
+/** Deadline cell with urgency color */
+const DeadlineCell = defineComponent({
+  props: { deadline: String },
+  setup(props) {
+    return () => {
+      if (!props.deadline) return h('span', { class: 'text-sm text-slate-400' }, 'N/A')
+      const d = new Date(props.deadline)
+      const daysLeft = Math.ceil((d.getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+      const dateStr = d.toLocaleDateString('vi-VN')
+      let cls = 'text-sm text-slate-600 dark:text-slate-400'
+      let badge = ''
+      if (daysLeft < 0) {
+        cls = 'text-sm text-slate-400 line-through'
+      } else if (daysLeft <= 3) {
+        cls = 'text-sm font-bold text-red-500'
+        badge = `Còn ${daysLeft} ngày`
+      } else if (daysLeft <= 7) {
+        cls = 'text-sm font-semibold text-amber-500'
+        badge = `Còn ${daysLeft} ngày`
+      }
+      return h('div', { class: 'flex flex-col gap-0.5' }, [
+        h('span', { class: cls }, dateStr),
+        badge ? h('span', { class: 'text-[10px] font-bold px-2 py-0.5 rounded-full w-fit ' + (daysLeft <= 3 ? 'bg-red-50 text-red-500' : 'bg-amber-50 text-amber-600') }, badge) : null,
+      ])
+    }
+  }
+})
+
+const colorMap: Record<string, string> = {
+  primary: 'hover:bg-primary/10 text-primary',
+  amber:   'hover:bg-amber-100 dark:hover:bg-amber-900/30 text-amber-600',
+  orange:  'hover:bg-orange-100 dark:hover:bg-orange-900/30 text-orange-600',
+  green:   'hover:bg-green-100 dark:hover:bg-green-900/30 text-green-600',
+  red:     'hover:bg-red-100 dark:hover:bg-red-900/30 text-red-600',
+  indigo:  'hover:bg-indigo-100 dark:hover:bg-indigo-900/30 text-indigo-600',
+  emerald: 'hover:bg-emerald-100 dark:hover:bg-emerald-900/30 text-emerald-600',
+}
+
+/** Icon action button */
+const ActionBtn = defineComponent({
+  props: { icon: String, title: String, color: { type: String, default: 'primary' } },
+  emits: ['click'],
+  setup(props, { emit }) {
+    return () => h('button', {
+      class: `p-2 rounded-xl transition-colors cursor-pointer ${colorMap[props.color!] ?? colorMap.primary}`,
+      title: props.title,
+      onClick: () => emit('click'),
+    }, [
+      h('span', { class: 'material-symbols-outlined text-[20px]' }, props.icon)
+    ])
+  }
+})
+
+// ─── Props & Emits ───────────────────────────────────────────────────────────
+
+defineProps<{ jobs: ResJobPostingDetail[] }>()
 
 defineEmits<{
   edit: [job: ResJobPostingDetail]
@@ -159,16 +192,16 @@ defineEmits<{
   extend: [job: ResJobPostingDetail]
   view: [job: ResJobPostingDetail]
   candidates: [job: ResJobPostingDetail]
+  setupInterviews: [job: ResJobPostingDetail]
+  offers: [job: ResJobPostingDetail]
 }>()
 
 function statusClass(status: string): string {
   return JOB_POSTING_STATUS_BADGE[status?.toLowerCase() as JobPostingStatus] || 'bg-slate-100 text-slate-700'
 }
-
 function statusLabel(status: string): string {
   return JOB_POSTING_STATUS_LABELS[status?.toLowerCase() as JobPostingStatus] || status
 }
-
 function isEditable(status: string) {
   return ['draft', 'pending_approval', 'published', 'paused', 'rejected'].includes(status?.toLowerCase())
 }

@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <header class="sticky top-0 z-10 flex items-center justify-between px-8 py-4 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-md">
     <div>
       <h2 class="text-2xl font-bold">{{ title }}</h2>
@@ -17,7 +17,7 @@
       </div>
 
       <!-- Notifications -->
-      <button class="p-2 rounded-xl bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 shadow-sm relative">
+      <button class="p-2 rounded-xl bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 shadow-sm relative cursor-pointer">
         <span class="material-symbols-outlined">notifications</span>
         <span
           v-if="hasNotification"

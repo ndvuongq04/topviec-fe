@@ -4,12 +4,12 @@
   </div>
   <div v-else-if="job" class="pt-6">
     <!-- Breadcrumbs -->
-    <nav class="flex items-center gap-2 text-xs text-slate-500 mb-6">
+    <nav class="flex items-center gap-2 text-xs text-slate-400 mb-6 uppercase tracking-widest font-bold">
       <router-link to="/recruiter/jobs" class="hover:text-primary cursor-pointer transition-colors">
-        Quản lý tin tuyển dụng
+        Tin tuyển dụng
       </router-link>
-      <span class="material-symbols-outlined text-[10px]">chevron_right</span>
-      <span class="text-slate-900 dark:text-slate-100 font-medium">Chi tiết tin</span>
+      <span class="material-symbols-outlined text-[12px]">chevron_right</span>
+      <span class="text-primary">Chi tiết tin</span>
     </nav>
 
     <!-- Header -->
@@ -24,6 +24,7 @@
       @pause="onPause"
       @resume="onResume"
       @close="onClose"
+      @offers="onNavigateToOffers"
     />
 
     <!-- Stats -->
@@ -49,7 +50,7 @@
   </div>
   <div v-else class="pt-20 text-center text-slate-500">
     <p>Không tìm thấy tin tuyển dụng.</p>
-    <button @click="$router.push('/recruiter/jobs')" class="mt-4 text-primary hover:underline">Quay lại danh sách</button>
+    <button @click="$router.push('/recruiter/jobs')" class="mt-4 text-primary hover:underline cursor-pointer">Quay lại danh sách</button>
   </div>
 </template>
 
@@ -259,5 +260,9 @@ async function onClose() {
   } catch (error: any) {
     toast.error('Lỗi', jobStore.error || 'Không thể đóng tin')
   }
+}
+
+function onNavigateToOffers() {
+  router.push(`/recruiter/jobs/${jobId}/offers`)
 }
 </script>

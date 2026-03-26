@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <section class="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800">
     <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-800">
       <h3 class="font-bold text-lg">Giới thiệu & Văn hóa công ty</h3>
@@ -54,7 +54,7 @@
           >
             {{ benefit }}
             <button
-              class="material-symbols-outlined text-sm leading-none hover:text-red-500 transition-colors"
+              class="material-symbols-outlined text-sm leading-none hover:text-red-500 transition-colors cursor-pointer"
               @click="removeBenefit(benefit)"
             >close</button>
           </span>
@@ -62,7 +62,7 @@
           <!-- Thêm phúc lợi -->
           <template v-if="!showInput">
             <button
-              class="px-3 py-1 border border-dashed border-primary text-primary rounded-full text-xs font-bold flex items-center gap-1 hover:bg-primary/5 transition-colors"
+              class="px-3 py-1 border border-dashed border-primary text-primary rounded-full text-xs font-bold flex items-center gap-1 hover:bg-primary/5 transition-colors cursor-pointer"
               @click="showInput = true"
             >
               <span class="material-symbols-outlined text-sm">add</span>
@@ -81,10 +81,10 @@
                 @keydown.enter="addBenefit"
                 @keydown.esc="cancelAdd"
               />
-              <button class="text-primary hover:text-primary/80" @click="addBenefit">
+              <button class="text-primary hover:text-primary/80 cursor-pointer" @click="addBenefit">
                 <span class="material-symbols-outlined text-sm">check</span>
               </button>
-              <button class="text-slate-400 hover:text-slate-600" @click="cancelAdd">
+              <button class="text-slate-400 hover:text-slate-600 cursor-pointer" @click="cancelAdd">
                 <span class="material-symbols-outlined text-sm">close</span>
               </button>
             </div>
