@@ -24,10 +24,8 @@ const newTag = ref('')
 const note = ref('')
 
 const EVALUATION_STATUS_OPTIONS = [
-  { value: 'considering', label: 'Cân nhắc', icon: 'help', colorClass: 'border-amber-100 bg-amber-50/30 text-amber-700', activeClass: 'border-amber-500 bg-amber-50 shadow-sm', iconColor: 'text-amber-500' },
   { value: 'cv_passed', label: 'Đạt vòng CV', icon: 'verified', colorClass: 'border-emerald-100 bg-emerald-50/30 text-emerald-700', activeClass: 'border-emerald-500 bg-emerald-50 shadow-sm', iconColor: 'text-emerald-500' },
-  { value: 'schedule_pending', label: 'Chờ chọn lịch', icon: 'schedule_send', colorClass: 'border-blue-100 bg-blue-50/30 text-blue-700', activeClass: 'border-blue-500 bg-blue-50 shadow-sm', iconColor: 'text-blue-500' },
-  { value: 'overdue', label: 'Quá hạn', icon: 'history_toggle_off', colorClass: 'border-rose-100 bg-rose-50/30 text-rose-700', activeClass: 'border-rose-500 bg-rose-50 shadow-sm', iconColor: 'text-rose-500' },
+  { value: 'considering', label: 'Cân nhắc', icon: 'help', colorClass: 'border-amber-100 bg-amber-50/30 text-amber-700', activeClass: 'border-amber-500 bg-amber-50 shadow-sm', iconColor: 'text-amber-500' },
   { value: 'rejected', label: 'Từ chối', icon: 'cancel', colorClass: 'border-rose-100 bg-rose-50/30 text-rose-700', activeClass: 'border-rose-500 bg-rose-50 shadow-sm', iconColor: 'text-rose-500' },
 ]
 
@@ -124,11 +122,13 @@ const interactionHistory = computed(() => {
         <section class="flex-1 flex flex-col gap-6">
           <!-- Breadcrumb & Actions -->
           <div class="flex justify-between items-center">
-            <div class="flex items-center gap-2 text-sm">
-              <router-link :to="`/recruiter/jobs/${jobId}/applications`" class="text-slate-500 hover:text-primary transition-colors">Ứng viên</router-link>
-              <span class="material-symbols-outlined text-sm text-slate-400">chevron_right</span>
-              <span class="font-bold text-primary">{{ application.candidateName }}</span>
-            </div>
+            <nav class="flex items-center gap-2 text-xs text-slate-400 mb-6 uppercase tracking-widest font-bold">
+              <router-link to="/recruiter/jobs" class="hover:text-primary transition-colors">Tuyển dụng</router-link>
+              <span class="material-symbols-outlined text-[12px]">chevron_right</span>
+              <span class="text-slate-400 select-none">{{ application.jobTitle }}</span>
+              <span class="material-symbols-outlined text-[12px]">chevron_right</span>
+              <span class="text-primary">{{ application.candidateName }}</span>
+            </nav>
             <div class="flex gap-2">
               <a v-if="application.cvFileUrl" :href="application.cvFileUrl" target="_blank" class="flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 text-sm font-semibold transition-all">
                 <span class="material-symbols-outlined text-lg">download</span>
@@ -270,14 +270,7 @@ const interactionHistory = computed(() => {
                 <span class="material-symbols-outlined">save</span>
                 {{ loading ? 'Đang lưu...' : 'Lưu Đánh Giá' }}
               </button>
-              <button 
-                @click="inviteForInterview"
-                :disabled="loading || application?.status === 'interviewing'"
-                class="w-full bg-white dark:bg-slate-900 text-primary border-2 border-primary/10 py-3 rounded-xl font-extrabold text-sm hover:bg-primary hover:text-white transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 cursor-pointer"
-              >
-                <span class="material-symbols-outlined">calendar_today</span>
-                {{ application?.status === 'interviewing' ? 'Đã Mời Phỏng Vấn' : 'Mời Phỏng Vấn' }}
-              </button>
+              <!-- Removed Invite Button as per request -->
             </div>
           </div>
 

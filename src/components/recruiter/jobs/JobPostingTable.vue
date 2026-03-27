@@ -106,6 +106,9 @@
               <!-- Expired: extend -->
               <ActionBtn v-if="job.status?.toLowerCase() === 'expired'" icon="update" title="Gia hạn" color="primary" @click="$emit('extend', job)" />
 
+              <!-- View Candidates -->
+              <ActionBtn icon="group" title="Quản lý ứng viên" color="primary" @click="$emit('candidates', job)" />
+
               <!-- Closed: setup interview -->
               <ActionBtn v-if="job.status?.toLowerCase() === 'closed'" icon="event_available" title="Thiết lập vòng PV" color="indigo" @click="$emit('setupInterviews', job)" />
 
