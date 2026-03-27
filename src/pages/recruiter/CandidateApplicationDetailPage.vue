@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useEmployerApplicationStore } from '@/stores/employerApplication.store'
@@ -25,6 +25,9 @@ const note = ref('')
 
 const EVALUATION_STATUS_OPTIONS = [
   { value: 'considering', label: 'Cân nhắc', icon: 'help', colorClass: 'border-amber-100 bg-amber-50/30 text-amber-700', activeClass: 'border-amber-500 bg-amber-50 shadow-sm', iconColor: 'text-amber-500' },
+  { value: 'cv_passed', label: 'Đạt vòng CV', icon: 'verified', colorClass: 'border-emerald-100 bg-emerald-50/30 text-emerald-700', activeClass: 'border-emerald-500 bg-emerald-50 shadow-sm', iconColor: 'text-emerald-500' },
+  { value: 'schedule_pending', label: 'Chờ chọn lịch', icon: 'schedule_send', colorClass: 'border-blue-100 bg-blue-50/30 text-blue-700', activeClass: 'border-blue-500 bg-blue-50 shadow-sm', iconColor: 'text-blue-500' },
+  { value: 'overdue', label: 'Quá hạn', icon: 'history_toggle_off', colorClass: 'border-rose-100 bg-rose-50/30 text-rose-700', activeClass: 'border-rose-500 bg-rose-50 shadow-sm', iconColor: 'text-rose-500' },
   { value: 'rejected', label: 'Từ chối', icon: 'cancel', colorClass: 'border-rose-100 bg-rose-50/30 text-rose-700', activeClass: 'border-rose-500 bg-rose-50 shadow-sm', iconColor: 'text-rose-500' },
 ]
 
@@ -168,7 +171,7 @@ const interactionHistory = computed(() => {
             
             <div class="p-6 space-y-8" :class="{ 'opacity-60 pointer-events-none select-none': application.status === 'interviewing' }">
               <!-- Locked Message -->
-              <div v-if="application.status === 'interviewing'" class="p-3 bg-blue-50 text-blue-700 border border-blue-100 rounded-lg text-xs font-bold flex items-center gap-2">
+              <div v-if="application?.status === 'interviewing'" class="p-3 bg-blue-50 text-blue-700 border border-blue-100 rounded-lg text-xs font-bold flex items-center gap-2">
                 <span class="material-symbols-outlined text-lg">info</span>
                 Ứng viên đang phỏng vấn - Đánh giá đã được khóa
               </div>
@@ -187,7 +190,7 @@ const interactionHistory = computed(() => {
                         : opt.colorClass + ' border-transparent hover:bg-slate-50 dark:hover:bg-slate-800/50'
                     ]"
                   >
-                    <input type="radio" v-model="selectedStatus" :value="opt.value" class="w-4 h-4" :class="opt.iconColor.replace('text', 'text-').replace('-500', '-600')" :disabled="application.status === 'interviewing'" />
+                    <input type="radio" v-model="selectedStatus" :value="opt.value" class="w-4 h-4" :class="opt.iconColor.replace('text', 'text-').replace('-500', '-600')" :disabled="application?.status === 'interviewing'" />
                     <span class="text-sm font-bold" :class="selectedStatus === opt.value ? 'text-slate-900 dark:text-white' : ''">{{ opt.label }}</span>
                     <span class="material-symbols-outlined ml-auto text-lg" :class="opt.iconColor">{{ opt.icon }}</span>
                   </label>
@@ -204,7 +207,7 @@ const interactionHistory = computed(() => {
                     @click="rating = i"
                     :disabled="application.status === 'interviewing'"
                     class="transition-transform hover:scale-110 disabled:hover:scale-100"
-                    :class="i <= rating ? 'text-amber-400' : 'text-slate-200 dark:text-slate-700' cursor-pointer"
+                    :class="[i <= rating ? 'text-amber-400' : 'text-slate-200 dark:text-slate-700', 'cursor-pointer']"
                   >
                     <span class="material-symbols-outlined text-3xl" :style="{ fontVariationSettings: i <= rating ? `'FILL' 1` : `'FILL' 0` }">
                       star
@@ -217,7 +220,7 @@ const interactionHistory = computed(() => {
               <div class="space-y-3">
                 <div class="flex justify-between items-center">
                   <label class="text-sm font-bold text-slate-500 uppercase tracking-tight">Nhãn (Tags)</label>
-                  <button @click="addTag" v-if="application.status !== 'interviewing'" class="text-xs text-primary font-bold hover:underline cursor-pointer">+ Thêm mới</button>
+                  <button @click="addTag" v-if="application?.status !== 'interviewing'" class="text-xs text-primary font-bold hover:underline cursor-pointer">+ Thêm mới</button>
                 </div>
                 <div class="flex flex-wrap gap-2">
                   <span 
@@ -226,10 +229,10 @@ const interactionHistory = computed(() => {
                     class="group flex items-center gap-1.5 px-3 py-1 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-bold rounded-full border border-slate-200 dark:border-slate-700 hover:bg-slate-200 transition-colors cursor-pointer"
                   >
                     {{ tag }}
-                    <span v-if="application.status !== 'interviewing'" @click.stop="removeTag(tag)" class="material-symbols-outlined text-sm opacity-50 group-hover:opacity-100">close</span>
+                    <span v-if="application?.status !== 'interviewing'" @click.stop="removeTag(tag)" class="material-symbols-outlined text-sm opacity-50 group-hover:opacity-100">close</span>
                   </span>
                   <input 
-                    v-if="tags.length < 5 && application.status !== 'interviewing'"
+                    v-if="tags.length < 5 && application?.status !== 'interviewing'"
                     v-model="newTag"
                     @keyup.enter="addTag"
                     type="text" 
@@ -249,7 +252,7 @@ const interactionHistory = computed(() => {
                 </div>
                 <textarea 
                   v-model="note"
-                  :disabled="application.status === 'interviewing'"
+                  :disabled="application?.status === 'interviewing'"
                   class="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm focus:ring-primary focus:border-primary placeholder:text-slate-400 dark:text-slate-200 p-4 outline-none resize-none disabled:bg-slate-100 disabled:text-slate-400" 
                   placeholder="Nhập nhận xét về ứng viên này..." 
                   rows="4"
@@ -261,7 +264,7 @@ const interactionHistory = computed(() => {
             <div class="p-6 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-200 dark:border-slate-800 flex flex-col gap-3">
               <button 
                 @click="saveEvaluation"
-                :disabled="loading || application.status === 'interviewing'"
+                :disabled="loading || application?.status === 'interviewing'"
                 class="w-full bg-primary text-white py-3 rounded-xl font-extrabold text-sm shadow-lg shadow-primary/20 hover:bg-blue-600 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:hover:scale-100 cursor-pointer"
               >
                 <span class="material-symbols-outlined">save</span>
@@ -269,11 +272,11 @@ const interactionHistory = computed(() => {
               </button>
               <button 
                 @click="inviteForInterview"
-                :disabled="loading || application.status === 'interviewing'"
+                :disabled="loading || application?.status === 'interviewing'"
                 class="w-full bg-white dark:bg-slate-900 text-primary border-2 border-primary/10 py-3 rounded-xl font-extrabold text-sm hover:bg-primary hover:text-white transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 cursor-pointer"
               >
                 <span class="material-symbols-outlined">calendar_today</span>
-                {{ application.status === 'interviewing' ? 'Đã Mời Phỏng Vấn' : 'Mời Phỏng Vấn' }}
+                {{ application?.status === 'interviewing' ? 'Đã Mời Phỏng Vấn' : 'Mời Phỏng Vấn' }}
               </button>
             </div>
           </div>
