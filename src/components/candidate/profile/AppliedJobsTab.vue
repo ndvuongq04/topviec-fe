@@ -1,25 +1,31 @@
 <template>
-  <div class="space-y-6">
-    <!-- Header -->
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-surface-dark p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm transition-all duration-300">
-      <div>
-        <h1 class="text-2xl font-bold text-text-main dark:text-white flex items-center gap-2">
-          Việc làm đã ứng tuyển
-          <span v-if="!loading" class="inline-flex items-center px-3 py-0.5 rounded-full text-xs font-bold bg-primary/10 text-primary border border-primary/20">
-            {{ meta.totals }}
-          </span>
-        </h1>
-        <p class="text-text-muted text-sm mt-1">Theo dõi trạng thái và tiến độ các đơn ứng tuyển của bạn.</p>
+  <div class="space-y-5">
+    <!-- Header Card: Title + Filters merged -->
+    <div class="bg-white dark:bg-surface-dark rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+      <div class="p-5 sm:p-6">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h2 class="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight">Việc làm đã ứng tuyển</h2>
+            <p class="text-slate-500 dark:text-gray-400 text-sm mt-1">Theo dõi trạng thái và tiến độ các đơn ứng tuyển.</p>
+          </div>
+          <div v-if="!loading" class="flex items-center gap-2">
+            <span class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-sm font-bold bg-primary/10 text-primary border border-primary/20">
+              <span class="material-symbols-outlined text-[16px]">send</span>
+              {{ meta.totals }} đơn
+            </span>
+          </div>
+        </div>
       </div>
-      <div class="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0 scrollbar-hide">
+      <!-- Filter Tabs -->
+      <div class="px-5 sm:px-6 py-3 bg-slate-50/50 dark:bg-slate-800/30 border-t border-slate-100 dark:border-slate-800 flex items-center gap-2 overflow-x-auto scrollbar-hide">
         <button 
           v-for="filter in filterOptions" 
           :key="filter.value"
           @click="handleFilterChange(filter.value)"
-          class="whitespace-nowrap px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200"
+          class="whitespace-nowrap px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all duration-200"
           :class="activeFilter === filter.value 
-            ? 'bg-primary text-white shadow-lg shadow-primary/20' 
-            : 'bg-slate-50 dark:bg-slate-800 text-text-muted hover:bg-slate-100 dark:hover:bg-slate-700'"
+            ? 'bg-primary text-white shadow-md shadow-primary/20' 
+            : 'text-slate-500 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-slate-700'"
         >
           {{ filter.label }}
         </button>
@@ -27,111 +33,104 @@
     </div>
 
     <!-- Loading State -->
-    <div v-if="loading && applications.length === 0" class="flex flex-col items-center justify-center p-12">
-      <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-      <p class="mt-4 text-text-muted">Đang tải danh sách...</p>
+    <div v-if="loading && applications.length === 0" class="flex flex-col items-center justify-center py-20">
+      <span class="material-symbols-outlined animate-spin text-primary text-4xl">progress_activity</span>
+      <p class="mt-4 text-sm text-slate-400 font-medium">Đang tải danh sách...</p>
     </div>
 
     <!-- Empty state -->
-    <div v-else-if="applications.length === 0" class="bg-white dark:bg-surface-dark p-12 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col items-center justify-center text-center">
-      <div class="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center text-slate-400 mb-4">
-        <span class="material-symbols-outlined text-3xl">work_history</span>
+    <div v-else-if="applications.length === 0" class="bg-white dark:bg-surface-dark py-16 px-8 rounded-2xl border border-slate-200 dark:border-slate-800 flex flex-col items-center justify-center text-center">
+      <div class="w-20 h-20 bg-slate-100 dark:bg-slate-800 rounded-2xl flex items-center justify-center text-slate-400 mb-5">
+        <span class="material-symbols-outlined text-4xl">work_history</span>
       </div>
-      <h3 class="text-lg font-bold text-text-main dark:text-white mb-2">Không tìm thấy đơn ứng tuyển nào</h3>
-      <p class="text-text-muted text-sm mb-6">Bạn không có đơn ứng tuyển nào ở trạng thái này.</p>
+      <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-1.5">Không tìm thấy đơn ứng tuyển</h3>
+      <p class="text-slate-500 dark:text-gray-400 text-sm mb-6 max-w-xs">Bạn không có đơn ứng tuyển nào ở trạng thái này.</p>
       <button 
         v-if="activeFilter !== 'all'"
         @click="handleFilterChange('all')"
-        class="text-primary font-bold text-sm hover:underline"
+        class="inline-flex items-center gap-2 text-primary font-bold text-sm hover:underline"
       >
+        <span class="material-symbols-outlined text-[16px]">filter_list_off</span>
         Xem tất cả các đơn
       </button>
     </div>
 
     <!-- Application List -->
-    <div v-else class="grid grid-cols-1 gap-4">
+    <div v-else class="flex flex-col gap-3">
       <div 
         v-for="app in applications" 
         :key="app.id"
-        class="group relative bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800 rounded-3xl p-5 hover:border-primary/50 dark:hover:border-primary/50 transition-all duration-300 hover:shadow-xl hover:shadow-primary/5"
+        class="group bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800 rounded-2xl p-4 sm:p-5 hover:border-primary/40 transition-all duration-200 hover:shadow-sm"
       >
-        <div class="flex flex-col md:flex-row gap-5">
+        <div class="flex flex-col sm:flex-row gap-4">
           <!-- Company Logo -->
-          <div class="flex-shrink-0 w-16 h-16 rounded-2xl bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-800 p-2 flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform duration-300">
+          <div class="flex-shrink-0 w-12 h-12 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 p-1.5 flex items-center justify-center">
             <img :src="app.jobPosting?.company.logoUrl || '/default-company.png'" :alt="app.jobPosting?.company.name" class="w-full h-full object-contain" />
           </div>
 
           <!-- Job Info -->
           <div class="flex-grow min-w-0">
-            <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
-              <div>
-                <h3 class="text-lg font-bold text-text-main dark:text-white group-hover:text-primary transition-colors truncate">
+            <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-2">
+              <div class="min-w-0">
+                <h3 class="text-base font-bold text-slate-900 dark:text-white group-hover:text-primary transition-colors truncate">
                   {{ app.jobPosting?.title || 'Công việc không còn tồn tại' }}
                 </h3>
-                <p class="text-text-main dark:text-slate-300 font-medium text-sm mt-0.5 flex items-center gap-1.5">
-                  <span class="material-symbols-outlined text-[18px] text-text-muted">corporate_fare</span>
-                  {{ app.jobPosting?.company.name || 'N/A' }}
-                </p>
+                <p class="text-slate-500 dark:text-gray-400 text-sm mt-0.5 truncate">{{ app.jobPosting?.company.name || 'N/A' }}</p>
               </div>
-              <div :class="getStatusClasses(app.status)" class="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border shrink-0">
-                <span class="material-symbols-outlined text-[16px]">{{ getStatusIcon(app.status) }}</span>
+              <div :class="getStatusClasses(app.status)" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold border shrink-0 self-start">
+                <span class="material-symbols-outlined text-[14px]">{{ getStatusIcon(app.status) }}</span>
                 {{ getStatusLabel(app.status) }}
               </div>
             </div>
 
-            <div class="mt-4 flex flex-wrap items-center gap-y-2 gap-x-6 text-sm">
-              <div class="flex items-center gap-1.5 text-text-muted">
-                <span class="material-symbols-outlined text-[18px]">calendar_today</span>
-                <span>Ngày nộp: <span class="font-medium text-text-main dark:text-white">{{ formatDate(app.createdAt) }}</span></span>
+            <div class="mt-3 flex flex-wrap items-center gap-x-5 gap-y-1.5 text-xs text-slate-500 dark:text-gray-400">
+              <div class="flex items-center gap-1">
+                <span class="material-symbols-outlined text-[14px]">calendar_today</span>
+                Nộp: <span class="font-medium text-slate-700 dark:text-gray-300 ml-0.5">{{ formatDate(app.createdAt) }}</span>
               </div>
-            </div>
-            
-            <!-- Timeline Preview (Subtle) -->
-            <div v-if="app.viewedAt" class="mt-3 text-xs text-secondary italic flex items-center gap-1.5">
-              <span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
-              Nhà tuyển dụng đã xem hồ sơ vào {{ formatDate(app.viewedAt) }}
-            </div>
-            <div v-else-if="app.status === APPLICATION_STATUS.PENDING" class="mt-3 text-xs text-text-muted italic flex items-center gap-1.5">
-              <span class="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-slate-600"></span>
-              Đang chờ nhà tuyển dụng phản hồi
+              <div v-if="app.viewedAt" class="flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
+                <span class="material-symbols-outlined text-[14px]">visibility</span>
+                Đã xem {{ formatDate(app.viewedAt) }}
+              </div>
+              <div v-else-if="app.status === APPLICATION_STATUS.PENDING" class="flex items-center gap-1">
+                <span class="material-symbols-outlined text-[14px]">hourglass_top</span>
+                Chờ phản hồi
+              </div>
             </div>
           </div>
 
           <!-- Actions -->
-          <div class="flex md:flex-col items-center justify-end gap-2 shrink-0 md:border-l md:border-slate-100 md:dark:border-slate-800 md:pl-5">
+          <div class="flex sm:flex-col items-center gap-1.5 shrink-0 sm:border-l sm:border-slate-100 sm:dark:border-slate-800 sm:pl-4">
             <router-link 
               :to="{ name: 'JobDetail', params: { id: app.jobPostId } }"
-              class="flex-1 md:flex-none flex items-center justify-center gap-2 bg-slate-50 dark:bg-slate-800 hover:bg-primary/10 hover:text-primary text-text-main dark:text-white px-4 py-2 rounded-xl text-sm font-bold transition-all duration-200"
+              class="p-2 rounded-lg text-slate-400 hover:text-primary hover:bg-primary/5 transition-all"
+              title="Xem chi tiết"
             >
-              <span class="material-symbols-outlined text-[18px]">visibility</span>
-              Chi tiết
+              <span class="material-symbols-outlined text-[20px]">visibility</span>
             </router-link>
-            
             <button 
               v-if="app.cvId"
               @click="handleViewCv(app)"
-              class="flex-1 md:flex-none flex items-center justify-center gap-2 bg-slate-50 dark:bg-slate-800 hover:bg-primary/10 hover:text-primary text-text-main dark:text-white px-4 py-2 rounded-xl text-sm font-bold transition-all duration-200"
+              class="p-2 rounded-lg text-slate-400 hover:text-primary hover:bg-primary/5 transition-all"
+              title="Xem CV"
             >
-              <span class="material-symbols-outlined text-[18px]">description</span>
-              Xem CV
+              <span class="material-symbols-outlined text-[20px]">description</span>
             </button>
-
             <button 
               v-if="app.status === APPLICATION_STATUS.PENDING"
               @click="handleChangeCv(app)"
-              class="flex-1 md:flex-none flex items-center justify-center gap-2 text-primary hover:bg-primary/5 px-4 py-2 rounded-xl text-sm font-bold transition-all duration-200"
+              class="p-2 rounded-lg text-slate-400 hover:text-primary hover:bg-primary/5 transition-all"
+              title="Đổi CV"
             >
-              <span class="material-symbols-outlined text-[18px]">edit_document</span>
-              Đổi CV
+              <span class="material-symbols-outlined text-[20px]">edit_document</span>
             </button>
-
             <button 
               v-if="app.status === APPLICATION_STATUS.PENDING"
               @click="handleWithdraw(app)"
-              class="flex-1 md:flex-none flex items-center justify-center gap-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 px-4 py-2 rounded-xl text-sm font-bold transition-all duration-200"
+              class="p-2 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all"
+              title="Rút đơn"
             >
-              <span class="material-symbols-outlined text-[18px]">cancel</span>
-              Rút đơn
+              <span class="material-symbols-outlined text-[20px]">cancel</span>
             </button>
           </div>
         </div>
