@@ -14,6 +14,7 @@ export enum JobPostingStatus {
     CLOSED = 'closed',
     EXPIRED = 'expired',
     REJECTED = 'rejected',
+    INTERVIEWING = 'interviewing',
 }
 
 
@@ -34,6 +35,7 @@ export const JOB_POSTING_STATUS_LABELS: Record<JobPostingStatus, string> = {
     [JobPostingStatus.CLOSED]: 'Đã đóng',
     [JobPostingStatus.EXPIRED]: 'Hết hạn',
     [JobPostingStatus.REJECTED]: 'Bị từ chối',
+    [JobPostingStatus.INTERVIEWING]: 'Phỏng vấn',
 }
 
 /** Tailwind badge classes theo status */
@@ -45,6 +47,7 @@ export const JOB_POSTING_STATUS_BADGE: Record<JobPostingStatus, string> = {
     [JobPostingStatus.CLOSED]: 'bg-slate-200 text-slate-500 dark:bg-slate-600 dark:text-slate-400',
     [JobPostingStatus.EXPIRED]: 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400',
     [JobPostingStatus.REJECTED]: 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400',
+    [JobPostingStatus.INTERVIEWING]: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
 }
 
 export const WORK_TYPE_OPTIONS: { label: string; value: WorkType }[] = [

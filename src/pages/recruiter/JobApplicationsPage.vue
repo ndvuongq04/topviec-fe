@@ -202,6 +202,14 @@ function formatDate(dateStr: string) {
             <!-- Actions -->
             <td class="px-6 py-4 text-right space-x-1">
               <button
+                v-if="app.status === APPLICATION_STATUS.INTERVIEWING"
+                @click="router.push({ name: 'recruiter-interview-create', query: { jobId, applicationId: app.id } })"
+                class="p-1.5 text-emerald-500 hover:text-emerald-700 transition-colors cursor-pointer"
+                title="Đặt lịch phỏng vấn"
+              >
+                <span class="material-symbols-outlined text-xl">calendar_month</span>
+              </button>
+              <button
                 @click="router.push({ name: 'recruiter-application-detail', params: { id: jobId, applicationId: app.id } })"
                 class="p-1.5 text-slate-400 hover:text-primary transition-colors cursor-pointer"
                 title="Xem chi tiết"

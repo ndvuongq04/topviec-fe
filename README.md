@@ -1,841 +1,356 @@
-CONTROLLER :
-package com.topviec.topviec_be.controller;
-
-import com.topviec.topviec_be.dto.request.*;
-import com.topviec.topviec_be.dto.response.*;
-import com.topviec.topviec_be.service.CompanyService;
-import com.topviec.topviec_be.service.InterviewService;
-import com.topviec.topviec_be.util.SecurityUtil;
-import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
-
-/**
- * Controller dành cho Employer — quản lý phỏng vấn.
- * Base URL: /api/v1/employer
- */
-@RestController
-@RequestMapping("/employer")
-@RequiredArgsConstructor
-@PreAuthorize("hasRole('EMPLOYER')")
-public class EmployerInterviewController {
-
-    private final InterviewService interviewService;
-    private final CompanyService companyService;
-
-    // ── Vòng phỏng vấn ────────────────────────────────────────────────────────
-
-    @PostMapping("/job-postings/{jobPostId}/interview-rounds")
-    public ResponseEntity<ResInterviewRoundDTO> createRound(
-            @PathVariable Long jobPostId,
-            @Valid @RequestBody ReqCreateInterviewRoundDTO request) {
-
-        Long userId = SecurityUtil.getCurrentUserId();
-        Long companyId = companyService.getCompanyIdByUserId(userId);
-
-        return ResponseEntity
-                .status(HttpStatus.CREATED)
-                .body(interviewService.createRound(jobPostId, userId, companyId, request));
-    }
-
-    @GetMapping("/job-postings/{jobPostId}/interview-rounds")
-    public ResponseEntity<List<ResInterviewRoundDTO>> getRounds(
-            @PathVariable Long jobPostId) {
-
-        Long userId = SecurityUtil.getCurrentUserId();
-        Long companyId = companyService.getCompanyIdByUserId(userId);
-
-        return ResponseEntity.ok(interviewService.getRounds(jobPostId, companyId));
-    }
-
-    @PatchMapping("/interview-rounds/{roundId}")
-    public ResponseEntity<ResInterviewRoundDTO> updateRound(
-            @PathVariable Long roundId,
-            @Valid @RequestBody ReqUpdateInterviewRoundDTO request) {
-
-        Long userId = SecurityUtil.getCurrentUserId();
-        Long companyId = companyService.getCompanyIdByUserId(userId);
-
-        return ResponseEntity.ok(interviewService.updateRound(roundId, userId, companyId, request));
-    }
-
-    @DeleteMapping("/interview-rounds/{roundId}")
-    public ResponseEntity<Void> deleteRound(@PathVariable Long roundId) {
-        Long userId = SecurityUtil.getCurrentUserId();
-        Long companyId = companyService.getCompanyIdByUserId(userId);
-
-        interviewService.deleteRound(roundId, userId, companyId);
-        return ResponseEntity.noContent().build();
-    }
-
-    // ── Lịch phỏng vấn ───────────────────────────────────────────────────────
-
-    @PostMapping("/interview-rounds/{roundId}/schedules")
-    public ResponseEntity<ResInterviewScheduleDTO> createSchedule(
-            @PathVariable Long roundId,
-            @Valid @RequestBody ReqCreateInterviewScheduleDTO request) {
-
-        Long userId = SecurityUtil.getCurrentUserId();
-        Long companyId = companyService.getCompanyIdByUserId(userId);
-
-        return ResponseEntity
-                .status(HttpStatus.CREATED)
-                .body(interviewService.createSchedule(roundId, userId, companyId, request));
-    }
-
-    @PostMapping("/interview-rounds/{roundId}/schedule-slots")
-    public ResponseEntity<Void> createSlots(
-            @PathVariable Long roundId,
-            @Valid @RequestBody ReqCreateInterviewSlotsDTO request) {
-
-        Long userId = SecurityUtil.getCurrentUserId();
-        Long companyId = companyService.getCompanyIdByUserId(userId);
-
-        interviewService.createSlots(roundId, userId, companyId, request);
-        return ResponseEntity.status(HttpStatus.CREATED).build();
-    }
-
-    @GetMapping("/job-postings/{jobPostId}/interview-schedules")
-    public ResponseEntity<List<ResInterviewScheduleDTO>> getSchedules(
-            @PathVariable Long jobPostId,
-            @RequestParam(required = false) Long roundId,
-            @RequestParam(required = false) String status) {
-
-        Long userId = SecurityUtil.getCurrentUserId();
-        Long companyId = companyService.getCompanyIdByUserId(userId);
-
-        return ResponseEntity.ok(interviewService.getSchedules(jobPostId, companyId, roundId, status));
-    }
-
-    @PutMapping("/interview-schedules/{scheduleId}")
-    public ResponseEntity<ResInterviewScheduleDTO> updateSchedule(
-            @PathVariable Long scheduleId,
-            @Valid @RequestBody ReqUpdateInterviewScheduleDTO request) {
-
-        Long userId = SecurityUtil.getCurrentUserId();
-        Long companyId = companyService.getCompanyIdByUserId(userId);
-
-        return ResponseEntity.ok(interviewService.updateSchedule(scheduleId, userId, companyId, request));
-    }
-
-    @DeleteMapping("/interview-schedules/{scheduleId}")
-    public ResponseEntity<Void> deleteSchedule(@PathVariable Long scheduleId) {
-        Long userId = SecurityUtil.getCurrentUserId();
-        Long companyId = companyService.getCompanyIdByUserId(userId);
-
-        interviewService.deleteSchedule(scheduleId, userId, companyId);
-        return ResponseEntity.noContent().build();
-    }
-
-    // ── Kết quả phỏng vấn ────────────────────────────────────────────────────
-
-    @PostMapping("/interview-schedules/{scheduleId}/results")
-    public ResponseEntity<ResInterviewResultDTO> createResult(
-            @PathVariable Long scheduleId,
-            @Valid @RequestBody ReqInterviewResultDTO request) {
-
-        Long userId = SecurityUtil.getCurrentUserId();
-        Long companyId = companyService.getCompanyIdByUserId(userId);
-
-        return ResponseEntity
-                .status(HttpStatus.CREATED)
-                .body(interviewService.createResult(scheduleId, userId, companyId, request));
-    }
-
-    @GetMapping("/interview-schedules/{scheduleId}/results")
-    public ResponseEntity<ResInterviewResultDTO> getResult(
-            @PathVariable Long scheduleId) {
-
-        Long userId = SecurityUtil.getCurrentUserId();
-        Long companyId = companyService.getCompanyIdByUserId(userId);
-
-        return ResponseEntity.ok(interviewService.getResult(scheduleId, companyId));
-    }
-
-    // ── Lịch sử PV ──────────────────────────────────────────────────────────
-
-    @GetMapping("/applications/{applicationId}/interview-history")
-    public ResponseEntity<ResInterviewHistoryDTO> getInterviewHistory(
-            @PathVariable Long applicationId) {
-
-        Long userId = SecurityUtil.getCurrentUserId();
-        Long companyId = companyService.getCompanyIdByUserId(userId);
-
-        return ResponseEntity.ok(interviewService.getInterviewHistory(applicationId, companyId));
-    }
-
-    // ── Overdue ──────────────────────────────────────────────────────────────
-
-    @GetMapping("/job-postings/{jobPostId}/overdue-applications")
-    public ResponseEntity<List<ResOverdueApplicationDTO>> getOverdueApplications(
-            @PathVariable Long jobPostId) {
-
-        Long userId = SecurityUtil.getCurrentUserId();
-        Long companyId = companyService.getCompanyIdByUserId(userId);
-
-        return ResponseEntity.ok(interviewService.getOverdueApplications(jobPostId, companyId));
-    }
-
-    @PatchMapping("/applications/{applicationId}/extend-deadline")
-    public ResponseEntity<Void> extendDeadline(
-            @PathVariable Long applicationId,
-            @Valid @RequestBody ReqExtendDeadlineDTO request) {
-
-        Long userId = SecurityUtil.getCurrentUserId();
-        Long companyId = companyService.getCompanyIdByUserId(userId);
-
-        interviewService.extendDeadline(applicationId, userId, companyId, request);
-        return ResponseEntity.ok().build();
-    }
-
-    @PatchMapping("/applications/{applicationId}/force-schedule")
-    public ResponseEntity<ResInterviewScheduleDTO> forceSchedule(
-            @PathVariable Long applicationId,
-            @Valid @RequestBody ReqForceScheduleDTO request) {
-
-        Long userId = SecurityUtil.getCurrentUserId();
-        Long companyId = companyService.getCompanyIdByUserId(userId);
-
-        return ResponseEntity.ok(interviewService.forceSchedule(applicationId, userId, companyId, request));
-    }
-
-    // ── Offer ────────────────────────────────────────────────────────────────
-
-    @PatchMapping("/applications/{applicationId}/offer")
-    public ResponseEntity<ResEmployerApplicationDTO> updateOffer(
-            @PathVariable Long applicationId,
-            @Valid @RequestBody ReqOfferResultDTO request) {
-
-        Long userId = SecurityUtil.getCurrentUserId();
-        Long companyId = companyService.getCompanyIdByUserId(userId);
-
-        return ResponseEntity.ok(interviewService.updateOffer(applicationId, userId, companyId, request));
-    }
-
-    // ── Job interview phase ──────────────────────────────────────────────────
-
-    @GetMapping("/job-postings/{jobPostId}/interview-readiness")
-    public ResponseEntity<ResInterviewReadinessDTO> checkReadiness(
-            @PathVariable Long jobPostId) {
-
-        Long userId = SecurityUtil.getCurrentUserId();
-        Long companyId = companyService.getCompanyIdByUserId(userId);
-
-        return ResponseEntity.ok(interviewService.checkReadiness(jobPostId, companyId));
-    }
-
-    @PatchMapping("/job-postings/{jobPostId}/start-interviewing")
-    public ResponseEntity<Void> startInterviewing(
-            @PathVariable Long jobPostId) {
-
-        Long userId = SecurityUtil.getCurrentUserId();
-        Long companyId = companyService.getCompanyIdByUserId(userId);
-
-        interviewService.startInterviewing(jobPostId, userId, companyId);
-        return ResponseEntity.ok().build();
-    }
-
-    @PatchMapping("/job-postings/{jobPostId}/complete")
-    public ResponseEntity<Void> completeRecruitment(
-            @PathVariable Long jobPostId,
-            @Valid @RequestBody ReqCompleteRecruitmentDTO request) {
-
-        Long userId = SecurityUtil.getCurrentUserId();
-        Long companyId = companyService.getCompanyIdByUserId(userId);
-
-        interviewService.completeRecruitment(jobPostId, userId, companyId, request);
-        return ResponseEntity.ok().build();
-    }
-}
-
-package com.topviec.topviec_be.controller;
-
-import com.topviec.topviec_be.service.InterviewService;
-import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
-import java.util.Map;
-
-/**
- * Controller public — UV xác nhận chọn slot PV (không cần đăng nhập).
- * Base URL: /api/v1/interview-schedules
- */
-@RestController
-@RequestMapping("/interview-schedules")
-@RequiredArgsConstructor
-public class PublicInterviewController {
-
-    private final InterviewService interviewService;
-
-    /**
-     * GET /interview-schedules/confirm?token=xxx&slotId=123
-     * UV click link từ email để chọn slot. Không cần auth.
-     */
-    @GetMapping("/confirm")
-    public ResponseEntity<Map<String, String>> confirmSlot(
-            @RequestParam String token,
-            @RequestParam Long slotId) {
-
-        String message = interviewService.confirmSlot(token, slotId);
-        return ResponseEntity.ok(Map.of("message", message));
-    }
-}
-
-DTO :
-package com.topviec.topviec_be.dto.request;
-
-import jakarta.validation.constraints.NotEmpty;
-import lombok.*;
-
-import java.util.List;
-
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
-public class ReqCompleteRecruitmentDTO {
-
-    @NotEmpty(message = "Danh sách ứng viên trúng tuyển không được trống")
-    private List<Long> applicationIds;
-}
-
-package com.topviec.topviec_be.dto.request;
-
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotBlank;
-import lombok.*;
-
-import java.util.List;
-
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
-public class ReqCreateInterviewRoundDTO {
-
-    @NotBlank(message = "Tên vòng phỏng vấn không được trống")
-    private String roundName;
-
-    private String description;
-
-    private Boolean isFinal;
-
-    @Valid
-    private List<InterviewerDTO> interviewers;
-
-    @Getter
-    @Setter
-    @NoArgsConstructor
-    @AllArgsConstructor
-    @Builder
-    public static class InterviewerDTO {
-        @NotBlank(message = "Tên người phỏng vấn không được trống")
-        private String name;
-        private String email;
-        private String phone;
-    }
-}
-
-package com.topviec.topviec_be.dto.request;
-
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import lombok.*;
-
-import java.time.LocalDateTime;
-
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
-public class ReqCreateInterviewScheduleDTO {
-
-    @NotNull(message = "applicationId không được trống")
-    private Long applicationId;
-
-    @NotNull(message = "Thời gian phỏng vấn không được trống")
-    private LocalDateTime scheduledAt;
-
-    private Integer durationMinutes;
-
-    @NotBlank(message = "Loại phỏng vấn không được trống")
-    private String interviewType;
-
-    private String location;
-
-    private String meetingLink;
-
-    private String interviewerNote;
-}
-
-package com.topviec.topviec_be.dto.request;
-
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotEmpty;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
-import lombok.*;
-
-import java.time.LocalDateTime;
-import java.util.List;
-
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
-public class ReqCreateInterviewSlotsDTO {
-
-    @NotEmpty(message = "Danh sách ứng viên không được trống")
-    private List<Long> applicationIds;
-
-    @NotNull(message = "Hạn chót chọn lịch không được trống")
-    private LocalDateTime deadline;
-
-    @Valid
-    @NotEmpty(message = "Cần ít nhất 1 slot thời gian")
-    @Size(min = 3, max = 5, message = "Số lượng slot phải từ 3 đến 5")
-    private List<SlotDTO> slots;
-
-    @Getter
-    @Setter
-    @NoArgsConstructor
-    @AllArgsConstructor
-    @Builder
-    public static class SlotDTO {
-        @NotNull(message = "Thời gian slot không được trống")
-        private LocalDateTime proposedAt;
-
-        @NotBlank(message = "Loại phỏng vấn không được trống")
-        private String interviewType;
-
-        private String location;
-
-        private String meetingLink;
-    }
-}
-
-package com.topviec.topviec_be.dto.request;
-
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotNull;
-import lombok.*;
-
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
-public class ReqExtendDeadlineDTO {
-
-    @NotNull(message = "Số ngày gia hạn không được trống")
-    @Min(value = 1, message = "Phải gia hạn ít nhất 1 ngày")
-    private Integer extendDays;
-}
-
-package com.topviec.topviec_be.dto.request;
-
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import lombok.*;
-
-import java.time.LocalDateTime;
-
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
-public class ReqForceScheduleDTO {
-
-    @NotNull(message = "Thời gian phỏng vấn không được trống")
-    private LocalDateTime scheduledAt;
-
-    @NotBlank(message = "Loại phỏng vấn không được trống")
-    private String interviewType;
-
-    private String location;
-
-    private String meetingLink;
-}
-
-package com.topviec.topviec_be.dto.request;
-
-import jakarta.validation.constraints.Max;
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotBlank;
-import lombok.*;
-
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
-public class ReqInterviewResultDTO {
-
-    @NotBlank(message = "Kết quả phỏng vấn không được trống")
-    private String result; // PASS / FAIL
-
-    @Min(value = 1, message = "Rating tối thiểu là 1")
-    @Max(value = 5, message = "Rating tối đa là 5")
-    private Integer rating;
-
-    private String note;
-
-    private Boolean notifyCandidate;
-}
-
-package com.topviec.topviec_be.dto.request;
-
-import com.topviec.topviec_be.enums.interview.OfferResult;
-import jakarta.validation.constraints.NotNull;
-import lombok.*;
-
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
-public class ReqOfferResultDTO {
-
-    @NotNull(message = "Kết quả offer không được trống")
-    private OfferResult result;
-}
-
-package com.topviec.topviec_be.dto.request;
-
-import jakarta.validation.Valid;
-import lombok.*;
-
-import java.util.List;
-
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
-public class ReqUpdateInterviewRoundDTO {
-
-    private String roundName;
-
-    private String description;
-
-    private Boolean isFinal;
-
-    @Valid
-    private List<ReqCreateInterviewRoundDTO.InterviewerDTO> interviewers;
-}
-
-package com.topviec.topviec_be.dto.request;
-
-import lombok.*;
-import java.time.LocalDateTime;
-
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
-public class ReqUpdateInterviewScheduleDTO {
-
-    private LocalDateTime scheduledAt;
-
-    private String location;
-
-    private String meetingLink;
-
-    private String interviewerNote;
-}
-
-RES:
-package com.topviec.topviec_be.dto.response;
-
-import lombok.*;
-import java.time.LocalDateTime;
-import java.util.List;
-
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
-public class ResInterviewHistoryDTO {
-
-    private Long applicationId;
-    private String candidateName;
-    private String currentStatus;
-    private List<RoundHistory> rounds;
-
-    @Getter
-    @Setter
-    @NoArgsConstructor
-    @AllArgsConstructor
-    @Builder
-    public static class RoundHistory {
-        private Integer roundNumber;
-        private String roundName;
-        private Boolean isFinal;
-
-        // Lịch PV (nếu có)
-        private Long scheduleId;
-        private LocalDateTime scheduledAt;
-        private String interviewType;
-        private String scheduleStatus;
-
-        // Kết quả (nếu có)
-        private String result;
-        private Integer rating;
-        private String note;
-        private LocalDateTime evaluatedAt;
-    }
-}
-
-package com.topviec.topviec_be.dto.response;
-
-import lombok.*;
-
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
-public class ResInterviewReadinessDTO {
-
-    private Boolean isJobClosed;
-    private Boolean hasRounds;
-    private Boolean hasCvPassed;
-    private Boolean ready;
-}
-
-package com.topviec.topviec_be.dto.response;
-
-import lombok.*;
-import java.time.LocalDateTime;
-
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
-public class ResInterviewResultDTO {
-
-    private Long id;
-    private Long interviewId;
-    private String result;
-    private Integer rating;
-    private String note;
-    private Boolean notifyCandidate;
-    private Long evaluatedBy;
-    private LocalDateTime evaluatedAt;
-}
-
-package com.topviec.topviec_be.dto.response;
-
-import lombok.*;
-import java.time.LocalDateTime;
-import java.util.List;
-
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
-public class ResInterviewRoundDTO {
-
-    private Long id;
-    private Long jobPostId;
-    private Integer roundNumber;
-    private String roundName;
-    private String description;
-    private Boolean isFinal;
-    private List<InterviewerInfo> interviewers;
-    private Long candidateCount; // số UV đang ở vòng này
-    private LocalDateTime createdAt;
-
-    @Getter
-    @Setter
-    @NoArgsConstructor
-    @AllArgsConstructor
-    @Builder
-    public static class InterviewerInfo {
-        private Long id;
-        private String name;
-        private String email;
-        private String phone;
-    }
-}
-
-package com.topviec.topviec_be.dto.response;
-
-import lombok.*;
-import java.time.LocalDateTime;
-
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
-public class ResInterviewScheduleDTO {
-
-    private Long id;
-    private Long applicationId;
-    private Long roundId;
-    private Integer roundNumber;
-    private String roundName;
-
-    // Thông tin UV
-    private String candidateName;
-    private String candidateEmail;
-    private String candidatePhone;
-
-    // Thông tin buổi PV
-    private LocalDateTime scheduledAt;
-    private Integer durationMinutes;
-    private String interviewType;
-    private String location;
-    private String meetingLink;
-    private String status;
-    private Boolean confirmedByCandidate;
-    private String interviewerNote;
-
-    // Audit
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
-}
-
-package com.topviec.topviec_be.dto.response;
-
-import lombok.*;
-import java.time.LocalDateTime;
-
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
-public class ResOverdueApplicationDTO {
-
-    private Long applicationId;
-    private Long candidateUserId;
-    private String candidateName;
-    private String candidateEmail;
-    private String candidatePhone;
-    private Integer reminderCount;
-    private LocalDateTime firstReminderAt;
-    private LocalDateTime reminderDeadline;
-    private String currentRoundName;
-    private Integer currentRoundNumber;
-}
-
-ENUM
-package com.topviec.topviec_be.enums.interview;
-
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonValue;
-
-public enum InterviewStatus {
-
-    SCHEDULED("scheduled"),
-    CONFIRMED("confirmed"),
-    COMPLETED("completed"),
-    CANCELLED("cancelled"),
-    NO_SHOW("no_show");
-
-    private final String value;
-
-    InterviewStatus(String value) {
-        this.value = value;
-    }
-
-    @JsonValue
-    public String getValue() {
-        return value;
-    }
-
-    @JsonCreator
-    public static InterviewStatus fromValue(String value) {
-        for (InterviewStatus status : InterviewStatus.values()) {
-            if (status.value.equalsIgnoreCase(value)) {
-                return status;
-            }
+<!DOCTYPE html>
+
+<html class="light" lang="vi"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Azure Horizon - Tin Tuyển Dụng</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "error": "#ef4444",
+                        "on-error": "#ffffff",
+                        "tertiary-container": "#fef3c7",
+                        "surface-variant": "#f1f5f9",
+                        "primary-container": "#e0f2fe",
+                        "on-primary-fixed-variant": "#1d4ed8",
+                        "on-tertiary": "#ffffff",
+                        "on-secondary-fixed-variant": "#334155",
+                        "inverse-surface": "#1e293b",
+                        "on-tertiary-fixed-variant": "#9a3412",
+                        "on-secondary-container": "#334155",
+                        "error-container": "#fee2e2",
+                        "on-primary": "#ffffff",
+                        "on-error-container": "#b91c1c",
+                        "on-secondary": "#ffffff",
+                        "outline": "#cbd5e1",
+                        "on-primary-container": "#0369a1",
+                        "inverse-on-surface": "#f8fafc",
+                        "background": "#f6f6f8",
+                        "tertiary": "#f59e0b",
+                        "on-background": "#0f172a",
+                        "surface-tint": "#4B9AF6",
+                        "on-secondary-fixed": "#0f172a",
+                        "secondary": "#64748b",
+                        "primary-fixed": "#dbeafe",
+                        "primary-fixed-dim": "#bfdbfe",
+                        "outline-variant": "#e2e8f0",
+                        "on-surface": "#0f172a",
+                        "on-tertiary-fixed": "#7c2d12",
+                        "secondary-container": "#f1f5f9",
+                        "surface-dim": "#f6f6f8",
+                        "surface-container": "#f1f4f9",
+                        "primary": "#4B9AF6",
+                        "surface-bright": "#ffffff",
+                        "tertiary-fixed": "#ffedd5",
+                        "surface-container-low": "#f8fafd",
+                        "surface-container-highest": "#e2e7f0",
+                        "surface-container-high": "#e9edf5",
+                        "inverse-primary": "#bae6fd",
+                        "secondary-fixed-dim": "#e2e8f0",
+                        "on-surface-variant": "#64748b",
+                        "secondary-fixed": "#f1f5f9",
+                        "on-primary-fixed": "#1e40af",
+                        "tertiary-fixed-dim": "#fed7aa",
+                        "on-tertiary-container": "#b45309",
+                        "surface": "#ffffff",
+                        "surface-container-lowest": "#ffffff"
+                    },
+                    fontFamily: {
+                        "headline": ["Manrope"],
+                        "body": ["Manrope"],
+                        "label": ["Manrope"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.5rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
         }
-        throw new IllegalArgumentException("Unknown InterviewStatus: " + value);
-    }
-}
-
-package com.topviec.topviec_be.enums.interview;
-
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonValue;
-
-public enum InterviewType {
-
-    ONSITE("onsite"),
-    ONLINE("online"),
-    PHONE("phone");
-
-    private final String value;
-
-    InterviewType(String value) {
-        this.value = value;
-    }
-
-    @JsonValue
-    public String getValue() {
-        return value;
-    }
-
-    @JsonCreator
-    public static InterviewType fromValue(String value) {
-        for (InterviewType type : InterviewType.values()) {
-            if (type.value.equalsIgnoreCase(value)) {
-                return type;
-            }
-        }
-        throw new IllegalArgumentException("Unknown InterviewType: " + value);
-    }
-}
-
-package com.topviec.topviec_be.enums.interview;
-
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonValue;
-
-public enum OfferResult {
-
-    ACCEPTED("accepted"),
-    DECLINED("declined");
-
-    private final String value;
-
-    OfferResult(String value) {
-        this.value = value;
-    }
-
-    @JsonValue
-    public String getValue() {
-        return value;
-    }
-
-    @JsonCreator
-    public static OfferResult fromValue(String value) {
-        for (OfferResult result : OfferResult.values()) {
-            if (result.value.equalsIgnoreCase(value)) {
-                return result;
-            }
-        }
-        throw new IllegalArgumentException("Unknown OfferResult: " + value);
-    }
-}
-
-
+    </script>
+<style>
+        body { font-family: 'Manrope', sans-serif; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+    </style>
+</head>
+<body class="bg-background text-on-background">
+<!-- SideNavBar Integration -->
+<aside class="fixed left-0 top-0 h-full w-64 bg-white dark:bg-slate-900 border-r border-slate-100 dark:border-slate-800 z-40 flex flex-col shadow-sm">
+<div class="p-6">
+<h1 class="text-xl font-extrabold text-primary dark:text-blue-400 tracking-tight">Azure Horizon</h1>
+<p class="text-xs text-secondary font-medium uppercase tracking-wider mt-1">Recruiter Studio</p>
+</div>
+<nav class="flex-1 px-3 space-y-1">
+<a class="flex items-center gap-3 px-4 py-3 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-all duration-200 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="font-medium text-sm">Bảng điều khiển</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-all duration-200 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg" href="#">
+<span class="material-symbols-outlined">calendar_month</span>
+<span class="font-medium text-sm">Lịch phỏng vấn</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-primary dark:text-blue-400 bg-blue-50/50 dark:bg-blue-900/20 font-bold border-r-4 border-primary rounded-r-none rounded-l-lg" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">work</span>
+<span class="font-medium text-sm">Tin tuyển dụng</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-all duration-200 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg" href="#">
+<span class="material-symbols-outlined">groups</span>
+<span class="font-medium text-sm">Ứng viên</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-all duration-200 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-medium text-sm">Cài đặt</span>
+</a>
+</nav>
+<div class="p-4 border-t border-slate-100 dark:border-slate-800">
+<a class="flex items-center gap-3 px-4 py-3 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-all duration-200" href="#">
+<span class="material-symbols-outlined">help</span>
+<span class="font-medium text-sm">Trợ giúp</span>
+</a>
+</div>
+</aside>
+<main class="ml-64 min-h-screen">
+<!-- TopAppBar Integration -->
+<header class="sticky top-0 w-full bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-100 dark:border-slate-800 px-8 py-4 z-30 flex justify-between items-center">
+<div class="flex items-center gap-4 bg-slate-100 dark:bg-slate-800 px-4 py-2 rounded-full w-96 transition-all duration-200 focus-within:ring-2 focus-within:ring-primary/20">
+<span class="material-symbols-outlined text-slate-400">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-sm w-full placeholder:text-slate-400" placeholder="Tìm kiếm tin tuyển dụng..." type="text"/>
+</div>
+<div class="flex items-center gap-6">
+<div class="flex gap-4 text-slate-500">
+<button class="hover:text-primary transition-colors"><span class="material-symbols-outlined">notifications</span></button>
+<button class="hover:text-primary transition-colors"><span class="material-symbols-outlined">mail</span></button>
+</div>
+<div class="flex items-center gap-3 pl-6 border-l border-slate-200">
+<div class="text-right">
+<p class="text-sm font-bold text-on-background">Admin Profile</p>
+<p class="text-[10px] text-secondary uppercase font-bold tracking-tighter">Hiring Manager</p>
+</div>
+<div class="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center overflow-hidden">
+<img alt="Admin Profile" class="w-full h-full object-cover" data-alt="professional portrait of a confident male hiring manager in a modern office environment, warm lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDSrz_3xoncZAwx0kRJ7JkhmtOjByQcDq-OldPKpS1VcOuJ6y8HJyRlETp_hmFz_5TkDp8RqiSzVmNYBehW_BdtcvsYabIzOWqEXXEga5AQ4JrHY98V8Ha9fnWO4qzRsglCnKMKHbiYRTiN-ogYE8CGYQyN_vdSfyLYFZyHp5BNHm0gXMq5m3aKy3K6W9ukvQNhdvPDtAqtDJbYoMIWM5liYohXeXdKBkEmBWy9o5ZUO3oygoMql0z5hH0o0rx6aJL2vm_5Brd0mA"/>
+</div>
+</div>
+</div>
+</header>
+<!-- Main Content Area -->
+<div class="p-8 max-w-7xl mx-auto space-y-8">
+<!-- Header Section -->
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
+<div>
+<h2 class="text-3xl font-extrabold text-on-background tracking-tight">Quản lý Tin tuyển dụng</h2>
+<p class="text-secondary mt-1">Theo dõi các vị trí đang tuyển dụng và lượng ứng viên tương ứng.</p>
+</div>
+<div class="flex gap-4">
+<button class="px-6 py-2.5 bg-primary text-white font-bold rounded-lg shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center gap-2">
+<span class="material-symbols-outlined text-lg">add</span>
+                        Tạo tin mới
+                    </button>
+</div>
+</div>
+<!-- Stats Bento Grid -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+<div class="bg-white p-6 rounded-xl shadow-sm border border-slate-100 transition-all hover:shadow-md">
+<div class="flex justify-between items-start">
+<div>
+<p class="text-xs font-bold text-secondary uppercase tracking-wider">Tổng tin tuyển dụng</p>
+<h3 class="text-3xl font-extrabold mt-2">24</h3>
+</div>
+<div class="p-3 bg-blue-50 text-primary rounded-lg">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">work</span>
+</div>
+</div>
+<div class="mt-4 flex items-center gap-2 text-xs font-medium text-emerald-600">
+<span class="material-symbols-outlined text-sm">trending_up</span>
+<span>+12% so với tháng trước</span>
+</div>
+</div>
+<div class="bg-white p-6 rounded-xl shadow-sm border border-slate-100 transition-all hover:shadow-md">
+<div class="flex justify-between items-start">
+<div>
+<p class="text-xs font-bold text-secondary uppercase tracking-wider">Chờ duyệt tin</p>
+<h3 class="text-3xl font-extrabold mt-2">08</h3>
+</div>
+<div class="p-3 bg-amber-50 text-amber-600 rounded-lg">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">pending_actions</span>
+</div>
+</div>
+<div class="mt-4 flex items-center gap-2 text-xs font-medium text-amber-600">
+<span class="material-symbols-outlined text-sm">schedule</span>
+<span>Cần xử lý trong 24h tới</span>
+</div>
+</div>
+<div class="bg-white p-6 rounded-xl shadow-sm border border-slate-100 transition-all hover:shadow-md">
+<div class="flex justify-between items-start">
+<div>
+<p class="text-xs font-bold text-secondary uppercase tracking-wider">Tin sắp hết hạn</p>
+<h3 class="text-3xl font-extrabold mt-2">02</h3>
+</div>
+<div class="p-3 bg-red-50 text-red-600 rounded-lg">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">error</span>
+</div>
+</div>
+<div class="mt-4 flex items-center gap-2 text-xs font-medium text-red-600">
+<span class="material-symbols-outlined text-sm">priority_high</span>
+<span>Vui lòng kiểm tra lại</span>
+</div>
+</div>
+</div>
+<!-- Job Postings List View -->
+<div class="space-y-4">
+<div class="flex items-center justify-between">
+<h4 class="text-lg font-bold text-on-background">Tin tuyển dụng đang hoạt động</h4>
+<button class="text-sm font-bold text-primary hover:underline">Xem tất cả</button>
+</div>
+<div class="bg-white rounded-2xl shadow-sm border border-slate-100 divide-y divide-slate-100 overflow-hidden">
+<!-- Row 1 -->
+<div class="group flex items-center gap-4 p-4 hover:bg-slate-50 transition-colors cursor-pointer">
+<div class="w-12 h-12 rounded-lg bg-blue-50 flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-2xl text-primary">terminal</span>
+</div>
+<div class="flex-1 min-w-0 grid grid-cols-1 md:grid-cols-12 items-center gap-4">
+<div class="md:col-span-4">
+<h5 class="text-sm font-bold text-on-background truncate group-hover:text-primary transition-colors">Tin tuyển dụng Java Developer</h5>
+<p class="text-xs text-secondary truncate">Phòng phát triển phần mềm • Senior Level</p>
+</div>
+<div class="md:col-span-2">
+<span class="text-xs font-semibold text-on-background flex items-center gap-1.5">
+<span class="material-symbols-outlined text-base text-slate-400">groups</span>
+                                    12 ứng viên
+                                </span>
+</div>
+<div class="md:col-span-2">
+<span class="text-xs font-semibold text-on-background flex items-center gap-1.5">
+<span class="material-symbols-outlined text-base text-slate-400">event_available</span>
+                                    04 phỏng vấn/tuần
+                                </span>
+</div>
+<div class="md:col-span-2">
+<span class="px-2.5 py-0.5 bg-emerald-100 text-emerald-700 text-[10px] font-bold uppercase rounded-full inline-block">Đang tuyển</span>
+</div>
+<div class="md:col-span-2 flex justify-end">
+<button class="px-4 py-1.5 text-xs font-bold text-primary border border-primary/20 rounded-lg hover:bg-primary hover:text-white transition-all">
+                                    Xem chi tiết
+                                </button>
+</div>
+</div>
+</div>
+<!-- Row 2 -->
+<div class="group flex items-center gap-4 p-4 hover:bg-slate-50 transition-colors cursor-pointer bg-blue-50/20">
+<div class="w-12 h-12 rounded-lg bg-primary flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-2xl text-white">javascript</span>
+</div>
+<div class="flex-1 min-w-0 grid grid-cols-1 md:grid-cols-12 items-center gap-4">
+<div class="md:col-span-4">
+<h5 class="text-sm font-bold text-primary truncate">Tin tuyển dụng React JS Developer</h5>
+<p class="text-xs text-secondary truncate">Đội ngũ Frontend • Middle Level</p>
+</div>
+<div class="md:col-span-2">
+<span class="text-xs font-semibold text-on-background flex items-center gap-1.5">
+<span class="material-symbols-outlined text-base text-slate-400">groups</span>
+                                    08 ứng viên
+                                </span>
+</div>
+<div class="md:col-span-2">
+<span class="text-xs font-semibold text-on-background flex items-center gap-1.5">
+<span class="material-symbols-outlined text-base text-slate-400">event_available</span>
+                                    03 phỏng vấn/tuần
+                                </span>
+</div>
+<div class="md:col-span-2">
+<span class="px-2.5 py-0.5 bg-emerald-100 text-emerald-700 text-[10px] font-bold uppercase rounded-full inline-block">Đang tuyển</span>
+</div>
+<div class="md:col-span-2 flex justify-end">
+<button class="px-4 py-1.5 text-xs font-bold bg-primary text-white rounded-lg shadow-sm hover:scale-105 transition-all">
+                                    Xem chi tiết
+                                </button>
+</div>
+</div>
+</div>
+<!-- Row 3 -->
+<div class="group flex items-center gap-4 p-4 hover:bg-slate-50 transition-colors cursor-pointer">
+<div class="w-12 h-12 rounded-lg bg-orange-50 flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-2xl text-orange-600">palette</span>
+</div>
+<div class="flex-1 min-w-0 grid grid-cols-1 md:grid-cols-12 items-center gap-4">
+<div class="md:col-span-4">
+<h5 class="text-sm font-bold text-on-background truncate group-hover:text-primary transition-colors">UI/UX Designer</h5>
+<p class="text-xs text-secondary truncate">Đội ngũ Design • Junior/Middle</p>
+</div>
+<div class="md:col-span-2">
+<span class="text-xs font-semibold text-on-background flex items-center gap-1.5">
+<span class="material-symbols-outlined text-base text-slate-400">groups</span>
+                                    15 ứng viên
+                                </span>
+</div>
+<div class="md:col-span-2">
+<span class="text-xs font-semibold text-on-background flex items-center gap-1.5">
+<span class="material-symbols-outlined text-base text-slate-400">event_available</span>
+                                    05 phỏng vấn/tuần
+                                </span>
+</div>
+<div class="md:col-span-2">
+<span class="px-2.5 py-0.5 bg-emerald-100 text-emerald-700 text-[10px] font-bold uppercase rounded-full inline-block">Đang tuyển</span>
+</div>
+<div class="md:col-span-2 flex justify-end">
+<button class="px-4 py-1.5 text-xs font-bold text-primary border border-primary/20 rounded-lg hover:bg-primary hover:text-white transition-all">
+                                    Xem chi tiết
+                                </button>
+</div>
+</div>
+</div>
+<!-- Row 4 -->
+<div class="group flex items-center gap-4 p-4 hover:bg-slate-50 transition-colors cursor-pointer">
+<div class="w-12 h-12 rounded-lg bg-purple-50 flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-2xl text-purple-600">psychology</span>
+</div>
+<div class="flex-1 min-w-0 grid grid-cols-1 md:grid-cols-12 items-center gap-4">
+<div class="md:col-span-4">
+<h5 class="text-sm font-bold text-on-background truncate group-hover:text-primary transition-colors">AI Engineer</h5>
+<p class="text-xs text-secondary truncate">Phòng R&amp;D • Expert Level</p>
+</div>
+<div class="md:col-span-2">
+<span class="text-xs font-semibold text-on-background flex items-center gap-1.5">
+<span class="material-symbols-outlined text-base text-slate-400">groups</span>
+                                    04 ứng viên
+                                </span>
+</div>
+<div class="md:col-span-2">
+<span class="text-xs font-semibold text-on-background flex items-center gap-1.5">
+<span class="material-symbols-outlined text-base text-slate-400">event_available</span>
+                                    01 phỏng vấn/tuần
+                                </span>
+</div>
+<div class="md:col-span-2">
+<span class="px-2.5 py-0.5 bg-emerald-100 text-emerald-700 text-[10px] font-bold uppercase rounded-full inline-block">Đang tuyển</span>
+</div>
+<div class="md:col-span-2 flex justify-end">
+<button class="px-4 py-1.5 text-xs font-bold text-primary border border-primary/20 rounded-lg hover:bg-primary hover:text-white transition-all">
+                                    Xem chi tiết
+                                </button>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Floating Action Focus -->
+<div class="flex justify-end gap-4 mt-8">
+<button class="px-8 py-3 bg-white border-2 border-primary text-primary font-extrabold rounded-lg hover:bg-blue-50 transition-all">
+                    Xuất báo cáo tuyển dụng
+                </button>
+<button class="px-8 py-3 bg-primary text-white font-extrabold rounded-lg shadow-xl shadow-primary/30 hover:scale-105 active:scale-95 transition-all">
+                    Mời ứng viên mới
+                </button>
+</div>
+</div>
+</main>
+<!-- Simple Backdrop for Mobile (Logic Only) -->
+<div class="fixed inset-0 bg-slate-900/50 z-30 hidden backdrop-blur-sm md:hidden"></div>
+</body></html>

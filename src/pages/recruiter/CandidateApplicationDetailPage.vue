@@ -263,14 +263,23 @@ const interactionHistory = computed(() => {
             <!-- Final Footer Actions -->
             <div class="p-6 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-200 dark:border-slate-800 flex flex-col gap-3">
               <button 
+                v-if="application.status !== 'interviewing'"
                 @click="saveEvaluation"
-                :disabled="loading || application?.status === 'interviewing'"
-                class="w-full bg-primary text-white py-3 rounded-xl font-extrabold text-sm shadow-lg shadow-primary/20 hover:bg-blue-600 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:hover:scale-100 cursor-pointer"
+                :disabled="loading"
+                class="w-full bg-primary text-white py-3 rounded-xl font-extrabold text-sm shadow-lg shadow-primary/20 hover:bg-blue-600 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
               >
                 <span class="material-symbols-outlined">save</span>
                 {{ loading ? 'Đang lưu...' : 'Lưu Đánh Giá' }}
               </button>
-              <!-- Removed Invite Button as per request -->
+
+              <button 
+                v-else
+                @click="router.push({ name: 'recruiter-interview-create', query: { jobId, applicationId: application.id } })"
+                class="w-full bg-emerald-500 text-white py-3 rounded-xl font-extrabold text-sm shadow-lg shadow-emerald-500/20 hover:bg-emerald-600 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <span class="material-symbols-outlined">calendar_month</span>
+                Đặt lịch phỏng vấn
+              </button>
             </div>
           </div>
 

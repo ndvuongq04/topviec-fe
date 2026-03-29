@@ -10,30 +10,73 @@
     </nav>
 
     <!-- Page Header -->
-    <div v-if="selectedJob" class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+    <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
       <div>
-        <h2 class="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">{{ selectedJob.title }}</h2>
+        <h2 class="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+          {{ selectedJob?.title || 'Thiết lập phỏng vấn' }}
+        </h2>
         <div class="flex items-center gap-3 mt-2">
-          <span class="bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide">Job ID: #{{ selectedJob.id }}</span>
+          <span v-if="selectedJob" class="bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide">
+            Job ID: #{{ selectedJob.id }}
+          </span>
           <span v-if="readiness" class="text-slate-500 text-sm flex items-center gap-1">
-            <span class="material-symbols-outlined text-sm">group</span> {{ readiness.hasCvPassed ? 'Sẵn sàng phỏng vấn' : 'Chờ duyệt CV' }}
+            <span class="material-symbols-outlined text-sm">group</span> 
+            {{ readiness.hasCvPassed ? 'Sẵn sàng phỏng vấn' : 'Chờ duyệt CV' }}
           </span>
         </div>
       </div>
       <div class="flex gap-3">
-        <button 
-          v-if="!readiness?.isJobClosed"
-          @click="handleStartInterviewing"
-          :disabled="loading || !readiness?.ready"
-          class="px-5 py-2.5 rounded-xl bg-primary text-white font-bold text-sm shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50 disabled:hover:scale-100"
-        >
-          <span class="material-symbols-outlined">rocket_launch</span>
-          {{ loading ? 'Đang xử lý...' : 'Xác nhận & Bắt đầu phỏng vấn' }}
-        </button>
-        <div v-else class="px-5 py-2.5 rounded-xl bg-emerald-500 text-white font-bold text-sm flex items-center gap-2">
-          <span class="material-symbols-outlined">check_circle</span>
-          Đang trong giai đoạn phỏng vấn
-        </div>
+        <!-- Nếu chưa có dữ liệu Readiness -->
+        <div v-if="!readiness && loading" class="h-10 w-40 bg-slate-100 animate-pulse rounded-xl"></div>
+
+        <!-- Nếu đã có Readiness -->
+        <template v-else-if="readiness">
+          <!-- Nếu chưa đóng tin -->
+          <div v-if="!readiness.isJobClosed" class="flex flex-col items-end gap-2">
+            <button 
+              disabled
+              class="px-5 py-2.5 rounded-xl bg-slate-200 text-slate-500 font-bold text-sm flex items-center gap-2 cursor-not-allowed"
+              title="Bạn phải đóng tin tuyển dụng trước khi bắt đầu phỏng vấn"
+            >
+              <span class="material-symbols-outlined">lock</span>
+              Cần đóng tin tuyển dụng
+            </button>
+            <router-link 
+              :to="`/recruiter/jobs/${jobPostId}/edit`"
+              class="text-xs text-primary font-bold hover:underline flex items-center gap-1"
+            >
+              Đi đến trang quản lý tin <span class="material-symbols-outlined text-xs">arrow_forward</span>
+            </router-link>
+          </div>
+
+          <!-- Nếu đã đóng tin -->
+          <template v-else>
+            <button 
+              v-if="!isInterviewPhaseStarted && !readiness.ready"
+              @click="handleStartInterviewing"
+              :disabled="loading || !readiness.hasRounds"
+              class="px-5 py-2.5 rounded-xl bg-primary text-white font-bold text-sm shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50 disabled:hover:scale-100"
+            >
+              <span class="material-symbols-outlined">rocket_launch</span>
+              {{ loading ? 'Đang xử lý...' : 'Xác nhận & Bắt đầu phỏng vấn' }}
+            </button>
+
+            <!-- Nút ENABLED khi đã chuẩn bị xong (ready = true) -->
+            <button 
+              v-else-if="!isInterviewPhaseStarted && readiness.ready"
+              @click="handleStartInterviewing"
+              class="px-5 py-2.5 rounded-xl bg-primary text-white font-bold text-sm shadow-lg shadow-primary/20 hover:scale-[1.05] active:scale-95 transition-all flex items-center gap-2 cursor-pointer"
+            >
+              <span class="material-symbols-outlined">rocket_launch</span>
+              Bắt đầu phỏng vấn ngay
+            </button>
+            
+            <div v-else class="px-5 py-2.5 rounded-xl bg-emerald-500 text-white font-bold text-sm flex items-center gap-2 shadow-lg shadow-emerald-500/20">
+              <span class="material-symbols-outlined">check_circle</span>
+              Đang trong giai đoạn phỏng vấn
+            </div>
+          </template>
+        </template>
       </div>
     </div>
 
@@ -149,8 +192,13 @@
             </div>
           </div>
           <div v-if="!readiness.ready" class="mt-6 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-800 rounded-xl">
+            <p v-if="!readiness.isJobClosed" class="text-[11px] text-amber-700 dark:text-amber-400 leading-relaxed font-bold mb-1 flex items-center gap-1">
+              <span class="material-symbols-outlined text-[14px]">warning</span> Yêu cầu bắt buộc:
+            </p>
             <p class="text-[11px] text-amber-700 dark:text-amber-400 leading-relaxed font-medium">
-              Bạn cần ít nhất 1 vòng phỏng vấn và ít nhất 1 ứng viên đạt vòng CV để bắt đầu giai đoạn phỏng vấn.
+              <template v-if="!readiness.isJobClosed">Bạn phải <b>Đóng tin tuyển dụng</b> (ngừng nhận hồ sơ mới) trước khi có thể bắt đầu phase phỏng vấn.</template>
+              <template v-else-if="!readiness.hasRounds">Bạn cần tạo ít nhất <b>1 vòng phỏng vấn</b> để tiếp tục.</template>
+              <template v-else-if="!readiness.hasCvPassed">Không có ứng viên nào đạt vòng hồ sơ (CV_PASSED) để phỏng vấn.</template>
             </p>
           </div>
         </div>
@@ -255,6 +303,8 @@ const roundForm = reactive<ReqCreateInterviewRoundDTO>({
   isFinal: false,
 });
 
+const isInterviewPhaseStarted = ref(false);
+
 // --- Lifecycle ---
 onMounted(async () => {
   await Promise.all([
@@ -335,8 +385,11 @@ async function handleStartInterviewing() {
   if (isConfirmed) {
     try {
       await interviewStore.startInterviewing(jobPostId);
-      toast.success('Thành công', 'Giai đoạn phỏng vấn đã bắt đầu');
-      interviewStore.fetchReadiness(jobPostId);
+      toast.success('Thành công', 'Giai đoạn phỏng vấn đã bắt đầu. Trạng thái các ứng viên đã được cập nhật.');
+      isInterviewPhaseStarted.value = true;
+      await interviewStore.fetchReadiness(jobPostId);
+      // Có thể chuyển hướng sang trang quản lý lịch phỏng vấn
+      // router.push(`/recruiter/jobs/${jobPostId}/interviews`);
     } catch (err) {}
   }
 }
