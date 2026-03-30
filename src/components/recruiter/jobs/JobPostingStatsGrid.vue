@@ -50,8 +50,8 @@ defineProps<{
   overflow: hidden;
 }
 .stat-card__label {
-  font-size: 1rem;
-  font-weight: 700;
+  font-size: 0.875rem;
+  font-weight: 600;
   color: #64748b;
   margin: 0 0 0.25rem;
 }

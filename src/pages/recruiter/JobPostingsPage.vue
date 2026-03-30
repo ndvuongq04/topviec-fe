@@ -129,6 +129,7 @@ const handleDelete = (id: number) => console.log('delete', id)
   gap: 2rem;
   min-height: 100vh;
   background-color: #f8fafc;
+  font-family: 'Manrope', sans-serif;
 }
 
 .page-header { display: flex; align-items: flex-end; justify-content: space-between; }
@@ -143,7 +144,7 @@ const handleDelete = (id: number) => console.log('delete', id)
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   font-family: inherit;
-  font-weight: 600;
+  font-weight: 800;
   font-size: 1rem;
   border-radius: var(--radius-lg);
   cursor: pointer;

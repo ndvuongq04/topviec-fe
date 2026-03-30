@@ -253,13 +253,13 @@ const statusLabel = computed(() => ({
 .performance__item { text-align: center; }
 .performance__value { font-size: 0.875rem; font-weight: 700; color: var(--color-on-surface); margin: 0; }
 .performance__value--primary { color: var(--color-primary); }
-.performance__label { font-size: 0.75rem; color: var(--color-on-surface-muted); font-weight: 500; margin: 0; }
+.performance__label { font-size: 0.75rem; color: var(--color-on-surface-muted); font-weight: 700; margin: 0; }
 
 /* Deadline */
-.deadline__date { font-size: 1rem; font-weight: 600; color: var(--color-on-surface); margin: 0; }
+.deadline__date { font-size: 0.875rem; font-weight: 700; color: var(--color-on-surface); margin: 0; }
 .deadline__date--error  { color: var(--color-error); }
 .deadline__date--muted  { color: var(--color-on-surface-muted); }
-.deadline__remaining { font-size: 0.75rem; color: var(--color-on-surface-muted); font-weight: 500; margin: 0.125rem 0 0; }
+.deadline__remaining { font-size: 0.75rem; color: var(--color-on-surface-muted); font-weight: 700; margin: 0.125rem 0 0; }
 .deadline__remaining--urgent { color: var(--color-error); font-style: italic; }
 
 /* Actions */
