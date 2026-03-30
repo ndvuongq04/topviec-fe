@@ -1,7 +1,7 @@
-﻿<template>
+<template>
   <section class="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800">
     <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-800">
-      <h3 class="font-bold text-lg">Giới thiệu & Văn hóa công ty</h3>
+      <h3 class="font-bold text-[1.125rem]">Giới thiệu & Văn hóa công ty</h3>
     </div>
     <div class="p-6 space-y-6">
 
@@ -11,14 +11,14 @@
         <textarea
           :value="description"
           rows="4"
-          class="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-transparent focus:ring-2 focus:ring-primary focus:border-transparent outline-none text-sm resize-none leading-relaxed trans-all"
+          class="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-transparent focus:ring-2 focus:ring-primary focus:border-transparent outline-none text-base resize-none leading-relaxed trans-all"
           :class="{ '!border-red-500 !ring-red-500/20': errors?.description }"
           placeholder="Mô tả sứ mệnh, lịch sử và tổng quan công ty..."
           maxlength="2000"
           @input="$emit('update:description', ($event.target as HTMLTextAreaElement).value)"
         ></textarea>
         <div class="flex justify-between items-center mt-1">
-          <p v-if="errors?.description" class="text-[11px] text-red-500">{{ errors.description }}</p>
+          <p v-if="errors?.description" class="text-xs text-red-500">{{ errors.description }}</p>
           <div v-else></div>
           <span class="text-xs text-slate-400">{{ description.length }} / 2000 ký tự</span>
         </div>
@@ -30,14 +30,14 @@
         <textarea
           :value="culture"
           rows="4"
-          class="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-transparent focus:ring-2 focus:ring-primary focus:border-transparent outline-none text-sm resize-none leading-relaxed trans-all"
+          class="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-transparent focus:ring-2 focus:ring-primary focus:border-transparent outline-none text-base resize-none leading-relaxed trans-all"
           :class="{ '!border-red-500 !ring-red-500/20': errors?.culture }"
           placeholder="Chia sẻ về văn hóa làm việc, môi trường và con người tại công ty..."
           maxlength="2000"
           @input="$emit('update:culture', ($event.target as HTMLTextAreaElement).value)"
         ></textarea>
         <div class="flex justify-between items-center mt-1">
-          <p v-if="errors?.culture" class="text-[11px] text-red-500">{{ errors.culture }}</p>
+          <p v-if="errors?.culture" class="text-xs text-red-500">{{ errors.culture }}</p>
           <div v-else></div>
           <span class="text-xs text-slate-400">{{ culture?.length || 0 }} / 2000 ký tự</span>
         </div>

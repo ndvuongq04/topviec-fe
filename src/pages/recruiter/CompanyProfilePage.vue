@@ -1,5 +1,5 @@
-﻿<template>
-  <div class="space-y-8 pt-6">
+<template>
+  <div class="space-y-8 pt-6" style="font-family: 'Manrope', sans-serif;">
 
     <!-- Loading lần đầu -->
     <div v-if="store.loading && !store.company" class="flex justify-center py-20">
@@ -23,7 +23,7 @@
             <p class="text-xs" :class="statusBarStyle.descColor">{{ statusBarStyle.desc }}</p>
           </div>
         </div>
-        <span class="px-3 py-1 text-[10px] font-bold uppercase tracking-wider rounded-full shrink-0" :class="statusBarStyle.badge">
+        <span class="px-3 py-1 text-xs font-bold uppercase tracking-wider rounded-full shrink-0" :class="statusBarStyle.badge">
           {{ statusBarStyle.badgeText }}
         </span>
       </div>
@@ -72,14 +72,14 @@
       <!-- Actions bottom -->
       <div class="flex justify-end gap-3 pt-6 pb-12">
         <button
-          class="px-8 py-3 border border-slate-300 dark:border-slate-700 rounded-xl text-sm font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+          class="px-8 py-3 border border-slate-300 dark:border-slate-700 rounded-xl text-base font-extrabold hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
           :disabled="store.loading"
           @click="discardDraft"
         >
           Hủy bỏ
         </button>
         <button
-          class="px-10 py-3 bg-primary text-white rounded-xl text-sm font-bold shadow-xl shadow-primary/30 hover:bg-primary/90 transition-all hover:-translate-y-0.5 disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-2 cursor-pointer"
+          class="px-10 py-3 bg-primary text-white rounded-xl text-base font-extrabold shadow-xl shadow-primary/30 hover:bg-primary/90 transition-all hover:-translate-y-0.5 disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-2 cursor-pointer"
           :disabled="store.loading"
           @click="publishProfile"
         >

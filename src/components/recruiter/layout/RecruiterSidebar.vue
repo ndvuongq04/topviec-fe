@@ -77,11 +77,11 @@ function isActive(to: string): boolean {
 const navItems = [
   { to: '/recruiter',           icon: 'dashboard',        label: 'Dashboard' },
   { to: '/recruiter/jobs',      icon: 'work',             label: 'Tin tuyển dụng' },
-  { to: '/recruiter/candidates',icon: 'group',            label: 'Ứng viên' },
+  // { to: '/recruiter/candidates',icon: 'group',            label: 'Ứng viên' },
   { to: '/recruiter/interviews', icon: 'event',    label: 'Phỏng vấn' },
-  { to: '/recruiter/offers',     icon: 'handshake', label: 'Mời làm việc' },
-  { to: '/recruiter/search-cv', icon: 'person_search',    label: 'Tìm CV' },
-  { to: '/recruiter/reports',   icon: 'bar_chart',        label: 'Báo cáo' },
+  // { to: '/recruiter/offers',     icon: 'handshake', label: 'Mời làm việc' },
+  // { to: '/recruiter/search-cv', icon: 'person_search',    label: 'Tìm CV' },
+  // { to: '/recruiter/reports',   icon: 'bar_chart',        label: 'Báo cáo' },
   { to: '/recruiter/team',      icon: 'manage_accounts',  label: 'Quản lý nhóm' },
   { to: '/recruiter/company-profile', icon: 'business',     label: 'Thông tin công ty' },
 ]

@@ -1,7 +1,7 @@
-﻿<template>
+<template>
   <section class="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800">
     <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
-      <h3 class="font-bold text-lg">Xác minh doanh nghiệp</h3>
+      <h3 class="font-bold text-[1.125rem]">Xác minh doanh nghiệp</h3>
       <span class="flex items-center gap-1 text-[10px] font-bold text-amber-600 bg-amber-50 dark:bg-amber-950 px-2 py-0.5 rounded uppercase">
         <span class="material-symbols-outlined text-xs">info</span>
         Bắt buộc
