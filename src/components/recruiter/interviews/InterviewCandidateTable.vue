@@ -138,7 +138,6 @@ const emit = defineEmits<{
   background: #fff;
   border-radius: 1rem;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-  overflow: hidden;
   border: 1px solid #f1f5f9;
 }
 
@@ -150,6 +149,8 @@ const emit = defineEmits<{
   align-items: center;
   justify-content: space-between;
   background: rgba(248, 250, 252, 0.3);
+  border-top-left-radius: 1rem;
+  border-top-right-radius: 1rem;
 }
 
 .candidate-table__header-left {
@@ -163,7 +164,7 @@ const emit = defineEmits<{
 }
 
 .candidate-table__title {
-  font-size: 0.875rem;            /* 14px – metadata / section label */
+  font-size: 1.125rem;            /* 18px – Tiêu đề khối / Item chính */
   font-weight: 700;
   color: #0f172a;
 }
@@ -186,7 +187,7 @@ const emit = defineEmits<{
   padding: 0.375rem 0.75rem;
   border: 1px solid #e2e8f0;
   border-radius: 0.5rem;
-  font-size: 0.75rem;             /* 12px – nút phụ thu gọn, bold */
+  font-size: 0.875rem;             /* 14px – nút hành động phụ, bold */
   font-weight: 700;
   color: #475569;
   cursor: pointer;
@@ -237,6 +238,8 @@ const emit = defineEmits<{
   display: flex;
   align-items: center;
   justify-content: space-between;
+  border-bottom-left-radius: 1rem;
+  border-bottom-right-radius: 1rem;
 }
 
 .candidate-table__footer-text {

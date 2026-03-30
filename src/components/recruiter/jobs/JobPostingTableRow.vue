@@ -86,53 +86,30 @@
         <!-- Pending: nút gửi duyệt nhanh -->
         <template v-else-if="job.status === 'pending'">
           <button class="btn-submit" @click="$emit('submit', job.id)">Gửi duyệt</button>
-          <JobPostingDropdown>
-            <button class="dropdown-menu__item" @click="$emit('view', job.id)">
-              <span class="material-symbols-outlined dropdown-menu__item-icon">visibility</span>
-              Xem chi tiết
-            </button>
-            <button class="dropdown-menu__item" @click="$emit('edit', job.id)">
-              <span class="material-symbols-outlined dropdown-menu__item-icon">edit</span>
-              Chỉnh sửa tin
-            </button>
-            <button class="dropdown-menu__item" @click="$emit('submit', job.id)">
-              <span class="material-symbols-outlined dropdown-menu__item-icon">send</span>
-              Gửi duyệt tin
-            </button>
-            <div class="dropdown-menu__divider" />
-            <button class="dropdown-menu__item dropdown-menu__item--danger" @click="$emit('delete', job.id)">
-              <span class="material-symbols-outlined dropdown-menu__item-icon">delete</span>
-              Xóa tin
-            </button>
-          </JobPostingDropdown>
+          <GlobalDropdown>
+            <template #default="{ close }">
+              <GlobalDropdownItem icon="visibility" label="Xem chi tiết" @click="handleAction('view', job.id, close)" />
+              <GlobalDropdownItem icon="edit" label="Chỉnh sửa tin" @click="handleAction('edit', job.id, close)" />
+              <GlobalDropdownItem icon="send" label="Gửi duyệt tin" @click="handleAction('submit', job.id, close)" />
+              <div class="dropdown-divider-v2"></div>
+              <GlobalDropdownItem icon="delete" label="Xóa tin" danger @click="handleAction('delete', job.id, close)" />
+            </template>
+          </GlobalDropdown>
         </template>
 
         <!-- Expiring: nút gia hạn nhanh -->
         <template v-else-if="job.status === 'expiring'">
           <button class="btn-extend" @click="$emit('extend', job.id)">Gia hạn</button>
-          <JobPostingDropdown>
-            <button class="dropdown-menu__item" @click="$emit('view', job.id)">
-              <span class="material-symbols-outlined dropdown-menu__item-icon">visibility</span>
-              Xem chi tiết
-            </button>
-            <button class="dropdown-menu__item" @click="$emit('edit', job.id)">
-              <span class="material-symbols-outlined dropdown-menu__item-icon">edit</span>
-              Chỉnh sửa tin
-            </button>
-            <button class="dropdown-menu__item" @click="$emit('extend', job.id)">
-              <span class="material-symbols-outlined dropdown-menu__item-icon">update</span>
-              Gia hạn tin
-            </button>
-            <div class="dropdown-menu__divider" />
-            <button class="dropdown-menu__item dropdown-menu__item--danger" @click="$emit('close', job.id)">
-              <span class="material-symbols-outlined dropdown-menu__item-icon">block</span>
-              Đóng tin
-            </button>
-            <button class="dropdown-menu__item dropdown-menu__item--danger" @click="$emit('delete', job.id)">
-              <span class="material-symbols-outlined dropdown-menu__item-icon">delete</span>
-              Xóa tin
-            </button>
-          </JobPostingDropdown>
+          <GlobalDropdown>
+            <template #default="{ close }">
+              <GlobalDropdownItem icon="visibility" label="Xem chi tiết" @click="handleAction('view', job.id, close)" />
+              <GlobalDropdownItem icon="edit" label="Chỉnh sửa tin" @click="handleAction('edit', job.id, close)" />
+              <GlobalDropdownItem icon="update" label="Gia hạn tin" @click="handleAction('extend', job.id, close)" />
+              <div class="dropdown-divider-v2"></div>
+              <GlobalDropdownItem icon="block" label="Đóng tin" danger @click="handleAction('close', job.id, close)" />
+              <GlobalDropdownItem icon="delete" label="Xóa tin" danger @click="handleAction('delete', job.id, close)" />
+            </template>
+          </GlobalDropdown>
         </template>
 
         <!-- Active + default: icon actions + dropdown -->
@@ -143,33 +120,17 @@
           <button class="btn-action" title="Sao chép" @click="$emit('copy', job.id)">
             <span class="material-symbols-outlined icon-xl">content_copy</span>
           </button>
-          <JobPostingDropdown>
-            <button class="dropdown-menu__item" @click="$emit('view', job.id)">
-              <span class="material-symbols-outlined dropdown-menu__item-icon">visibility</span>
-              Xem chi tiết
-            </button>
-            <button class="dropdown-menu__item" @click="$emit('edit', job.id)">
-              <span class="material-symbols-outlined dropdown-menu__item-icon">edit</span>
-              Chỉnh sửa tin
-            </button>
-            <button class="dropdown-menu__item" @click="$emit('submit', job.id)">
-              <span class="material-symbols-outlined dropdown-menu__item-icon">send</span>
-              Gửi duyệt tin
-            </button>
-            <button class="dropdown-menu__item" @click="$emit('extend', job.id)">
-              <span class="material-symbols-outlined dropdown-menu__item-icon">update</span>
-              Gia hạn tin
-            </button>
-            <div class="dropdown-menu__divider" />
-            <button class="dropdown-menu__item dropdown-menu__item--danger" @click="$emit('close', job.id)">
-              <span class="material-symbols-outlined dropdown-menu__item-icon">block</span>
-              Đóng tin
-            </button>
-            <button class="dropdown-menu__item dropdown-menu__item--danger" @click="$emit('delete', job.id)">
-              <span class="material-symbols-outlined dropdown-menu__item-icon">delete</span>
-              Xóa tin
-            </button>
-          </JobPostingDropdown>
+          <GlobalDropdown>
+            <template #default="{ close }">
+              <GlobalDropdownItem icon="visibility" label="Xem chi tiết" @click="handleAction('view', job.id, close)" />
+              <GlobalDropdownItem icon="edit" label="Chỉnh sửa tin" @click="handleAction('edit', job.id, close)" />
+              <GlobalDropdownItem icon="send" label="Gửi duyệt tin" @click="handleAction('submit', job.id, close)" />
+              <GlobalDropdownItem icon="update" label="Gia hạn tin" @click="handleAction('extend', job.id, close)" />
+              <div class="dropdown-divider-v2"></div>
+              <GlobalDropdownItem icon="block" label="Đóng tin" danger @click="handleAction('close', job.id, close)" />
+              <GlobalDropdownItem icon="delete" label="Xóa tin" danger @click="handleAction('delete', job.id, close)" />
+            </template>
+          </GlobalDropdown>
         </template>
       </div>
     </td>
@@ -178,12 +139,13 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import JobPostingDropdown from './JobPostingDropdown.vue'
+import GlobalDropdown from '@/components/ui/GlobalDropdown.vue'
+import GlobalDropdownItem from '@/components/ui/GlobalDropdownItem.vue'
 import type { JobPostingRow } from '@/types/employerJobPosting.types'
 
 const props = defineProps<{ job: JobPostingRow }>()
 
-defineEmits<{
+const emit = defineEmits<{
   view:   [id: number]
   edit:   [id: number]
   copy:   [id: number]
@@ -192,6 +154,11 @@ defineEmits<{
   close:  [id: number]
   delete: [id: number]
 }>()
+
+function handleAction(event: any, id: number, close: () => void) {
+  close()
+  emit(event, id)
+}
 
 const statusChipClass = computed(() => ({
   'status-chip--active':   props.job.status === 'active',
@@ -272,4 +239,11 @@ const statusLabel = computed(() => ({
 .btn-extend { padding: 0.375rem 0.75rem; background: none; color: var(--color-on-surface); font-family: inherit; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; border-radius: var(--radius-sm); border: 1px solid var(--color-border); cursor: pointer; transition: background 0.15s; }
 .btn-extend:hover { background: #f1f5f9; }
 .icon-xl { font-size: 1.25rem !important; }
+
+/* Divider inside global dropdown content */
+.dropdown-divider-v2 {
+  height: 1px;
+  background: #f1f5f9;
+  margin: 0.375rem 0.25rem;
+}
 </style>

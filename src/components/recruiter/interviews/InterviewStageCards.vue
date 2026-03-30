@@ -19,8 +19,24 @@
         <div class="stage-card__top">
           <div>
             <p class="stage-card__round">{{ stage.label }}</p>
-            <h4 class="stage-card__name">{{ stage.name }}</h4>
-          </div>
+            <div class="stage-card__name-wrapper">
+              <h4 class="stage-card__name">{{ stage.name }}</h4>
+                <button
+                  class="stage-card__edit-btn"
+                  title="Đổi tên vòng"
+                  @click.stop="openRenameModal(stage)"
+                >
+                  <span class="material-symbols-outlined">edit</span>
+                </button>
+                <button
+                  class="stage-card__delete-btn"
+                  title="Xóa vòng phỏng vấn"
+                  @click.stop="handleRemove(stage)"
+                >
+                  <span class="material-symbols-outlined">remove_circle</span>
+                </button>
+              </div>
+            </div>
           <div
             class="stage-card__count"
             :class="stage.id === activeStageId ? 'stage-card__count--active' : ''"
@@ -47,17 +63,80 @@
 
       <!-- Total summary -->
       <div class="stage-total">
-        <p class="stage-total__label">Tổng cộng ứng viên</p>
+        <div class="stage-total__header">
+          <p class="stage-total__label">Tổng cộng ứng viên</p>
+          <button
+            class="stage-total__add-btn"
+            title="Thêm vòng phỏng vấn mới"
+            @click="openAddModal"
+          >
+            <span class="material-symbols-outlined">add_circle</span>
+          </button>
+        </div>
         <div class="stage-total__value">
           {{ totalCandidates }}
           <span class="stage-total__unit">Hồ sơ</span>
         </div>
       </div>
     </div>
+
+    <!-- Rename Modal (Global) -->
+    <GlobalModal
+      :visible="isRenaming"
+      :title="`Đổi tên vòng: ${originalLabel}`"
+      confirm-text="Lưu thay đổi"
+      confirm-icon="save"
+      max-width="md"
+      @close="closeRenameModal"
+      @confirm="submitRename"
+    >
+      <div class="py-2">
+        <label class="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">
+          Tên vòng phỏng vấn mới
+        </label>
+        <input
+          v-model="newName"
+          type="text"
+          class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all bg-slate-50/50 text-slate-900"
+          placeholder="Nhập tên mới..."
+          @keyup.enter="submitRename"
+          ref="inputRef"
+        />
+      </div>
+    </GlobalModal>
+
+    <!-- Add Stage Modal (Global) -->
+    <GlobalModal
+      :visible="isAddingStage"
+      :title="'Thêm vòng phỏng vấn mới'"
+      confirm-text="Thêm vòng"
+      confirm-icon="add"
+      max-width="md"
+      @close="closeAddModal"
+      @confirm="submitAddStage"
+    >
+      <div class="py-2">
+        <label class="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">
+          Tên vòng phỏng vấn (ví dụ: Technical, Culture Fit...)
+        </label>
+        <input
+          v-model="addStageName"
+          type="text"
+          class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all bg-slate-50/50 text-slate-900"
+          placeholder="Nhập tên vòng..."
+          @keyup.enter="submitAddStage"
+          ref="addInputRef"
+        />
+      </div>
+    </GlobalModal>
   </section>
 </template>
 
 <script setup lang="ts">
+import { ref, nextTick } from 'vue'
+import GlobalModal from '@/components/ui/GlobalModal.vue'
+import { useConfirm } from '@/composables/useConfirm'
+
 interface Stage {
   id: number
   label: string
@@ -71,9 +150,85 @@ defineProps<{
   totalCandidates: number
 }>()
 
-defineEmits<{
+const emit = defineEmits<{
   select: [stageId: number]
+  rename: [stageId: number, newName: string]
+  add: [name: string]
+  delete: [stageId: number]
 }>()
+
+const { confirm } = useConfirm()
+
+// --- Rename Logic ---
+const isRenaming = ref(false)
+const newName = ref('')
+const originalLabel = ref('')
+const editingId = ref<number | null>(null)
+const inputRef = ref<HTMLInputElement | null>(null)
+
+function openRenameModal(stage: Stage) {
+  editingId.value = stage.id
+  newName.value = stage.name
+  originalLabel.value = stage.label
+  isRenaming.value = true
+  
+  nextTick(() => {
+    inputRef.value?.focus()
+  })
+}
+
+function closeRenameModal() {
+  isRenaming.value = false
+  editingId.value = null
+  newName.value = ''
+}
+
+function submitRename() {
+  if (editingId.value && newName.value.trim()) {
+    emit('rename', editingId.value, newName.value.trim())
+    closeRenameModal()
+  }
+}
+
+// --- Add Stage Logic ---
+const isAddingStage = ref(false)
+const addStageName = ref('')
+const addInputRef = ref<HTMLInputElement | null>(null)
+
+function openAddModal() {
+  addStageName.value = ''
+  isAddingStage.value = true
+  nextTick(() => {
+    addInputRef.value?.focus()
+  })
+}
+
+function closeAddModal() {
+  isAddingStage.value = false
+  addStageName.value = ''
+}
+
+function submitAddStage() {
+  if (addStageName.value.trim()) {
+    emit('add', addStageName.value.trim())
+    closeAddModal()
+  }
+}
+
+// --- Delete Logic ---
+async function handleRemove(stage: Stage) {
+  const ok = await confirm({
+    title: `Xóa ${stage.label}?`,
+    message: `Bạn có chắc chắn muốn xóa "${stage.name}"? Hành động này không thể hoàn tác.`,
+    confirmText: 'Xóa ngay',
+    confirmColor: 'red',
+    icon: 'delete',
+  })
+
+  if (ok) {
+    emit('delete', stage.id)
+  }
+}
 </script>
 
 <style scoped>
@@ -94,7 +249,7 @@ defineEmits<{
 }
 
 .stage-title {
-  font-size: 0.875rem;            /* 14px – metadata/label cấp section */
+  font-size: 1.125rem;            /* 18px – Tiêu đề khối / Item chính */
   font-weight: 800;
   color: #0f172a;
   text-transform: uppercase;
@@ -172,10 +327,53 @@ defineEmits<{
   color: #4b9af6;
 }
 
+.stage-card__name-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 .stage-card__name {
-  font-size: 0.875rem;            /* 14px – data cell / tên vòng */
+  font-size: 1.125rem;            /* 18px – Tên item chính (Vòng phỏng vấn) */
   font-weight: 800;
   color: #0f172a;
+}
+
+.stage-card__edit-btn,
+.stage-card__delete-btn {
+  background: transparent;
+  border: none;
+  padding: 0.25rem;
+  border-radius: 0.375rem;
+  color: #94a3b8;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: all 0.2s;
+}
+
+.stage-card:hover .stage-card__edit-btn,
+.stage-card--active .stage-card__edit-btn,
+.stage-card:hover .stage-card__delete-btn,
+.stage-card--active .stage-card__delete-btn {
+  opacity: 1;
+}
+
+.stage-card__edit-btn:hover {
+  background: rgba(75, 154, 246, 0.1);
+  color: #4b9af6;
+}
+
+.stage-card__delete-btn:hover {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+}
+
+.stage-card__edit-btn .material-symbols-outlined,
+.stage-card__delete-btn .material-symbols-outlined {
+  font-size: 1.125rem;
 }
 
 .stage-card__count {
@@ -237,6 +435,14 @@ defineEmits<{
   display: flex;
   flex-direction: column;
   justify-content: center;
+  position: relative;
+}
+
+.stage-total__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 0.25rem;
 }
 
 .stage-total__label {
@@ -245,7 +451,27 @@ defineEmits<{
   color: #94a3b8;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  margin-bottom: 0.25rem;
+}
+
+.stage-total__add-btn {
+  background: transparent;
+  border: none;
+  color: #4b9af6;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s, opacity 0.2s;
+}
+
+.stage-total__add-btn:hover {
+  transform: scale(1.1);
+  opacity: 0.9;
+}
+
+.stage-total__add-btn .material-symbols-outlined {
+  font-size: 1.5rem;
 }
 
 .stage-total__value {

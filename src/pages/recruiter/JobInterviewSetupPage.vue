@@ -13,6 +13,9 @@
       :active-stage-id="activeStageId"
       :total-candidates="totalCandidates"
       @select="activeStageId = $event"
+      @rename="handleRenameStage"
+      @add="handleAddStage"
+      @delete="handleDeleteStage"
     />
 
     <InterviewCandidateTable
@@ -53,13 +56,15 @@ const activeStageId = ref(1)
 const currentPage = ref(1)
 
 // --- Mock Data (thay bằng store/API khi tích hợp) ---
-const stages = [
+const stages = ref([
   { id: 1, label: 'Vòng 1', name: 'HR Interview', count: 8 },
   { id: 2, label: 'Vòng 2', name: 'Technical', count: 12 },
   { id: 3, label: 'Vòng 3', name: 'Culture Fit', count: 4 },
-]
+])
 
-const totalCandidates = 24
+const totalCandidates = computed(() => {
+  return stages.value.reduce((acc: number, s: any) => acc + s.count, 0)
+})
 
 const candidates = [
   {
@@ -119,12 +124,12 @@ const candidates = [
 
 // --- Computed ---
 const activeStageName = computed(() => {
-  const stage = stages.find((s) => s.id === activeStageId.value)
+  const stage = stages.value.find((s) => s.id === activeStageId.value)
   return stage ? `${stage.label} - ${stage.name}` : ''
 })
 
 const totalCandidateCount = computed(() => {
-  return stages.find((s) => s.id === activeStageId.value)?.count ?? 0
+  return stages.value.find((s) => s.id === activeStageId.value)?.count ?? 0
 })
 
 const totalPages = computed(() => Math.ceil(totalCandidateCount.value / 3))
@@ -158,6 +163,41 @@ function handleCancel(candidateId: number) {
   console.log('Cancel interview for candidate:', candidateId)
 }
 
+function handleRenameStage(stageId: number, newName: string) {
+  const stage = stages.value.find((s) => s.id === stageId)
+  if (stage) {
+    stage.name = newName
+  }
+}
+
+function handleAddStage(name: string) {
+  const nextId = stages.value.length > 0 ? Math.max(...stages.value.map((s) => s.id)) + 1 : 1
+  const nextRoundNumber = stages.value.length + 1
+  stages.value.push({
+    id: nextId,
+    label: `Vòng ${nextRoundNumber}`,
+    name: name,
+    count: 0,
+  })
+}
+
+function handleDeleteStage(stageId: number) {
+  const index = stages.value.findIndex((s) => s.id === stageId)
+  if (index !== -1) {
+    stages.value.splice(index, 1)
+
+    // Re-index labels (Vòng 1, Vòng 2, ...)
+    stages.value.forEach((stage, i) => {
+      stage.label = `Vòng ${i + 1}`
+    })
+
+    // If active stage was deleted, select the first available stage
+    if (activeStageId.value === stageId) {
+      activeStageId.value = stages.value.length > 0 ? stages.value[0].id : 0
+    }
+  }
+}
+
 function handleCreateInterview() {
   console.log('Create new interview')
 }
@@ -184,6 +224,7 @@ function handleCreateInterview() {
 .breadcrumb__link {
   color: #6b7280;
   text-decoration: none;
+  cursor: pointer;
 }
 
 .breadcrumb__link:hover {

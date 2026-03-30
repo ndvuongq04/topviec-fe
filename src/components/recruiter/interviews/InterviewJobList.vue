@@ -120,6 +120,5 @@ function handleViewDetail(jobId: number) {
   border-radius: 1rem;
   border: 1px solid #f1f5f9;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-  overflow: hidden;
 }
 </style>

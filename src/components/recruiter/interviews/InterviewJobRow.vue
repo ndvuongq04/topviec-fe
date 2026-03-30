@@ -30,28 +30,51 @@
         <span class="badge-active">Đang tuyển</span>
       </div>
 
-      <!-- CTA button -->
+      <!-- Actions: GlobalDropdown -->
       <div class="action-cell">
-        <button
-          v-if="isActive"
-          class="btn-solid-sm"
-          @click.stop="$emit('view-detail')"
-        >
-          Xem chi tiết
-        </button>
-        <button
-          v-else
-          class="btn-outline"
-          @click.stop="$emit('view-detail')"
-        >
-          Xem chi tiết
-        </button>
+        <GlobalDropdown>
+          <template #default="{ close }">
+            <!-- Primary action -->
+            <GlobalDropdownItem
+              icon="visibility"
+              label="Xem chi tiết"
+              @click="handleAction('view-detail', close)"
+            />
+
+            <div class="dropdown-divider-v2"></div>
+
+            <!-- Other actions -->
+            <GlobalDropdownItem
+              icon="edit"
+              label="Chỉnh sửa tin"
+              @click="handleAction('edit', close)"
+            />
+
+            <GlobalDropdownItem
+              icon="block"
+              label="Đóng tin tuyển dụng"
+              @click="handleAction('close', close)"
+            />
+
+            <div class="dropdown-divider-v2"></div>
+
+            <GlobalDropdownItem
+              icon="delete"
+              label="Gỡ bỏ tin này"
+              danger
+              @click="handleAction('delete', close)"
+            />
+          </template>
+        </GlobalDropdown>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import GlobalDropdown from '@/components/ui/GlobalDropdown.vue'
+import GlobalDropdownItem from '@/components/ui/GlobalDropdownItem.vue'
+
 interface JobPostingRow {
   id: number
   title: string
@@ -63,15 +86,23 @@ interface JobPostingRow {
   iconVariant: 'blue-light' | 'blue-solid' | 'orange' | 'purple' | 'green' | 'rose'
 }
 
-defineProps<{
+const props = defineProps<{
   job: JobPostingRow
   isActive?: boolean
 }>()
 
-defineEmits<{
+const emit = defineEmits<{
   (e: 'click'): void
   (e: 'view-detail'): void
+  (e: 'edit'): void
+  (e: 'close'): void
+  (e: 'delete'): void
 }>()
+
+function handleAction(event: 'view-detail' | 'edit' | 'close' | 'delete', close: () => void) {
+  close()
+  emit(event as any)
+}
 </script>
 
 <style scoped>
@@ -97,7 +128,8 @@ defineEmits<{
   cursor: pointer;
   transition: background 0.15s;
 }
-.job-row:last-child  { border-bottom: none; }
+.job-row:first-child { border-top-left-radius: 1rem; border-top-right-radius: 1rem; }
+.job-row:last-child { border-bottom-left-radius: 1rem; border-bottom-right-radius: 1rem; border-bottom: none; }
 .job-row:hover       { background: #f8fafc; }
 .job-row.active      { background: rgba(219, 234, 254, 0.2); }
 
@@ -171,36 +203,12 @@ defineEmits<{
 
 .action-cell { display: flex; justify-content: flex-end; }
 
-.btn-outline {
-  padding: 0.375rem 1rem;
-  font-family: 'Manrope', sans-serif;
-  font-size: 0.875rem;
-  font-weight: 700;
-  color: #4B9AF6;
-  border: 1px solid rgba(75, 154, 246, 0.25);
-  border-radius: 0.5rem;
-  background: transparent;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: all 0.15s;
+/* Divider inside global dropdown content */
+.dropdown-divider-v2 {
+  height: 1px;
+  background: #f1f5f9;
+  margin: 0.375rem 0.25rem;
 }
-.btn-outline:hover { background: #4B9AF6; color: #fff; }
-
-.btn-solid-sm {
-  padding: 0.375rem 1rem;
-  font-family: 'Manrope', sans-serif;
-  font-size: 0.875rem;
-  font-weight: 700;
-  color: #fff;
-  background: #4B9AF6;
-  border: none;
-  border-radius: 0.5rem;
-  cursor: pointer;
-  white-space: nowrap;
-  box-shadow: 0 1px 4px rgba(75, 154, 246, 0.25);
-  transition: transform 0.15s;
-}
-.btn-solid-sm:hover { transform: scale(1.05); }
 
 @media (max-width: 768px) {
   .job-info { grid-template-columns: 1fr; }
