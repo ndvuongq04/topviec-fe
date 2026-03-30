@@ -59,7 +59,7 @@ defineEmits<{
 .filter-tab {
   padding: 0.5rem 1rem;
   border-radius: var(--radius-full);
-  font-size: 0.75rem;
+  font-size: 0.875rem;
   font-weight: 700;
   font-family: inherit;
   border: none;

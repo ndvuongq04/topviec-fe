@@ -123,7 +123,7 @@ const handleDelete = (id: number) => console.log('delete', id)
   --radius-md: 0.75rem;
   --radius-sm: 0.5rem;
 
-  padding: 2rem;
+
   display: flex;
   flex-direction: column;
   gap: 2rem;
@@ -133,7 +133,7 @@ const handleDelete = (id: number) => console.log('delete', id)
 
 .page-header { display: flex; align-items: flex-end; justify-content: space-between; }
 .page-header__title { font-size: 1.875rem; font-weight: 800; letter-spacing: -0.02em; margin: 0 0 0.25rem; }
-.page-header__subtitle { color: var(--color-on-surface-muted); margin: 0; font-size: 0.875rem; }
+.page-header__subtitle { color: var(--color-on-surface-muted); margin: 0; font-size: 1rem; }
 
 .btn-export {
   display: inline-flex;
@@ -144,7 +144,7 @@ const handleDelete = (id: number) => console.log('delete', id)
   border: 1px solid var(--color-border);
   font-family: inherit;
   font-weight: 600;
-  font-size: 0.875rem;
+  font-size: 1rem;
   border-radius: var(--radius-lg);
   cursor: pointer;
   transition: background 0.15s;

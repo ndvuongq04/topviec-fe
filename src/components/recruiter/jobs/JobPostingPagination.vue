@@ -59,7 +59,7 @@ const showEllipsis = computed(() => totalPages.value > 3)
   align-items: center;
   justify-content: space-between;
 }
-.pagination-bar__info { font-size: 0.75rem; font-weight: 500; color: var(--color-on-surface-muted); margin: 0; }
+.pagination-bar__info { font-size: 0.875rem; font-weight: 500; color: var(--color-on-surface-muted); margin: 0; }
 .pagination-bar__info strong { font-weight: 700; color: var(--color-on-surface); }
 
 .pagination-controls { display: flex; align-items: center; gap: 0.25rem; }
@@ -72,7 +72,7 @@ const showEllipsis = computed(() => totalPages.value > 3)
   border-radius: var(--radius-sm);
   border: none;
   background: none;
-  font-size: 0.75rem;
+  font-size: 0.875rem;
   font-weight: 700;
   font-family: inherit;
   color: var(--color-on-surface);
@@ -84,6 +84,6 @@ const showEllipsis = computed(() => totalPages.value > 3)
 .page-btn--active:hover  { background: var(--color-primary); }
 .page-btn:disabled       { opacity: 0.3; cursor: default; }
 .page-btn:disabled:hover { background: none; }
-.page-separator { color: #cbd5e1; margin: 0 0.25rem; font-size: 0.75rem; }
+.page-separator { color: #cbd5e1; margin: 0 0.25rem; font-size: 0.875rem; }
 .icon-xl { font-size: 1.25rem !important; }
 </style>

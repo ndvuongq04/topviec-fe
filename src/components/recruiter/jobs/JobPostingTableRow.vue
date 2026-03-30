@@ -227,18 +227,18 @@ const statusLabel = computed(() => ({
 .job-info__icon--star { color: var(--color-tertiary); }
 .job-info__spacer { width: 1.25rem; flex-shrink: 0; }
 .job-info__title-row { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
-.job-info__title { font-weight: 700; font-size: 0.9375rem; color: var(--color-on-surface); margin: 0; }
+.job-info__title { font-weight: 700; font-size: 1.125rem; color: var(--color-on-surface); margin: 0; }
 .job-info__title--draft { font-style: italic; opacity: 0.7; }
-.job-info__meta { font-size: 0.75rem; color: var(--color-on-surface-muted); margin: 0.25rem 0 0; }
+.job-info__meta { font-size: 0.875rem; color: var(--color-on-surface-muted); margin: 0.25rem 0 0; }
 .job-info__meta-code { font-family: monospace; }
 
 /* Badges */
-.badge { display: inline-flex; align-items: center; padding: 0.125rem 0.5rem; border-radius: 0.25rem; font-size: 0.625rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; }
+.badge { display: inline-flex; align-items: center; padding: 0.125rem 0.5rem; border-radius: 0.25rem; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; }
 .badge--urgent  { background: var(--color-error-light);   color: var(--color-error-text); }
 .badge--featured { background: var(--color-primary-light); color: var(--color-primary-text); }
 
 /* Status chips */
-.status-chip { display: inline-flex; align-items: center; gap: 0.375rem; padding: 0.25rem 0.75rem; border-radius: var(--radius-full); font-size: 0.75rem; font-weight: 700; white-space: nowrap; }
+.status-chip { display: inline-flex; align-items: center; gap: 0.375rem; padding: 0.25rem 0.75rem; border-radius: var(--radius-full); font-size: 0.875rem; font-weight: 700; white-space: nowrap; }
 .status-chip__dot { width: 0.375rem; height: 0.375rem; border-radius: 50%; background: currentColor; }
 .status-chip__dot--pulse { animation: pulse 1.5s ease-in-out infinite; }
 @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.3; } }
@@ -251,15 +251,15 @@ const statusLabel = computed(() => ({
 /* Performance */
 .performance { display: flex; justify-content: center; gap: 1.5rem; }
 .performance__item { text-align: center; }
-.performance__value { font-size: 0.75rem; font-weight: 700; color: var(--color-on-surface); margin: 0; }
+.performance__value { font-size: 0.875rem; font-weight: 700; color: var(--color-on-surface); margin: 0; }
 .performance__value--primary { color: var(--color-primary); }
-.performance__label { font-size: 0.625rem; color: var(--color-on-surface-muted); font-weight: 500; margin: 0; }
+.performance__label { font-size: 0.75rem; color: var(--color-on-surface-muted); font-weight: 500; margin: 0; }
 
 /* Deadline */
-.deadline__date { font-size: 0.875rem; font-weight: 600; color: var(--color-on-surface); margin: 0; }
+.deadline__date { font-size: 1rem; font-weight: 600; color: var(--color-on-surface); margin: 0; }
 .deadline__date--error  { color: var(--color-error); }
 .deadline__date--muted  { color: var(--color-on-surface-muted); }
-.deadline__remaining { font-size: 0.625rem; color: var(--color-on-surface-muted); font-weight: 500; margin: 0.125rem 0 0; }
+.deadline__remaining { font-size: 0.75rem; color: var(--color-on-surface-muted); font-weight: 500; margin: 0.125rem 0 0; }
 .deadline__remaining--urgent { color: var(--color-error); font-style: italic; }
 
 /* Actions */
@@ -267,9 +267,9 @@ const statusLabel = computed(() => ({
 .btn-action { width: 2rem; height: 2rem; display: flex; align-items: center; justify-content: center; border-radius: var(--radius-sm); border: none; background: none; color: var(--color-on-surface-muted); cursor: pointer; transition: background 0.15s; }
 .btn-action:hover { background: #f1f5f9; }
 .btn-action--danger:hover { background: rgba(239,68,68,0.08); color: var(--color-error); }
-.btn-submit { padding: 0.375rem 0.75rem; background: rgba(75,154,246,0.1); color: var(--color-primary); font-family: inherit; font-size: 0.625rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; border-radius: var(--radius-sm); border: none; cursor: pointer; transition: background 0.15s, color 0.15s; }
+.btn-submit { padding: 0.375rem 0.75rem; background: rgba(75,154,246,0.1); color: var(--color-primary); font-family: inherit; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; border-radius: var(--radius-sm); border: none; cursor: pointer; transition: background 0.15s, color 0.15s; }
 .btn-submit:hover { background: var(--color-primary); color: #fff; }
-.btn-extend { padding: 0.375rem 0.75rem; background: none; color: var(--color-on-surface); font-family: inherit; font-size: 0.625rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; border-radius: var(--radius-sm); border: 1px solid var(--color-border); cursor: pointer; transition: background 0.15s; }
+.btn-extend { padding: 0.375rem 0.75rem; background: none; color: var(--color-on-surface); font-family: inherit; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; border-radius: var(--radius-sm); border: 1px solid var(--color-border); cursor: pointer; transition: background 0.15s; }
 .btn-extend:hover { background: #f1f5f9; }
 .icon-xl { font-size: 1.25rem !important; }
 </style>

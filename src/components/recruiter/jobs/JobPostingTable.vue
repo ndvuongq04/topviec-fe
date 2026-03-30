@@ -59,7 +59,7 @@ defineEmits<{
 .job-table thead tr { background: rgba(248,250,252,0.5); }
 .job-table th {
   padding: 1rem 1.5rem;
-  font-size: 0.625rem;
+  font-size: 0.75rem;
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.1em;
@@ -76,6 +76,6 @@ defineEmits<{
   padding: 3rem;
   text-align: center;
   color: var(--color-on-surface-muted);
-  font-size: 0.875rem;
+  font-size: 1rem;
 }
 </style>

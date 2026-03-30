@@ -89,7 +89,7 @@ onUnmounted(() => document.removeEventListener('click', onClickOutside))
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  font-size: 0.875rem;
+  font-size: 1rem;
   font-weight: 500;
   font-family: inherit;
   color: #0f172a;

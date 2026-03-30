@@ -1,41 +1,39 @@
 <template>
-  <section class="bg-white dark:bg-slate-800 rounded-3xl p-8 shadow-sm border border-slate-100 dark:border-slate-700">
-    <div class="flex items-center gap-3 mb-6">
-      <div class="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center text-blue-600 dark:text-blue-400">
+  <section class="section-card">
+    <div class="section-header">
+      <div class="icon-wrap icon-blue">
         <span class="material-symbols-outlined">location_on</span>
       </div>
-      <h3 class="text-xl font-bold">Địa điểm làm việc</h3>
+      <h3 class="section-title">Địa điểm làm việc</h3>
     </div>
 
-    <div class="space-y-4">
-      <!-- Location rows -->
+    <div class="location-list">
       <div
-        v-for="(loc, i) in modelValue"
+        v-for="(loc, i) in locations"
         :key="i"
-        class="grid grid-cols-1 md:grid-cols-12 gap-4"
+        class="location-row"
       >
-        <div class="md:col-span-4">
-          <SearchableSelect
-            :model-value="loc.city"
-            :options="locationOptions"
-            placeholder="-- Chọn tỉnh/thành phố --"
-            @update:model-value="updateLocation(i, 'city', $event.toString())"
-          />
+        <div class="loc-province">
+          <select v-model="loc.province" class="field-input field-select">
+            <option value="">-- Chọn tỉnh/thành --</option>
+            <option>Hà Nội</option>
+            <option>TP. Hồ Chí Minh</option>
+            <option>Đà Nẵng</option>
+          </select>
         </div>
-        <div class="md:col-span-7">
+        <div class="loc-address">
           <input
-            :value="loc.address"
-            class="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-700 focus:ring-primary/10 outline-none text-sm"
+            v-model="loc.address"
+            class="field-input"
             placeholder="Số nhà, tên đường, quận/huyện..."
             type="text"
-            @input="updateLocation(i, 'address', ($event.target as HTMLInputElement).value)"
           />
         </div>
-        <div class="md:col-span-1">
+        <div class="loc-delete">
           <button
-            v-if="modelValue.length > 1"
             type="button"
-            class="w-full h-full flex items-center justify-center rounded-xl bg-red-50 dark:bg-red-900/20 text-red-500 hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors cursor-pointer"
+            class="delete-btn"
+            title="Xóa"
             @click="removeLocation(i)"
           >
             <span class="material-symbols-outlined">delete</span>
@@ -44,61 +42,133 @@
       </div>
 
       <!-- Add more -->
-      <button
-        type="button"
-        class="w-full py-3 flex items-center justify-center gap-2 rounded-xl border-2 border-dashed border-slate-300 dark:border-slate-600 text-slate-500 font-semibold hover:border-primary hover:text-primary transition-all cursor-pointer"
-        @click="addLocation"
-      >
+      <button type="button" class="add-location-btn" @click="addLocation">
         <span class="material-symbols-outlined">add_location</span>
-        <span>Thêm địa điểm làm việc khác</span>
+        Thêm địa điểm làm việc khác
       </button>
     </div>
   </section>
 </template>
 
 <script setup lang="ts">
-import { onMounted, computed } from 'vue'
-import { useLocationStore } from '@/stores/location.store'
-import SearchableSelect from '@/components/ui/SearchableSelect.vue'
+import { reactive } from 'vue'
 
-export interface LocationItem {
-  city: string
+interface Location {
+  province: string
   address: string
 }
 
-const props = defineProps<{
-  modelValue: LocationItem[]
-}>()
-
-const emit = defineEmits<{
-  'update:modelValue': [value: LocationItem[]]
-}>()
-
-function updateLocation(index: number, field: keyof LocationItem, value: string) {
-  const updated = [...props.modelValue]
-  updated[index] = { ...updated[index], [field]: value }
-  emit('update:modelValue', updated)
-}
+const locations = reactive<Location[]>([
+  { province: '', address: '' },
+])
 
 function addLocation() {
-  emit('update:modelValue', [...props.modelValue, { city: '1', address: '' }])
+  locations.push({ province: '', address: '' })
 }
 
 function removeLocation(index: number) {
-  const updated = [...props.modelValue]
-  updated.splice(index, 1)
-  emit('update:modelValue', updated)
+  if (locations.length > 1) {
+    locations.splice(index, 1)
+  }
+}
+</script>
+
+<style scoped>
+.section-card {
+  background: #fff;
+  border-radius: 1.5rem;
+  padding: 2rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,.06);
+  border: 1px solid #f1f5f9;
+}
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+.icon-wrap {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.icon-blue { background: #eff6ff; color: #2563eb; }
+.section-title { font-size: 1.125rem; font-weight: 700; color: #0f172a; }
+
+.location-list { display: flex; flex-direction: column; gap: 1rem; }
+
+.location-row {
+  display: grid;
+  grid-template-columns: 1fr 1.75fr 2.5rem;
+  align-items: center;
+  gap: 0.75rem;
 }
 
-const locationStore = useLocationStore()
+.field-input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
+  border: 1px solid #e2e8f0;
+  outline: none;
+  font-size: 1rem;
+  font-family: inherit;
+  color: #0f172a;
+  box-sizing: border-box;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.field-input:focus {
+  border-color: #4B9AF6;
+  box-shadow: 0 0 0 4px rgba(75,154,246,.1);
+}
+.field-select { background: #fff; appearance: none; cursor: pointer; }
 
-const locationOptions = computed(() => {
-  return locationStore.locations.map(l => ({ id: l.id.toString(), name: l.name }))
-})
+.delete-btn {
+  width: 2.5rem;
+  height: 2.5rem;
+  border: none;
+  background: #fef2f2;
+  color: #ef4444;
+  border-radius: 0.75rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+  flex-shrink: 0;
+}
+.delete-btn:hover { background: #fee2e2; }
+.delete-btn .material-symbols-outlined { font-size: 1rem; }
 
-onMounted(() => {
-  if (locationStore.locations.length === 0) {
-    locationStore.fetchLocations({ size: 100 })
-  }
-})
-</script>
+.add-location-btn {
+  width: 100%;
+  padding: 0.875rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border: 2px dashed #e2e8f0;
+  border-radius: 0.75rem;
+  background: none;
+  color: #94a3b8;
+  font-size: 1rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+.add-location-btn:hover {
+  border-color: #4B9AF6;
+  color: #4B9AF6;
+}
+.add-location-btn .material-symbols-outlined { font-size: 1.125rem; }
+
+@media (max-width: 768px) {
+  .location-row { grid-template-columns: 1fr 2.5rem; }
+  .loc-province { grid-column: 1 / -1; }
+  .loc-address { grid-column: 1; }
+  .loc-delete { grid-column: 2; grid-row: 2; }
+}
+</style>
