@@ -20,8 +20,7 @@
     <div class="listing-panel">
       <JobPostingFilters
         v-model="activeFilter"
-        @filter="handleFilter"
-        @sort="handleSort"
+        v-model:searchValue="searchValue"
       />
       <JobPostingTable
         :jobs="filteredJobs"
@@ -91,6 +90,7 @@ const filteredJobs = computed<JobPostingRow[]>(() => {
 const handleExport = () => console.log('export')
 const handleFilter = () => console.log('open filter panel')
 const handleSort   = () => console.log('open sort panel')
+const searchValue  = ref('')
 const handleView   = (id: number) => console.log('view', id)
 const handleEdit   = (id: number) => console.log('edit', id)
 const handleCopy   = (id: number) => console.log('copy', id)

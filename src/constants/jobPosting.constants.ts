@@ -9,12 +9,15 @@ export enum WorkType {
 export enum JobPostingStatus {
     DRAFT = 'draft',
     PENDING_APPROVAL = 'pending_approval',
+    REJECTED = 'rejected',
+    SCHEDULED = 'scheduled',
     PUBLISHED = 'published',
     PAUSED = 'paused',
     CLOSED = 'closed',
     EXPIRED = 'expired',
-    REJECTED = 'rejected',
+    RENEWED = 'renewed',
     INTERVIEWING = 'interviewing',
+    COMPLETED = 'completed',
 }
 
 
@@ -30,24 +33,61 @@ export const WORK_TYPE_LABELS: Record<WorkType, string> = {
 export const JOB_POSTING_STATUS_LABELS: Record<JobPostingStatus, string> = {
     [JobPostingStatus.DRAFT]: 'Bản nháp',
     [JobPostingStatus.PENDING_APPROVAL]: 'Chờ duyệt',
+    [JobPostingStatus.REJECTED]: 'Bị từ chối',
+    [JobPostingStatus.SCHEDULED]: 'Đã lên lịch',
     [JobPostingStatus.PUBLISHED]: 'Đang đăng',
     [JobPostingStatus.PAUSED]: 'Tạm dừng',
     [JobPostingStatus.CLOSED]: 'Đã đóng',
     [JobPostingStatus.EXPIRED]: 'Hết hạn',
-    [JobPostingStatus.REJECTED]: 'Bị từ chối',
-    [JobPostingStatus.INTERVIEWING]: 'Phỏng vấn',
+    [JobPostingStatus.RENEWED]: 'Đã gia hạn',
+    [JobPostingStatus.INTERVIEWING]: 'Đang phỏng vấn',
+    [JobPostingStatus.COMPLETED]: 'Hoàn thành',
 }
 
-/** Tailwind badge classes theo status */
 export const JOB_POSTING_STATUS_BADGE: Record<JobPostingStatus, string> = {
-    [JobPostingStatus.DRAFT]: 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300',
-    [JobPostingStatus.PENDING_APPROVAL]: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400',
-    [JobPostingStatus.PUBLISHED]: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
-    [JobPostingStatus.PAUSED]: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400',
-    [JobPostingStatus.CLOSED]: 'bg-slate-200 text-slate-500 dark:bg-slate-600 dark:text-slate-400',
-    [JobPostingStatus.EXPIRED]: 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400',
-    [JobPostingStatus.REJECTED]: 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400',
-    [JobPostingStatus.INTERVIEWING]: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
+    // Chưa active — neutral
+    [JobPostingStatus.DRAFT]:
+        'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300',
+
+    // Chờ xử lý — vàng
+    [JobPostingStatus.PENDING_APPROVAL]:
+        'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
+
+    // Bị từ chối — đỏ hồng
+    [JobPostingStatus.REJECTED]:
+        'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400',
+
+    // Đã lên lịch, chưa chạy — tím nhạt
+    [JobPostingStatus.SCHEDULED]:
+        'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400',
+
+    // Đang chạy — xanh lá
+    [JobPostingStatus.PUBLISHED]:
+        'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400',
+
+    // Tạm dừng — cam
+    [JobPostingStatus.PAUSED]:
+        'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400',
+
+    // Đã đóng chủ động — slate đậm hơn draft
+    [JobPostingStatus.CLOSED]:
+        'bg-slate-200 text-slate-500 dark:bg-slate-600 dark:text-slate-400',
+
+    // Hết hạn tự động — đỏ nhạt
+    [JobPostingStatus.EXPIRED]:
+        'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400',
+
+    // Gia hạn thành công — teal (gần với published nhưng phân biệt)
+    [JobPostingStatus.RENEWED]:
+        'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400',
+
+    // Đang phỏng vấn — xanh dương
+    [JobPostingStatus.INTERVIEWING]:
+        'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
+
+    // Hoàn thành tuyển dụng — indigo (kết thúc tích cực)
+    [JobPostingStatus.COMPLETED]:
+        'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400',
 }
 
 export const WORK_TYPE_OPTIONS: { label: string; value: WorkType }[] = [

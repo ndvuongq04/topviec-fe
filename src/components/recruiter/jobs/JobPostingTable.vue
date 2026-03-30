@@ -3,10 +3,10 @@
     <table class="job-table">
       <thead>
         <tr>
-          <th>Thông tin tin tuyển dụng</th>
-          <th>Trạng thái</th>
+          <th class="col-left">Thông tin tin tuyển dụng</th>
+          <th class="col-left">Trạng thái</th>
           <th class="col-center">Hiệu suất</th>
-          <th>Hạn nộp</th>
+          <th class="col-left">Hạn nộp</th>
           <th class="col-right">Thao tác</th>
         </tr>
       </thead>
@@ -69,6 +69,8 @@ defineEmits<{
 }
 .col-center { text-align: center; }
 .col-right  { text-align: right; }
+.col-left  { text-align: left; }
+
 
 .job-table tbody tr + tr { border-top: 1px solid #f8fafc; }
 
