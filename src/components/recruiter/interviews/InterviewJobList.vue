@@ -87,7 +87,7 @@ const JOB_POSTINGS: JobPostingRow[] = [
 const activeId = ref<number>(JOB_POSTINGS[1].id)
 
 function handleViewDetail(jobId: number) {
-  router.push(`/recruiter/job-postings/${jobId}/interviews`)
+  router.push({ name: 'recruiter-job-interview-setup', params: { id: jobId } })
 }
 </script>
 
