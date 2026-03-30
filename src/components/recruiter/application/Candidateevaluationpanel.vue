@@ -109,10 +109,7 @@
         <span class="material-symbols-outlined">save</span>
         Lưu Đánh Giá
       </button>
-      <button class="btn-secondary" type="button" @click="$emit('invite-interview')">
-        <span class="material-symbols-outlined">calendar_today</span>
-        Mời Phỏng Vấn
-      </button>
+
     </div>
   </div>
 </template>

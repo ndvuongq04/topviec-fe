@@ -12,7 +12,6 @@
       :experiences="candidate.experiences"
       @download="handleDownload"
       @print="handlePrint"
-      @fullscreen="handleFullscreen"
     />
 
     <!-- Right: Evaluation + Activity -->
@@ -66,9 +65,6 @@ function handlePrint() {
   window.print()
 }
 
-function handleFullscreen() {
-  console.log('Open fullscreen CV')
-}
 
 function handleSave(data: unknown) {
   console.log('Save evaluation', data)
@@ -84,7 +80,6 @@ function handleInviteInterview() {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
-  padding: 1.5rem;
   flex: 1;
   overflow-y: auto;
 }

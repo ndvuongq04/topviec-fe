@@ -2,11 +2,7 @@
   <section class="cv-preview-panel">
     <!-- Breadcrumb & Actions -->
     <div class="panel-header">
-      <div class="breadcrumb">
-        <span class="breadcrumb__parent">Ứng viên</span>
-        <span class="material-symbols-outlined breadcrumb__sep">chevron_right</span>
-        <span class="breadcrumb__current">{{ candidateName }}</span>
-      </div>
+      <Breadcrumb :items="breadcrumbItems" :hide-home="true" />
       <div class="panel-actions">
         <button class="btn-action" @click="$emit('download')">
           <span class="material-symbols-outlined">download</span>
@@ -20,16 +16,7 @@
     </div>
 
     <!-- CV Preview -->
-    <div class="cv-viewport" @mouseenter="showOverlay = true" @mouseleave="showOverlay = false">
-      <Transition name="fade">
-        <div v-if="showOverlay" class="cv-overlay">
-          <button class="btn-fullscreen" @click="$emit('fullscreen')">
-            <span class="material-symbols-outlined">fullscreen</span>
-            Xem toàn màn hình
-          </button>
-        </div>
-      </Transition>
-
+    <div class="cv-viewport">
       <!-- CV Document -->
       <div class="cv-doc">
         <!-- CV Header -->
@@ -101,7 +88,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
+import { useRoute } from 'vue-router'
+import Breadcrumb from '@/components/ui/Breadcrumb.vue'
 
 interface Experience {
   company: string
@@ -120,14 +109,21 @@ interface Props {
   experiences: Experience[]
 }
 
-defineProps<Props>()
+const props = defineProps<Props>()
 defineEmits<{
   download: []
   print: []
-  fullscreen: []
 }>()
 
-const showOverlay = ref(false)
+const route = useRoute()
+
+const breadcrumbItems = computed(() => [
+  { 
+    label: 'Danh sách ứng viên', 
+    to: `/recruiter/jobs/${route.params.id}/applications` 
+  },
+  { label: props.candidateName }
+])
 </script>
 
 <style scoped>
@@ -146,15 +142,6 @@ const showOverlay = ref(false)
   align-items: center;
 }
 
-.breadcrumb {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-  font-size: 0.875rem; /* 14px – metadata */
-}
-.breadcrumb__parent { color: #64748b; }
-.breadcrumb__sep { font-size: 1rem; color: #94a3b8; }
-.breadcrumb__current { font-weight: 700; color: #4B9AF6; }
 
 .panel-actions {
   display: flex;
@@ -170,7 +157,7 @@ const showOverlay = ref(false)
   background: #fff;
   color: #475569;
   font-size: 0.875rem; /* 14px */
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
   transition: background 0.15s;
 }
@@ -191,36 +178,6 @@ const showOverlay = ref(false)
   justify-content: center;
 }
 
-.cv-overlay {
-  position: absolute;
-  inset: 0;
-  background: rgba(255, 255, 255, 0.45);
-  backdrop-filter: blur(2px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 10;
-}
-.btn-fullscreen {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.625rem 1.5rem;
-  border-radius: 9999px;
-  background: #4B9AF6;
-  color: #fff;
-  font-size: 0.875rem; /* 14px */
-  font-weight: 700;
-  border: none;
-  cursor: pointer;
-  box-shadow: 0 4px 16px rgba(75, 154, 246, 0.35);
-  transition: transform 0.15s;
-}
-.btn-fullscreen:hover { transform: scale(1.05); }
-
-/* Fade transition */
-.fade-enter-active, .fade-leave-active { transition: opacity 0.2s; }
-.fade-enter-from, .fade-leave-to { opacity: 0; }
 
 /* ── CV Document ── */
 .cv-doc {

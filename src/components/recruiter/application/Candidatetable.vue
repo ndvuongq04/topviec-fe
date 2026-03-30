@@ -16,6 +16,7 @@
           v-for="c in candidates"
           :key="c.id"
           class="table-row"
+          @click="goToDetail(c.id)"
         >
           <!-- Candidate info -->
           <td class="td">
@@ -60,7 +61,11 @@
           <!-- Actions -->
           <td class="td td--right">
             <div class="action-group">
-              <button class="action-btn" title="Xem chi tiết">
+              <button 
+                class="action-btn" 
+                title="Xem chi tiết"
+                @click.stop="goToDetail(c.id)"
+              >
                 <span class="material-symbols-outlined">visibility</span>
               </button>
               <button class="action-btn" title="Phân loại nhanh">
@@ -98,7 +103,12 @@
 </template>
 
 <script setup lang="ts">
+import { useRouter, useRoute } from 'vue-router'
+
 defineProps<{ candidates: any[] }>()
+
+const router = useRouter()
+const route = useRoute()
 
 const statusLabel: Record<string, string> = {
   new:      'Mới',
@@ -106,6 +116,16 @@ const statusLabel: Record<string, string> = {
   fit:      'Phù hợp',
   consider: 'Cân nhắc',
   rejected: 'Từ chối',
+}
+
+const goToDetail = (candidateId: string) => {
+  router.push({
+    name: 'recruiter-application-detail',
+    params: {
+      id: route.params.id,
+      applicationId: candidateId
+    }
+  })
 }
 </script>
 

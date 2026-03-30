@@ -5,22 +5,19 @@
 
     <!-- Page Header -->
     <div class="flex justify-between items-start">
-      <div class="flex items-center gap-4">
-        
-        <div>
-          <div class="flex items-center gap-3">
-            <h1 class="page-title">Senior Product Designer (UI/UX)</h1>
-            <span class="job-status-badge">Đang tuyển</span>
-          </div>
-          <p class="page-subtitle">Mã tin: #JOB-12345 • Hoạt động: 12 ngày trước</p>
+      <div class="flex flex-col gap-1">
+        <div class="flex items-center gap-3">
+          <h1 class="page-title">Senior Product Designer (UI/UX)</h1>
+          <span class="job-status-badge">Đang tuyển</span>
         </div>
+        <p class="page-subtitle">Mã tin: #JOB-12345 • Hoạt động: 12 ngày trước</p>
       </div>
-      <div class="flex gap-3">
+      
+      <div class="header-actions">
         <button class="btn-outline">
           <span class="material-symbols-outlined">download</span>
           Xuất báo cáo
         </button>
-        
       </div>
     </div>
 
