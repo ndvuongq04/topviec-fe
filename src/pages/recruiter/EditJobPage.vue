@@ -1,263 +1,227 @@
 <template>
-  <div class="flex justify-center">
-    <div class="w-full max-w-7xl pt-6 pb-16">
-      <!-- Header Actions -->
-      <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
+  <div class="page-wrapper">
+    <div class="page-inner">
+
+      <!-- ── Header ─────────────────────────────────── -->
+      <div class="page-header">
         <div>
-          <nav class="flex items-center gap-2 text-sm text-slate-500 mb-2">
-            <router-link to="/recruiter/jobs" class="hover:text-primary transition-colors cursor-pointer">Tuyển dụng</router-link>
-            <span class="material-symbols-outlined text-xs">chevron_right</span>
-            <router-link :to="`/recruiter/jobs/${jobId}`" class="hover:text-primary transition-colors cursor-pointer">Chi tiết tin</router-link>
-            <span class="material-symbols-outlined text-xs">chevron_right</span>
-            <span class="text-slate-900 dark:text-slate-100 font-medium">Chỉnh sửa</span>
+          <nav class="breadcrumb">
+            <router-link to="/recruiter/jobs" class="breadcrumb-link">Tin tuyển dụng</router-link>
+            <span class="material-symbols-outlined breadcrumb-sep">chevron_right</span>
+            <router-link to="/recruiter/jobs/1" class="breadcrumb-link">Chi tiết tin</router-link>
+            <span class="material-symbols-outlined breadcrumb-sep">chevron_right</span>
+            <span class="breadcrumb-current">Chỉnh sửa</span>
           </nav>
-          <div class="flex items-center gap-3">
-            <h2 class="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">Cập nhật tin tuyển dụng</h2>
-            <span class="bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1.5">
-              <span class="material-symbols-outlined text-sm">edit_note</span>
+
+          <div class="title-row">
+            <h2 class="page-title">Cập nhật tin tuyển dụng</h2>
+            <span class="edit-badge">
+              <span class="material-symbols-outlined">edit_note</span>
               Đang chỉnh sửa
             </span>
           </div>
-          <p class="text-slate-500 mt-1">Cập nhật thông tin để tin tuyển dụng luôn chính xác và hấp dẫn nhất.</p>
+
+          <p class="page-subtitle">Cập nhật thông tin để tin tuyển dụng luôn chính xác và hấp dẫn nhất.</p>
         </div>
-        <div class="flex items-center gap-3 shrink-0">
-          <router-link
-            :to="`/recruiter/jobs/${jobId}`"
-            class="px-6 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-100 font-semibold hover:bg-slate-50 dark:hover:bg-slate-800 transition-all active:scale-95 cursor-pointer"
-          >
-            Hủy bỏ
-          </router-link>
-          <button
-            type="button"
-            class="px-8 py-2.5 rounded-xl bg-primary text-white font-bold shadow-lg shadow-primary/25 hover:shadow-primary/40 transition-all active:scale-95 flex items-center gap-2 cursor-pointer"
-            @click="onUpdate"
-          >
-            <span class="material-symbols-outlined text-lg">save</span>
+        
+        <div class="header-actions">
+          <router-link to="/recruiter/jobs/1" class="btn-outline">Hủy bỏ</router-link>
+          <button class="btn-primary" type="button" @click="update">
             <span>Cập nhật tin</span>
+            <span class="material-symbols-outlined">save</span>
           </button>
         </div>
       </div>
 
-      <!-- Edit notice -->
-      <div class="mb-6 p-4 bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800 rounded-xl flex items-start gap-3">
-        <span class="material-symbols-outlined text-amber-500 shrink-0 mt-0.5">info</span>
-        <div class="text-sm text-amber-800 dark:text-amber-300">
-          <p class="font-semibold">Lưu ý khi chỉnh sửa</p>
-          <p class="mt-1 text-amber-700 dark:text-amber-400">Tin tuyển dụng sau khi cập nhật có thể cần được duyệt lại. Bạn còn <span class="font-bold">1 lần</span> chỉnh sửa cho tin này.</p>
+      <!-- Edit Notice -->
+      <div class="edit-notice">
+        <span class="material-symbols-outlined notice-icon">info</span>
+        <div>
+          <p class="notice-title">Lưu ý khi chỉnh sửa</p>
+          <p class="notice-desc">Tin tuyển dụng sau khi cập nhật có thể cần được duyệt lại. Bạn còn <strong>1 lần</strong> chỉnh sửa cho tin này.</p>
         </div>
       </div>
 
-      <!-- Form Sections (reuse from Create Job) -->
-      <div class="space-y-6">
-        <CreateJobBasicInfo v-model="basicInfo" />
-        <CreateJobDetails v-model="details" />
-        <CreateJobSkills v-model="skills" />
-        <CreateJobSalary v-model="salary" />
-        <CreateJobLocation v-model="locations" />
-        <CreateJobAdvanced v-model="advanced" />
+      <!-- ── Sections ───────────────────────────────── -->
+      <div class="sections">
+        <CreateJobBasicInfo />
+        <CreateJobContent />
+        <CreateJobSkills />
+        <CreateJobSalary />
+        <CreateJobLocation />
+        <CreateJobAdvanced />
       </div>
 
-      <!-- Final Actions -->
-      <div class="mt-8 pt-6 flex justify-end gap-4 border-t border-slate-200 dark:border-slate-700">
-        <router-link
-          :to="`/recruiter/jobs/${jobId}`"
-          class="px-8 py-3 rounded-xl border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-100 font-semibold hover:bg-white dark:hover:bg-slate-800 transition-all active:scale-95 cursor-pointer"
-        >
-          Hủy bỏ
-        </router-link>
-        <button
-          type="button"
-          class="px-12 py-3 rounded-xl bg-primary text-white font-bold shadow-lg shadow-primary/25 hover:shadow-primary/40 transition-all active:scale-95 flex items-center gap-2 cursor-pointer"
-          @click="onUpdate"
-        >
-          <span class="material-symbols-outlined text-lg">save</span>
+      <!-- ── Footer actions ─────────────────────────── -->
+      <div class="page-footer">
+        <router-link to="/recruiter/jobs/1" class="btn-outline">Hủy bỏ</router-link>
+        <button class="btn-primary" type="button" @click="update">
           <span>Cập nhật tin</span>
+          <span class="material-symbols-outlined">save</span>
         </button>
       </div>
+
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import { useToast } from '@/composables/useToast'
-import { useEmployerJobPostingStore } from '@/stores/employerJobPosting.store'
-import { employerJobPostingService } from '@/services/jobPosting.service'
-import type { ReqUpdateJobPostingDTO } from '@/types/jobPosting.types'
-
 import CreateJobBasicInfo from '@/components/recruiter/jobs/CreateJobBasicInfo.vue'
-import CreateJobDetails from '@/components/recruiter/jobs/CreateJobDetails.vue'
+import CreateJobContent from '@/components/recruiter/jobs/CreateJobContent.vue'
 import CreateJobSkills from '@/components/recruiter/jobs/CreateJobSkills.vue'
 import CreateJobSalary from '@/components/recruiter/jobs/CreateJobSalary.vue'
 import CreateJobLocation from '@/components/recruiter/jobs/CreateJobLocation.vue'
 import CreateJobAdvanced from '@/components/recruiter/jobs/CreateJobAdvanced.vue'
-import type { BasicInfoData } from '@/components/recruiter/jobs/CreateJobBasicInfo.vue'
-import type { DetailsData } from '@/components/recruiter/jobs/CreateJobDetails.vue'
-import type { SkillsData } from '@/components/recruiter/jobs/CreateJobSkills.vue'
-import type { SalaryData } from '@/components/recruiter/jobs/CreateJobSalary.vue'
-import type { LocationItem } from '@/components/recruiter/jobs/CreateJobLocation.vue'
-import type { AdvancedData } from '@/components/recruiter/jobs/CreateJobAdvanced.vue'
 
-const route = useRoute()
-const router = useRouter()
-const toast = useToast()
-const jobStore = useEmployerJobPostingStore()
-const jobId = route.params.id as string
-const loading = ref(false)
-const fetching = ref(true)
-
-const basicInfo = ref<BasicInfoData>({
-  title: '',
-  industry: '',
-  level: '',
-  quantity: 1,
-  deadline: '',
-})
-
-const details = ref<DetailsData>({
-  description: '',
-  requirements: '',
-  benefits: '',
-})
-
-const skills = ref<SkillsData>({
-  skills: [],
-  expMin: 0,
-  expMax: null,
-})
-
-const salary = ref<SalaryData>({
-  salaryMin: '',
-  salaryMax: '',
-  negotiable: false,
-  workType: 'FULL_TIME',
-})
-
-const locations = ref<LocationItem[]>([])
-
-const advanced = ref<AdvancedData>({
-  featured: false,
-  urgent: false,
-})
-
-onMounted(async () => {
-  try {
-    fetching.value = true
-    const job = await employerJobPostingService.getById(jobId)
-
-    basicInfo.value = {
-      title: job.title,
-      industry: job.industry?.id?.toString() || '1',
-      level: job.level?.id?.toString() || '1',
-      quantity: job.headcount,
-      deadline: job.deadline ? job.deadline.split('T')[0] : '', // format YYYY-MM-DD
-    }
-
-    details.value = {
-      description: job.description,
-      requirements: job.requirements,
-      benefits: job.benefits || '',
-    }
-
-    skills.value = {
-      skills: (job.skills || []).map(s => ({ id: s.skillId, name: (s as any).skillName || `Kỹ năng ${s.skillId}` })),
-      expMin: job.experienceYearsMin,
-      expMax: job.experienceYearsMax ?? null,
-    }
-
-    salary.value = {
-      salaryMin: job.salaryMin?.toString() || '',
-      salaryMax: job.salaryMax?.toString() || '',
-      negotiable: job.salaryNegotiable,
-      workType: job.workType || 'FULL_TIME',
-    }
-
-    locations.value = (job.locations || []).map(l => ({
-      city: l.provinceId?.toString() || '1',
-      address: l.addressDetail || '',
-    }))
-    if (locations.value.length === 0) locations.value.push({ city: '1', address: '' })
-
-    advanced.value = {
-      featured: job.isFeatured,
-      urgent: job.isUrgent,
-    }
-  } catch (error: any) {
-    toast.error('Lỗi', 'Không thể tải thông tin tin tuyển dụng để chỉnh sửa')
-    router.push('/recruiter/jobs')
-  } finally {
-    fetching.value = false
-  }
-})
-
-function validateForm(): boolean {
-  if (!basicInfo.value.title.trim()) { toast.error('Lỗi', 'Vui lòng nhập tiêu đề'); return false }
-  if (!basicInfo.value.industry) { toast.error('Lỗi', 'Vui lòng chọn ngành nghề'); return false }
-  if (!basicInfo.value.level) { toast.error('Lỗi', 'Vui lòng chọn cấp bậc'); return false }
-  if (!basicInfo.value.quantity || basicInfo.value.quantity < 1) { toast.error('Lỗi', 'Số lượng tuyển phải >= 1'); return false }
-  if (!basicInfo.value.deadline) { toast.error('Lỗi', 'Vui lòng chọn hạn nộp hồ sơ'); return false }
-
-  if (!details.value.description.trim()) { toast.error('Lỗi', 'Vui lòng nhập mô tả công việc'); return false }
-  if (!details.value.requirements.trim()) { toast.error('Lỗi', 'Vui lòng nhập yêu cầu ứng viên'); return false }
-
-  if (skills.value.expMin === null || skills.value.expMin < 0) { toast.error('Lỗi', 'Kinh nghiệm tối thiểu không hợp lệ'); return false }
-
-  if (!salary.value.negotiable) {
-    if (!salary.value.salaryMin && !salary.value.salaryMax) {
-      toast.error('Lỗi', 'Vui lòng nhập mức lương hoặc chọn thỏa thuận')
-      return false
-    }
-  }
-  
-  if (!locations.value.length) { toast.error('Lỗi', 'Vui lòng thêm ít nhất 1 địa điểm làm việc'); return false }
-
-  return true
-}
-
-function buildPayload(): ReqUpdateJobPostingDTO {
-  return {
-    title: basicInfo.value.title,
-    description: details.value.description,
-    requirements: details.value.requirements,
-    benefits: details.value.benefits || undefined,
-    industryId: parseInt(basicInfo.value.industry) || 1,
-    levelId: parseInt(basicInfo.value.level) || 1,
-    experienceYearsMin: skills.value.expMin || 0,
-    experienceYearsMax: skills.value.expMax || undefined,
-    salaryMin: salary.value.salaryMin ? parseInt(salary.value.salaryMin) : undefined,
-    salaryMax: salary.value.salaryMax ? parseInt(salary.value.salaryMax) : undefined,
-    salaryNegotiable: salary.value.negotiable,
-    workType: salary.value.workType || 'FULL_TIME',
-    headcount: basicInfo.value.quantity || 1,
-    deadline: basicInfo.value.deadline ? new Date(basicInfo.value.deadline).toISOString() : new Date().toISOString(),
-    locations: locations.value.map(loc => ({
-      provinceId: parseInt(loc.city) || 1,
-      addressDetail: loc.address || undefined,
-      isRemote: false
-    })),
-    skills: skills.value.skills.map((s) => ({
-      skillId: s.id,
-      isRequired: true,
-    })),
-    isFeatured: advanced.value.featured,
-    isUrgent: advanced.value.urgent,
-  }
-}
-
-async function onUpdate() {
-  if (!validateForm()) return
-
-  try {
-    loading.value = true
-    const payload = buildPayload()
-    await jobStore.updateJob(jobId, payload)
-    toast.success('Thành công', 'Cập nhật tin tuyển dụng thành công')
-    router.push(`/recruiter/jobs/${jobId}`)
-  } catch (error: any) {
-    toast.error('Lỗi', jobStore.error || 'Không thể cập nhật tin tuyển dụng')
-  } finally {
-    loading.value = false
-  }
+function update() {
+  console.log('Updating job...')
 }
 </script>
+
+<style scoped>
+.page-wrapper {
+  /* Bỏ padding hoàn toàn vì RecruiterLayout parent đã có px-8 pb-8 */
+  width: 100%;
+}
+.page-inner {
+  width: 100%;
+  /* Bỏ max-width để full màn hình tĩnh 100% giống JobPostingsPage */
+}
+
+/* Header */
+.page-header {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+@media (min-width: 768px) {
+  .page-header {
+    flex-direction: row;
+    align-items: flex-end;
+    justify-content: space-between;
+  }
+}
+
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: #64748b;
+  margin-bottom: 0.5rem;
+}
+.breadcrumb-link {
+  color: #64748b;
+  text-decoration: none;
+  transition: color 0.15s;
+}
+.breadcrumb-link:hover { color: #4B9AF6; }
+.breadcrumb-sep { font-size: 0.75rem; }
+.breadcrumb-current { color: #0f172a; font-weight: 500; }
+
+.title-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.page-title {
+  font-size: 1.875rem;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -0.025em;
+}
+
+.edit-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.75rem;
+  background: #fef3c7;
+  color: #b45309;
+  font-size: 0.75rem;
+  font-weight: 700;
+  border-radius: 9999px;
+  margin-top: 0.25rem;
+}
+.edit-badge .material-symbols-outlined { font-size: 1rem; }
+
+.page-subtitle { color: #64748b; margin-top: 0.25rem; font-size: 1rem; }
+
+/* Edit notice box */
+.edit-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 1rem;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: 0.75rem;
+  margin-bottom: 2rem;
+}
+.notice-icon { color: #f59e0b; flex-shrink: 0; margin-top: 0.125rem; }
+.notice-title { font-size: 0.875rem; font-weight: 600; color: #92400e; margin-bottom: 0.25rem; }
+.notice-desc { font-size: 0.875rem; color: #b45309; line-height: 1.5; }
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+/* Buttons */
+.btn-outline {
+  display: inline-block;
+  padding: 0.625rem 1.5rem;
+  border-radius: 0.75rem;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  color: #374151;
+  font-weight: 600;
+  font-size: 1rem;
+  font-family: inherit;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+}
+.btn-outline:hover { background: #f8fafc; }
+.btn-outline:active { transform: scale(0.97); }
+
+.btn-primary {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 2rem;
+  border-radius: 0.75rem;
+  border: none;
+  background: #4B9AF6;
+  color: #fff;
+  font-weight: 700;
+  font-size: 1rem;
+  font-family: inherit;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(75,154,246,.3);
+  transition: opacity 0.15s, box-shadow 0.15s, transform 0.1s;
+}
+.btn-primary:hover {
+  opacity: 0.92;
+  box-shadow: 0 6px 20px rgba(75,154,246,.4);
+}
+.btn-primary:active { transform: scale(0.97); }
+.btn-primary .material-symbols-outlined { font-size: 1.125rem; }
+
+/* Sections */
+.sections { display: flex; flex-direction: column; gap: 2rem; }
+
+/* Footer */
+.page-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  padding-top: 1rem;
+  margin-top: 0.5rem;
+  border-top: 1px solid #e2e8f0;
+}
+</style>
