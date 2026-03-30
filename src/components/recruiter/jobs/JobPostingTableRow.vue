@@ -89,6 +89,7 @@
           <GlobalDropdown>
             <template #default="{ close }">
               <GlobalDropdownItem icon="visibility" label="Xem chi tiết" @click="handleAction('view', job.id, close)" />
+              <GlobalDropdownItem icon="group" label="Danh sách ứng viên" @click="handleAction('applications', job.id, close)" />
               <GlobalDropdownItem icon="edit" label="Chỉnh sửa tin" @click="handleAction('edit', job.id, close)" />
               <GlobalDropdownItem icon="send" label="Gửi duyệt tin" @click="handleAction('submit', job.id, close)" />
               <div class="dropdown-divider-v2"></div>
@@ -103,6 +104,7 @@
           <GlobalDropdown>
             <template #default="{ close }">
               <GlobalDropdownItem icon="visibility" label="Xem chi tiết" @click="handleAction('view', job.id, close)" />
+              <GlobalDropdownItem icon="group" label="Danh sách ứng viên" @click="handleAction('applications', job.id, close)" />
               <GlobalDropdownItem icon="edit" label="Chỉnh sửa tin" @click="handleAction('edit', job.id, close)" />
               <GlobalDropdownItem icon="update" label="Gia hạn tin" @click="handleAction('extend', job.id, close)" />
               <div class="dropdown-divider-v2"></div>
@@ -123,6 +125,7 @@
           <GlobalDropdown>
             <template #default="{ close }">
               <GlobalDropdownItem icon="visibility" label="Xem chi tiết" @click="handleAction('view', job.id, close)" />
+              <GlobalDropdownItem icon="group" label="Danh sách ứng viên" @click="handleAction('applications', job.id, close)" />
               <GlobalDropdownItem icon="edit" label="Chỉnh sửa tin" @click="handleAction('edit', job.id, close)" />
               <GlobalDropdownItem icon="send" label="Gửi duyệt tin" @click="handleAction('submit', job.id, close)" />
               <GlobalDropdownItem icon="update" label="Gia hạn tin" @click="handleAction('extend', job.id, close)" />
@@ -153,6 +156,7 @@ const emit = defineEmits<{
   extend: [id: number]
   close:  [id: number]
   delete: [id: number]
+  applications: [id: number]
 }>()
 
 function handleAction(event: any, id: number, close: () => void) {

@@ -22,6 +22,7 @@
           @extend="$emit('extend', $event)"
           @close="$emit('close', $event)"
           @delete="$emit('delete', $event)"
+          @applications="$emit('applications', $event)"
         />
         <tr v-if="jobs.length === 0">
           <td colspan="5" class="empty">Không có tin tuyển dụng nào.</td>
@@ -45,6 +46,7 @@ defineEmits<{
   extend: [id: number]
   close:  [id: number]
   delete: [id: number]
+  applications: [id: number]
 }>()
 </script>
 

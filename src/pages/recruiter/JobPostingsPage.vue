@@ -31,6 +31,7 @@
         @extend="handleExtend"
         @close="handleClose"
         @delete="handleDelete"
+        @applications="handleViewApplications"
       />
       <JobPostingPagination
         v-model:currentPage="currentPage"
@@ -44,6 +45,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import JobPostingStatsGrid  from '@/components/recruiter/jobs/JobPostingStatsGrid.vue'
 import JobPostingFilters    from '@/components/recruiter/jobs/JobPostingFilters.vue'
 import JobPostingTable      from '@/components/recruiter/jobs/JobPostingTable.vue'
@@ -54,6 +56,7 @@ import type { JobPostingRow, JobPostingStats } from '@/types/employerJobPosting.
 // ── State ────────────────────────────────────────────────
 const activeFilter = ref<JobPostingFilterTab>('all')
 const currentPage  = ref(1)
+const router = useRouter()
 
 // ── Mock data (thay bằng store/service thực tế) ──────────
 const stats: JobPostingStats = { total: 24, active: 12, pending: 5, expiring: 3 }
@@ -98,6 +101,13 @@ const handleSubmit = (id: number) => console.log('submit', id)
 const handleExtend = (id: number) => console.log('extend', id)
 const handleClose  = (id: number) => console.log('close', id)
 const handleDelete = (id: number) => console.log('delete', id)
+const handleViewApplications = (id: number) => {
+  // Chuyển hướng sang trang chi tiết ứng viên (với applicationId mock là 1)
+  router.push({ 
+    name: 'recruiter-application-detail', 
+    params: { id, applicationId: 1 } 
+  })
+}
 </script>
 
 <style scoped>
