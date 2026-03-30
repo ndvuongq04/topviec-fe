@@ -102,10 +102,10 @@ const handleExtend = (id: number) => console.log('extend', id)
 const handleClose  = (id: number) => console.log('close', id)
 const handleDelete = (id: number) => console.log('delete', id)
 const handleViewApplications = (id: number) => {
-  // Chuyển hướng sang trang chi tiết ứng viên (với applicationId mock là 1)
+  // Chuyển hướng sang trang danh sách ứng viên của tin tuyển dụng
   router.push({ 
-    name: 'recruiter-application-detail', 
-    params: { id, applicationId: 1 } 
+    name: 'recruiter-job-applications', 
+    params: { id } 
   })
 }
 </script>

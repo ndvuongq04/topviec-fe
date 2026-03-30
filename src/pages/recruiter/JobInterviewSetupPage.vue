@@ -1,8 +1,8 @@
 <template>
   <div class="interview-page">
     <nav class="breadcrumb">
-      <router-link :to="{ name: 'recruiter-jobs' }" class="breadcrumb__link">
-        Tin tuyển dụng
+      <router-link :to="{ name: 'recruiter-interviews' }" class="breadcrumb__link">
+        Quản lý lịch phỏng vấn
       </router-link>
       <span class="material-symbols-outlined breadcrumb__sep">chevron_right</span>
       <span class="breadcrumb__current">Thiết lập phỏng vấn</span>

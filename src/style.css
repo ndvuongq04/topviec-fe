@@ -1,6 +1,8 @@
 @import "tailwindcss";
 @plugin "@tailwindcss/forms";
 
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@200..800&display=swap');
+
 @theme {
   --color-primary: #137fec;
   --color-primary-content: #ffffff;
@@ -11,5 +13,6 @@
   --color-text-main: #1e293b;
   --color-text-muted: #64748b;
 
-  --font-display: "Spline Sans", sans-serif;
+  --font-sans: "Manrope", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Manrope", sans-serif;
 }

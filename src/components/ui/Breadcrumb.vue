@@ -1,12 +1,19 @@
 <template>
   <nav class="flex items-center gap-2 text-sm font-medium text-slate-500 dark:text-gray-400 overflow-x-auto whitespace-nowrap scrollbar-hide">
-    <router-link to="/" class="hover:text-primary transition-all flex items-center gap-1 group">
+    <router-link 
+      v-if="!hideHome"
+      to="/" 
+      class="hover:text-primary transition-all flex items-center gap-1 group"
+    >
       <span class="material-symbols-outlined text-[20px] group-hover:scale-110 transition-transform">home</span>
       Trang chủ
     </router-link>
     
     <template v-for="(item, index) in items" :key="index">
-      <span class="material-symbols-outlined text-slate-300 dark:text-gray-700 text-[18px]">chevron_right</span>
+      <span 
+        v-if="!hideHome || index > 0"
+        class="material-symbols-outlined text-slate-300 dark:text-gray-700 text-[18px]"
+      >chevron_right</span>
       <router-link 
         v-if="item.to" 
         :to="item.to" 
@@ -27,6 +34,7 @@
 <script setup lang="ts">
 defineProps<{
   items: { label: string; to?: string }[]
+  hideHome?: boolean
 }>()
 </script>
 

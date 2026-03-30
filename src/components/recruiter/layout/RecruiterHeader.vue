@@ -6,7 +6,7 @@
     </div>
     <div class="flex items-center gap-4">
       <!-- Search -->
-      <div class="relative hidden md:block">
+      <div class="relative hidden md:block ">
         <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">search</span>
         <input
           v-model="searchQuery"
