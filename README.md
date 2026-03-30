@@ -1,356 +1,885 @@
-<!DOCTYPE html>
+<template>
+  <div class="job-postings-page">
 
-<html class="light" lang="vi"><head>
-<meta charset="utf-8"/>
-<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>Azure Horizon - Tin Tuyển Dụng</title>
-<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
-<script id="tailwind-config">
-        tailwind.config = {
-            darkMode: "class",
-            theme: {
-                extend: {
-                    colors: {
-                        "error": "#ef4444",
-                        "on-error": "#ffffff",
-                        "tertiary-container": "#fef3c7",
-                        "surface-variant": "#f1f5f9",
-                        "primary-container": "#e0f2fe",
-                        "on-primary-fixed-variant": "#1d4ed8",
-                        "on-tertiary": "#ffffff",
-                        "on-secondary-fixed-variant": "#334155",
-                        "inverse-surface": "#1e293b",
-                        "on-tertiary-fixed-variant": "#9a3412",
-                        "on-secondary-container": "#334155",
-                        "error-container": "#fee2e2",
-                        "on-primary": "#ffffff",
-                        "on-error-container": "#b91c1c",
-                        "on-secondary": "#ffffff",
-                        "outline": "#cbd5e1",
-                        "on-primary-container": "#0369a1",
-                        "inverse-on-surface": "#f8fafc",
-                        "background": "#f6f6f8",
-                        "tertiary": "#f59e0b",
-                        "on-background": "#0f172a",
-                        "surface-tint": "#4B9AF6",
-                        "on-secondary-fixed": "#0f172a",
-                        "secondary": "#64748b",
-                        "primary-fixed": "#dbeafe",
-                        "primary-fixed-dim": "#bfdbfe",
-                        "outline-variant": "#e2e8f0",
-                        "on-surface": "#0f172a",
-                        "on-tertiary-fixed": "#7c2d12",
-                        "secondary-container": "#f1f5f9",
-                        "surface-dim": "#f6f6f8",
-                        "surface-container": "#f1f4f9",
-                        "primary": "#4B9AF6",
-                        "surface-bright": "#ffffff",
-                        "tertiary-fixed": "#ffedd5",
-                        "surface-container-low": "#f8fafd",
-                        "surface-container-highest": "#e2e7f0",
-                        "surface-container-high": "#e9edf5",
-                        "inverse-primary": "#bae6fd",
-                        "secondary-fixed-dim": "#e2e8f0",
-                        "on-surface-variant": "#64748b",
-                        "secondary-fixed": "#f1f5f9",
-                        "on-primary-fixed": "#1e40af",
-                        "tertiary-fixed-dim": "#fed7aa",
-                        "on-tertiary-container": "#b45309",
-                        "surface": "#ffffff",
-                        "surface-container-lowest": "#ffffff"
-                    },
-                    fontFamily: {
-                        "headline": ["Manrope"],
-                        "body": ["Manrope"],
-                        "label": ["Manrope"]
-                    },
-                    borderRadius: {
-                        "DEFAULT": "0.5rem",
-                        "lg": "0.5rem",
-                        "xl": "0.75rem",
-                        "full": "9999px"
-                    },
-                },
-            },
-        }
-    </script>
+    <!-- Page header -->
+    <div class="page-header">
+      <div>
+        <h2 class="page-header__title">Tin tuyển dụng</h2>
+        <p class="page-header__subtitle">Quản lý và theo dõi hiệu suất các vị trí đang tuyển.</p>
+      </div>
+      <button class="btn-export" @click="handleExport">
+        <span class="material-symbols-outlined icon-xl">file_download</span>
+        Xuất báo cáo
+      </button>
+    </div>
+
+    <!-- Stats -->
+    <JobPostingStatsGrid :stats="stats" />
+
+    <!-- Listing panel -->
+    <div class="listing-panel">
+      <JobPostingFilters
+        v-model="activeFilter"
+        @filter="handleFilter"
+        @sort="handleSort"
+      />
+      <JobPostingTable
+        :jobs="filteredJobs"
+        @view="handleView"
+        @edit="handleEdit"
+        @copy="handleCopy"
+        @submit="handleSubmit"
+        @extend="handleExtend"
+        @close="handleClose"
+        @delete="handleDelete"
+      />
+      <JobPostingPagination
+        v-model:currentPage="currentPage"
+        :total="stats.total"
+        :per-page="10"
+      />
+    </div>
+
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref, computed } from 'vue'
+import JobPostingStatsGrid  from '@/components/recruiter/jobs/JobPostingStatsGrid.vue'
+import JobPostingFilters    from '@/components/recruiter/jobs/JobPostingFilters.vue'
+import JobPostingTable      from '@/components/recruiter/jobs/JobPostingTable.vue'
+import JobPostingPagination from '@/components/recruiter/jobs/JobPostingPagination.vue'
+import type { JobPostingFilterTab } from '@/components/recruiter/jobs/JobPostingFilters.vue'
+import type { JobPostingRow, JobPostingStats } from '@/types/employerJobPosting.types'
+
+// ── State ────────────────────────────────────────────────
+const activeFilter = ref<JobPostingFilterTab>('all')
+const currentPage  = ref(1)
+
+// ── Mock data (thay bằng store/service thực tế) ──────────
+const stats: JobPostingStats = { total: 24, active: 12, pending: 5, expiring: 3 }
+
+const allJobs: JobPostingRow[] = [
+  {
+    id: 1, title: 'Senior Product Designer (UI/UX)', code: 'JOB-2023-001',
+    status: 'active', postedAt: '15/10/2023', deadline: '30/11/2023',
+    daysLeft: 12, views: '1,240', applicants: 86, isUrgent: true,
+  },
+  {
+    id: 2, title: 'Fullstack Developer (NodeJS/React)', code: 'JOB-2023-005',
+    status: 'pending', postedAt: '18/10/2023', deadline: '15/12/2023',
+    views: 0, applicants: 0,
+  },
+  {
+    id: 3, title: 'Marketing Manager', code: 'JOB-2023-012',
+    status: 'expiring', postedAt: '01/10/2023', deadline: '20/11/2023',
+    daysLeft: 2, views: '2,845', applicants: 156, isFeatured: true,
+  },
+  {
+    id: 4, title: 'Kế toán trưởng (Chưa đặt tên)', code: 'JOB-DRAFT-09',
+    status: 'draft', postedAt: '20/11/2023',
+  },
+]
+
+// ── Computed ─────────────────────────────────────────────
+const filteredJobs = computed<JobPostingRow[]>(() => {
+  if (activeFilter.value === 'all') return allJobs
+  return allJobs.filter(j => j.status === activeFilter.value)
+})
+
+// ── Handlers (kết nối store/service thực tế tại đây) ─────
+const handleExport = () => console.log('export')
+const handleFilter = () => console.log('open filter panel')
+const handleSort   = () => console.log('open sort panel')
+const handleView   = (id: number) => console.log('view', id)
+const handleEdit   = (id: number) => console.log('edit', id)
+const handleCopy   = (id: number) => console.log('copy', id)
+const handleSubmit = (id: number) => console.log('submit', id)
+const handleExtend = (id: number) => console.log('extend', id)
+const handleClose  = (id: number) => console.log('close', id)
+const handleDelete = (id: number) => console.log('delete', id)
+</script>
+
+<style scoped>
+.job-postings-page {
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  min-height: 100vh;
+}
+
+.page-header { display: flex; align-items: flex-end; justify-content: space-between; }
+.page-header__title { font-size: 1.875rem; font-weight: 800; letter-spacing: -0.02em; margin: 0 0 0.25rem; }
+.page-header__subtitle { color: var(--color-on-surface-muted); margin: 0; font-size: 0.875rem; }
+
+.btn-export {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.25rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  font-family: inherit;
+  font-weight: 600;
+  font-size: 0.875rem;
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.btn-export:hover { background: #f8fafc; }
+
+.listing-panel {
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  border: 1px solid var(--color-border-light);
+  overflow: hidden;
+}
+
+.icon-xl { font-size: 1.25rem !important; }
+</style>
+
+
+<template>
+  <div class="stats-grid">
+    <div class="stat-card">
+      <p class="stat-card__label">Tổng số tin</p>
+      <p class="stat-card__value">{{ stats.total }}</p>
+      <span class="material-symbols-outlined stat-card__icon">list_alt</span>
+    </div>
+    <div class="stat-card stat-card--active">
+      <p class="stat-card__label">Đang tuyển</p>
+      <p class="stat-card__value">{{ stats.active }}</p>
+      <span class="material-symbols-outlined stat-card__icon">rocket_launch</span>
+    </div>
+    <div class="stat-card stat-card--pending">
+      <p class="stat-card__label">Chờ duyệt</p>
+      <p class="stat-card__value">{{ String(stats.pending).padStart(2, '0') }}</p>
+      <span class="material-symbols-outlined stat-card__icon">hourglass_empty</span>
+    </div>
+    <div class="stat-card stat-card--expiring">
+      <p class="stat-card__label">Sắp hết hạn</p>
+      <p class="stat-card__value">{{ String(stats.expiring).padStart(2, '0') }}</p>
+      <span class="material-symbols-outlined stat-card__icon">alarm</span>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+interface JobPostingStats {
+  total: number
+  active: number
+  pending: number
+  expiring: number
+}
+
+defineProps<{
+  stats: JobPostingStats
+}>()
+</script>
+
+<style scoped>
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.5rem;
+}
+@media (max-width: 900px) { .stats-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 520px)  { .stats-grid { grid-template-columns: 1fr; } }
+
+.stat-card {
+  background: var(--color-surface);
+  padding: 1.5rem;
+  border-radius: var(--radius-lg);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  border: 1px solid var(--color-border-light);
+  position: relative;
+  overflow: hidden;
+}
+.stat-card__label {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #64748b;
+  margin: 0 0 0.25rem;
+}
+.stat-card__value {
+  font-size: 1.875rem;
+  font-weight: 800;
+  color: var(--color-on-surface);
+  margin: 0;
+  line-height: 1.2;
+}
+.stat-card__icon {
+  position: absolute;
+  right: -0.5rem;
+  bottom: -0.5rem;
+  font-size: 5rem !important;
+  opacity: 0.05;
+  transition: transform 0.5s;
+}
+.stat-card:hover .stat-card__icon { transform: scale(1.1); }
+
+.stat-card--active   { border-left: 4px solid var(--color-primary); }
+.stat-card--active   .stat-card__label { color: var(--color-primary); }
+.stat-card--active   .stat-card__icon  { opacity: 0.1; color: var(--color-primary); }
+
+.stat-card--pending  { border-left: 4px solid var(--color-tertiary); }
+.stat-card--pending  .stat-card__label { color: var(--color-tertiary); }
+.stat-card--pending  .stat-card__icon  { opacity: 0.1; color: var(--color-tertiary); }
+
+.stat-card--expiring { border-left: 4px solid var(--color-error); }
+.stat-card--expiring .stat-card__label { color: var(--color-error); }
+.stat-card--expiring .stat-card__icon  { opacity: 0.1; color: var(--color-error); }
+</style>
+
+
+<template>
+  <div class="toolbar">
+    <div class="filter-tabs">
+      <button
+        v-for="tab in tabs"
+        :key="tab.value"
+        class="filter-tab"
+        :class="{ 'filter-tab--active': modelValue === tab.value }"
+        @click="$emit('update:modelValue', tab.value)"
+      >
+        {{ tab.label }}
+      </button>
+    </div>
+    <div class="toolbar-actions">
+      <button class="btn-icon" title="Lọc" @click="$emit('filter')">
+        <span class="material-symbols-outlined icon-xl">filter_list</span>
+      </button>
+      <button class="btn-icon" title="Sắp xếp" @click="$emit('sort')">
+        <span class="material-symbols-outlined icon-xl">sort_by_alpha</span>
+      </button>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+export type JobPostingFilterTab = 'all' | 'active' | 'pending' | 'draft' | 'closed' | 'expired'
+
+const tabs: { label: string; value: JobPostingFilterTab }[] = [
+  { label: 'Tất cả',    value: 'all' },
+  { label: 'Đang tuyển', value: 'active' },
+  { label: 'Chờ duyệt', value: 'pending' },
+  { label: 'Nháp',      value: 'draft' },
+  { label: 'Đã đóng',   value: 'closed' },
+  { label: 'Hết hạn',   value: 'expired' },
+]
+
+defineProps<{ modelValue: JobPostingFilterTab }>()
+
+defineEmits<{
+  'update:modelValue': [value: JobPostingFilterTab]
+  filter: []
+  sort: []
+}>()
+</script>
+
+<style scoped>
+.toolbar {
+  padding: 1.25rem;
+  border-bottom: 1px solid var(--color-border-light);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+.filter-tabs { display: flex; gap: 0.5rem; overflow-x: auto; }
+.filter-tabs::-webkit-scrollbar { display: none; }
+
+.filter-tab {
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-full);
+  font-size: 0.75rem;
+  font-weight: 700;
+  font-family: inherit;
+  border: none;
+  cursor: pointer;
+  white-space: nowrap;
+  background: #f1f5f9;
+  color: #475569;
+  transition: background 0.15s, color 0.15s;
+}
+.filter-tab:hover { background: #e2e8f0; }
+.filter-tab--active { background: var(--color-primary); color: #fff; }
+
+.toolbar-actions { display: flex; gap: 0.75rem; }
+.btn-icon {
+  width: 2.5rem;
+  height: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: none;
+  color: var(--color-on-surface-muted);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.btn-icon:hover { background: #f8fafc; }
+.icon-xl { font-size: 1.25rem !important; }
+</style>
+
+<template>
+  <div class="table-wrapper">
+    <table class="job-table">
+      <thead>
+        <tr>
+          <th>Thông tin tin tuyển dụng</th>
+          <th>Trạng thái</th>
+          <th class="col-center">Hiệu suất</th>
+          <th>Hạn nộp</th>
+          <th class="col-right">Thao tác</th>
+        </tr>
+      </thead>
+      <tbody>
+        <JobPostingTableRow
+          v-for="job in jobs"
+          :key="job.id"
+          :job="job"
+          @view="$emit('view', $event)"
+          @edit="$emit('edit', $event)"
+          @copy="$emit('copy', $event)"
+          @submit="$emit('submit', $event)"
+          @extend="$emit('extend', $event)"
+          @close="$emit('close', $event)"
+          @delete="$emit('delete', $event)"
+        />
+        <tr v-if="jobs.length === 0">
+          <td colspan="5" class="empty">Không có tin tuyển dụng nào.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</template>
+
+<script setup lang="ts">
+import JobPostingTableRow from './JobPostingTableRow.vue'
+import type { JobPostingRow } from '@/types/employerJobPosting.types'
+
+defineProps<{ jobs: JobPostingRow[] }>()
+
+defineEmits<{
+  view:   [id: number]
+  edit:   [id: number]
+  copy:   [id: number]
+  submit: [id: number]
+  extend: [id: number]
+  close:  [id: number]
+  delete: [id: number]
+}>()
+</script>
+
+<style scoped>
+.table-wrapper { overflow-x: auto; }
+
+.job-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 700px;
+}
+.job-table thead tr { background: rgba(248,250,252,0.5); }
+.job-table th {
+  padding: 1rem 1.5rem;
+  font-size: 0.625rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--color-on-surface-muted);
+  border-bottom: 1px solid #f1f5f9;
+  white-space: nowrap;
+}
+.col-center { text-align: center; }
+.col-right  { text-align: right; }
+
+.job-table tbody tr + tr { border-top: 1px solid #f8fafc; }
+
+.empty {
+  padding: 3rem;
+  text-align: center;
+  color: var(--color-on-surface-muted);
+  font-size: 0.875rem;
+}
+</style>
+
+<template>
+  <tr class="table-row">
+    <!-- Job info -->
+    <td class="td">
+      <div class="job-info">
+        <span
+          v-if="job.isUrgent"
+          class="material-symbols-outlined job-info__icon"
+          style="font-variation-settings:'FILL' 1"
+        >new_releases</span>
+        <span
+          v-else-if="job.isFeatured"
+          class="material-symbols-outlined job-info__icon job-info__icon--star"
+          style="font-variation-settings:'FILL' 1"
+        >star</span>
+        <span v-else class="job-info__spacer" />
+
+        <div>
+          <div class="job-info__title-row">
+            <h4 class="job-info__title" :class="{ 'job-info__title--draft': job.status === 'draft' }">
+              {{ job.title }}
+            </h4>
+            <span v-if="job.isUrgent"   class="badge badge--urgent">Gấp</span>
+            <span v-if="job.isFeatured" class="badge badge--featured">Nổi bật</span>
+          </div>
+          <p class="job-info__meta">
+            {{ job.status === 'draft' ? 'Lưu nháp' : 'Đăng ngày' }}: {{ job.postedAt }}
+            • Mã: <span class="job-info__meta-code">{{ job.code }}</span>
+          </p>
+        </div>
+      </div>
+    </td>
+
+    <!-- Status -->
+    <td class="td">
+      <span class="status-chip" :class="statusChipClass">
+        <span v-if="job.status === 'active'" class="status-chip__dot status-chip__dot--pulse" />
+        {{ statusLabel }}
+      </span>
+    </td>
+
+    <!-- Performance -->
+    <td class="td td--center">
+      <div class="performance">
+        <div class="performance__item">
+          <p class="performance__value">{{ job.views ?? '-' }}</p>
+          <p class="performance__label">Lượt xem</p>
+        </div>
+        <div v-if="job.status !== 'draft'" class="performance__item">
+          <p class="performance__value performance__value--primary">{{ job.applicants ?? '-' }}</p>
+          <p class="performance__label">Ứng viên</p>
+        </div>
+      </div>
+    </td>
+
+    <!-- Deadline -->
+    <td class="td">
+      <template v-if="job.deadline">
+        <p class="deadline__date" :class="{ 'deadline__date--error': job.status === 'expiring' }">
+          {{ job.deadline }}
+        </p>
+        <p
+          v-if="job.daysLeft !== undefined"
+          class="deadline__remaining"
+          :class="{ 'deadline__remaining--urgent': job.daysLeft <= 3 }"
+        >
+          Còn {{ job.daysLeft }} ngày
+        </p>
+      </template>
+      <p v-else class="deadline__date deadline__date--muted">-</p>
+    </td>
+
+    <!-- Actions -->
+    <td class="td td--right">
+      <div class="actions">
+        <!-- Draft: chỉ edit + delete -->
+        <template v-if="job.status === 'draft'">
+          <button class="btn-action" title="Chỉnh sửa" @click="$emit('edit', job.id)">
+            <span class="material-symbols-outlined icon-xl">edit</span>
+          </button>
+          <button class="btn-action btn-action--danger" title="Xóa" @click="$emit('delete', job.id)">
+            <span class="material-symbols-outlined icon-xl">delete</span>
+          </button>
+        </template>
+
+        <!-- Pending: nút gửi duyệt nhanh -->
+        <template v-else-if="job.status === 'pending'">
+          <button class="btn-submit" @click="$emit('submit', job.id)">Gửi duyệt</button>
+          <JobPostingDropdown>
+            <button class="dropdown-menu__item" @click="$emit('view', job.id)">
+              <span class="material-symbols-outlined dropdown-menu__item-icon">visibility</span>
+              Xem chi tiết
+            </button>
+            <button class="dropdown-menu__item" @click="$emit('edit', job.id)">
+              <span class="material-symbols-outlined dropdown-menu__item-icon">edit</span>
+              Chỉnh sửa tin
+            </button>
+            <button class="dropdown-menu__item" @click="$emit('submit', job.id)">
+              <span class="material-symbols-outlined dropdown-menu__item-icon">send</span>
+              Gửi duyệt tin
+            </button>
+            <div class="dropdown-menu__divider" />
+            <button class="dropdown-menu__item dropdown-menu__item--danger" @click="$emit('delete', job.id)">
+              <span class="material-symbols-outlined dropdown-menu__item-icon">delete</span>
+              Xóa tin
+            </button>
+          </JobPostingDropdown>
+        </template>
+
+        <!-- Expiring: nút gia hạn nhanh -->
+        <template v-else-if="job.status === 'expiring'">
+          <button class="btn-extend" @click="$emit('extend', job.id)">Gia hạn</button>
+          <JobPostingDropdown>
+            <button class="dropdown-menu__item" @click="$emit('view', job.id)">
+              <span class="material-symbols-outlined dropdown-menu__item-icon">visibility</span>
+              Xem chi tiết
+            </button>
+            <button class="dropdown-menu__item" @click="$emit('edit', job.id)">
+              <span class="material-symbols-outlined dropdown-menu__item-icon">edit</span>
+              Chỉnh sửa tin
+            </button>
+            <button class="dropdown-menu__item" @click="$emit('extend', job.id)">
+              <span class="material-symbols-outlined dropdown-menu__item-icon">update</span>
+              Gia hạn tin
+            </button>
+            <div class="dropdown-menu__divider" />
+            <button class="dropdown-menu__item dropdown-menu__item--danger" @click="$emit('close', job.id)">
+              <span class="material-symbols-outlined dropdown-menu__item-icon">block</span>
+              Đóng tin
+            </button>
+            <button class="dropdown-menu__item dropdown-menu__item--danger" @click="$emit('delete', job.id)">
+              <span class="material-symbols-outlined dropdown-menu__item-icon">delete</span>
+              Xóa tin
+            </button>
+          </JobPostingDropdown>
+        </template>
+
+        <!-- Active + default: icon actions + dropdown -->
+        <template v-else>
+          <button class="btn-action" title="Chỉnh sửa" @click="$emit('edit', job.id)">
+            <span class="material-symbols-outlined icon-xl">edit</span>
+          </button>
+          <button class="btn-action" title="Sao chép" @click="$emit('copy', job.id)">
+            <span class="material-symbols-outlined icon-xl">content_copy</span>
+          </button>
+          <JobPostingDropdown>
+            <button class="dropdown-menu__item" @click="$emit('view', job.id)">
+              <span class="material-symbols-outlined dropdown-menu__item-icon">visibility</span>
+              Xem chi tiết
+            </button>
+            <button class="dropdown-menu__item" @click="$emit('edit', job.id)">
+              <span class="material-symbols-outlined dropdown-menu__item-icon">edit</span>
+              Chỉnh sửa tin
+            </button>
+            <button class="dropdown-menu__item" @click="$emit('submit', job.id)">
+              <span class="material-symbols-outlined dropdown-menu__item-icon">send</span>
+              Gửi duyệt tin
+            </button>
+            <button class="dropdown-menu__item" @click="$emit('extend', job.id)">
+              <span class="material-symbols-outlined dropdown-menu__item-icon">update</span>
+              Gia hạn tin
+            </button>
+            <div class="dropdown-menu__divider" />
+            <button class="dropdown-menu__item dropdown-menu__item--danger" @click="$emit('close', job.id)">
+              <span class="material-symbols-outlined dropdown-menu__item-icon">block</span>
+              Đóng tin
+            </button>
+            <button class="dropdown-menu__item dropdown-menu__item--danger" @click="$emit('delete', job.id)">
+              <span class="material-symbols-outlined dropdown-menu__item-icon">delete</span>
+              Xóa tin
+            </button>
+          </JobPostingDropdown>
+        </template>
+      </div>
+    </td>
+  </tr>
+</template>
+
+<script setup lang="ts">
+import { computed } from 'vue'
+import JobPostingDropdown from './JobPostingDropdown.vue'
+import type { JobPostingRow } from '@/types/employerJobPosting.types'
+
+const props = defineProps<{ job: JobPostingRow }>()
+
+defineEmits<{
+  view:   [id: number]
+  edit:   [id: number]
+  copy:   [id: number]
+  submit: [id: number]
+  extend: [id: number]
+  close:  [id: number]
+  delete: [id: number]
+}>()
+
+const statusChipClass = computed(() => ({
+  'status-chip--active':   props.job.status === 'active',
+  'status-chip--pending':  props.job.status === 'pending',
+  'status-chip--expiring': props.job.status === 'expiring',
+  'status-chip--draft':    props.job.status === 'draft',
+  'status-chip--closed':   props.job.status === 'closed',
+}))
+
+const statusLabel = computed(() => ({
+  active:   'Đang tuyển',
+  pending:  'Chờ duyệt',
+  expiring: 'Sắp hết hạn',
+  draft:    'Nháp',
+  closed:   'Đã đóng',
+}[props.job.status] ?? props.job.status))
+</script>
+
+<style scoped>
+.table-row { transition: background 0.15s; }
+.table-row:hover { background: rgba(248,250,252,0.5); }
+
+.td {
+  padding: 1.25rem 1.5rem;
+  vertical-align: middle;
+}
+.td--center { text-align: center; }
+.td--right  { text-align: right; }
+
+/* Job info */
+.job-info { display: flex; align-items: flex-start; gap: 0.75rem; }
+.job-info__icon { margin-top: 0.125rem; flex-shrink: 0; font-size: 1.25rem !important; color: var(--color-primary); }
+.job-info__icon--star { color: var(--color-tertiary); }
+.job-info__spacer { width: 1.25rem; flex-shrink: 0; }
+.job-info__title-row { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+.job-info__title { font-weight: 700; font-size: 0.9375rem; color: var(--color-on-surface); margin: 0; }
+.job-info__title--draft { font-style: italic; opacity: 0.7; }
+.job-info__meta { font-size: 0.75rem; color: var(--color-on-surface-muted); margin: 0.25rem 0 0; }
+.job-info__meta-code { font-family: monospace; }
+
+/* Badges */
+.badge { display: inline-flex; align-items: center; padding: 0.125rem 0.5rem; border-radius: 0.25rem; font-size: 0.625rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; }
+.badge--urgent  { background: var(--color-error-light);   color: var(--color-error-text); }
+.badge--featured { background: var(--color-primary-light); color: var(--color-primary-text); }
+
+/* Status chips */
+.status-chip { display: inline-flex; align-items: center; gap: 0.375rem; padding: 0.25rem 0.75rem; border-radius: var(--radius-full); font-size: 0.75rem; font-weight: 700; white-space: nowrap; }
+.status-chip__dot { width: 0.375rem; height: 0.375rem; border-radius: 50%; background: currentColor; }
+.status-chip__dot--pulse { animation: pulse 1.5s ease-in-out infinite; }
+@keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.3; } }
+.status-chip--active   { background: #dbeafe; color: #2563eb; }
+.status-chip--pending  { background: var(--color-tertiary-light); color: var(--color-tertiary-text); }
+.status-chip--expiring { background: var(--color-error-light);   color: var(--color-error-text); }
+.status-chip--draft    { background: #f1f5f9; color: #64748b; }
+.status-chip--closed   { background: #f1f5f9; color: #94a3b8; }
+
+/* Performance */
+.performance { display: flex; justify-content: center; gap: 1.5rem; }
+.performance__item { text-align: center; }
+.performance__value { font-size: 0.75rem; font-weight: 700; color: var(--color-on-surface); margin: 0; }
+.performance__value--primary { color: var(--color-primary); }
+.performance__label { font-size: 0.625rem; color: var(--color-on-surface-muted); font-weight: 500; margin: 0; }
+
+/* Deadline */
+.deadline__date { font-size: 0.875rem; font-weight: 600; color: var(--color-on-surface); margin: 0; }
+.deadline__date--error  { color: var(--color-error); }
+.deadline__date--muted  { color: var(--color-on-surface-muted); }
+.deadline__remaining { font-size: 0.625rem; color: var(--color-on-surface-muted); font-weight: 500; margin: 0.125rem 0 0; }
+.deadline__remaining--urgent { color: var(--color-error); font-style: italic; }
+
+/* Actions */
+.actions { display: flex; align-items: center; justify-content: flex-end; gap: 0.5rem; }
+.btn-action { width: 2rem; height: 2rem; display: flex; align-items: center; justify-content: center; border-radius: var(--radius-sm); border: none; background: none; color: var(--color-on-surface-muted); cursor: pointer; transition: background 0.15s; }
+.btn-action:hover { background: #f1f5f9; }
+.btn-action--danger:hover { background: rgba(239,68,68,0.08); color: var(--color-error); }
+.btn-submit { padding: 0.375rem 0.75rem; background: rgba(75,154,246,0.1); color: var(--color-primary); font-family: inherit; font-size: 0.625rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; border-radius: var(--radius-sm); border: none; cursor: pointer; transition: background 0.15s, color 0.15s; }
+.btn-submit:hover { background: var(--color-primary); color: #fff; }
+.btn-extend { padding: 0.375rem 0.75rem; background: none; color: var(--color-on-surface); font-family: inherit; font-size: 0.625rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; border-radius: var(--radius-sm); border: 1px solid var(--color-border); cursor: pointer; transition: background 0.15s; }
+.btn-extend:hover { background: #f1f5f9; }
+.icon-xl { font-size: 1.25rem !important; }
+</style>
+
+<template>
+  <div class="dropdown" ref="dropdownRef">
+    <button class="btn-action" @click.stop="toggle">
+      <span class="material-symbols-outlined icon-xl">more_vert</span>
+    </button>
+    <Teleport to="body">
+      <div
+        v-if="isOpen"
+        class="dropdown-menu"
+        :style="menuStyle"
+        @click.stop
+      >
+        <slot />
+      </div>
+    </Teleport>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref, onMounted, onUnmounted, nextTick } from 'vue'
+
+const isOpen = ref(false)
+const dropdownRef = ref<HTMLElement>()
+const menuStyle = ref({})
+
+const toggle = async () => {
+  isOpen.value = !isOpen.value
+  if (isOpen.value) {
+    await nextTick()
+    positionMenu()
+  }
+}
+
+const positionMenu = () => {
+  if (!dropdownRef.value) return
+  const rect = dropdownRef.value.getBoundingClientRect()
+  menuStyle.value = {
+    position: 'fixed',
+    top: `${rect.bottom + 4}px`,
+    right: `${window.innerWidth - rect.right}px`,
+    zIndex: 9999,
+  }
+}
+
+const onClickOutside = (e: MouseEvent) => {
+  if (!dropdownRef.value?.contains(e.target as Node)) {
+    isOpen.value = false
+  }
+}
+
+onMounted(() => document.addEventListener('click', onClickOutside))
+onUnmounted(() => document.removeEventListener('click', onClickOutside))
+</script>
+
+<style scoped>
+.dropdown { position: relative; display: inline-block; }
+
+.btn-action {
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  border: none;
+  background: none;
+  color: var(--color-on-surface-muted);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.btn-action:hover { background: #f1f5f9; }
+.icon-xl { font-size: 1.25rem !important; }
+</style>
+
+<!-- dropdown-menu style phải là non-scoped vì dùng Teleport to body -->
 <style>
-        body { font-family: 'Manrope', sans-serif; }
-        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
-    </style>
-</head>
-<body class="bg-background text-on-background">
-<!-- SideNavBar Integration -->
-<aside class="fixed left-0 top-0 h-full w-64 bg-white dark:bg-slate-900 border-r border-slate-100 dark:border-slate-800 z-40 flex flex-col shadow-sm">
-<div class="p-6">
-<h1 class="text-xl font-extrabold text-primary dark:text-blue-400 tracking-tight">Azure Horizon</h1>
-<p class="text-xs text-secondary font-medium uppercase tracking-wider mt-1">Recruiter Studio</p>
-</div>
-<nav class="flex-1 px-3 space-y-1">
-<a class="flex items-center gap-3 px-4 py-3 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-all duration-200 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg" href="#">
-<span class="material-symbols-outlined">dashboard</span>
-<span class="font-medium text-sm">Bảng điều khiển</span>
-</a>
-<a class="flex items-center gap-3 px-4 py-3 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-all duration-200 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg" href="#">
-<span class="material-symbols-outlined">calendar_month</span>
-<span class="font-medium text-sm">Lịch phỏng vấn</span>
-</a>
-<a class="flex items-center gap-3 px-4 py-3 text-primary dark:text-blue-400 bg-blue-50/50 dark:bg-blue-900/20 font-bold border-r-4 border-primary rounded-r-none rounded-l-lg" href="#">
-<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">work</span>
-<span class="font-medium text-sm">Tin tuyển dụng</span>
-</a>
-<a class="flex items-center gap-3 px-4 py-3 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-all duration-200 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg" href="#">
-<span class="material-symbols-outlined">groups</span>
-<span class="font-medium text-sm">Ứng viên</span>
-</a>
-<a class="flex items-center gap-3 px-4 py-3 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-all duration-200 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg" href="#">
-<span class="material-symbols-outlined">settings</span>
-<span class="font-medium text-sm">Cài đặt</span>
-</a>
-</nav>
-<div class="p-4 border-t border-slate-100 dark:border-slate-800">
-<a class="flex items-center gap-3 px-4 py-3 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-all duration-200" href="#">
-<span class="material-symbols-outlined">help</span>
-<span class="font-medium text-sm">Trợ giúp</span>
-</a>
-</div>
-</aside>
-<main class="ml-64 min-h-screen">
-<!-- TopAppBar Integration -->
-<header class="sticky top-0 w-full bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-100 dark:border-slate-800 px-8 py-4 z-30 flex justify-between items-center">
-<div class="flex items-center gap-4 bg-slate-100 dark:bg-slate-800 px-4 py-2 rounded-full w-96 transition-all duration-200 focus-within:ring-2 focus-within:ring-primary/20">
-<span class="material-symbols-outlined text-slate-400">search</span>
-<input class="bg-transparent border-none focus:ring-0 text-sm w-full placeholder:text-slate-400" placeholder="Tìm kiếm tin tuyển dụng..." type="text"/>
-</div>
-<div class="flex items-center gap-6">
-<div class="flex gap-4 text-slate-500">
-<button class="hover:text-primary transition-colors"><span class="material-symbols-outlined">notifications</span></button>
-<button class="hover:text-primary transition-colors"><span class="material-symbols-outlined">mail</span></button>
-</div>
-<div class="flex items-center gap-3 pl-6 border-l border-slate-200">
-<div class="text-right">
-<p class="text-sm font-bold text-on-background">Admin Profile</p>
-<p class="text-[10px] text-secondary uppercase font-bold tracking-tighter">Hiring Manager</p>
-</div>
-<div class="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center overflow-hidden">
-<img alt="Admin Profile" class="w-full h-full object-cover" data-alt="professional portrait of a confident male hiring manager in a modern office environment, warm lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDSrz_3xoncZAwx0kRJ7JkhmtOjByQcDq-OldPKpS1VcOuJ6y8HJyRlETp_hmFz_5TkDp8RqiSzVmNYBehW_BdtcvsYabIzOWqEXXEga5AQ4JrHY98V8Ha9fnWO4qzRsglCnKMKHbiYRTiN-ogYE8CGYQyN_vdSfyLYFZyHp5BNHm0gXMq5m3aKy3K6W9ukvQNhdvPDtAqtDJbYoMIWM5liYohXeXdKBkEmBWy9o5ZUO3oygoMql0z5hH0o0rx6aJL2vm_5Brd0mA"/>
-</div>
-</div>
-</div>
-</header>
-<!-- Main Content Area -->
-<div class="p-8 max-w-7xl mx-auto space-y-8">
-<!-- Header Section -->
-<div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
-<div>
-<h2 class="text-3xl font-extrabold text-on-background tracking-tight">Quản lý Tin tuyển dụng</h2>
-<p class="text-secondary mt-1">Theo dõi các vị trí đang tuyển dụng và lượng ứng viên tương ứng.</p>
-</div>
-<div class="flex gap-4">
-<button class="px-6 py-2.5 bg-primary text-white font-bold rounded-lg shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center gap-2">
-<span class="material-symbols-outlined text-lg">add</span>
-                        Tạo tin mới
-                    </button>
-</div>
-</div>
-<!-- Stats Bento Grid -->
-<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-<div class="bg-white p-6 rounded-xl shadow-sm border border-slate-100 transition-all hover:shadow-md">
-<div class="flex justify-between items-start">
-<div>
-<p class="text-xs font-bold text-secondary uppercase tracking-wider">Tổng tin tuyển dụng</p>
-<h3 class="text-3xl font-extrabold mt-2">24</h3>
-</div>
-<div class="p-3 bg-blue-50 text-primary rounded-lg">
-<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">work</span>
-</div>
-</div>
-<div class="mt-4 flex items-center gap-2 text-xs font-medium text-emerald-600">
-<span class="material-symbols-outlined text-sm">trending_up</span>
-<span>+12% so với tháng trước</span>
-</div>
-</div>
-<div class="bg-white p-6 rounded-xl shadow-sm border border-slate-100 transition-all hover:shadow-md">
-<div class="flex justify-between items-start">
-<div>
-<p class="text-xs font-bold text-secondary uppercase tracking-wider">Chờ duyệt tin</p>
-<h3 class="text-3xl font-extrabold mt-2">08</h3>
-</div>
-<div class="p-3 bg-amber-50 text-amber-600 rounded-lg">
-<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">pending_actions</span>
-</div>
-</div>
-<div class="mt-4 flex items-center gap-2 text-xs font-medium text-amber-600">
-<span class="material-symbols-outlined text-sm">schedule</span>
-<span>Cần xử lý trong 24h tới</span>
-</div>
-</div>
-<div class="bg-white p-6 rounded-xl shadow-sm border border-slate-100 transition-all hover:shadow-md">
-<div class="flex justify-between items-start">
-<div>
-<p class="text-xs font-bold text-secondary uppercase tracking-wider">Tin sắp hết hạn</p>
-<h3 class="text-3xl font-extrabold mt-2">02</h3>
-</div>
-<div class="p-3 bg-red-50 text-red-600 rounded-lg">
-<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">error</span>
-</div>
-</div>
-<div class="mt-4 flex items-center gap-2 text-xs font-medium text-red-600">
-<span class="material-symbols-outlined text-sm">priority_high</span>
-<span>Vui lòng kiểm tra lại</span>
-</div>
-</div>
-</div>
-<!-- Job Postings List View -->
-<div class="space-y-4">
-<div class="flex items-center justify-between">
-<h4 class="text-lg font-bold text-on-background">Tin tuyển dụng đang hoạt động</h4>
-<button class="text-sm font-bold text-primary hover:underline">Xem tất cả</button>
-</div>
-<div class="bg-white rounded-2xl shadow-sm border border-slate-100 divide-y divide-slate-100 overflow-hidden">
-<!-- Row 1 -->
-<div class="group flex items-center gap-4 p-4 hover:bg-slate-50 transition-colors cursor-pointer">
-<div class="w-12 h-12 rounded-lg bg-blue-50 flex items-center justify-center shrink-0">
-<span class="material-symbols-outlined text-2xl text-primary">terminal</span>
-</div>
-<div class="flex-1 min-w-0 grid grid-cols-1 md:grid-cols-12 items-center gap-4">
-<div class="md:col-span-4">
-<h5 class="text-sm font-bold text-on-background truncate group-hover:text-primary transition-colors">Tin tuyển dụng Java Developer</h5>
-<p class="text-xs text-secondary truncate">Phòng phát triển phần mềm • Senior Level</p>
-</div>
-<div class="md:col-span-2">
-<span class="text-xs font-semibold text-on-background flex items-center gap-1.5">
-<span class="material-symbols-outlined text-base text-slate-400">groups</span>
-                                    12 ứng viên
-                                </span>
-</div>
-<div class="md:col-span-2">
-<span class="text-xs font-semibold text-on-background flex items-center gap-1.5">
-<span class="material-symbols-outlined text-base text-slate-400">event_available</span>
-                                    04 phỏng vấn/tuần
-                                </span>
-</div>
-<div class="md:col-span-2">
-<span class="px-2.5 py-0.5 bg-emerald-100 text-emerald-700 text-[10px] font-bold uppercase rounded-full inline-block">Đang tuyển</span>
-</div>
-<div class="md:col-span-2 flex justify-end">
-<button class="px-4 py-1.5 text-xs font-bold text-primary border border-primary/20 rounded-lg hover:bg-primary hover:text-white transition-all">
-                                    Xem chi tiết
-                                </button>
-</div>
-</div>
-</div>
-<!-- Row 2 -->
-<div class="group flex items-center gap-4 p-4 hover:bg-slate-50 transition-colors cursor-pointer bg-blue-50/20">
-<div class="w-12 h-12 rounded-lg bg-primary flex items-center justify-center shrink-0">
-<span class="material-symbols-outlined text-2xl text-white">javascript</span>
-</div>
-<div class="flex-1 min-w-0 grid grid-cols-1 md:grid-cols-12 items-center gap-4">
-<div class="md:col-span-4">
-<h5 class="text-sm font-bold text-primary truncate">Tin tuyển dụng React JS Developer</h5>
-<p class="text-xs text-secondary truncate">Đội ngũ Frontend • Middle Level</p>
-</div>
-<div class="md:col-span-2">
-<span class="text-xs font-semibold text-on-background flex items-center gap-1.5">
-<span class="material-symbols-outlined text-base text-slate-400">groups</span>
-                                    08 ứng viên
-                                </span>
-</div>
-<div class="md:col-span-2">
-<span class="text-xs font-semibold text-on-background flex items-center gap-1.5">
-<span class="material-symbols-outlined text-base text-slate-400">event_available</span>
-                                    03 phỏng vấn/tuần
-                                </span>
-</div>
-<div class="md:col-span-2">
-<span class="px-2.5 py-0.5 bg-emerald-100 text-emerald-700 text-[10px] font-bold uppercase rounded-full inline-block">Đang tuyển</span>
-</div>
-<div class="md:col-span-2 flex justify-end">
-<button class="px-4 py-1.5 text-xs font-bold bg-primary text-white rounded-lg shadow-sm hover:scale-105 transition-all">
-                                    Xem chi tiết
-                                </button>
-</div>
-</div>
-</div>
-<!-- Row 3 -->
-<div class="group flex items-center gap-4 p-4 hover:bg-slate-50 transition-colors cursor-pointer">
-<div class="w-12 h-12 rounded-lg bg-orange-50 flex items-center justify-center shrink-0">
-<span class="material-symbols-outlined text-2xl text-orange-600">palette</span>
-</div>
-<div class="flex-1 min-w-0 grid grid-cols-1 md:grid-cols-12 items-center gap-4">
-<div class="md:col-span-4">
-<h5 class="text-sm font-bold text-on-background truncate group-hover:text-primary transition-colors">UI/UX Designer</h5>
-<p class="text-xs text-secondary truncate">Đội ngũ Design • Junior/Middle</p>
-</div>
-<div class="md:col-span-2">
-<span class="text-xs font-semibold text-on-background flex items-center gap-1.5">
-<span class="material-symbols-outlined text-base text-slate-400">groups</span>
-                                    15 ứng viên
-                                </span>
-</div>
-<div class="md:col-span-2">
-<span class="text-xs font-semibold text-on-background flex items-center gap-1.5">
-<span class="material-symbols-outlined text-base text-slate-400">event_available</span>
-                                    05 phỏng vấn/tuần
-                                </span>
-</div>
-<div class="md:col-span-2">
-<span class="px-2.5 py-0.5 bg-emerald-100 text-emerald-700 text-[10px] font-bold uppercase rounded-full inline-block">Đang tuyển</span>
-</div>
-<div class="md:col-span-2 flex justify-end">
-<button class="px-4 py-1.5 text-xs font-bold text-primary border border-primary/20 rounded-lg hover:bg-primary hover:text-white transition-all">
-                                    Xem chi tiết
-                                </button>
-</div>
-</div>
-</div>
-<!-- Row 4 -->
-<div class="group flex items-center gap-4 p-4 hover:bg-slate-50 transition-colors cursor-pointer">
-<div class="w-12 h-12 rounded-lg bg-purple-50 flex items-center justify-center shrink-0">
-<span class="material-symbols-outlined text-2xl text-purple-600">psychology</span>
-</div>
-<div class="flex-1 min-w-0 grid grid-cols-1 md:grid-cols-12 items-center gap-4">
-<div class="md:col-span-4">
-<h5 class="text-sm font-bold text-on-background truncate group-hover:text-primary transition-colors">AI Engineer</h5>
-<p class="text-xs text-secondary truncate">Phòng R&amp;D • Expert Level</p>
-</div>
-<div class="md:col-span-2">
-<span class="text-xs font-semibold text-on-background flex items-center gap-1.5">
-<span class="material-symbols-outlined text-base text-slate-400">groups</span>
-                                    04 ứng viên
-                                </span>
-</div>
-<div class="md:col-span-2">
-<span class="text-xs font-semibold text-on-background flex items-center gap-1.5">
-<span class="material-symbols-outlined text-base text-slate-400">event_available</span>
-                                    01 phỏng vấn/tuần
-                                </span>
-</div>
-<div class="md:col-span-2">
-<span class="px-2.5 py-0.5 bg-emerald-100 text-emerald-700 text-[10px] font-bold uppercase rounded-full inline-block">Đang tuyển</span>
-</div>
-<div class="md:col-span-2 flex justify-end">
-<button class="px-4 py-1.5 text-xs font-bold text-primary border border-primary/20 rounded-lg hover:bg-primary hover:text-white transition-all">
-                                    Xem chi tiết
-                                </button>
-</div>
-</div>
-</div>
-</div>
-</div>
-<!-- Floating Action Focus -->
-<div class="flex justify-end gap-4 mt-8">
-<button class="px-8 py-3 bg-white border-2 border-primary text-primary font-extrabold rounded-lg hover:bg-blue-50 transition-all">
-                    Xuất báo cáo tuyển dụng
-                </button>
-<button class="px-8 py-3 bg-primary text-white font-extrabold rounded-lg shadow-xl shadow-primary/30 hover:scale-105 active:scale-95 transition-all">
-                    Mời ứng viên mới
-                </button>
-</div>
-</div>
-</main>
-<!-- Simple Backdrop for Mobile (Logic Only) -->
-<div class="fixed inset-0 bg-slate-900/50 z-30 hidden backdrop-blur-sm md:hidden"></div>
-</body></html>
+.dropdown-menu {
+  width: 14rem;
+  background: #fff;
+  border-radius: 0.5rem;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.12), 0 2px 6px rgba(0,0,0,0.06);
+  border: 1px solid #f1f5f9;
+  padding: 0.5rem 0;
+  overflow: hidden;
+}
+.dropdown-menu__item {
+  width: 100%;
+  padding: 0.625rem 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  font-family: inherit;
+  color: #0f172a;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s;
+  box-sizing: border-box;
+}
+.dropdown-menu__item:hover { background: #f8fafc; }
+.dropdown-menu__item--danger { color: #ef4444; }
+.dropdown-menu__item--danger:hover { background: rgba(239,68,68,0.05); }
+.dropdown-menu__item-icon { color: #4B9AF6; font-size: 1.25rem !important; }
+.dropdown-menu__item--danger .dropdown-menu__item-icon { color: #ef4444; }
+.dropdown-menu__divider { height: 1px; background: #f1f5f9; margin: 0.25rem 0; }
+</style>
+
+<template>
+  <div class="pagination-bar">
+    <p class="pagination-bar__info">
+      Hiển thị <strong>{{ rangeStart }}-{{ rangeEnd }}</strong>
+      trong số <strong>{{ total }}</strong> tin tuyển dụng
+    </p>
+    <div class="pagination-controls">
+      <button class="page-btn" :disabled="currentPage <= 1" @click="$emit('update:currentPage', currentPage - 1)">
+        <span class="material-symbols-outlined icon-xl">chevron_left</span>
+      </button>
+      <button
+        v-for="page in visiblePages"
+        :key="page"
+        class="page-btn"
+        :class="{ 'page-btn--active': page === currentPage }"
+        @click="$emit('update:currentPage', page)"
+      >
+        {{ page }}
+      </button>
+      <span v-if="showEllipsis" class="page-separator">...</span>
+      <button class="page-btn" :disabled="currentPage >= totalPages" @click="$emit('update:currentPage', currentPage + 1)">
+        <span class="material-symbols-outlined icon-xl">chevron_right</span>
+      </button>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { computed } from 'vue'
+
+const props = defineProps<{
+  total: number
+  currentPage: number
+  perPage?: number
+}>()
+
+defineEmits<{ 'update:currentPage': [page: number] }>()
+
+const perPage  = computed(() => props.perPage ?? 10)
+const totalPages = computed(() => Math.ceil(props.total / perPage.value))
+const rangeStart = computed(() => (props.currentPage - 1) * perPage.value + 1)
+const rangeEnd   = computed(() => Math.min(props.currentPage * perPage.value, props.total))
+
+const visiblePages = computed(() => {
+  const pages: number[] = []
+  for (let i = 1; i <= Math.min(totalPages.value, 3); i++) pages.push(i)
+  return pages
+})
+
+const showEllipsis = computed(() => totalPages.value > 3)
+</script>
+
+<style scoped>
+.pagination-bar {
+  padding: 1rem 1.5rem;
+  background: rgba(248,250,252,0.3);
+  border-top: 1px solid #f1f5f9;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.pagination-bar__info { font-size: 0.75rem; font-weight: 500; color: var(--color-on-surface-muted); margin: 0; }
+.pagination-bar__info strong { font-weight: 700; color: var(--color-on-surface); }
+
+.pagination-controls { display: flex; align-items: center; gap: 0.25rem; }
+.page-btn {
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  border: none;
+  background: none;
+  font-size: 0.75rem;
+  font-weight: 700;
+  font-family: inherit;
+  color: var(--color-on-surface);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.page-btn:hover          { background: #f1f5f9; }
+.page-btn--active        { background: var(--color-primary); color: #fff; }
+.page-btn--active:hover  { background: var(--color-primary); }
+.page-btn:disabled       { opacity: 0.3; cursor: default; }
+.page-btn:disabled:hover { background: none; }
+.page-separator { color: #cbd5e1; margin: 0 0.25rem; font-size: 0.75rem; }
+.icon-xl { font-size: 1.25rem !important; }
+</style>

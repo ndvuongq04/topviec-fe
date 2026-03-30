@@ -145,7 +145,7 @@ const stats = computed<JobStat[]>(() => {
 
   return [
     { icon: 'visibility', label: 'Lượt xem', value: job.value.viewCount?.toLocaleString('vi-VN') || '0', bgClass: 'bg-blue-50 dark:bg-blue-900/20', iconClass: 'text-blue-600 dark:text-blue-400' },
-    { icon: 'groups', label: 'Ứng viên', value: '0', bgClass: 'bg-orange-50 dark:bg-orange-900/20', iconClass: 'text-orange-600 dark:text-orange-400' },
+    { icon: 'groups', label: 'Ứng viên', value: `${job.value.applicationCount ?? 0}`, bgClass: 'bg-orange-50 dark:bg-orange-900/20', iconClass: 'text-orange-600 dark:text-orange-400' },
     { icon: 'history_edu', label: 'Lần chỉnh sửa', value: `${job.value.editCount || 0}`, bgClass: 'bg-purple-50 dark:bg-purple-900/20', iconClass: 'text-purple-600 dark:text-purple-400' },
     { icon: 'schedule', label: 'Ngày còn lại', value: diffDays > 0 ? `${diffDays} ngày` : 'Đã hết hạn', bgClass: 'bg-red-50 dark:bg-red-900/20', iconClass: 'text-red-600 dark:text-red-400' },
   ]

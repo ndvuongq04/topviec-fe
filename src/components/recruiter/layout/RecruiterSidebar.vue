@@ -17,8 +17,10 @@
         v-for="item in navItems"
         :key="item.to"
         :to="item.to"
-        class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-        active-class="!bg-primary/10 !text-primary font-semibold"
+        class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors"
+        :class="isActive(item.to)
+          ? 'bg-primary/10 text-primary font-semibold'
+          : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'"
       >
         <span class="material-symbols-outlined">{{ item.icon }}</span>
         {{ item.label }}
@@ -49,6 +51,29 @@
 </template>
 
 <script setup lang="ts">
+import { useRoute } from 'vue-router'
+
+const route = useRoute()
+
+// Routes nằm dưới /recruiter/jobs/* nhưng thuộc nhóm Phỏng vấn
+const interviewJobRouteNames = new Set(['recruiter-job-interview-setup'])
+
+function isActive(to: string): boolean {
+  if (to === '/recruiter') return route.path === '/recruiter'
+
+  if (to === '/recruiter/interviews') {
+    return route.path.startsWith('/recruiter/interviews') ||
+      interviewJobRouteNames.has(String(route.name))
+  }
+
+  if (to === '/recruiter/jobs') {
+    return route.path.startsWith('/recruiter/jobs') &&
+      !interviewJobRouteNames.has(String(route.name))
+  }
+
+  return route.path.startsWith(to)
+}
+
 const navItems = [
   { to: '/recruiter',           icon: 'dashboard',        label: 'Dashboard' },
   { to: '/recruiter/jobs',      icon: 'work',             label: 'Tin tuyển dụng' },

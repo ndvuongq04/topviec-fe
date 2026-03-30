@@ -1,303 +1,163 @@
 <template>
-  <div class="space-y-8 pt-6">
-    <!-- Top Actions -->
-    <div class="flex items-end justify-between">
-      <div class="flex flex-col gap-1">
-        <h1 class="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">Danh sách tin tuyển dụng</h1>
-        <p class="text-slate-500 text-sm">Quản lý và theo dõi hiệu quả các tin đăng của bạn.</p>
+  <div class="job-postings-page">
+
+    <!-- Page header -->
+    <div class="page-header">
+      <div>
+        <h2 class="page-header__title">Tin tuyển dụng</h2>
+        <p class="page-header__subtitle">Quản lý và theo dõi hiệu suất các vị trí đang tuyển.</p>
       </div>
-      <router-link
-        to="/recruiter/jobs/create"
-        class="bg-primary hover:bg-primary/90 text-white px-6 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2 transition-all shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-95 cursor-pointer"
-      >
-        <span class="material-symbols-outlined">add</span>
-        Đăng tin mới
-      </router-link>
+      <button class="btn-export" @click="handleExport">
+        <span class="material-symbols-outlined icon-xl">file_download</span>
+        Xuất báo cáo
+      </button>
     </div>
 
-    <!-- Summary Cards -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-      <JobPostingSummaryCard
-        v-for="card in summaryCards"
-        :key="card.label"
-        :icon="card.icon"
-        :label="card.label"
-        :value="card.value"
-        :color="card.color"
+    <!-- Stats -->
+    <JobPostingStatsGrid :stats="stats" />
+
+    <!-- Listing panel -->
+    <div class="listing-panel">
+      <JobPostingFilters
+        v-model="activeFilter"
+        @filter="handleFilter"
+        @sort="handleSort"
       />
-    </div>
-
-    <!-- Filters & Search -->
-    <JobPostingFilters
-      :search="searchQuery"
-      :filter="activeFilter"
-      @update:search="searchQuery = $event"
-      @update:filter="activeFilter = $event"
-    />
-
-    <!-- Job Table + Pagination -->
-    <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden">
       <JobPostingTable
-        :jobs="jobs"
-        @edit="onEdit"
-        @pendingApproval="onPendingApproval"
-        @pause="onPause"
-        @resume="onResume"
-        @close="onClose"
-        @extend="onExtend"
-        @view="onView"
-        @candidates="onCandidates"
-        @setupInterviews="onSetupInterviews"
-        @offers="onOffers"
+        :jobs="filteredJobs"
+        @view="handleView"
+        @edit="handleEdit"
+        @copy="handleCopy"
+        @submit="handleSubmit"
+        @extend="handleExtend"
+        @close="handleClose"
+        @delete="handleDelete"
       />
       <JobPostingPagination
-        :current-page="currentPage"
-        :total-pages="totalPages"
-        :total-items="totalItems"
-        :page-size="pageSize"
-        @update:page="currentPage = $event"
+        v-model:currentPage="currentPage"
+        :total="stats.total"
+        :per-page="10"
       />
     </div>
 
-    <!-- Extend Job Modal -->
-    <GlobalModal
-      :visible="showExtendModal"
-      title="Gia hạn tin tuyển dụng"
-      subtitle="Vui lòng chọn ngày hết hạn mới cho tin tuyển dụng này."
-      icon="update"
-      :loading="isExtending"
-      confirm-text="Gia hạn"
-      @close="closeExtendModal"
-      @confirm="submitExtendJob"
-    >
-      <div v-if="jobToExtend" class="space-y-4">
-        <div>
-          <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Hạn chót mới</label>
-          <input
-            v-model="newDeadlineDate"
-            type="date"
-            class="w-full bg-slate-50 dark:bg-slate-800 border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/20"
-            :min="minDeadlineDate"
-          />
-          <p class="text-xs text-slate-500 mt-2 flex items-center gap-1">
-            <span class="material-symbols-outlined text-[14px]">info</span>
-            Bạn đang gia hạn tin: <strong class="text-slate-700 dark:text-slate-300">{{ jobToExtend.title }}</strong>
-          </p>
-        </div>
-      </div>
-    </GlobalModal>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
-import { useRouter } from 'vue-router'
-import { useToast } from '@/composables/useToast'
-import { useConfirm } from '@/composables/useConfirm'
-import { useEmployerJobPostingStore } from '@/stores/employerJobPosting.store'
-import type { ResJobPostingDetail, JobPostingStatus } from '@/types/jobPosting.types'
-
-import JobPostingSummaryCard from '@/components/recruiter/jobs/JobPostingSummaryCard.vue'
-import JobPostingFilters from '@/components/recruiter/jobs/JobPostingFilters.vue'
-import JobPostingTable from '@/components/recruiter/jobs/JobPostingTable.vue'
+import { ref, computed } from 'vue'
+import JobPostingStatsGrid  from '@/components/recruiter/jobs/JobPostingStatsGrid.vue'
+import JobPostingFilters    from '@/components/recruiter/jobs/JobPostingFilters.vue'
+import JobPostingTable      from '@/components/recruiter/jobs/JobPostingTable.vue'
 import JobPostingPagination from '@/components/recruiter/jobs/JobPostingPagination.vue'
-import GlobalModal from '@/components/ui/GlobalModal.vue'
-import type { FilterStatus } from '@/components/recruiter/jobs/JobPostingFilters.vue'
+import type { JobPostingFilterTab } from '@/components/recruiter/jobs/JobPostingFilters.vue'
+import type { JobPostingRow, JobPostingStats } from '@/types/employerJobPosting.types'
 
-const router = useRouter()
-const toast = useToast()
-const { confirm } = useConfirm()
-const jobStore = useEmployerJobPostingStore()
+// ── State ────────────────────────────────────────────────
+const activeFilter = ref<JobPostingFilterTab>('all')
+const currentPage  = ref(1)
 
-// State
-const jobs = computed(() => jobStore.jobs)
-const totalItems = computed(() => jobStore.meta.totals)
-const loading = computed(() => jobStore.loading)
+// ── Mock data (thay bằng store/service thực tế) ──────────
+const stats: JobPostingStats = { total: 24, active: 12, pending: 5, expiring: 3 }
 
-const searchQuery = ref('')
-const activeFilter = ref<FilterStatus>('all')
-const currentPage = ref(1)
-const pageSize = ref(10)
+const allJobs: JobPostingRow[] = [
+  {
+    id: 1, title: 'Senior Product Designer (UI/UX)', code: 'JOB-2023-001',
+    status: 'active', postedAt: '15/10/2023', deadline: '30/11/2023',
+    daysLeft: 12, views: '1,240', applicants: 86, isUrgent: true,
+  },
+  {
+    id: 2, title: 'Fullstack Developer (NodeJS/React)', code: 'JOB-2023-005',
+    status: 'pending', postedAt: '18/10/2023', deadline: '15/12/2023',
+    views: 0, applicants: 0,
+  },
+  {
+    id: 3, title: 'Marketing Manager', code: 'JOB-2023-012',
+    status: 'expiring', postedAt: '01/10/2023', deadline: '20/11/2023',
+    daysLeft: 2, views: '2,845', applicants: 156, isFeatured: true,
+  },
+  {
+    id: 4, title: 'Kế toán trưởng (Chưa đặt tên)', code: 'JOB-DRAFT-09',
+    status: 'draft', postedAt: '20/11/2023',
+  },
+]
 
-// Extend Modal State
-const showExtendModal = ref(false)
-const isExtending = ref(false)
-const jobToExtend = ref<ResJobPostingDetail | null>(null)
-const newDeadlineDate = ref('')
-
-const minDeadlineDate = computed(() => {
-  const d = new Date()
-  d.setDate(d.getDate() + 1)
-  return d.toISOString().split('T')[0]
-})
-const summaryStats = ref({
-  total: 0,
-  active: 0,
-  pending: 0,
-  expired: 0
-})
-
-const totalPages = computed(() => Math.max(1, Math.ceil(totalItems.value / pageSize.value)))
-
-// Summary cards
-const summaryCards = computed(() => [
-  { icon: 'work',         label: 'Tổng số tin',  value: summaryStats.value.total,   color: 'primary' as const },
-  { icon: 'check_circle', label: 'Đang tuyển',   value: summaryStats.value.active,  color: 'green'   as const },
-  { icon: 'schedule',     label: 'Chờ duyệt',    value: summaryStats.value.pending, color: 'amber'   as const },
-  { icon: 'warning',      label: 'Hết hạn',      value: summaryStats.value.expired, color: 'red'     as const },
-])
-
-
-async function fetchJobs() {
-  await jobStore.fetchJobs({
-    page: Math.max(0, currentPage.value - 1),
-    size: pageSize.value,
-    keyword: searchQuery.value || undefined,
-    status: (activeFilter.value !== 'all' ? activeFilter.value : undefined) as JobPostingStatus | undefined
-  })
-
-  if (jobStore.error) {
-    toast.error('Lỗi', jobStore.error)
-  } else {
-    // Update summary stats
-    summaryStats.value = {
-      total: totalItems.value || jobs.value.length,
-      active: jobs.value.filter(j => j.status?.toLowerCase() === 'published').length,
-      pending: jobs.value.filter(j => j.status?.toLowerCase() === 'pending_approval').length,
-      expired: jobs.value.filter(j => j.status?.toLowerCase() === 'expired').length,
-    }
-  }
-}
-
-// Re-fetch when filters or page changes
-watch([currentPage, activeFilter], () => {
-  fetchJobs()
+// ── Computed ─────────────────────────────────────────────
+const filteredJobs = computed<JobPostingRow[]>(() => {
+  if (activeFilter.value === 'all') return allJobs
+  return allJobs.filter(j => j.status === activeFilter.value)
 })
 
-// Delay search to avoid spamming
-let searchTimeout: any
-watch(searchQuery, () => {
-  clearTimeout(searchTimeout)
-  searchTimeout = setTimeout(() => {
-    currentPage.value = 1
-    fetchJobs()
-  }, 500)
-})
-
-onMounted(() => {
-  fetchJobs()
-})
-
-// Handlers
-function onEdit(job: ResJobPostingDetail) {
-  router.push(`/recruiter/jobs/${job.id}/edit`)
-}
-
-async function onPendingApproval(job: ResJobPostingDetail) {
-  const isConfirmed = await confirm({
-    title: 'Xác nhận gửi duyệt',
-    message: `Bạn có chắc chắn muốn gửi duyệt tin "${job.title}" không? Sau khi gửi, tin sẽ chuyển sang trạng thái "Chờ duyệt".`,
-    confirmText: 'Gửi duyệt',
-    cancelText: 'Hủy bỏ',
-    confirmColor: 'primary',
-    icon: 'send'
-  })
-  if (!isConfirmed) return
-
-  try {
-    await jobStore.pendingApproval(job.id)
-    toast.success('Thành công', 'Đã gửi duyệt tin tuyển dụng')
-    fetchJobs()
-  } catch (error: any) {
-    toast.error('Lỗi', jobStore.error || 'Không thể gửi duyệt tin')
-  }
-}
-
-async function onPause(job: ResJobPostingDetail) {
-  try {
-    await jobStore.pauseJob(job.id)
-    toast.success('Thành công', 'Đã tạm dừng tin tuyển dụng')
-  } catch (error: any) {
-    toast.error('Lỗi', jobStore.error || 'Không thể tạm dừng tin')
-  }
-}
-
-async function onResume(job: ResJobPostingDetail) {
-  try {
-    await jobStore.resumeJob(job.id)
-    toast.success('Thành công', 'Đã mở lại tin tuyển dụng')
-  } catch (error: any) {
-    toast.error('Lỗi', jobStore.error || 'Không thể mở lại tin')
-  }
-}
-
-async function onClose(job: ResJobPostingDetail) {
-  const isConfirmed = await confirm({
-    title: 'Xác nhận đóng tin',
-    message: `Bạn có chắc chắn muốn đóng tin "${job.title}" không? Tác vụ này không thể hoàn tác.`,
-    confirmText: 'Đóng tin',
-    cancelText: 'Hủy bỏ',
-    confirmColor: 'red',
-    icon: 'warning'
-  })
-  if (!isConfirmed) return
-
-  try {
-    await jobStore.closeJob(job.id)
-    toast.success('Thành công', 'Đã đóng tin tuyển dụng')
-  } catch (error: any) {
-    toast.error('Lỗi', jobStore.error || 'Không thể đóng tin')
-  }
-}
-
-async function onExtend(job: ResJobPostingDetail) {
-  jobToExtend.value = job
-  
-  // Mặc định gia hạn thêm 30 ngày so với hiện tại hoặc deadline cũ
-  const currentDeadline = new Date(job.deadline).getTime()
-  const baseDate = currentDeadline > Date.now() ? currentDeadline : Date.now()
-  const d = new Date(baseDate + 30 * 24 * 60 * 60 * 1000)
-  
-  newDeadlineDate.value = d.toISOString().split('T')[0]
-  showExtendModal.value = true
-}
-
-function closeExtendModal() {
-  showExtendModal.value = false
-  setTimeout(() => { jobToExtend.value = null }, 300)
-}
-
-async function submitExtendJob() {
-  if (!jobToExtend.value || !newDeadlineDate.value) return
-  
-  try {
-    isExtending.value = true
-    // Force 23:59:59 as requested
-    const newDeadline = `${newDeadlineDate.value}T23:59:59`
-    await jobStore.extendJob(jobToExtend.value.id, { newDeadline })
-    toast.success('Thành công', 'Đã gia hạn tin tuyển dụng')
-    fetchJobs()
-    closeExtendModal()
-  } catch (error: any) {
-    toast.error('Lỗi', jobStore.error || 'Không thể gia hạn tin')
-  } finally {
-    isExtending.value = false
-  }
-}
-
-function onView(job: ResJobPostingDetail) {
-  router.push(`/recruiter/jobs/${job.id}`)
-}
-
-function onCandidates(job: ResJobPostingDetail) {
-  router.push({ name: 'recruiter-job-applications', params: { id: job.id } })
-}
-
-function onSetupInterviews(job: ResJobPostingDetail) {
-  router.push({ name: 'recruiter-job-interview-setup', params: { id: job.id } })
-}
-
-function onOffers(job: ResJobPostingDetail) {
-  router.push({ name: 'recruiter-job-offers', params: { id: job.id } })
-}
+// ── Handlers (kết nối store/service thực tế tại đây) ─────
+const handleExport = () => console.log('export')
+const handleFilter = () => console.log('open filter panel')
+const handleSort   = () => console.log('open sort panel')
+const handleView   = (id: number) => console.log('view', id)
+const handleEdit   = (id: number) => console.log('edit', id)
+const handleCopy   = (id: number) => console.log('copy', id)
+const handleSubmit = (id: number) => console.log('submit', id)
+const handleExtend = (id: number) => console.log('extend', id)
+const handleClose  = (id: number) => console.log('close', id)
+const handleDelete = (id: number) => console.log('delete', id)
 </script>
+
+<style scoped>
+.job-postings-page {
+  /* Design system tokens missing from Tailwind */
+  --color-surface: #ffffff;
+  --color-on-surface: #0f172a;
+  --color-on-surface-muted: #64748b;
+  --color-border: #e2e8f0;
+  --color-border-light: #f1f5f9;
+  --color-primary: #137fec;
+  --color-primary-text: #1e40af;
+  --color-primary-light: #dbeafe;
+  --color-tertiary: #f59e0b;
+  --color-tertiary-text: #b45309;
+  --color-tertiary-light: #fef3c7;
+  --color-error: #ef4444;
+  --color-error-text: #b91c1c;
+  --color-error-light: #fee2e2;
+
+  --radius-full: 9999px;
+  --radius-lg: 1rem;
+  --radius-md: 0.75rem;
+  --radius-sm: 0.5rem;
+
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  min-height: 100vh;
+  background-color: #f8fafc;
+}
+
+.page-header { display: flex; align-items: flex-end; justify-content: space-between; }
+.page-header__title { font-size: 1.875rem; font-weight: 800; letter-spacing: -0.02em; margin: 0 0 0.25rem; }
+.page-header__subtitle { color: var(--color-on-surface-muted); margin: 0; font-size: 0.875rem; }
+
+.btn-export {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.25rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  font-family: inherit;
+  font-weight: 600;
+  font-size: 0.875rem;
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.btn-export:hover { background: #f8fafc; }
+
+.listing-panel {
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  border: 1px solid var(--color-border-light);
+  overflow: hidden;
+}
+
+.icon-xl { font-size: 1.25rem !important; }
+</style>

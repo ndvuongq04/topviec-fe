@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { ref, onMounted, computed, reactive, watch } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useEmployerInterviewStore } from '@/stores/employerInterview.store';
 import { useEmployerApplicationStore } from '@/stores/employerApplication.store';
 import { useToast } from '@/composables/useToast';
 import { INTERVIEW_TYPE } from '@/constants/interview.constants';
-import type { ReqCreateInterviewScheduleDTO, ResInterviewRoundDTO } from '@/types/interview.types';
+import type { ReqCreateInterviewScheduleDTO } from '@/types/interview.types';
 
 const route = useRoute();
 const router = useRouter();
@@ -308,9 +308,3 @@ function setInterviewType(type: typeof INTERVIEW_TYPE[keyof typeof INTERVIEW_TYP
   </div>
 </template>
 
-<style scoped>
-</style>
-
-<style scoped>
-/* Any additional local styles if needed */
-</style>

@@ -1,48 +1,25 @@
 <template>
-  <div v-if="totalItems > 0" class="px-6 py-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/20 flex flex-col sm:flex-row items-center justify-between gap-4">
-    <!-- Info -->
-    <span class="text-sm text-slate-500">
-      Hiển thị <span class="font-bold text-slate-700 dark:text-slate-300">{{ rangeStart }}–{{ rangeEnd }}</span>
-      trên <span class="font-bold text-slate-700 dark:text-slate-300">{{ totalItems }}</span> tin
-    </span>
-
-    <!-- Pages -->
-    <div class="flex items-center gap-1.5">
-      <!-- Prev -->
-      <button
-        class="w-9 h-9 flex items-center justify-center rounded-xl border text-sm transition-all"
-        :class="currentPage <= 1
-          ? 'border-slate-200 dark:border-slate-700 text-slate-300 cursor-not-allowed bg-white dark:bg-slate-900'
-          : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-primary hover:text-primary bg-white dark:bg-slate-900 cursor-pointer'"
-        :disabled="currentPage <= 1"
-        @click="$emit('update:page', currentPage - 1)"
-      >
-        <span class="material-symbols-outlined text-[18px]">chevron_left</span>
+  <div class="pagination-bar">
+    <p class="pagination-bar__info">
+      Hiển thị <strong>{{ rangeStart }}-{{ rangeEnd }}</strong>
+      trong số <strong>{{ total }}</strong> tin tuyển dụng
+    </p>
+    <div class="pagination-controls">
+      <button class="page-btn" :disabled="currentPage <= 1" @click="$emit('update:currentPage', currentPage - 1)">
+        <span class="material-symbols-outlined icon-xl">chevron_left</span>
       </button>
-
-      <!-- Page numbers -->
       <button
         v-for="page in visiblePages"
         :key="page"
-        class="w-9 h-9 rounded-xl text-sm font-bold transition-all cursor-pointer"
-        :class="page === currentPage
-          ? 'bg-primary text-white shadow-md shadow-primary/30'
-          : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-primary hover:text-primary'"
-        @click="$emit('update:page', page)"
+        class="page-btn"
+        :class="{ 'page-btn--active': page === currentPage }"
+        @click="$emit('update:currentPage', page)"
       >
         {{ page }}
       </button>
-
-      <!-- Next -->
-      <button
-        class="w-9 h-9 flex items-center justify-center rounded-xl border text-sm transition-all"
-        :class="currentPage >= totalPages
-          ? 'border-slate-200 dark:border-slate-700 text-slate-300 cursor-not-allowed bg-white dark:bg-slate-900'
-          : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-primary hover:text-primary bg-white dark:bg-slate-900 cursor-pointer'"
-        :disabled="currentPage >= totalPages"
-        @click="$emit('update:page', currentPage + 1)"
-      >
-        <span class="material-symbols-outlined text-[18px]">chevron_right</span>
+      <span v-if="showEllipsis" class="page-separator">...</span>
+      <button class="page-btn" :disabled="currentPage >= totalPages" @click="$emit('update:currentPage', currentPage + 1)">
+        <span class="material-symbols-outlined icon-xl">chevron_right</span>
       </button>
     </div>
   </div>
@@ -52,30 +29,61 @@
 import { computed } from 'vue'
 
 const props = defineProps<{
+  total: number
   currentPage: number
-  totalPages: number
-  totalItems: number
-  pageSize: number
+  perPage?: number
 }>()
 
-defineEmits<{ 'update:page': [page: number] }>()
+defineEmits<{ 'update:currentPage': [page: number] }>()
 
-const rangeStart = computed(() => (props.currentPage - 1) * props.pageSize + 1)
-const rangeEnd = computed(() => Math.min(props.currentPage * props.pageSize, props.totalItems))
+const perPage  = computed(() => props.perPage ?? 10)
+const totalPages = computed(() => Math.ceil(props.total / perPage.value))
+const rangeStart = computed(() => (props.currentPage - 1) * perPage.value + 1)
+const rangeEnd   = computed(() => Math.min(props.currentPage * perPage.value, props.total))
 
-// Show at most 5 page numbers around current page
 const visiblePages = computed(() => {
-  const total = props.totalPages
-  const current = props.currentPage
-  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1)
   const pages: number[] = []
-  const start = Math.max(1, current - 2)
-  const end = Math.min(total, current + 2)
-  if (start > 1) pages.push(1)
-  if (start > 2) pages.push(-1) // ellipsis placeholder
-  for (let i = start; i <= end; i++) pages.push(i)
-  if (end < total - 1) pages.push(-2) // ellipsis placeholder
-  if (end < total) pages.push(total)
+  for (let i = 1; i <= Math.min(totalPages.value, 3); i++) pages.push(i)
   return pages
 })
+
+const showEllipsis = computed(() => totalPages.value > 3)
 </script>
+
+<style scoped>
+.pagination-bar {
+  padding: 1rem 1.5rem;
+  background: rgba(248,250,252,0.3);
+  border-top: 1px solid #f1f5f9;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.pagination-bar__info { font-size: 0.75rem; font-weight: 500; color: var(--color-on-surface-muted); margin: 0; }
+.pagination-bar__info strong { font-weight: 700; color: var(--color-on-surface); }
+
+.pagination-controls { display: flex; align-items: center; gap: 0.25rem; }
+.page-btn {
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  border: none;
+  background: none;
+  font-size: 0.75rem;
+  font-weight: 700;
+  font-family: inherit;
+  color: var(--color-on-surface);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.page-btn:hover          { background: #f1f5f9; }
+.page-btn--active        { background: var(--color-primary); color: #fff; }
+.page-btn--active:hover  { background: var(--color-primary); }
+.page-btn:disabled       { opacity: 0.3; cursor: default; }
+.page-btn:disabled:hover { background: none; }
+.page-separator { color: #cbd5e1; margin: 0 0.25rem; font-size: 0.75rem; }
+.icon-xl { font-size: 1.25rem !important; }
+</style>

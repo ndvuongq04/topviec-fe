@@ -87,3 +87,24 @@ export interface ResJobPostingDetail {
 }
 
 export type ResJobPostingPagination = ResultPaginationDTO<ResJobPostingDetail>
+
+export interface JobPostingStats {
+  total: number
+  active: number
+  pending: number
+  expiring: number
+}
+
+export interface JobPostingRow {
+  id: number
+  title: string
+  code: string
+  status: 'active' | 'pending' | 'expiring' | 'draft' | 'closed'
+  postedAt: string
+  deadline?: string
+  daysLeft?: number
+  views?: string | number
+  applicants?: string | number
+  isUrgent?: boolean
+  isFeatured?: boolean
+}

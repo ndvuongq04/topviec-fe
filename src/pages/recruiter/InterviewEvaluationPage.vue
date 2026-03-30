@@ -1,3 +1,7 @@
+<script setup lang="ts">
+// Logic sẽ được implement sau khi tích hợp API
+</script>
+
 <template>
   <div class="space-y-8 pt-6">
     <!-- Page Header -->
@@ -208,11 +212,3 @@
     </div>
   </div>
 </template>
-
-<script setup lang="ts">
-// Logic sẽ được implement sau khi tích hợp API
-</script>
-
-<style scoped>
-.font-extrabold { font-weight: 800; }
-</style>

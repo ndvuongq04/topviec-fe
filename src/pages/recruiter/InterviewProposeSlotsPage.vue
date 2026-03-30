@@ -6,6 +6,7 @@ import { useEmployerJobPostingStore } from '@/stores/employerJobPosting.store';
 import { useEmployerApplicationStore } from '@/stores/employerApplication.store';
 import { useToast } from '@/composables/useToast';
 import { INTERVIEW_TYPE } from '@/constants/interview.constants';
+import type { InterviewType } from '@/constants/interview.constants';
 
 const route = useRoute();
 const router = useRouter();
@@ -18,9 +19,10 @@ const toast = useToast();
 const selectedJobId = ref<number | null>(null);
 const selectedRoundId = ref<number | null>(null);
 const selectedApplicationId = ref<number | null>(null);
-const interviewType = ref(INTERVIEW_TYPE.ONLINE);
+const interviewType = ref<InterviewType>(INTERVIEW_TYPE.ONLINE);
 const location = ref('');
 const notes = ref('');
+const deadline = ref('');
 
 const slots = ref([
   { date: '', startTime: '09:00', endTime: '10:00' }
@@ -295,6 +297,3 @@ async function handleSubmit() {
   </div>
 </template>
 
-<style scoped>
-.font-black { font-weight: 950; }
-</style>

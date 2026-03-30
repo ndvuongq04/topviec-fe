@@ -1,57 +1,91 @@
 <template>
-  <div class="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm space-y-4">
-    <!-- Search row -->
-    <div class="flex flex-col sm:flex-row gap-3">
-      <div class="relative flex-1">
-        <span class="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-[20px]">search</span>
-        <input
-          :value="search"
-          class="w-full bg-slate-50 dark:bg-slate-800 border-none rounded-xl pl-10 pr-4 py-3 text-sm focus:ring-2 focus:ring-primary/20 placeholder:text-slate-400 transition-all"
-          placeholder="Tìm kiếm theo tên vị trí tuyển dụng..."
-          type="text"
-          @input="$emit('update:search', ($event.target as HTMLInputElement).value)"
-        />
-      </div>
-    </div>
-
-    <!-- Status filter chips -->
-    <div class="flex flex-wrap gap-2">
+  <div class="toolbar">
+    <div class="filter-tabs">
       <button
         v-for="tab in tabs"
         :key="tab.value"
-        class="flex items-center gap-1.5 px-4 py-1.5 rounded-full text-sm font-bold transition-all cursor-pointer"
-        :class="filter === tab.value
-          ? tab.activeClass
-          : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'"
-        @click="$emit('update:filter', tab.value)"
+        class="filter-tab"
+        :class="{ 'filter-tab--active': modelValue === tab.value }"
+        @click="$emit('update:modelValue', tab.value)"
       >
-        <span class="material-symbols-outlined text-[15px]" style="font-variation-settings: 'FILL' 1;">{{ tab.icon }}</span>
         {{ tab.label }}
+      </button>
+    </div>
+    <div class="toolbar-actions">
+      <button class="btn-icon" title="Lọc" @click="$emit('filter')">
+        <span class="material-symbols-outlined icon-xl">filter_list</span>
+      </button>
+      <button class="btn-icon" title="Sắp xếp" @click="$emit('sort')">
+        <span class="material-symbols-outlined icon-xl">sort_by_alpha</span>
       </button>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-export type FilterStatus = 'all' | 'published' | 'pending_approval' | 'paused' | 'expired' | 'closed' | 'draft' | 'rejected'
+export type JobPostingFilterTab = 'all' | 'active' | 'pending' | 'draft' | 'closed' | 'expired'
 
-defineProps<{
-  search: string
-  filter: FilterStatus
-}>()
+const tabs: { label: string; value: JobPostingFilterTab }[] = [
+  { label: 'Tất cả',    value: 'all' },
+  { label: 'Đang tuyển', value: 'active' },
+  { label: 'Chờ duyệt', value: 'pending' },
+  { label: 'Nháp',      value: 'draft' },
+  { label: 'Đã đóng',   value: 'closed' },
+  { label: 'Hết hạn',   value: 'expired' },
+]
+
+defineProps<{ modelValue: JobPostingFilterTab }>()
 
 defineEmits<{
-  'update:search': [value: string]
-  'update:filter': [value: FilterStatus]
+  'update:modelValue': [value: JobPostingFilterTab]
+  filter: []
+  sort: []
 }>()
-
-const tabs: { label: string; value: FilterStatus; icon: string; activeClass: string }[] = [
-  { label: 'Tất cả',      value: 'all',              icon: 'list',          activeClass: 'bg-slate-800 text-white shadow-md' },
-  { label: 'Đang tuyển',  value: 'published',        icon: 'check_circle',  activeClass: 'bg-emerald-500 text-white shadow-md shadow-emerald-200' },
-  { label: 'Chờ duyệt',   value: 'pending_approval', icon: 'schedule',      activeClass: 'bg-amber-500 text-white shadow-md shadow-amber-200' },
-  { label: 'Tạm dừng',    value: 'paused',           icon: 'pause_circle',  activeClass: 'bg-orange-500 text-white shadow-md shadow-orange-200' },
-  { label: 'Đã đóng',     value: 'closed',           icon: 'lock',          activeClass: 'bg-indigo-500 text-white shadow-md shadow-indigo-200' },
-  { label: 'Hết hạn',     value: 'expired',          icon: 'event_busy',    activeClass: 'bg-red-500 text-white shadow-md shadow-red-200' },
-  { label: 'Bản nháp',    value: 'draft',            icon: 'draft',         activeClass: 'bg-slate-500 text-white shadow-md' },
-]
 </script>
+
+<style scoped>
+.toolbar {
+  padding: 1.25rem;
+  border-bottom: 1px solid var(--color-border-light);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+.filter-tabs { display: flex; gap: 0.5rem; overflow-x: auto; }
+.filter-tabs::-webkit-scrollbar { display: none; }
+
+.filter-tab {
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-full);
+  font-size: 0.75rem;
+  font-weight: 700;
+  font-family: inherit;
+  border: none;
+  cursor: pointer;
+  white-space: nowrap;
+  background: #f1f5f9;
+  color: #475569;
+  transition: background 0.15s, color 0.15s;
+}
+.filter-tab:hover { background: #e2e8f0; }
+.filter-tab--active { background: var(--color-primary); color: #fff; }
+
+.toolbar-actions { display: flex; gap: 0.75rem; }
+.btn-icon {
+  width: 2.5rem;
+  height: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: none;
+  color: var(--color-on-surface-muted);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.btn-icon:hover { background: #f8fafc; }
+.icon-xl { font-size: 1.25rem !important; }
+</style>
