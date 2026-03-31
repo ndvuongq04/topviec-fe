@@ -10,8 +10,10 @@
     <div class="content-fields">
       <!-- Description with mini toolbar -->
       <div>
-        <label class="field-label">Mô tả công việc</label>
-        <div class="rich-editor">
+        <label class="field-label">
+          Mô tả công việc <span class="required">*</span>
+        </label>
+        <div class="rich-editor" :class="{ 'rich-editor--error': errors.description }">
           <div class="editor-toolbar">
             <button class="toolbar-btn" type="button" title="Bold">
               <span class="material-symbols-outlined">format_bold</span>
@@ -34,17 +36,22 @@
             rows="5"
           ></textarea>
         </div>
+        <p v-if="errors.description" class="field-error">{{ errors.description }}</p>
       </div>
 
       <div class="grid-2col">
         <div>
-          <label class="field-label">Yêu cầu công việc</label>
+          <label class="field-label">
+            Yêu cầu công việc <span class="required">*</span>
+          </label>
           <textarea
             v-model="form.requirements"
             class="field-textarea"
+            :class="{ 'field-textarea--error': errors.requirements }"
             placeholder="- Có ít nhất 2 năm kinh nghiệm&#10;- Thành thạo ReactJS..."
             rows="6"
           ></textarea>
+          <p v-if="errors.requirements" class="field-error">{{ errors.requirements }}</p>
         </div>
         <div>
           <label class="field-label">Quyền lợi ứng viên</label>
@@ -61,13 +68,11 @@
 </template>
 
 <script setup lang="ts">
-import { reactive } from 'vue'
+import { inject } from 'vue'
+import { CREATE_JOB_FORM_KEY, CREATE_JOB_ERRORS_KEY } from '@/composables/useCreateJobForm'
 
-const form = reactive({
-  description: '',
-  requirements: '',
-  benefits: '',
-})
+const form = inject(CREATE_JOB_FORM_KEY)!
+const errors = inject(CREATE_JOB_ERRORS_KEY)!
 </script>
 
 <style scoped>
@@ -97,12 +102,18 @@ const form = reactive({
 
 .content-fields { display: flex; flex-direction: column; gap: 1.5rem; }
 
+.required { color: #ef4444; }
 .field-label {
   display: block;
   font-size: 0.875rem;
   font-weight: 600;
   color: #1e293b;
   margin-bottom: 0.5rem;
+}
+.field-error {
+  font-size: 0.75rem;
+  color: #ef4444;
+  margin-top: 0.375rem;
 }
 
 /* Rich editor */
@@ -115,6 +126,10 @@ const form = reactive({
 .rich-editor:focus-within {
   border-color: #4B9AF6;
   box-shadow: 0 0 0 4px rgba(75,154,246,.1);
+}
+.rich-editor--error {
+  border-color: #ef4444 !important;
+  box-shadow: 0 0 0 4px rgba(239,68,68,.08) !important;
 }
 .editor-toolbar {
   background: #f8fafc;
@@ -172,6 +187,10 @@ const form = reactive({
 .field-textarea:focus {
   border-color: #4B9AF6;
   box-shadow: 0 0 0 4px rgba(75,154,246,.1);
+}
+.field-textarea--error {
+  border-color: #ef4444 !important;
+  box-shadow: 0 0 0 4px rgba(239,68,68,.08) !important;
 }
 
 @media (max-width: 768px) {

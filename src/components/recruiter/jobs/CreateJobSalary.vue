@@ -16,21 +16,24 @@
             <input
               v-model="form.salaryMin"
               class="field-input"
+              :class="{ 'field-input--error': errors.salaryMin }"
               placeholder="Tối thiểu"
               type="text"
-              :disabled="form.negotiable"
+              :disabled="form.salaryNegotiable"
             />
             <input
               v-model="form.salaryMax"
               class="field-input"
+              :class="{ 'field-input--error': errors.salaryMax }"
               placeholder="Tối đa"
               type="text"
-              :disabled="form.negotiable"
+              :disabled="form.salaryNegotiable"
             />
           </div>
+          <p v-if="errors.salaryMax" class="field-error">{{ errors.salaryMax }}</p>
           <label class="checkbox-label">
             <input
-              v-model="form.negotiable"
+              v-model="form.salaryNegotiable"
               class="checkbox"
               type="checkbox"
             />
@@ -44,13 +47,13 @@
         <label class="field-label">Hình thức làm việc</label>
         <div class="work-type-grid">
           <button
-            v-for="type in workTypes"
-            :key="type"
+            v-for="opt in workTypeOptions"
+            :key="opt.value"
             type="button"
-            :class="['work-type-btn', form.workType === type ? 'active' : '']"
-            @click="form.workType = type"
+            :class="['work-type-btn', form.workType === opt.value ? 'active' : '']"
+            @click="form.workType = opt.value"
           >
-            {{ type }}
+            {{ opt.label }}
           </button>
         </div>
       </div>
@@ -59,16 +62,14 @@
 </template>
 
 <script setup lang="ts">
-import { reactive } from 'vue'
+import { inject } from 'vue'
+import { WORK_TYPE_OPTIONS } from '@/constants/jobPosting.constants'
+import { CREATE_JOB_FORM_KEY, CREATE_JOB_ERRORS_KEY } from '@/composables/useCreateJobForm'
 
-const workTypes = ['Toàn thời gian', 'Bán thời gian', 'Remote', 'Hybrid']
+const form = inject(CREATE_JOB_FORM_KEY)!
+const errors = inject(CREATE_JOB_ERRORS_KEY)!
 
-const form = reactive({
-  salaryMin: '',
-  salaryMax: '',
-  negotiable: false,
-  workType: 'Toàn thời gian',
-})
+const workTypeOptions = WORK_TYPE_OPTIONS
 </script>
 
 <style scoped>
@@ -109,6 +110,11 @@ const form = reactive({
   color: #1e293b;
   margin-bottom: 0.5rem;
 }
+.field-error {
+  font-size: 0.75rem;
+  color: #ef4444;
+  margin-top: 0.375rem;
+}
 
 /* Salary */
 .salary-fields { display: flex; flex-direction: column; gap: 0.75rem; }
@@ -129,6 +135,10 @@ const form = reactive({
 .field-input:focus {
   border-color: #4B9AF6;
   box-shadow: 0 0 0 4px rgba(75,154,246,.1);
+}
+.field-input--error {
+  border-color: #ef4444 !important;
+  box-shadow: 0 0 0 4px rgba(239,68,68,.08) !important;
 }
 .field-input:disabled {
   background: #f8fafc;

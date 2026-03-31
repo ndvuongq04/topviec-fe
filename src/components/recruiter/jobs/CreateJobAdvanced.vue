@@ -16,7 +16,7 @@
             <p class="toggle-desc">Hiển thị ở vị trí ưu tiên trên trang chủ và kết quả tìm kiếm</p>
           </div>
           <label class="toggle-switch">
-            <input v-model="form.featured" type="checkbox" />
+            <input v-model="form.isFeatured" type="checkbox" />
             <span class="toggle-track"></span>
           </label>
         </div>
@@ -30,7 +30,7 @@
             <p class="toggle-desc">Gắn nhãn "Tuyển gấp" để thu hút ứng viên nộp hồ sơ nhanh</p>
           </div>
           <label class="toggle-switch urgent">
-            <input v-model="form.urgent" type="checkbox" />
+            <input v-model="form.isUrgent" type="checkbox" />
             <span class="toggle-track"></span>
           </label>
         </div>
@@ -53,12 +53,10 @@
 </template>
 
 <script setup lang="ts">
-import { reactive } from 'vue'
+import { inject } from 'vue'
+import { CREATE_JOB_FORM_KEY } from '@/composables/useCreateJobForm'
 
-const form = reactive({
-  featured: false,
-  urgent: true,
-})
+const form = inject(CREATE_JOB_FORM_KEY)!
 </script>
 
 <style scoped>
