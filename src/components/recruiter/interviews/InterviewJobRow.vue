@@ -27,7 +27,7 @@
 
       <!-- Status badge -->
       <div>
-        <span class="badge-active">Đang tuyển</span>
+        <span class="status-badge" :class="statusBadgeClass">{{ statusLabel }}</span>
       </div>
 
       <!-- Actions: GlobalDropdown -->
@@ -63,8 +63,10 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import GlobalDropdown from '@/components/ui/GlobalDropdown.vue'
 import GlobalDropdownItem from '@/components/ui/GlobalDropdownItem.vue'
+import { JobPostingStatus, JOB_POSTING_STATUS_LABELS, JOB_POSTING_STATUS_BADGE } from '@/constants/jobPosting.constants'
 
 interface JobPostingRow {
   id: number
@@ -75,12 +77,16 @@ interface JobPostingRow {
   interviewsPerWeek: number
   icon: string
   iconVariant: 'blue-light' | 'blue-solid' | 'orange' | 'purple' | 'green' | 'rose'
+  status: JobPostingStatus
 }
 
 const props = defineProps<{
   job: JobPostingRow
   isActive?: boolean
 }>()
+
+const statusLabel = computed(() => JOB_POSTING_STATUS_LABELS[props.job.status])
+const statusBadgeClass = computed(() => JOB_POSTING_STATUS_BADGE[props.job.status])
 
 const emit = defineEmits<{
   (e: 'click'): void
@@ -179,14 +185,11 @@ function handleAction(event: 'view-detail' | 'setup-rounds' | 'finish-interview'
 }
 .job-meta .material-symbols-outlined { font-size: 18px; color: #94a3b8; }
 
-.badge-active {
+.status-badge {
   display: inline-block;
   padding: 0.125rem 0.625rem;
-  background: #d1fae5;
-  color: #065f46;
   font-size: 0.75rem;
   font-weight: 700;
-  text-transform: uppercase;
   border-radius: 9999px;
   letter-spacing: 0.05em;
 }

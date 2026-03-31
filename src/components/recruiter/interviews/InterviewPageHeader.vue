@@ -4,10 +4,7 @@
       <h2>Quản lý lịch phỏng vấn</h2>
       <p>Theo dõi các vị trí đang tuyển dụng và lượng lịch phỏng vấn.</p>
     </div>
-    <button class="btn-primary" @click="$emit('create')">
-      <span class="material-symbols-outlined">add</span>
-      Tạo lịch phỏng vấn
-    </button>
+
   </div>
 </template>
 

@@ -11,9 +11,9 @@
     <!-- Table -->
     <div class="job-list">
       <InterviewJobRow
-        v-for="job in JOB_POSTINGS"
+        v-for="job in jobPostings"
         :key="job.id"
-        :job="job"
+       :job="job"
         :is-active="activeId === job.id"
         @click="activeId = job.id"
         @view-detail="handleViewDetail(job.id)"
@@ -25,68 +25,50 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import InterviewJobRow from './InterviewJobRow.vue'
+import { employerJobPostingService } from '@/services/employerJobPosting.service'
+import { JobPostingStatus } from '@/constants/jobPosting.constants'
+import type { ResJobPostingDetail } from '@/types/jobPosting.types'
 
-// Định nghĩa interface ở đây, không import từ InterviewJobRow
-interface JobPostingRow {
-  id: number
-  title: string
-  department: string
-  level: string
-  candidateCount: number
-  interviewsPerWeek: number
-  icon: string
-  iconVariant: 'blue-light' | 'blue-solid' | 'orange' | 'purple' | 'green' | 'rose'
-}
+type IconVariant = 'blue-light' | 'blue-solid' | 'orange' | 'purple' | 'green' | 'rose'
+const ICON_VARIANTS: IconVariant[] = ['blue-light', 'blue-solid', 'orange', 'purple', 'green', 'rose']
 
 const router = useRouter()
 
-const JOB_POSTINGS: JobPostingRow[] = [
-  {
-    id: 1,
-    title: 'Tin tuyển dụng Java Developer',
-    department: 'Phòng phát triển phần mềm',
-    level: 'Senior Level',
-    candidateCount: 12,
-    interviewsPerWeek: 4,
-    icon: 'terminal',
-    iconVariant: 'blue-light',
-  },
-  {
-    id: 2,
-    title: 'Tin tuyển dụng React JS Developer',
-    department: 'Đội ngũ Frontend',
-    level: 'Middle Level',
-    candidateCount: 8,
-    interviewsPerWeek: 3,
-    icon: 'javascript',
-    iconVariant: 'blue-solid',
-  },
-  {
-    id: 3,
-    title: 'UI/UX Designer',
-    department: 'Đội ngũ Design',
-    level: 'Junior/Middle',
-    candidateCount: 15,
-    interviewsPerWeek: 5,
-    icon: 'palette',
-    iconVariant: 'orange',
-  },
-  {
-    id: 4,
-    title: 'AI Engineer',
-    department: 'Phòng R&D',
-    level: 'Expert Level',
-    candidateCount: 4,
-    interviewsPerWeek: 1,
-    icon: 'psychology',
-    iconVariant: 'purple',
-  },
-]
+const rawJobs = ref<ResJobPostingDetail[]>([])
+const isLoading = ref(false)
+const activeId = ref<number | null>(null)
 
-const activeId = ref<number>(JOB_POSTINGS[1].id)
+const jobPostings = computed(() =>
+  rawJobs.value.map((job, index) => ({
+    id: job.id,
+    title: job.title,
+    department: job.industry?.name ?? '',
+    level: job.level?.name ?? '',
+    candidateCount: job.applicationCount,
+    interviewsPerWeek: 0,
+    icon: 'work',
+    iconVariant: ICON_VARIANTS[index % ICON_VARIANTS.length],
+    status: job.status,
+  }))
+)
+
+async function fetchInterviewingJobs() {
+  isLoading.value = true
+  try {
+    const res = await employerJobPostingService.getList({ status: JobPostingStatus.INTERVIEWING, size: 50 })
+    rawJobs.value = res.result
+    if (res.result.length > 0) activeId.value = res.result[0].id
+  } catch (err) {
+    console.error('Failed to fetch interviewing jobs:', err)
+  } finally {
+    isLoading.value = false
+  }
+}
+
+onMounted(fetchInterviewingJobs)
 
 function handleViewDetail(jobId: number) {
   router.push({ name: 'recruiter-job-interview-setup', params: { id: jobId } })

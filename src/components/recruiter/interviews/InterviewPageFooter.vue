@@ -3,9 +3,7 @@
     <button class="btn-outline-lg" @click="$emit('export')">
       Xuất báo cáo tuyển dụng
     </button>
-    <button class="btn-primary-lg" @click="$emit('invite')">
-      Mời ứng viên mới
-    </button>
+
   </div>
 </template>
 
