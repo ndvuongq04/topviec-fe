@@ -5,7 +5,7 @@
       trong số <strong>{{ total }}</strong> tin tuyển dụng
     </p>
     <div class="pagination-controls">
-      <button class="page-btn" :disabled="currentPage <= 1" @click="$emit('update:currentPage', currentPage - 1)">
+      <button class="page-btn" :disabled="currentPage <= 0" @click="$emit('update:currentPage', currentPage - 1)">
         <span class="material-symbols-outlined icon-xl">chevron_left</span>
       </button>
       <button
@@ -15,10 +15,10 @@
         :class="{ 'page-btn--active': page === currentPage }"
         @click="$emit('update:currentPage', page)"
       >
-        {{ page }}
+        {{ page + 1 }}
       </button>
       <span v-if="showEllipsis" class="page-separator">...</span>
-      <button class="page-btn" :disabled="currentPage >= totalPages" @click="$emit('update:currentPage', currentPage + 1)">
+      <button class="page-btn" :disabled="currentPage >= totalPages - 1 || totalPages === 0" @click="$emit('update:currentPage', currentPage + 1)">
         <span class="material-symbols-outlined icon-xl">chevron_right</span>
       </button>
     </div>
@@ -38,12 +38,24 @@ defineEmits<{ 'update:currentPage': [page: number] }>()
 
 const perPage  = computed(() => props.perPage ?? 10)
 const totalPages = computed(() => Math.ceil(props.total / perPage.value))
-const rangeStart = computed(() => (props.currentPage - 1) * perPage.value + 1)
-const rangeEnd   = computed(() => Math.min(props.currentPage * perPage.value, props.total))
+
+// Calculations for "Showing X-Y of Z"
+const rangeStart = computed(() => {
+  if (props.total === 0) return 0
+  return props.currentPage * perPage.value + 1
+})
+
+const rangeEnd = computed(() => {
+  return Math.min((props.currentPage + 1) * perPage.value, props.total)
+})
 
 const visiblePages = computed(() => {
   const pages: number[] = []
-  for (let i = 1; i <= Math.min(totalPages.value, 3); i++) pages.push(i)
+  // Show first few pages (0, 1, 2 ...)
+  const maxToPulse = Math.min(totalPages.value, 3)
+  for (let i = 0; i < maxToPulse; i++) {
+    pages.push(i)
+  }
   return pages
 })
 
