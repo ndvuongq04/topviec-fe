@@ -62,6 +62,11 @@ export const recruiterRoutes: RouteRecordRaw[] = [
         component: () => import('@/pages/recruiter/Interviewstagespage.vue'),
       },
       {
+        path: 'jobs/:id/interview-candidate/:applicationId',
+        name: 'recruiter-job-interview-candidate-detail',
+        component: () => import('@/pages/recruiter/Candidateinterviewdetailpage.vue'),
+      },
+      {
         path: 'interviews',
         name: 'recruiter-interviews',
         component: () => import('@/pages/recruiter/InterviewManagementPage.vue'),

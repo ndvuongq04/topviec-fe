@@ -33,7 +33,7 @@
 
 <script setup lang="ts">
 defineProps<{
-  items: { label: string; to?: string }[]
+  items: { label: string; to?: string | object }[]
   hideHome?: boolean
 }>()
 </script>

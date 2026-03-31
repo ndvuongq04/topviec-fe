@@ -37,7 +37,7 @@
             <!-- Primary action -->
             <GlobalDropdownItem
               icon="visibility"
-              label="Xem chi tiết"
+              label="Chi tiết phỏng vấn"
               @click="handleAction('view-detail', close)"
             />
 

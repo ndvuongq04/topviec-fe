@@ -36,10 +36,7 @@
       @page-change="currentPage = $event"
     />
 
-    <InterviewFab
-      tooltip="Tạo lịch phỏng vấn mới"
-      @click="handleCreateInterview"
-    />
+
   </div>
 </template>
 
@@ -48,7 +45,6 @@ import { ref, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import InterviewStageCards from '@/components/recruiter/interviews/InterviewStageCards.vue'
 import InterviewCandidateTable from '@/components/recruiter/interviews/InterviewCandidateTable.vue'
-import InterviewFab from '@/components/recruiter/interviews/InterviewFab.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -150,8 +146,14 @@ function handleOpenLink(candidateId: number) {
   console.log('Open meeting link for candidate:', candidateId)
 }
 
-function handleViewDetail(candidateId: number) {
-  console.log('View detail for candidate:', candidateId)
+function handleViewDetail(applicationId: number) {
+  router.push({
+    name: 'recruiter-job-interview-candidate-detail',
+    params: {
+      id: jobId.value,
+      applicationId: applicationId,
+    },
+  })
 }
 
 function handleReschedule(candidateId: number) {
