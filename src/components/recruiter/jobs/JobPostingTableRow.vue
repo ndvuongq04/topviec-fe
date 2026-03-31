@@ -131,6 +131,14 @@
               :tooltip="!canExtend ? 'Chỉ có thể gia hạn khi tin đã ở trạng thái Hết hạn' : undefined"
               @click="handleAction('extend', job.id, close)"
             />
+            <!-- Làm mới: chỉ khi PUBLISHED -->
+            <GlobalDropdownItem
+              icon="refresh"
+              label="Làm mới tin tuyển dụng"
+              :disabled="!canRefresh"
+              :tooltip="!canRefresh ? 'Chỉ có thể làm mới khi tin đang ở trạng thái Đang tuyển' : undefined"
+              @click="handleAction('refresh', job.id, close)"
+            />
             <!-- Bắt đầu phỏng vấn: chỉ khi PUBLISHED -->
             <GlobalDropdownItem
               icon="groups"
@@ -180,6 +188,7 @@ const emit = defineEmits<{
   pause:     [id: number]
   resume:    [id: number]
   extend:    [id: number]
+  refresh:   [id: number]
   interview: [id: number]
   close:     [id: number]
   delete:    [id: number]
@@ -221,6 +230,9 @@ const canResume = computed(() => props.job.status === 'paused')
 
 // Gia hạn: chỉ khi EXPIRED
 const canExtend = computed(() => props.job.status === 'expired')
+
+// Làm mới: chỉ khi PUBLISHED (active/expiring)
+const canRefresh = computed(() => ['active', 'expiring'].includes(props.job.status))
 
 // Bắt đầu phỏng vấn: chỉ khi PUBLISHED
 const canInterview = computed(() => ['active', 'expiring'].includes(props.job.status))

@@ -32,6 +32,7 @@
         @pause="handlePause"
         @resume="handleResume"
         @extend="handleExtend"
+        @refresh="handleRefresh"
         @close="handleClose"
         @delete="handleDelete"
         @applications="handleViewApplications"
@@ -77,6 +78,25 @@
       </div>
     </GlobalModal>
 
+    <!-- ── Submit for Approval Modal ──────────────────── -->
+    <GlobalModal
+      :visible="isSubmitModalVisible"
+      title="Gửi tin chờ duyệt"
+      :subtitle="`Tin: ${submittingJob?.title}`"
+      variant="primary"
+      icon="send"
+      confirm-text="Gửi duyệt ngay"
+      confirm-icon="check_circle"
+      :loading="isSubmitLoading"
+      @close="isSubmitModalVisible = false"
+      @confirm="confirmSubmit"
+    >
+      <p class="text-slate-600 dark:text-slate-400">
+        Tin tuyển dụng sẽ được chuyển sang trạng thái <strong>Chờ duyệt</strong>. 
+        Quản trị viên sẽ sớm kiểm tra và phê duyệt yêu cầu của bạn.
+      </p>
+    </GlobalModal>
+
   </div>
 </template>
 
@@ -112,6 +132,11 @@ const isExtendLoading      = ref(false)
 const extendingJob         = ref<{ id: number; title: string } | null>(null)
 const newDeadline          = ref('')
 const minDate              = ref(new Date().toISOString().split('T')[0])
+
+// Submit Modal State
+const isSubmitModalVisible = ref(false)
+const isSubmitLoading      = ref(false)
+const submittingJob        = ref<{ id: number; title: string } | null>(null)
 
 // ── Status mapping ───────────────────────────────────────
 const tabToStatus: Partial<Record<JobPostingFilterTab, JobPostingStatus>> = {
@@ -222,7 +247,6 @@ const handleExport = () => console.log('export')
 const handleView   = (id: number) => router.push({ name: 'recruiter-jobs-detail', params: { id } })
 const handleEdit   = (id: number) => router.push({ name: 'recruiter-jobs-edit', params: { id } })
 const handleCopy   = (id: number) => console.log('copy', id)
-const handleSubmit = (id: number) => console.log('submit', id)
 
 const handlePause = async (id: number) => {
   try {
@@ -266,6 +290,22 @@ const handleExtend = (id: number) => {
   }
 }
 
+const handleRefresh = async (id: number) => {
+  // We can use a generic loading state or specific one. 
+  // For simplicity using a toast + local update.
+  try {
+    const updated = await employerJobPostingService.refreshJob(id)
+    const idx = jobs.value.findIndex(j => j.id === id)
+    if (idx !== -1) {
+      jobs.value[idx] = mapToRow(updated)
+    }
+    toast.success('Đã làm mới!', `Tin tuyển dụng "${updated.title}" đã được đẩy lên đầu danh sách.`)
+  } catch (err: any) {
+    const msg = err?.response?.data?.message ?? 'Không thể làm mới tin. Vui lòng thử lại.'
+    toast.error('Lỗi', msg)
+  }
+}
+
 const confirmExtend = async () => {
   if (!extendingJob.value || !newDeadline.value) return
 
@@ -289,6 +329,38 @@ const confirmExtend = async () => {
     toast.error('Lỗi', msg)
   } finally {
     isExtendLoading.value = false
+  }
+}
+
+const handleSubmit = (id: number) => {
+  const job = jobs.value.find(j => j.id === id)
+  if (job) {
+    submittingJob.value = { id: job.id, title: job.title }
+    isSubmitModalVisible.value = true
+  }
+}
+
+const confirmSubmit = async () => {
+  if (!submittingJob.value) return
+
+  isSubmitLoading.value = true
+  try {
+    const id = submittingJob.value.id
+    const updated = await employerJobPostingService.pendingApproval(id)
+
+    const idx = jobs.value.findIndex(j => j.id === id)
+    if (idx !== -1) {
+      jobs.value[idx] = mapToRow(updated)
+    }
+
+    toast.success('Gửi duyệt thành công!', `Tin tuyển dụng "${updated.title}" đã được chuyển sang hàng đợi duyệt.`)
+    fetchStats()
+    isSubmitModalVisible.value = false
+  } catch (err: any) {
+    const msg = err?.response?.data?.message ?? 'Không thể gửi duyệt tin. Vui lòng thử lại.'
+    toast.error('Lỗi', msg)
+  } finally {
+    isSubmitLoading.value = false
   }
 }
 const handleClose  = (id: number) => console.log('close', id)

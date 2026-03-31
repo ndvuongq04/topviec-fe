@@ -22,6 +22,7 @@
           @pause="$emit('pause', $event)"
           @resume="$emit('resume', $event)"
           @extend="$emit('extend', $event)"
+          @refresh="$emit('refresh', $event)"
           @close="$emit('close', $event)"
           @delete="$emit('delete', $event)"
           @applications="$emit('applications', $event)"
@@ -48,6 +49,7 @@ defineEmits<{
   pause:  [id: number]
   resume: [id: number]
   extend: [id: number]
+  refresh: [id: number]
   close:  [id: number]
   delete: [id: number]
   applications: [id: number]
