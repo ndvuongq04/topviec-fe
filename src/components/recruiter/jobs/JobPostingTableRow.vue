@@ -92,6 +92,7 @@
             <div class="dropdown-divider-v2" />
             <!-- Chỉnh sửa: DRAFT/REJECTED/RENEWED luôn được; PUBLISHED chỉ khi editCount < 1 -->
             <GlobalDropdownItem
+              v-if="job.status !== 'deleted'"
               icon="edit"
               label="Chỉnh sửa tin"
               :disabled="!canEdit"
@@ -100,6 +101,7 @@
             />
             <!-- Gửi duyệt: chỉ khi DRAFT -->
             <GlobalDropdownItem
+              v-if="job.status !== 'deleted'"
               icon="send"
               label="Gửi tin cho duyệt"
               :disabled="!canSubmit"
@@ -107,24 +109,25 @@
               @click="handleAction('submit', job.id, close)"
             />
             <GlobalDropdownItem
+              v-if="job.status !== 'deleted' && job.status !== 'paused'"
               icon="pause_circle"
               label="Tạm dừng tin tuyển dụng"
               :disabled="!canPause"
               :tooltip="!canPause && job.status !== 'paused' ? 'Chỉ có thể tạm dừng khi tin đang ở trạng thái Đang tuyển' : undefined"
-              v-if="job.status !== 'paused'"
               @click="handleAction('pause', job.id, close)"
             />
             <!-- Tiếp tục đăng: chỉ khi PAUSED -->
             <GlobalDropdownItem
+              v-if="job.status === 'paused'"
               icon="play_circle"
               label="Tiếp tục đăng tin"
               :disabled="!canResume"
               :tooltip="!canResume ? 'Chỉ có thể tiếp tục khi tin đang ở trạng thái Tạm dừng' : undefined"
-              v-if="job.status === 'paused'"
               @click="handleAction('resume', job.id, close)"
             />
             <!-- Gia hạn: chỉ khi EXPIRED -->
             <GlobalDropdownItem
+              v-if="job.status !== 'deleted'"
               icon="update"
               label="Gia hạn tin tuyển dụng"
               :disabled="!canExtend"
@@ -133,6 +136,7 @@
             />
             <!-- Làm mới: chỉ khi PUBLISHED -->
             <GlobalDropdownItem
+              v-if="job.status !== 'deleted'"
               icon="refresh"
               label="Làm mới tin tuyển dụng"
               :disabled="!canRefresh"
@@ -141,15 +145,17 @@
             />
             <!-- Bắt đầu phỏng vấn: chỉ khi PUBLISHED -->
             <GlobalDropdownItem
+              v-if="job.status !== 'deleted'"
               icon="groups"
               label="Bắt đầu phỏng vấn"
               :disabled="!canInterview"
               :tooltip="!canInterview ? 'Chỉ có thể bắt đầu phỏng vấn khi tin đang ở trạng thái Đang tuyển' : undefined"
               @click="handleAction('interview', job.id, close)"
             />
-            <div class="dropdown-divider-v2" />
+            <div class="dropdown-divider-v2" v-if="job.status !== 'deleted'" />
             <!-- Đóng tin: PUBLISHED hoặc PAUSED -->
             <GlobalDropdownItem
+              v-if="job.status !== 'deleted'"
               icon="block"
               label="Đóng tin tuyển dụng"
               :disabled="!canClose"
@@ -158,12 +164,20 @@
             />
             <!-- Xóa tin: DRAFT / REJECTED / CLOSED / EXPIRED / COMPLETED -->
             <GlobalDropdownItem
+              v-if="job.status !== 'deleted'"
               icon="delete"
               label="Xóa tin"
               :disabled="!canDelete"
               :tooltip="!canDelete ? 'Không thể xóa tin đang hoạt động, hãy đóng tin trước' : undefined"
               danger
               @click="handleAction('delete', job.id, close)"
+            />
+            <!-- Khôi phục: chỉ khi DELETED -->
+            <GlobalDropdownItem
+              v-if="job.status === 'deleted'"
+              icon="restore_from_trash"
+              label="Khôi phục tin"
+              @click="handleAction('restore', job.id, close)"
             />
           </template>
         </GlobalDropdown>
@@ -192,6 +206,7 @@ const emit = defineEmits<{
   interview: [id: number]
   close:     [id: number]
   delete:    [id: number]
+  restore:   [id: number]
   applications: [id: number]
 }>()
 
@@ -243,6 +258,9 @@ const canClose = computed(() => ['active', 'expiring', 'paused'].includes(props.
 // Xóa tin: DRAFT / REJECTED / CLOSED / EXPIRED / COMPLETED
 const canDelete = computed(() => ['draft', 'rejected', 'closed', 'expired', 'completed'].includes(props.job.status))
 
+// Khôi phục: chỉ khi DELETED
+const canRestore = computed(() => props.job.status === 'deleted')
+
 const statusChipClass = computed(() => ({
   'status-chip--active':       props.job.status === 'active',
   'status-chip--pending':      props.job.status === 'pending',
@@ -254,6 +272,7 @@ const statusChipClass = computed(() => ({
   'status-chip--rejected':     props.job.status === 'rejected',
   'status-chip--interviewing': props.job.status === 'interviewing',
   'status-chip--completed':    props.job.status === 'completed',
+  'status-chip--deleted':      props.job.status === 'deleted',
 }))
 
 const statusLabel = computed(() => ({
@@ -267,6 +286,7 @@ const statusLabel = computed(() => ({
   rejected:     'Bị từ chối',
   interviewing: 'Đang phỏng vấn',
   completed:    'Đã hoàn thành',
+  deleted:      'Đã xóa',
 }[props.job.status] ?? props.job.status))
 </script>
 

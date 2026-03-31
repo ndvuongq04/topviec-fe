@@ -18,6 +18,7 @@ export enum JobPostingStatus {
     RENEWED = 'renewed',
     INTERVIEWING = 'interviewing',
     COMPLETED = 'completed',
+    DELETED = 'deleted',
 }
 
 
@@ -42,6 +43,7 @@ export const JOB_POSTING_STATUS_LABELS: Record<JobPostingStatus, string> = {
     [JobPostingStatus.RENEWED]: 'Đã gia hạn',
     [JobPostingStatus.INTERVIEWING]: 'Đang phỏng vấn',
     [JobPostingStatus.COMPLETED]: 'Hoàn thành',
+    [JobPostingStatus.DELETED]: 'Đã xóa',
 }
 
 export const JOB_POSTING_STATUS_BADGE: Record<JobPostingStatus, string> = {
@@ -88,6 +90,8 @@ export const JOB_POSTING_STATUS_BADGE: Record<JobPostingStatus, string> = {
     // Hoàn thành tuyển dụng — indigo (kết thúc tích cực)
     [JobPostingStatus.COMPLETED]:
         'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400',
+    [JobPostingStatus.DELETED]:
+        'bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500 line-through',
 }
 
 export const WORK_TYPE_OPTIONS: { label: string; value: WorkType }[] = [

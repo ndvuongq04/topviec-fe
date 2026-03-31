@@ -119,11 +119,12 @@ export interface ResJobPostingDetail {
     isFeatured: boolean
     isUrgent: boolean
     viewCount: number
-    applicationCount?: number
+    applicationCount: number
     editCount: number
     publishedAt?: string
     createdAt: string
     updatedAt: string
+    deletedAt?: string | null
     locations: ResJobPostLocationDTO[]
     skills: ResJobPostSkillDTO[]
 }
@@ -143,9 +144,11 @@ export interface ResJobPostingSummary {
     isFeatured: boolean
     isUrgent: boolean
     viewCount: number
+    applicationCount: number
     deadline: string
     publishedAt?: string
     createdAt: string
+    deletedAt?: string | null
 }
 
 

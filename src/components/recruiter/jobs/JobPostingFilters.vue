@@ -36,7 +36,7 @@
 <script setup lang="ts">
 export type JobPostingFilterTab =
   | 'all' | 'active' | 'pending' | 'draft'
-  | 'closed' | 'expired' | 'interviewing' | 'completed'
+  | 'closed' | 'expired' | 'interviewing' | 'completed' | 'deleted'
 
 const tabs: { label: string; value: JobPostingFilterTab }[] = [
   { label: 'Tất cả',           value: 'all' },
@@ -47,6 +47,7 @@ const tabs: { label: string; value: JobPostingFilterTab }[] = [
   { label: 'Hết hạn',          value: 'expired' },
   { label: 'Đang phỏng vấn',   value: 'interviewing' },
   { label: 'Đã hoàn thành',    value: 'completed' },
+  { label: 'Đã xóa',           value: 'deleted' },
 ]
 
 defineProps<{

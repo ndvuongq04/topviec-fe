@@ -25,6 +25,7 @@
           @refresh="$emit('refresh', $event)"
           @close="$emit('close', $event)"
           @delete="$emit('delete', $event)"
+          @restore="$emit('restore', $event)"
           @applications="$emit('applications', $event)"
         />
         <tr v-if="jobs.length === 0">
@@ -52,6 +53,7 @@ defineEmits<{
   refresh: [id: number]
   close:  [id: number]
   delete: [id: number]
+  restore: [id: number]
   applications: [id: number]
 }>()
 </script>

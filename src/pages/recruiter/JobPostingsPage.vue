@@ -35,12 +35,13 @@
         @refresh="handleRefresh"
         @close="handleClose"
         @delete="handleDelete"
+        @restore="handleRestore"
         @applications="handleViewApplications"
       />
       <JobPostingPagination
         v-model:currentPage="currentPage"
         :total="totalJobs"
-        :per-page="10"
+        :per-page="8"
       />
     </div>
 
@@ -97,6 +98,33 @@
       </p>
     </GlobalModal>
 
+    <!-- ── Delete Job Modal ─────────────────────────── -->
+    <GlobalModal
+      :visible="isDeleteModalVisible"
+      title="Xóa tin tuyển dụng"
+      :subtitle="`Tin: ${deletingJob?.title}`"
+      variant="primary"
+      icon="delete"
+      confirm-text="Xác nhận xóa"
+      confirm-icon="delete_forever"
+      :loading="isDeleteLoading"
+      @close="isDeleteModalVisible = false"
+      @confirm="confirmDelete"
+    >
+      <div class="space-y-3">
+        <p class="text-slate-600 dark:text-slate-400">
+          Bạn có chắc chắn muốn xóa tin tuyển dụng này không? 
+          Hành động này sẽ chuyển tin vào thùng rác.
+        </p>
+        <div class="p-3 bg-blue-50 border border-blue-100 rounded-lg flex gap-3">
+            <span class="material-symbols-outlined text-blue-500">info</span>
+            <p class="text-xs text-blue-700 font-medium">
+                Lưu ý: Chỉ có bộ phận quản trị hoặc bạn mới có thể khôi phục tin này sau khi xóa.
+            </p>
+        </div>
+      </div>
+    </GlobalModal>
+
   </div>
 </template>
 
@@ -138,6 +166,11 @@ const isSubmitModalVisible = ref(false)
 const isSubmitLoading      = ref(false)
 const submittingJob        = ref<{ id: number; title: string } | null>(null)
 
+// Delete Modal State
+const isDeleteModalVisible = ref(false)
+const isDeleteLoading      = ref(false)
+const deletingJob          = ref<{ id: number; title: string } | null>(null)
+
 // ── Status mapping ───────────────────────────────────────
 const tabToStatus: Partial<Record<JobPostingFilterTab, JobPostingStatus>> = {
   active:       JobPostingStatus.PUBLISHED,
@@ -147,6 +180,7 @@ const tabToStatus: Partial<Record<JobPostingFilterTab, JobPostingStatus>> = {
   expired:      JobPostingStatus.EXPIRED,
   interviewing: JobPostingStatus.INTERVIEWING,
   completed:    JobPostingStatus.COMPLETED,
+  deleted:      JobPostingStatus.DELETED,
 }
 
 function mapStatus(apiStatus: string): JobPostingRow['status'] {
@@ -162,6 +196,7 @@ function mapStatus(apiStatus: string): JobPostingRow['status'] {
     [JobPostingStatus.REJECTED]:         'rejected',
     [JobPostingStatus.INTERVIEWING]:     'interviewing',
     [JobPostingStatus.COMPLETED]:        'completed',
+    [JobPostingStatus.DELETED]:          'deleted',
   }
   return map[apiStatus] ?? 'draft'
 }
@@ -198,7 +233,7 @@ async function fetchJobs() {
     status:  tabToStatus[activeFilter.value],
     keyword: searchValue.value || undefined,
     page:    currentPage.value,
-    size:    10,
+    size:    8,
   })
   jobs.value      = res.result.map(mapToRow)
   totalJobs.value = res.meta.totals
@@ -363,8 +398,73 @@ const confirmSubmit = async () => {
     isSubmitLoading.value = false
   }
 }
-const handleClose  = (id: number) => console.log('close', id)
-const handleDelete = (id: number) => console.log('delete', id)
+
+const handleClose = async (id: number) => {
+  try {
+    const updated = await employerJobPostingService.closeJob(id)
+    const idx = jobs.value.findIndex(j => j.id === id)
+    if (idx !== -1) {
+      jobs.value[idx] = mapToRow(updated)
+    }
+    toast.success('Đã đóng tin!', `Tin tuyển dụng "${updated.title}" đã được đóng thành công.`)
+    fetchStats()
+  } catch (err: any) {
+    const msg = err?.response?.data?.message ?? 'Không thể đóng tin. Vui lòng thử lại.'
+    toast.error('Lỗi', msg)
+  }
+}
+
+const handleDelete = (id: number) => {
+  const job = jobs.value.find(j => j.id === id)
+  if (job) {
+    deletingJob.value = { id: job.id, title: job.title }
+    isDeleteModalVisible.value = true
+  }
+}
+
+const confirmDelete = async () => {
+  if (!deletingJob.value) return
+
+  isDeleteLoading.value = true
+  try {
+    const id = deletingJob.value.id
+    await employerJobPostingService.deleteJob(id)
+
+    // Remove from local list
+    jobs.value = jobs.value.filter(j => j.id !== id)
+    
+    toast.success('Đã xóa tin!', `Tin tuyển dụng "${deletingJob.value.title}" đã được xóa thành công.`)
+    fetchStats()
+    isDeleteModalVisible.value = false
+  } catch (err: any) {
+    const msg = err?.response?.data?.message ?? 'Không thể xóa tin. Vui lòng thử lại.'
+    toast.error('Lỗi', msg)
+  } finally {
+    isDeleteLoading.value = false
+  }
+}
+
+const handleRestore = async (id: number) => {
+  try {
+    const updated = await employerJobPostingService.restoreJob(id)
+    
+    // Update local jobs (it will disappear from 'deleted' tab if active)
+    if (activeFilter.value === 'deleted') {
+      jobs.value = jobs.value.filter(j => j.id !== id)
+    } else {
+      const idx = jobs.value.findIndex(j => j.id === id)
+      if (idx !== -1) {
+        jobs.value[idx] = mapToRow(updated)
+      }
+    }
+
+    toast.success('Khôi phục thành công!', `Tin tuyển dụng "${updated.title}" đã được khôi phục về trạng thái Nháp.`)
+    fetchStats()
+  } catch (err: any) {
+    const msg = err?.response?.data?.message ?? 'Không thể khôi phục tin. Vui lòng thử lại.'
+    toast.error('Lỗi', msg)
+  }
+}
 const handleViewApplications = (id: number) => {
   router.push({ name: 'recruiter-job-applications', params: { id } })
 }
