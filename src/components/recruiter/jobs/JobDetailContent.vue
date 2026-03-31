@@ -7,15 +7,7 @@
         <span class="title-bar"></span>
         Mô tả công việc
       </h2>
-      <div class="prose">
-        <p>Chúng tôi đang tìm kiếm một Senior Frontend Engineer tài năng để gia nhập đội ngũ phát triển sản phẩm cốt lõi. Bạn sẽ chịu trách nhiệm xây dựng các giao diện người dùng hiện đại, hiệu năng cao và dễ mở rộng.</p>
-        <ul>
-          <li>Phát triển các tính năng mới cho nền tảng web bằng React/Next.js.</li>
-          <li>Tối ưu hóa hiệu năng ứng dụng và trải nghiệm người dùng (Core Web Vitals).</li>
-          <li>Thiết kế và triển khai các component tái sử dụng trong Design System nội bộ.</li>
-          <li>Hợp tác chặt chẽ với đội ngũ Design và Backend để hoàn thiện sản phẩm.</li>
-        </ul>
-      </div>
+      <div class="prose" v-html="description || '<p>Chưa có mô tả.</p>'" />
     </section>
 
     <!-- Yêu cầu ứng viên -->
@@ -24,15 +16,7 @@
         <span class="title-bar"></span>
         Yêu cầu ứng viên
       </h2>
-      <div class="prose">
-        <ul>
-          <li>Ít nhất 4 năm kinh nghiệm làm việc với Frontend (React/Vue/Angular).</li>
-          <li>Nắm vững HTML5, CSS3 (Tailwind CSS/SCSS) và JavaScript (ES6+).</li>
-          <li>Có kinh nghiệm với TypeScript và quản lý state (Redux/Zustand).</li>
-          <li>Hiểu biết sâu về kiến trúc ứng dụng web và tối ưu hóa performance.</li>
-          <li>Kỹ năng giải quyết vấn đề tốt và khả năng làm việc nhóm hiệu quả.</li>
-        </ul>
-      </div>
+      <div class="prose" v-html="requirements || '<p>Chưa có yêu cầu.</p>'" />
     </section>
 
     <!-- Quyền lợi -->
@@ -41,7 +25,8 @@
         <span class="title-bar"></span>
         Quyền lợi được hưởng
       </h2>
-      <div class="benefits-grid">
+      <div v-if="benefitsHtml" class="prose" v-html="benefitsHtml" />
+      <div v-else class="benefits-grid">
         <div
           v-for="benefit in benefits"
           :key="benefit.icon"
@@ -65,14 +50,12 @@ interface Benefit {
 }
 
 withDefaults(defineProps<{
+  description?: string
+  requirements?: string
+  benefitsHtml?: string
   benefits?: Benefit[]
 }>(), {
-  benefits: () => [
-    { icon: 'payments',        text: 'Lương cạnh tranh + Thưởng tháng 13 & Performance bonus.' },
-    { icon: 'health_and_safety', text: 'Bảo hiểm sức khỏe cao cấp (PVI) cho nhân viên.' },
-    { icon: 'coffee',          text: 'Trang thiết bị hiện đại (Macbook), pantry đầy đủ đồ ăn nhẹ.' },
-    { icon: 'event_available', text: '15 ngày phép năm + 3 ngày nghỉ ốm hưởng nguyên lương.' },
-  ],
+  benefits: () => [],
 })
 </script>
 

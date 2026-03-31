@@ -12,9 +12,9 @@
       <div class="header-left">
         <div class="title-row">
           <h1 class="page-title">{{ title }}</h1>
-          <span class="status-badge">
-            <span class="status-dot"></span>
-            Đang tuyển
+          <span class="status-badge" :class="statusBadgeClass">
+            <span class="status-dot" :class="statusDotClass"></span>
+            {{ statusLabel }}
           </span>
         </div>
         <p class="header-location">
@@ -23,34 +23,53 @@
         </p>
       </div>
 
-      <div class="header-actions">
-        <button class="btn-outline" type="button">
-          <span class="material-symbols-outlined">edit</span>
-          Chỉnh sửa
-        </button>
-        <button class="btn-outline" type="button">
-          <span class="material-symbols-outlined">pause_circle</span>
-          Tạm dừng
-        </button>
-        <button class="btn-danger" type="button">
-          <span class="material-symbols-outlined">cancel</span>
-          Đóng tin
-        </button>
-      </div>
     </header>
   </div>
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 
+const STATUS_LABELS: Record<string, string> = {
+  draft:            'Bản nháp',
+  pending_approval: 'Chờ duyệt',
+  published:        'Đang tuyển',
+  paused:           'Tạm dừng',
+  closed:           'Đã đóng',
+  expired:          'Hết hạn',
+  rejected:         'Bị từ chối',
+  renewed:          'Đã gia hạn',
+  scheduled:        'Đã lên lịch',
+  interviewing:     'Đang phỏng vấn',
+  completed:        'Đã hoàn thành',
+}
 
-withDefaults(defineProps<{
+const props = withDefaults(defineProps<{
   title?: string
   location?: string
+  status?: string
 }>(), {
-  title: 'Senior Frontend Engineer',
-  location: 'Hồ Chí Minh, Quận 1',
+  title: '',
+  location: '',
+  status: '',
 })
+
+const statusLabel = computed(() => STATUS_LABELS[props.status ?? ''] ?? props.status ?? '')
+
+const statusBadgeClass = computed(() => ({
+  'status-badge--active':       ['published', 'renewed'].includes(props.status ?? ''),
+  'status-badge--pending':      props.status === 'pending_approval',
+  'status-badge--draft':        props.status === 'draft',
+  'status-badge--paused':       props.status === 'paused',
+  'status-badge--closed':       ['closed', 'expired'].includes(props.status ?? ''),
+  'status-badge--rejected':     props.status === 'rejected',
+  'status-badge--interviewing': props.status === 'interviewing',
+  'status-badge--completed':    props.status === 'completed',
+}))
+
+const statusDotClass = computed(() => ({
+  'status-dot--pulse': ['published', 'renewed', 'interviewing'].includes(props.status ?? ''),
+}))
 </script>
 
 <style scoped>
@@ -112,19 +131,28 @@ withDefaults(defineProps<{
   align-items: center;
   gap: 0.375rem;
   padding: 0.25rem 0.75rem;
-  background: #dcfce7;
-  color: #15803d;
-  font-size: 0.75rem; /* Tiny text 12px */
+  font-size: 0.75rem;
   font-weight: 700;
   border-radius: 9999px;
+  background: #f1f5f9;
+  color: #64748b;
 }
+.status-badge--active       { background: #dbeafe; color: #2563eb; }
+.status-badge--pending      { background: #fef3c7; color: #b45309; }
+.status-badge--draft        { background: #f1f5f9; color: #64748b; }
+.status-badge--paused       { background: #ffedd5; color: #c2410c; }
+.status-badge--closed       { background: #f1f5f9; color: #94a3b8; }
+.status-badge--rejected     { background: #ffe4e6; color: #be123c; }
+.status-badge--interviewing { background: #e0f2fe; color: #0369a1; }
+.status-badge--completed    { background: #e0e7ff; color: #4338ca; }
+
 .status-dot {
   width: 0.5rem;
   height: 0.5rem;
   border-radius: 50%;
-  background: #22c55e;
-  animation: pulse 2s infinite;
+  background: currentColor;
 }
+.status-dot--pulse { animation: pulse 2s infinite; }
 @keyframes pulse {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.4; }
