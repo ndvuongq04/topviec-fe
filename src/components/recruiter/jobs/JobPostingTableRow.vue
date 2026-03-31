@@ -146,7 +146,6 @@
               label="Đóng tin tuyển dụng"
               :disabled="!canClose"
               :tooltip="!canClose ? 'Chỉ có thể đóng tin khi đang ở trạng thái Đang tuyển hoặc Tạm dừng' : undefined"
-              danger
               @click="handleAction('close', job.id, close)"
             />
             <!-- Xóa tin: DRAFT / REJECTED / CLOSED / EXPIRED / COMPLETED -->

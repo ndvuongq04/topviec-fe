@@ -43,6 +43,40 @@
       />
     </div>
 
+    <!-- ── Extend Job Modal ─────────────────────────── -->
+    <GlobalModal
+      :visible="isExtendModalVisible"
+      title="Gia hạn tin tuyển dụng"
+      :subtitle="`Tin: ${extendingJob?.title}`"
+      variant="primary"
+      icon="update"
+      confirm-text="Xác nhận gia hạn"
+      confirm-icon="check_circle"
+      :loading="isExtendLoading"
+      @close="isExtendModalVisible = false"
+      @confirm="confirmExtend"
+    >
+      <div class="space-y-4">
+        <p class="text-slate-600 dark:text-slate-400">
+          Hãy chọn hạn nộp hồ sơ mới cho tin tuyển dụng này. 
+          Tin sẽ được gia hạn từ thời điểm hiện tại.
+        </p>
+        
+        <div class="flex flex-col gap-2">
+          <label for="new-deadline" class="text-sm font-bold text-slate-700 dark:text-slate-300">
+            Hạn nộp hồ sơ mới
+          </label>
+          <input
+            id="new-deadline"
+            type="date"
+            v-model="newDeadline"
+            class="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all dark:bg-slate-800 dark:border-slate-700"
+            :min="minDate"
+          />
+        </div>
+      </div>
+    </GlobalModal>
+
   </div>
 </template>
 
@@ -57,6 +91,7 @@ import JobPostingStatsGrid  from '@/components/recruiter/jobs/JobPostingStatsGri
 import JobPostingFilters    from '@/components/recruiter/jobs/JobPostingFilters.vue'
 import JobPostingTable      from '@/components/recruiter/jobs/JobPostingTable.vue'
 import JobPostingPagination from '@/components/recruiter/jobs/JobPostingPagination.vue'
+import GlobalModal          from '@/components/ui/GlobalModal.vue'
 import type { JobPostingFilterTab } from '@/components/recruiter/jobs/JobPostingFilters.vue'
 import type { JobPostingRow, JobPostingStats } from '@/types/employerJobPosting.types'
 
@@ -70,6 +105,13 @@ const toast  = useToast()
 const jobs      = ref<JobPostingRow[]>([])
 const totalJobs = ref(0)
 const stats     = ref<JobPostingStats>({ total: 0, active: 0, pending: 0, expiring: 0 })
+
+// Extend Modal State
+const isExtendModalVisible = ref(false)
+const isExtendLoading      = ref(false)
+const extendingJob         = ref<{ id: number; title: string } | null>(null)
+const newDeadline          = ref('')
+const minDate              = ref(new Date().toISOString().split('T')[0])
 
 // ── Status mapping ───────────────────────────────────────
 const tabToStatus: Partial<Record<JobPostingFilterTab, JobPostingStatus>> = {
@@ -212,7 +254,43 @@ const handleResume = async (id: number) => {
   }
 }
 
-const handleExtend = (id: number) => console.log('extend', id)
+const handleExtend = (id: number) => {
+  const job = jobs.value.find(j => j.id === id)
+  if (job) {
+    extendingJob.value = { id: job.id, title: job.title }
+    // Default to today + 30 days
+    const date = new Date()
+    date.setDate(date.getDate() + 30)
+    newDeadline.value = date.toISOString().split('T')[0]
+    isExtendModalVisible.value = true
+  }
+}
+
+const confirmExtend = async () => {
+  if (!extendingJob.value || !newDeadline.value) return
+
+  isExtendLoading.value = true
+  try {
+    const id = extendingJob.value.id
+    const updated = await employerJobPostingService.extendJob(id, {
+      newDeadline: new Date(newDeadline.value).toISOString(),
+    })
+
+    const idx = jobs.value.findIndex(j => j.id === id)
+    if (idx !== -1) {
+      jobs.value[idx] = mapToRow(updated)
+    }
+
+    toast.success('Gia hạn thành công!', `Tin tuyển dụng "${updated.title}" đã được gia hạn đến ngày ${new Date(newDeadline.value).toLocaleDateString('vi-VN')}.`)
+    fetchStats()
+    isExtendModalVisible.value = false
+  } catch (err: any) {
+    const msg = err?.response?.data?.message ?? 'Không thể gia hạn tin. Vui lòng thử lại.'
+    toast.error('Lỗi', msg)
+  } finally {
+    isExtendLoading.value = false
+  }
+}
 const handleClose  = (id: number) => console.log('close', id)
 const handleDelete = (id: number) => console.log('delete', id)
 const handleViewApplications = (id: number) => {
