@@ -41,28 +41,19 @@
               @click="handleAction('view-detail', close)"
             />
 
-            <div class="dropdown-divider-v2"></div>
-
-            <!-- Other actions -->
             <GlobalDropdownItem
-              icon="edit"
-              label="Chỉnh sửa tin"
-              @click="handleAction('edit', close)"
-            />
-
-            <GlobalDropdownItem
-              icon="block"
-              label="Đóng tin tuyển dụng"
-              @click="handleAction('close', close)"
+              icon="settings"
+              label="Cấu hình vòng PV"
+              @click="handleAction('setup-rounds', close)"
             />
 
             <div class="dropdown-divider-v2"></div>
 
             <GlobalDropdownItem
-              icon="delete"
-              label="Gỡ bỏ tin này"
+              icon="cancel"
+              label="Kết thúc phỏng vấn"
               danger
-              @click="handleAction('delete', close)"
+              @click="handleAction('finish-interview', close)"
             />
           </template>
         </GlobalDropdown>
@@ -94,12 +85,11 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'click'): void
   (e: 'view-detail'): void
-  (e: 'edit'): void
-  (e: 'close'): void
-  (e: 'delete'): void
+  (e: 'setup-rounds'): void
+  (e: 'finish-interview'): void
 }>()
 
-function handleAction(event: 'view-detail' | 'edit' | 'close' | 'delete', close: () => void) {
+function handleAction(event: 'view-detail' | 'setup-rounds' | 'finish-interview', close: () => void) {
   close()
   emit(event as any)
 }

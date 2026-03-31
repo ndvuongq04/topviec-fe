@@ -17,6 +17,8 @@
         :is-active="activeId === job.id"
         @click="activeId = job.id"
         @view-detail="handleViewDetail(job.id)"
+        @setup-rounds="handleSetupRounds(job.id)"
+        @finish-interview="handleFinishInterview(job.id)"
       />
     </div>
   </div>
@@ -88,6 +90,15 @@ const activeId = ref<number>(JOB_POSTINGS[1].id)
 
 function handleViewDetail(jobId: number) {
   router.push({ name: 'recruiter-job-interview-setup', params: { id: jobId } })
+}
+
+function handleSetupRounds(jobId: number) {
+  router.push({ name: 'recruiter-job-interview-stages', params: { id: jobId } })
+}
+
+function handleFinishInterview(jobId: number) {
+  console.log('Finish interview process for job:', jobId)
+  alert('Đã kết thúc đợt phỏng vấn cho tin tuyển dụng này.')
 }
 </script>
 
