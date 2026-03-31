@@ -83,9 +83,7 @@
               >
                 <span class="material-symbols-outlined">visibility</span>
               </button>
-              <button class="action-btn" title="Phân loại nhanh">
-                <span class="material-symbols-outlined">label</span>
-              </button>
+
               <button
                 v-if="c.cvFileUrl"
                 class="action-btn"

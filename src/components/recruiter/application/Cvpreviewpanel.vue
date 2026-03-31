@@ -4,144 +4,125 @@
     <div class="panel-header">
       <Breadcrumb :items="breadcrumbItems" :hide-home="true" />
       <div class="panel-actions">
-        <button class="btn-action" @click="$emit('download')">
+        <button class="btn-action" :disabled="!cvFileUrl" @click="handleDownload">
           <span class="material-symbols-outlined">download</span>
           Tải CV
         </button>
-        <button class="btn-action" @click="$emit('print')">
+        <button class="btn-action" :disabled="!cvPdfUrl" @click="handlePrint">
           <span class="material-symbols-outlined">print</span>
           In
         </button>
       </div>
     </div>
 
-    <!-- CV Preview -->
-    <div class="cv-viewport">
-      <!-- CV Document -->
-      <div class="cv-doc">
-        <!-- CV Header -->
-        <div class="cv-doc__header">
-          <div class="cv-doc__identity">
-            <h2 class="cv-doc__name">{{ candidateName.toUpperCase() }}</h2>
-            <p class="cv-doc__title">{{ candidateTitle }}</p>
-          </div>
-          <div class="cv-doc__avatar">
-            <img :src="avatarUrl" :alt="`Ảnh ${candidateName}`" />
-          </div>
-        </div>
-
-        <!-- CV Body -->
-        <div class="cv-doc__body">
-          <!-- Left column -->
-          <div class="cv-doc__col">
-            <div class="cv-section">
-              <h3 class="cv-section__heading">Thông tin liên hệ</h3>
-              <ul class="cv-contact">
-                <li>
-                  <span class="material-symbols-outlined">mail</span>
-                  {{ contactEmail }}
-                </li>
-                <li>
-                  <span class="material-symbols-outlined">call</span>
-                  {{ contactPhone }}
-                </li>
-                <li>
-                  <span class="material-symbols-outlined">location_on</span>
-                  {{ contactLocation }}
-                </li>
-              </ul>
-            </div>
-
-            <div class="cv-section">
-              <h3 class="cv-section__heading">Kỹ năng</h3>
-              <div class="cv-skills">
-                <span
-                  v-for="skill in skills"
-                  :key="skill"
-                  class="cv-skill-tag"
-                >{{ skill }}</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Right column -->
-          <div class="cv-doc__col">
-            <div class="cv-section">
-              <h3 class="cv-section__heading">Kinh nghiệm</h3>
-              <div class="cv-experience">
-                <div
-                  v-for="exp in experiences"
-                  :key="exp.company"
-                  class="cv-exp-item"
-                >
-                  <p class="cv-exp-item__company">{{ exp.company }}</p>
-                  <p class="cv-exp-item__period">{{ exp.period }}</p>
-                  <p class="cv-exp-item__desc">{{ exp.description }}</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+    <!-- PDF Viewer -->
+    <div class="pdf-viewport">
+      <!-- No CV -->
+      <div v-if="!pdfSrc" class="pdf-state">
+        <span class="material-symbols-outlined pdf-state__icon">description</span>
+        <p>Ứng viên chưa đính kèm CV</p>
       </div>
+
+      <template v-else>
+        <!-- PDF iframe — luôn render để @load hoạt động -->
+        <iframe
+          :src="pdfSrc"
+          class="pdf-iframe"
+          frameborder="0"
+          @load="loading = false"
+          @error="onIframeError"
+        />
+
+        <!-- Loading overlay phủ lên iframe, ẩn khi load xong -->
+        <div v-if="loading && !iframeError" class="pdf-overlay">
+          <span class="material-symbols-outlined loading-spin">progress_activity</span>
+          <p>Đang tải CV...</p>
+        </div>
+
+        <!-- Fallback khi iframe lỗi -->
+        <div v-if="iframeError" class="pdf-fallback">
+          <span class="material-symbols-outlined" style="font-size:3rem;color:#94a3b8">broken_image</span>
+          <p>Không thể hiển thị PDF trong trình duyệt.</p>
+          <a :href="cvFileUrl" target="_blank" class="btn-open-pdf">
+            <span class="material-symbols-outlined">open_in_new</span>
+            Mở CV trong tab mới
+          </a>
+        </div>
+      </template>
     </div>
   </section>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import Breadcrumb from '@/components/ui/Breadcrumb.vue'
 
-interface Experience {
-  company: string
-  period: string
-  description: string
-}
-
-interface Props {
+const props = defineProps<{
   candidateName: string
-  candidateTitle: string
-  avatarUrl: string
-  contactEmail: string
-  contactPhone: string
-  contactLocation: string
-  skills: string[]
-  experiences: Experience[]
-}
+  cvPdfUrl?: string
+  cvFileUrl?: string
+}>()
 
-const props = defineProps<Props>()
 defineEmits<{
   download: []
   print: []
 }>()
 
 const route = useRoute()
+const loading     = ref(true)
+const iframeError = ref(false)
 
 const breadcrumbItems = computed(() => [
-  { 
-    label: 'Danh sách ứng viên', 
-    to: `/recruiter/jobs/${route.params.id}/applications` 
+  {
+    label: 'Danh sách ứng viên',
+    to: `/recruiter/jobs/${route.params.id}/applications`,
   },
-  { label: props.candidateName }
+  { label: props.candidateName || '...' },
 ])
+
+// Dùng pdfUrl nếu có, fallback sang fileUrl
+const pdfSrc = computed(() => props.cvPdfUrl || props.cvFileUrl || '')
+
+// Reset khi URL thay đổi
+watch(pdfSrc, () => {
+  loading.value = true
+  iframeError.value = false
+})
+
+function onIframeError() {
+  loading.value = false
+  iframeError.value = true
+}
+
+function handleDownload() {
+  if (props.cvFileUrl) window.open(props.cvFileUrl, '_blank')
+}
+
+function handlePrint() {
+  if (props.cvPdfUrl) {
+    const iframe = document.querySelector('.pdf-iframe') as HTMLIFrameElement
+    iframe?.contentWindow?.print()
+  }
+}
 </script>
 
 <style scoped>
-/* ── Panel layout ── */
 .cv-preview-panel {
   flex: 1;
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
+  min-height: 0;
 }
 
-/* ── Breadcrumb & header ── */
+/* Header */
 .panel-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-shrink: 0;
 }
-
 
 .panel-actions {
   display: flex;
@@ -156,139 +137,97 @@ const breadcrumbItems = computed(() => [
   border: 1px solid #e2e8f0;
   background: #fff;
   color: #475569;
-  font-size: 0.875rem; /* 14px */
+  font-size: 0.875rem;
   font-weight: 700;
   cursor: pointer;
   transition: background 0.15s;
 }
-.btn-action:hover { background: #f8fafc; }
+.btn-action:hover:not(:disabled) { background: #f8fafc; }
+.btn-action:disabled { opacity: 0.4; cursor: not-allowed; }
 .btn-action .material-symbols-outlined { font-size: 1.125rem; }
 
-/* ── CV Viewport ── */
-.cv-viewport {
+/* PDF Viewport */
+.pdf-viewport {
   position: relative;
   flex: 1;
-  min-height: 480px;
+  min-height: 600px;
   border-radius: 0.75rem;
   border: 1px solid #e2e7f0;
-  background: #e2e7f0;
+  background: #525659;
   overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
+.pdf-iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: none;
+  background: #525659;
+}
 
-/* ── CV Document ── */
-.cv-doc {
-  width: 85%;
-  background: #fff;
-  border-radius: 2px;
-  box-shadow: 0 8px 40px rgba(15, 23, 42, 0.15);
-  padding: 2.5rem;
+/* States */
+.pdf-state {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
-}
-
-.cv-doc__header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-}
-.cv-doc__name {
-  font-size: 1.875rem; /* 30px – page title level */
-  font-weight: 800;
-  color: #0f172a;
-  line-height: 1.2;
-}
-.cv-doc__title {
-  font-size: 1.125rem; /* 18px – item title */
-  font-weight: 700;
-  color: #4B9AF6;
-  margin-top: 0.25rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-.cv-doc__avatar {
-  width: 6rem;
-  height: 6rem;
-  border-radius: 0.5rem;
-  overflow: hidden;
-  border: 1px solid #e2e8f0;
-  background: #f1f5f9;
-  flex-shrink: 0;
-}
-.cv-doc__avatar img { width: 100%; height: 100%; object-fit: cover; }
-
-.cv-doc__body {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 2rem;
-}
-
-/* ── CV Sections ── */
-.cv-section { display: flex; flex-direction: column; gap: 0.75rem; }
-
-.cv-section__heading {
-  font-size: 0.75rem; /* 12px – label */
-  font-weight: 800;
+  align-items: center;
+  gap: 0.75rem;
   color: #94a3b8;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  border-bottom: 1px solid #f1f5f9;
-  padding-bottom: 0.5rem;
+}
+.pdf-state p { font-size: 0.9375rem; }
+.pdf-state__icon { font-size: 3rem !important; }
+
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-spin {
+  font-size: 2rem !important;
+  animation: spin 0.8s linear infinite;
+  color: #fff;
 }
 
-.cv-contact {
-  list-style: none;
-  padding: 0;
-  margin: 0;
+/* Loading overlay */
+.pdf-overlay {
+  position: absolute;
+  inset: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  background: #525659;
+  color: #cbd5e1;
+  pointer-events: none;
 }
-.cv-contact li {
+.pdf-overlay p { font-size: 0.9375rem; }
+
+/* Fallback */
+.pdf-fallback {
+  position: absolute;
+  inset: 0;
   display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  background: #f8fafc;
+  color: #64748b;
+}
+.pdf-fallback p { font-size: 0.9375rem; }
+
+.btn-open-pdf {
+  display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  font-size: 0.875rem; /* 14px */
-  color: #475569;
-}
-.cv-contact .material-symbols-outlined {
-  font-size: 1rem;
-  color: #4B9AF6;
-}
-
-.cv-skills { display: flex; flex-wrap: wrap; gap: 0.375rem; }
-.cv-skill-tag {
-  padding: 0.25rem 0.5rem;
-  background: #f1f5f9;
-  color: #334155;
-  font-size: 0.75rem; /* 12px */
-  font-weight: 600;
-  border-radius: 0.25rem;
-}
-
-.cv-experience { display: flex; flex-direction: column; gap: 1rem; }
-.cv-exp-item__company {
-  font-size: 0.875rem; /* 14px */
+  padding: 0.625rem 1.25rem;
+  border-radius: 0.5rem;
+  background: #4B9AF6;
+  color: #fff;
+  font-size: 0.875rem;
   font-weight: 700;
-  color: #1e293b;
+  text-decoration: none;
+  transition: background 0.15s;
 }
-.cv-exp-item__period {
-  font-size: 0.75rem; /* 12px */
-  color: #94a3b8;
-  font-style: italic;
-  margin-top: 0.125rem;
-}
-.cv-exp-item__desc {
-  font-size: 0.75rem; /* 12px */
-  color: #475569;
-  margin-top: 0.25rem;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
+.btn-open-pdf:hover { background: #2563eb; }
 </style>

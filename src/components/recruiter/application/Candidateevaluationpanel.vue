@@ -16,7 +16,7 @@
             v-for="opt in statusOptions"
             :key="opt.value"
             class="status-opt"
-            :class="`status-opt--${opt.value}`"
+            :class="`status-opt--${opt.colorKey}`"
           >
             <input
               type="radio"
@@ -105,7 +105,7 @@
 
     <!-- ── Footer actions ── -->
     <div class="eval-card__footer">
-      <button class="btn-primary" type="button" @click="$emit('save', formData)">
+      <button class="btn-primary" type="button" @click="onSave">
         <span class="material-symbols-outlined">save</span>
         Lưu Đánh Giá
       </button>
@@ -115,7 +115,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, nextTick, computed } from 'vue'
+import { ref, nextTick, watch } from 'vue'
 
 interface Tag {
   label: string
@@ -129,30 +129,37 @@ interface EvaluationFormData {
   note: string
 }
 
+const props = defineProps<{
+  initialRating?: number
+  initialNote?:   string
+  initialTags?:   string   // chuỗi phân cách bởi dấu phẩy
+  initialStatus?: string   // giá trị status thật từ backend
+}>()
+
 const emit = defineEmits<{
   save: [data: EvaluationFormData]
   'invite-interview': []
 }>()
 
-// ── Status options ──
+// ── Status options — value là status thật gửi lên API ──
 const statusOptions = [
-  { value: 'suitable',  label: 'Phù hợp',  icon: 'check_circle' },
-  { value: 'consider',  label: 'Cân nhắc',  icon: 'help' },
-  { value: 'rejected',  label: 'Từ chối',   icon: 'cancel' },
+  { value: 'cv_passed',   colorKey: 'suitable', label: 'Phù hợp',  icon: 'check_circle' },
+  { value: 'considering', colorKey: 'consider', label: 'Cân nhắc',  icon: 'help' },
+  { value: 'rejected',    colorKey: 'rejected',  label: 'Từ chối',   icon: 'cancel' },
 ] as const
 
-const selectedStatus = ref<string>('suitable')
+const selectedStatus = ref<string>(props.initialStatus ?? '')
 
 // ── Rating ──
-const rating = ref(4)
+const rating      = ref(props.initialRating ?? 0)
 const hoverRating = ref(0)
 
-// ── Tags ──
-const tags = ref<Tag[]>([
-  { label: 'Kinh nghiệm tốt' },
-  { label: 'Tiếng Anh lưu loát' },
-  { label: 'Ưu tiên phỏng vấn', highlighted: true },
-])
+// ── Tags (parse từ chuỗi "tag1,tag2,tag3") ──
+function parseTags(raw?: string): Tag[] {
+  if (!raw) return []
+  return raw.split(',').map(t => t.trim()).filter(Boolean).map(label => ({ label }))
+}
+const tags = ref<Tag[]>(parseTags(props.initialTags))
 const showTagInput = ref(false)
 const newTagText = ref('')
 const tagInputRef = ref<HTMLInputElement | null>(null)
@@ -174,7 +181,6 @@ function removeTag(index: number) {
 }
 
 // Watch showTagInput → focus
-import { watch } from 'vue'
 watch(showTagInput, async (val) => {
   if (val) {
     await nextTick()
@@ -183,15 +189,17 @@ watch(showTagInput, async (val) => {
 })
 
 // ── Internal note ──
-const internalNote = ref('')
+const internalNote = ref(props.initialNote ?? '')
 
-// ── Computed form data ──
-const formData = computed<EvaluationFormData>(() => ({
-  status: selectedStatus.value,
-  rating: rating.value,
-  tags: tags.value,
-  note: internalNote.value,
-}))
+// ── Save — build plain object để tránh reactive proxy issue ──
+function onSave() {
+  emit('save', {
+    status: selectedStatus.value,
+    rating: rating.value,
+    tags:   [...tags.value],
+    note:   internalNote.value,
+  })
+}
 </script>
 
 <style scoped>

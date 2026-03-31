@@ -1,78 +1,135 @@
 <template>
   <main class="detail-page">
-    <!-- Left: CV Preview -->
-    <CvPreviewPanel
-      :candidate-name="candidate.name"
-      :candidate-title="candidate.title"
-      :avatar-url="candidate.avatarUrl"
-      :contact-email="candidate.email"
-      :contact-phone="candidate.phone"
-      :contact-location="candidate.location"
-      :skills="candidate.skills"
-      :experiences="candidate.experiences"
-      @download="handleDownload"
-      @print="handlePrint"
-    />
+    <!-- Loading full page -->
+    <div v-if="loading" class="page-loading">
+      <span class="material-symbols-outlined loading-spin">progress_activity</span>
+    </div>
 
-    <!-- Right: Evaluation + Activity -->
-    <aside class="detail-page__sidebar">
-      <CandidateEvaluationPanel
-        @save="handleSave"
-        @invite-interview="handleInviteInterview"
+    <template v-else-if="application">
+      <!-- Left: PDF CV -->
+      <CvPreviewPanel
+        :candidate-name="application.candidateName"
+        :cv-pdf-url="application.cvPdfUrl"
+        :cv-file-url="application.cvFileUrl"
       />
-      <CandidateActivityLog :activities="candidate.activities" />
-    </aside>
+
+      <!-- Right: Evaluation + Activity -->
+      <aside class="detail-page__sidebar">
+        <CandidateEvaluationPanel
+          :initial-rating="application.recruiterRating"
+          :initial-note="application.recruiterNote"
+          :initial-tags="application.recruiterTags"
+          :initial-status="application.status"
+          @save="handleSave"
+          @invite-interview="handleInviteInterview"
+        />
+        <CandidateActivityLog :activities="activityLog" />
+      </aside>
+    </template>
   </main>
 </template>
 
 <script setup lang="ts">
+import { ref, computed, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
 import CvPreviewPanel from '@/components/recruiter/application/Cvpreviewpanel.vue'
 import CandidateEvaluationPanel from '@/components/recruiter/application/Candidateevaluationpanel.vue'
 import CandidateActivityLog from '@/components/recruiter/application/Candidateactivitylog.vue'
+import employerApplicationService from '@/services/employerApplication.service'
+import { useToast } from '@/composables/useToast'
+import type { ResEmployerApplicationDTO } from '@/types/employerApplication.types'
 
-// ── Mock data (thay bằng store/API call thực tế) ──
-const candidate = {
-  name: 'Nguyễn Minh Tuấn',
-  title: 'Senior Frontend Developer',
-  avatarUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAhgiM2fHNwNECX9THtUm3X8cOp7ubarcG94ZLGwvoOK5jjBvLiHXTN30TEKePzBI0j9kj4znVIUwNCAnLDJrHSNm52bCs6XDS9cpUOxKmQ2xJVkGMlgtB5PFvuSMvZ7CCDTASPOpGPZanBcDatOMFo-0HmcStLN6bDgBkc5FLv4a9gjt6pdrHePMTdKTkfVRKHjiyEpbTx89wqwuOod06oP5IyVb1PxoZT92Dk0-R4wQnx0ahk9zhxZ-RHCbKUD5xrSj8-s3OXVg',
-  email: 'tuan.nguyen@email.com',
-  phone: '090 123 4567',
-  location: 'Quận 7, TP. HCM',
-  skills: ['React.js', 'TypeScript', 'Tailwind CSS', 'Next.js', 'Node.js'],
-  experiences: [
-    {
-      company: 'Global Tech Solutions',
-      period: '2020 - Hiện tại',
-      description: 'Chịu trách nhiệm phát triển giao diện người dùng cho các sản phẩm Fintech...',
-    },
-    {
-      company: 'Startup Visionary',
-      period: '2018 - 2020',
-      description: 'Phát triển MVP và tối ưu hóa hiệu suất trang web thương mại điện tử...',
-    },
-  ],
-  activities: [
-    { text: 'Đã ứng tuyển vào vị trí Frontend Dev', time: '10:45 AM - 20/10/2023' },
-    { text: 'Admin đã xem hồ sơ', time: '02:15 PM - 20/10/2023' },
-  ],
+const route  = useRoute()
+const toast  = useToast()
+
+const loading     = ref(true)
+const application = ref<ResEmployerApplicationDTO | null>(null)
+
+const applicationId = computed(() => Number(route.params.applicationId))
+
+// ── Lịch sử hoạt động từ dữ liệu API ──
+const activityLog = computed(() => {
+  if (!application.value) return []
+  const items: { text: string; time: string }[] = []
+
+  items.push({
+    text: 'Ứng viên đã nộp hồ sơ',
+    time: formatDateTime(application.value.createdAt),
+  })
+
+  if (application.value.viewedAt) {
+    items.push({
+      text: 'Nhà tuyển dụng đã xem hồ sơ',
+      time: formatDateTime(application.value.viewedAt),
+    })
+  }
+
+  return items
+})
+
+function formatDateTime(iso: string): string {
+  if (!iso) return ''
+  const d = new Date(iso)
+  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')} - ${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`
 }
 
-function handleDownload() {
-  console.log('Download CV')
+async function fetchApplication() {
+  loading.value = true
+  try {
+    application.value = await employerApplicationService.getApplicationDetailByEmployer(applicationId.value)
+  } catch (err: any) {
+    const msg = err?.response?.data?.message ?? 'Không thể tải thông tin hồ sơ'
+    toast.error('Lỗi tải hồ sơ', typeof msg === 'string' ? msg : msg?.[0])
+  } finally {
+    loading.value = false
+  }
 }
 
-function handlePrint() {
-  window.print()
-}
+async function handleSave(data: { status: string; rating: number; note: string; tags: { label: string }[] }) {
+  const SCREENED_STATUSES = ['cv_passed', 'considering', 'rejected']
 
+  try {
+    const promises: Promise<any>[] = []
 
-function handleSave(data: unknown) {
-  console.log('Save evaluation', data)
+    // Gọi changeApplicationStatus nếu status thuộc nhóm sàng lọc và khác status hiện tại
+    if (data.status && SCREENED_STATUSES.includes(data.status) && data.status !== application.value?.status) {
+      promises.push(
+        employerApplicationService.changeApplicationStatus(applicationId.value, { status: data.status })
+      )
+    }
+
+    // Gọi evaluateApplication cho rating / note / tags
+    promises.push(
+      employerApplicationService.evaluateApplication(applicationId.value, {
+        rating: data.rating,
+        note:   data.note,
+        tags:   data.tags.map(t => t.label).join(','),
+      })
+    )
+
+    const results = await Promise.allSettled(promises)
+    const failed  = results.filter(r => r.status === 'rejected')
+
+    if (failed.length === 0) {
+      toast.success('Đã lưu đánh giá')
+      // Cập nhật status local nếu đã đổi
+      if (application.value && data.status && SCREENED_STATUSES.includes(data.status)) {
+        application.value = { ...application.value, status: data.status as any }
+      }
+    } else {
+      toast.error('Lưu thất bại', 'Một số thông tin chưa được lưu')
+    }
+  } catch (err: any) {
+    const msg = err?.response?.data?.message ?? 'Lưu đánh giá thất bại'
+    toast.error('Lỗi', typeof msg === 'string' ? msg : msg?.[0])
+  }
 }
 
 function handleInviteInterview() {
-  console.log('Invite to interview')
+  toast.info('Tính năng đang phát triển')
 }
+
+onMounted(fetchApplication)
 </script>
 
 <style scoped>
@@ -85,9 +142,7 @@ function handleInviteInterview() {
 }
 
 @media (min-width: 768px) {
-  .detail-page {
-    flex-direction: row;
-  }
+  .detail-page { flex-direction: row; }
 }
 
 .detail-page__sidebar {
@@ -102,5 +157,20 @@ function handleInviteInterview() {
     width: 400px;
     flex-shrink: 0;
   }
+}
+
+/* Loading */
+.page-loading {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-spin {
+  font-size: 2.5rem !important;
+  color: #4B9AF6;
+  animation: spin 0.8s linear infinite;
 }
 </style>
