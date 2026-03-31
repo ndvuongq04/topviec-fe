@@ -43,13 +43,7 @@
           <p class="info-cell__label">Người phỏng vấn mặc định</p>
           <div class="info-cell__interviewer">
             <span v-if="stage.isAutomated" class="material-symbols-outlined info-cell__bot-icon">smart_toy</span>
-            <img
-              v-else-if="stage.interviewer?.avatar"
-              :src="stage.interviewer.avatar"
-              :alt="stage.interviewer.name"
-              class="info-cell__avatar"
-            />
-            <p class="info-cell__value">{{ stage.interviewer?.name ?? 'Bot lọc tự động' }}</p>
+            <p v-else class="info-cell__value">{{ interviewerNames }}</p>
           </div>
         </div>
 
@@ -63,10 +57,17 @@
 </template>
 
 <script setup lang="ts">
-defineProps<{
+import { computed } from 'vue'
+
+const props = defineProps<{
   stage: any
   isDragging?: boolean
 }>()
+
+const interviewerNames = computed(() => {
+  if (!props.stage.interviewers || props.stage.interviewers.length === 0) return 'Bot lọc tự động'
+  return props.stage.interviewers.map((i: any) => i.name).join(', ')
+})
 
 defineEmits<{
   (e: 'edit', stage: any): void

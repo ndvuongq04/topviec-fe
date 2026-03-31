@@ -127,6 +127,7 @@ export interface ResJobPostingDetail {
     deletedAt?: string | null
     locations: ResJobPostLocationDTO[]
     skills: ResJobPostSkillDTO[]
+    interviewRoundsCount: number
 }
 
 export interface ResJobPostingSummary {
@@ -149,6 +150,7 @@ export interface ResJobPostingSummary {
     publishedAt?: string
     createdAt: string
     deletedAt?: string | null
+    interviewRoundsCount: number
 }
 
 

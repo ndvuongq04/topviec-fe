@@ -52,6 +52,7 @@ const jobPostings = computed(() =>
     icon: 'work',
     iconVariant: ICON_VARIANTS[index % ICON_VARIANTS.length],
     status: job.status,
+    interviewRoundsCount: job.interviewRoundsCount ?? 0,
   }))
 )
 

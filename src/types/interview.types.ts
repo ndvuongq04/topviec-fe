@@ -11,6 +11,7 @@ export interface InterviewerDTO {
 export interface ReqCreateInterviewRoundDTO {
   roundName: string;
   description?: string;
+  expectedDuration?: number;
   isFinal?: boolean;
   interviewers?: InterviewerDTO[];
 }
@@ -18,6 +19,7 @@ export interface ReqCreateInterviewRoundDTO {
 export interface ReqUpdateInterviewRoundDTO {
   roundName?: string;
   description?: string;
+  expectedDuration?: number;
   isFinal?: boolean;
   interviewers?: InterviewerDTO[];
 }
@@ -93,6 +95,7 @@ export interface ResInterviewRoundDTO {
   roundNumber: number;
   roundName: string;
   description?: string;
+  expectedDuration?: number;
   isFinal: boolean;
   interviewers: InterviewerInfo[];
   candidateCount: number;

@@ -38,6 +38,8 @@
             <GlobalDropdownItem
               icon="visibility"
               label="Chi tiết phỏng vấn"
+              :disabled="!canViewDetail"
+              :tooltip="!canViewDetail ? 'Bạn cần tạo vòng phỏng vấn trước' : undefined"
               @click="handleAction('view-detail', close)"
             />
 
@@ -78,6 +80,7 @@ interface JobPostingRow {
   icon: string
   iconVariant: 'blue-light' | 'blue-solid' | 'orange' | 'purple' | 'green' | 'rose'
   status: JobPostingStatus
+  interviewRoundsCount: number
 }
 
 const props = defineProps<{
@@ -87,6 +90,8 @@ const props = defineProps<{
 
 const statusLabel = computed(() => JOB_POSTING_STATUS_LABELS[props.job.status])
 const statusBadgeClass = computed(() => JOB_POSTING_STATUS_BADGE[props.job.status])
+
+const canViewDetail = computed(() => (props.job.interviewRoundsCount ?? 0) > 0)
 
 const emit = defineEmits<{
   (e: 'click'): void

@@ -7,10 +7,10 @@
     <div class="header-section">
       <div class="header-left">
         <div class="title-group">
-          <h1 class="page-title">Senior Product Designer (UI/UX)</h1>
+          <h1 class="page-title">{{ jobTitle || 'Đang tải...' }}</h1>
           <span class="job-status-badge">Đang tuyển</span>
         </div>
-        <p class="page-subtitle">Mã tin: #JOB-12345 • Hoạt động: 12 ngày trước</p>
+        <p class="page-subtitle">Quản lý các vòng phỏng vấn cho tin tuyển dụng này.</p>
       </div>
       
       <div class="header-actions">
@@ -21,106 +21,322 @@
       </div>
     </div>
 
+    <!-- Loading State -->
+    <div v-if="isLoading" class="setup-page__placeholder">
+      <span class="material-symbols-outlined animate-spin text-primary">circle_notifications</span>
+      <p>Đang tải dữ liệu...</p>
+    </div>
+
+    <!-- List -->
     <InterviewStageList
-      :stages="stages"
+      v-else
+      :stages="mappedStages"
       @edit="openEditModal"
-      @delete="handleDelete"
+      @delete="confirmDelete"
       @add="openAddModal"
       @reorder="handleReorder"
     />
 
-    <!-- TODO: Thêm Modal tạo/sửa stage ở đây -->
+    <!-- Edit/Add Modal -->
+    <GlobalModal
+      :visible="isModalVisible"
+      :title="modalType === 'add' ? 'Thêm vòng phỏng vấn mới' : 'Chỉnh sửa vòng phỏng vấn'"
+      :subtitle="jobTitle"
+      variant="primary"
+      :icon="modalType === 'add' ? 'add_circle' : 'edit'"
+      :confirm-text="modalType === 'add' ? 'Tạo vòng' : 'Lưu thay đổi'"
+      :loading="isSaving"
+      @close="closeModal"
+      @confirm="handleSave"
+    >
+      <div class="modal-form">
+        <div class="grid grid-cols-2 gap-4">
+          <div class="form-group">
+            <label class="form-label">Tên vòng phỏng vấn <span class="text-rose-500">*</span></label>
+            <input
+              v-model="form.roundName"
+              type="text"
+              placeholder="Ví dụ: Phỏng vấn kỹ thuật..."
+              class="form-input"
+              required
+            />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Thời lượng dự kiến (phút)</label>
+            <input
+              v-model.number="form.expectedDuration"
+              type="number"
+              placeholder="Ví dụ: 45, 60..."
+              class="form-input"
+            />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Tiêu chí đánh giá / Mô tả</label>
+          <textarea
+            v-model="form.description"
+            rows="3"
+            placeholder="Mô tả ngắn gọn các tiêu chí cần đánh giá trong vòng này..."
+            class="form-textarea"
+          ></textarea>
+        </div>
+
+        <div class="form-group">
+          <div class="flex items-center gap-2">
+            <input
+              id="is-final"
+              v-model="form.isFinal"
+              type="checkbox"
+              class="form-checkbox"
+            />
+            <label for="is-final" class="form-label mb-0 cursor-pointer">
+              Đây là vòng phỏng vấn cuối cùng
+            </label>
+          </div>
+          <p class="text-xs text-slate-500 mt-1 ml-6">
+            Nếu được đánh dấu là vòng cuối, ứng viên vượt qua sẽ được chuyển sang trạng thái Offer.
+          </p>
+        </div>
+
+        <!-- Interviewers Section -->
+        <div class="form-group">
+          <label class="form-label">Người phỏng vấn mặc định</label>
+          <div v-for="(interviewer, index) in form.interviewers" :key="index" class="interviewer-item">
+            <div class="grid grid-cols-2 gap-2 w-full">
+              <input
+                v-model="interviewer.name"
+                placeholder="Tên"
+                class="form-input text-sm"
+              />
+              <input
+                v-model="interviewer.email"
+                placeholder="Email (không bắt buộc)"
+                class="form-input text-sm"
+              />
+            </div>
+            <button
+              v-if="form.interviewers.length > 1"
+              class="remove-interviewer"
+              @click="removeInterviewer(index)"
+            >
+              <span class="material-symbols-outlined">close</span>
+            </button>
+          </div>
+          <button class="add-interviewer-btn" @click="addInterviewer">
+            <span class="material-symbols-outlined">add</span>
+            Thêm người phỏng vấn
+          </button>
+        </div>
+      </div>
+    </GlobalModal>
+
+    <!-- Delete Confirmation Modal -->
+    <GlobalModal
+      :visible="isDeleteModalVisible"
+      title="Xoá vòng phỏng vấn"
+      subtitle="Hành động này không thể hoàn tác"
+      variant="primary"
+      icon="delete"
+      confirm-text="Xác nhận xoá"
+      confirm-icon="delete_forever"
+      :loading="isDeleting"
+      @close="isDeleteModalVisible = false"
+      @confirm="handleDelete"
+    >
+      <p class="text-slate-600">
+        Bạn có chắc chắn muốn xoá vòng phỏng vấn này không? 
+        Lưu ý: Chỉ có thể xoá nếu chưa có ứng viên nào tham gia vào vòng này.
+      </p>
+    </GlobalModal>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
 import Breadcrumb from '@/components/ui/Breadcrumb.vue'
+import GlobalModal from '@/components/ui/GlobalModal.vue'
 import InterviewStageList from '@/components/recruiter/interviews/config/Interviewstagelist.vue'
+import { publicJobPostingService } from '@/services/jobPosting.service'
+import employerInterviewService from '@/services/employerInterview.service'
+import { useToast } from '@/composables/useToast'
+import type { ResInterviewRoundDTO, InterviewerDTO } from '@/types/interview.types'
+
+const route = useRoute()
+const toast = useToast()
+const jobPostId = Number(route.params.id)
 
 const breadcrumbItems = [
   { label: 'Quản lý phỏng vấn', to: '/recruiter/interviews' },
   { label: 'Cấu hình vòng phỏng vấn' },
 ]
 
-// ─── Mock data (thay bằng API call thực tế) ──────────────────────────────────
-const stages = ref<any[]>([
-  {
-    id: 1,
-    order: 1,
-    name: 'Sơ loại CV',
-    criteria: 'Sự phù hợp, Kinh nghiệm, Học vấn',
-    duration: '5 phút',
-    isAutomated: true,
-  },
-  {
-    id: 2,
-    order: 2,
-    name: 'Phỏng vấn kỹ thuật',
-    criteria: 'Kỹ năng lập trình, Kiến trúc hệ thống, Giải quyết vấn đề',
-    duration: '60 phút',
-    interviewer: {
-      name: 'David Chen (Kỹ thuật)',
-      avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAgGEWI8jZTGocQiRh81tgbjWa2ggvOh2S1Zuyh6nO13p1rXrQvmBkz45D_exRnUMcZ74zhVKGdRzmaQCTxJH4ZVdvn7UvYCJdgoztIe5kwT5F7hqiMyGyEx7u4LtjBSI0W_ITctnvu4mwqsAi7FvB8Y5AclByZQRu6DUVyqQaCrA0WMi06WIR-mQ8Qfm4PCJ_KDcHlXSN61TGJYSgOtyRDQH_WVLMSynx3kXYwt3ycq38ezHkbul6NNdR4kDpm3bC89TLpLL1syQ',
-    },
-  },
-  {
-    id: 3,
-    order: 3,
-    name: 'Phù hợp văn hoá',
-    criteria: 'Giao tiếp, Làm việc nhóm, Giá trị cốt lõi',
-    duration: '30 phút',
-    interviewer: {
-      name: 'Sarah Jenkins (Nhân sự)',
-      avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCYjjtiLwB8J4ZK95tBmkqCNxnHbVML7rjnWiX7VGFcLJhi90vdXC3Qco-1xbX3T7g0vAvwCVWPbtuhCgm62oRgZry5T3lWvNF3uhpCjwnocNuAC7wJMYJilZquY627Cs2OUzaoj6kcq9AeuYK-GcpMcDhs9rMrST8_MDJ3lyG8Djr1xSmOzer2AITdDd0z4lXmn1Ma2PBHMDl1vDpTdi59njSN-Z3B8xsSJJAAfpWNKaA4rZRZ1cgNyNrLrh-opnpYw6hwKnUaxQ',
-    },
-  },
-  {
-    id: 4,
-    order: 4,
-    name: 'Phỏng vấn cuối cùng',
-    criteria: 'Thoả thuận lương, Ngày bắt đầu, Động lực',
-    duration: '45 phút',
-    interviewer: {
-      name: 'Michael Ross (CEO)',
-      avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBpV0IRCN0BH6I5ATWsPJLhxQK_BHmFNCDN7hgWfIFO6k_itG1WUjIGUy0w5mMuINfZzL0OmbQ15DDaxfMz9tw-64JEf8RjmCEEiVSoAijgY-A9mZgWK6bl29TU9P1HKy2_v-waiXPnS46iTt5UwmdxylgR3q1of13-zXuvz2Q9NWN9Azeba4NNz8WibTds6PscA3_0ajnDhk70eRqmjyTuk7Q-y-vKv3hJ6xy5XXT7_EKtxw_FFlSQ8vZ9EK4wJFaJOKxSXwUqKg',
-    },
-  },
-])
+// ─── State ────────────────────────────────────────────────────────────────────
+const jobTitle = ref('')
+const rounds = ref<ResInterviewRoundDTO[]>([])
+const isLoading = ref(false)
+const isSaving = ref(false)
+const isDeleting = ref(false)
+
+// Modal state
+const isModalVisible = ref(false)
+const modalType = ref<'add' | 'edit'>('add')
+const editingRoundId = ref<number | null>(null)
+const isDeleteModalVisible = ref(false)
+const roundToDeleteId = ref<number | null>(null)
+
+const form = ref({
+  roundName: '',
+  description: '',
+  expectedDuration: 30,
+  isFinal: false,
+  interviewers: [{ name: '', email: '', phone: '' }] as InterviewerDTO[]
+})
+
+// ─── Computed ─────────────────────────────────────────────────────────────────
+const mappedStages = computed(() => {
+  return rounds.value.map(r => ({
+    id: r.id,
+    order: r.roundNumber,
+    name: r.roundName,
+    criteria: r.description || 'Chưa có mô tả',
+    duration: r.expectedDuration ? `${r.expectedDuration} phút` : 'N/A',
+    isAutomated: r.interviewers.length === 0,
+    interviewers: r.interviewers || [],
+    isFinal: r.isFinal
+  }))
+})
+
+// ─── API Calls ────────────────────────────────────────────────────────────────
+async function fetchData() {
+  isLoading.value = true
+  try {
+    const [job, roundsData] = await Promise.all([
+      publicJobPostingService.getById(jobPostId),
+      employerInterviewService.getRounds(jobPostId)
+    ])
+    jobTitle.value = job.title
+    rounds.value = roundsData
+  } catch (err) {
+    console.error('Failed to fetch rounds:', err)
+    toast.error('Lỗi', 'Không thể tải dữ liệu vòng phỏng vấn')
+  } finally {
+    isLoading.value = false
+  }
+}
+
+async function handleSave() {
+  if (!form.value.roundName.trim()) {
+    toast.error('Lỗi', 'Vui lòng nhập tên vòng phỏng vấn')
+    return
+  }
+
+  isSaving.value = true
+  try {
+    // Filter out empty interviewers
+    const filteredInterviewers = form.value.interviewers.filter(i => i.name.trim())
+    const payload = {
+      ...form.value,
+      interviewers: filteredInterviewers
+    }
+
+    if (modalType.value === 'add') {
+      await employerInterviewService.createRound(jobPostId, payload)
+      toast.success('Thành công', 'Đã tạo vòng phỏng vấn mới')
+    } else if (editingRoundId.value) {
+      await employerInterviewService.updateRound(editingRoundId.value, payload)
+      toast.success('Thành công', 'Đã cập nhật vòng phỏng vấn')
+    }
+    
+    closeModal()
+    fetchData()
+  } catch (err: any) {
+    const msg = err?.response?.data?.message ?? 'Đã có lỗi xảy ra'
+    toast.error('Lỗi', msg)
+  } finally {
+    isSaving.value = false
+  }
+}
+
+async function handleDelete() {
+  if (!roundToDeleteId.value) return
+  
+  isDeleting.value = true
+  try {
+    await employerInterviewService.deleteRound(roundToDeleteId.value)
+    toast.success('Thành công', 'Đã xoá vòng phỏng vấn')
+    isDeleteModalVisible.value = false
+    fetchData()
+  } catch (err: any) {
+    const msg = err?.response?.data?.message ?? 'Không thể xoá vòng này (có thể đã có ứng viên tham gia)'
+    toast.error('Lỗi', msg)
+  } finally {
+    isDeleting.value = false
+  }
+}
 
 // ─── Handlers ─────────────────────────────────────────────────────────────────
 function openAddModal() {
-  // TODO: mở modal tạo stage mới
-  console.log('Open add modal')
+  modalType.value = 'add'
+  editingRoundId.value = null
+  form.value = {
+    roundName: '',
+    description: '',
+    expectedDuration: 30,
+    isFinal: false,
+    interviewers: [{ name: '', email: '', phone: '' }]
+  }
+  isModalVisible.value = true
 }
 
 function openEditModal(stage: any) {
-  // TODO: mở modal sửa stage
-  console.log('Edit stage:', stage)
+  const originalRound = rounds.value.find(r => r.id === stage.id)
+  if (!originalRound) return
+
+  modalType.value = 'edit'
+  editingRoundId.value = stage.id
+  form.value = {
+    roundName: originalRound.roundName,
+    description: originalRound.description || '',
+    expectedDuration: originalRound.expectedDuration || 30,
+    isFinal: originalRound.isFinal,
+    interviewers: originalRound.interviewers.length > 0 
+      ? originalRound.interviewers.map(i => ({ name: i.name, email: i.email, phone: i.phone }))
+      : [{ name: '', email: '', phone: '' }]
+  }
+  isModalVisible.value = true
 }
 
-function handleDelete(id: number) {
-  // TODO: gọi API xoá, sau đó:
-  stages.value = stages.value
-    .filter(s => s.id !== id)
-    .map((s, i) => ({ ...s, order: i + 1 }))
+function closeModal() {
+  isModalVisible.value = false
+}
+
+function confirmDelete(id: number) {
+  roundToDeleteId.value = id
+  isDeleteModalVisible.value = true
+}
+
+function addInterviewer() {
+  form.value.interviewers.push({ name: '', email: '', phone: '' })
+}
+
+function removeInterviewer(index: number) {
+  form.value.interviewers.splice(index, 1)
 }
 
 function handleReorder(reordered: any[]) {
-  stages.value = reordered
-  // TODO: gọi API lưu thứ tự mới
+  // UI reorder logic - currently frontend only as BE doesn't have reorder API
+  // We just follow the roundNumber assigned by BE on refresh
+  console.log('Reorder requested - Persisting custom order is not yet supported by Backend API')
 }
 
-function handleConfigure() {
-  // TODO: mở trang hoặc modal cấu hình notification
-  console.log('Configure notifications')
-}
+onMounted(fetchData)
 </script>
 
 <style scoped>
 .setup-page {
-  /* padding: 2rem;
-  max-width: 64rem; */
   margin: 0 auto;
   width: 100%;
   display: flex;
@@ -197,8 +413,100 @@ function handleConfigure() {
   transform: translateY(-1px);
 }
 
-.btn-primary:active {
-  transform: translateY(0);
+/* Modal Form Styles */
+.modal-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-label {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #475569;
+  margin-bottom: 0.5rem;
+}
+
+.form-input, .form-textarea {
+  padding: 0.625rem 1rem;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 0.5rem;
+  font-size: 0.9375rem;
+  color: #1e293b;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  font-family: inherit;
+}
+
+.form-input:focus, .form-textarea:focus {
+  outline: none;
+  border-color: #4B9AF6;
+  box-shadow: 0 0 0 4px rgba(75, 154, 246, 0.1);
+}
+
+.form-textarea {
+  resize: vertical;
+}
+
+.form-checkbox {
+  width: 1.125rem;
+  height: 1.125rem;
+  border-radius: 0.25rem;
+  border: 1.5px solid #e2e8f0;
+  cursor: pointer;
+}
+
+.interviewer-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.remove-interviewer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: #94a3b8;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.remove-interviewer:hover {
+  background: #fee2e2;
+  color: #ef4444;
+}
+
+.add-interviewer-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  background: transparent;
+  border: none;
+  color: #4B9AF6;
+  font-size: 0.875rem;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0;
+  margin-top: 0.25rem;
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 .setup-page__placeholder {
@@ -206,18 +514,18 @@ function handleConfigure() {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 0.75rem;
-  padding: 4rem 2rem;
+  gap: 1rem;
+  padding: 6rem 2rem;
   color: #94a3b8;
   text-align: center;
 }
 
 .setup-page__placeholder .material-symbols-outlined {
-  font-size: 3rem;
+  font-size: 2.5rem;
 }
 
 .setup-page__placeholder p {
-  font-size: 0.9rem;
+  font-size: 1rem;
   font-weight: 600;
   margin: 0;
 }
