@@ -79,9 +79,13 @@
           <input
             v-model="form.deadline"
             class="field-input input-with-icon"
-            :class="{ 'field-input--error': errors.deadline }"
+            :class="{ 
+              'field-input--error': errors.deadline,
+              'field-input--disabled': disabledDeadline 
+            }"
             type="date"
             :min="minDate"
+            :disabled="disabledDeadline"
           />
         </div>
         <p v-if="errors.deadline" class="field-error">{{ errors.deadline }}</p>
@@ -97,6 +101,11 @@ import { levelService } from '@/services/level.service'
 import { CREATE_JOB_FORM_KEY, CREATE_JOB_ERRORS_KEY } from '@/composables/useCreateJobForm'
 import SearchableSelect from '@/components/ui/SearchableSelect.vue'
 import type { SelectOption } from '@/components/ui/SearchableSelect.vue'
+
+interface Props {
+  disabledDeadline?: boolean
+}
+defineProps<Props>()
 
 const form = inject(CREATE_JOB_FORM_KEY)!
 const errors = inject(CREATE_JOB_ERRORS_KEY)!
@@ -180,6 +189,16 @@ onMounted(async () => {
 .field-input--error {
   border-color: #ef4444 !important;
   box-shadow: 0 0 0 4px rgba(239,68,68,.08) !important;
+}
+.field-input--disabled {
+  background-color: #f8fafc;
+  color: #64748b;
+  cursor: not-allowed;
+  border-color: #e2e8f0;
+}
+.field-input--disabled:focus {
+  border-color: #e2e8f0;
+  box-shadow: none;
 }
 .field-error {
   font-size: 0.75rem;

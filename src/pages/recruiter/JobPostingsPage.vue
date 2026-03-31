@@ -174,7 +174,7 @@ onMounted(() => {
 // ── Handlers ─────────────────────────────────────────────
 const handleExport = () => console.log('export')
 const handleView   = (id: number) => router.push({ name: 'recruiter-jobs-detail', params: { id } })
-const handleEdit   = (id: number) => console.log('edit', id)
+const handleEdit   = (id: number) => router.push({ name: 'recruiter-jobs-edit', params: { id } })
 const handleCopy   = (id: number) => console.log('copy', id)
 const handleSubmit = (id: number) => console.log('submit', id)
 const handleExtend = (id: number) => console.log('extend', id)
