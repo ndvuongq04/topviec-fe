@@ -29,6 +29,8 @@
         @edit="handleEdit"
         @copy="handleCopy"
         @submit="handleSubmit"
+        @pause="handlePause"
+        @resume="handleResume"
         @extend="handleExtend"
         @close="handleClose"
         @delete="handleDelete"
@@ -48,6 +50,7 @@
 import { ref, watch, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { employerJobPostingService } from '@/services/employerJobPosting.service'
+import { useToast } from '@/composables/useToast'
 import { JobPostingStatus } from '@/constants/jobPosting.constants'
 import type { ResJobPostingDetail } from '@/types/jobPosting.types'
 import JobPostingStatsGrid  from '@/components/recruiter/jobs/JobPostingStatsGrid.vue'
@@ -62,6 +65,7 @@ const activeFilter = ref<JobPostingFilterTab>('all')
 const currentPage  = ref(0)
 const searchValue  = ref('')
 const router = useRouter()
+const toast  = useToast()
 
 const jobs      = ref<JobPostingRow[]>([])
 const totalJobs = ref(0)
@@ -177,6 +181,37 @@ const handleView   = (id: number) => router.push({ name: 'recruiter-jobs-detail'
 const handleEdit   = (id: number) => router.push({ name: 'recruiter-jobs-edit', params: { id } })
 const handleCopy   = (id: number) => console.log('copy', id)
 const handleSubmit = (id: number) => console.log('submit', id)
+
+const handlePause = async (id: number) => {
+  try {
+    const updated = await employerJobPostingService.pauseJob(id)
+    const idx = jobs.value.findIndex(j => j.id === id)
+    if (idx !== -1) {
+      jobs.value[idx] = mapToRow(updated)
+    }
+    toast.success('Đã tạm dừng!', `Tin tuyển dụng "${updated.title}" đã được tạm dừng.`)
+    fetchStats() // Update stats too
+  } catch (err: any) {
+    const msg = err?.response?.data?.message ?? 'Không thể tạm dừng tin. Vui lòng thử lại.'
+    toast.error('Lỗi', msg)
+  }
+}
+
+const handleResume = async (id: number) => {
+  try {
+    const updated = await employerJobPostingService.resumeJob(id)
+    const idx = jobs.value.findIndex(j => j.id === id)
+    if (idx !== -1) {
+      jobs.value[idx] = mapToRow(updated)
+    }
+    toast.success('Đã tiếp tục!', `Tin tuyển dụng "${updated.title}" đã được hiển thị trở lại.`)
+    fetchStats()
+  } catch (err: any) {
+    const msg = err?.response?.data?.message ?? 'Không thể tiếp tục đăng tin. Vui lòng thử lại.'
+    toast.error('Lỗi', msg)
+  }
+}
+
 const handleExtend = (id: number) => console.log('extend', id)
 const handleClose  = (id: number) => console.log('close', id)
 const handleDelete = (id: number) => console.log('delete', id)

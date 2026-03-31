@@ -19,6 +19,8 @@
           @edit="$emit('edit', $event)"
           @copy="$emit('copy', $event)"
           @submit="$emit('submit', $event)"
+          @pause="$emit('pause', $event)"
+          @resume="$emit('resume', $event)"
           @extend="$emit('extend', $event)"
           @close="$emit('close', $event)"
           @delete="$emit('delete', $event)"
@@ -43,6 +45,8 @@ defineEmits<{
   edit:   [id: number]
   copy:   [id: number]
   submit: [id: number]
+  pause:  [id: number]
+  resume: [id: number]
   extend: [id: number]
   close:  [id: number]
   delete: [id: number]

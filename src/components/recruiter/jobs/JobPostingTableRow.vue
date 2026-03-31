@@ -106,13 +106,22 @@
               :tooltip="!canSubmit ? 'Chỉ có thể gửi duyệt khi tin đang ở trạng thái Nháp' : undefined"
               @click="handleAction('submit', job.id, close)"
             />
-            <!-- Tạm dừng: chỉ khi PUBLISHED -->
             <GlobalDropdownItem
               icon="pause_circle"
               label="Tạm dừng tin tuyển dụng"
               :disabled="!canPause"
-              :tooltip="!canPause ? 'Chỉ có thể tạm dừng khi tin đang ở trạng thái Đang tuyển' : undefined"
+              :tooltip="!canPause && job.status !== 'paused' ? 'Chỉ có thể tạm dừng khi tin đang ở trạng thái Đang tuyển' : undefined"
+              v-if="job.status !== 'paused'"
               @click="handleAction('pause', job.id, close)"
+            />
+            <!-- Tiếp tục đăng: chỉ khi PAUSED -->
+            <GlobalDropdownItem
+              icon="play_circle"
+              label="Tiếp tục đăng tin"
+              :disabled="!canResume"
+              :tooltip="!canResume ? 'Chỉ có thể tiếp tục khi tin đang ở trạng thái Tạm dừng' : undefined"
+              v-if="job.status === 'paused'"
+              @click="handleAction('resume', job.id, close)"
             />
             <!-- Gia hạn: chỉ khi EXPIRED -->
             <GlobalDropdownItem
@@ -170,6 +179,7 @@ const emit = defineEmits<{
   copy:      [id: number]
   submit:    [id: number]
   pause:     [id: number]
+  resume:    [id: number]
   extend:    [id: number]
   interview: [id: number]
   close:     [id: number]
@@ -206,6 +216,9 @@ const canSubmit = computed(() => props.job.status === 'draft')
 
 // Tạm dừng: chỉ khi PUBLISHED (active/expiring)
 const canPause = computed(() => ['active', 'expiring'].includes(props.job.status))
+
+// Tiếp tục: chỉ khi PAUSED
+const canResume = computed(() => props.job.status === 'paused')
 
 // Gia hạn: chỉ khi EXPIRED
 const canExtend = computed(() => props.job.status === 'expired')

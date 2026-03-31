@@ -1,3 +1,4 @@
+import { JobPostingStatus } from '@/constants/jobPosting.constants'
 import type { ResultPaginationDTO } from './company.types'
 
 export interface ReqJobPostLocationDTO {
@@ -95,11 +96,12 @@ export interface JobPostingStats {
   expiring: number
 }
 
+/** Represending a row in the job postings table */
 export interface JobPostingRow {
   id: number
   title: string
   code: string
-  status: 'active' | 'pending' | 'expiring' | 'draft' | 'closed' | 'expired' | 'paused' | 'rejected' | 'interviewing' | 'completed'
+  status: 'active' | 'pending' | 'expiring' | 'draft' | 'closed' | 'expired' | 'paused' | 'rejected' | 'interviewing' | 'completed' | string
   postedAt: string
   deadline?: string
   daysLeft?: number
