@@ -24,13 +24,15 @@
       :total-count="totalCandidateCount"
       :current-page="currentPage"
       :total-pages="totalPages"
-      @filter="handleFilter"
+      v-model:search-value="searchValue"
+      v-model:status-filter="statusFilter"
       @export="handleExport"
       @open-link="handleOpenLink"
       @view-detail="handleViewDetail"
       @reschedule="handleReschedule"
       @remind="handleRemind"
       @cancel="handleCancel"
+      @schedule="handleSchedule"
       @page-change="currentPage = $event"
     />
 
@@ -43,17 +45,20 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import InterviewStageCards from '@/components/recruiter/interviews/InterviewStageCards.vue'
 import InterviewCandidateTable from '@/components/recruiter/interviews/InterviewCandidateTable.vue'
 import InterviewFab from '@/components/recruiter/interviews/InterviewFab.vue'
 
 const route = useRoute()
-const jobId = computed(() => route.params.id)
+const router = useRouter()
+const jobId = computed(() => Number(route.params.id))
 
 // --- State ---
 const activeStageId = ref(1)
 const currentPage = ref(1)
+const searchValue = ref('')
+const statusFilter = ref('all')
 
 // --- Mock Data (thay bằng store/API khi tích hợp) ---
 const stages = ref([
@@ -135,9 +140,7 @@ const totalCandidateCount = computed(() => {
 const totalPages = computed(() => Math.ceil(totalCandidateCount.value / 3))
 
 // --- Handlers (thay bằng logic thực khi tích hợp) ---
-function handleFilter() {
-  console.log('Open filter modal')
-}
+// Note: handleFilter has been replaced by inline searching via searchValue
 
 function handleExport() {
   console.log('Export data')
@@ -161,6 +164,16 @@ function handleRemind(candidateId: number) {
 
 function handleCancel(candidateId: number) {
   console.log('Cancel interview for candidate:', candidateId)
+}
+
+function handleSchedule(applicationId: number) {
+  router.push({
+    name: 'recruiter-interview-create',
+    query: {
+      jobId: jobId.value,
+      applicationId: applicationId,
+    },
+  })
 }
 
 function handleRenameStage(stageId: number, newName: string) {

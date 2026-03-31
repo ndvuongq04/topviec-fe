@@ -10,10 +10,37 @@
         </h3>
       </div>
       <div class="candidate-table__actions">
-        <button class="btn-outline" @click="$emit('filter')">
-          <span class="material-symbols-outlined btn-icon">filter_list</span>
-          Bộ lọc
-        </button>
+        <!-- Bộ lọc trạng thái (Dropdown) -->
+        <div class="filter-dropdown">
+          <select
+            class="filter-select"
+            :value="statusFilter"
+            @change="$emit('update:statusFilter', ($event.target as HTMLSelectElement).value)"
+          >
+            <option v-for="tab in statusTabs" :key="tab.value" :value="tab.value">
+               {{ tab.label }}
+            </option>
+          </select>
+          <span class="material-symbols-outlined filter-icon">expand_more</span>
+        </div>
+
+        <div class="search-wrap">
+          <span class="search-icon material-symbols-outlined">search</span>
+          <input
+            class="search-input"
+            type="text"
+            placeholder="Tìm kiếm ứng viên..."
+            :value="searchValue"
+            @input="$emit('update:searchValue', ($event.target as HTMLInputElement).value)"
+          />
+          <button
+            v-if="searchValue"
+            class="search-clear"
+            @click="$emit('update:searchValue', '')"
+          >
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        </div>
         <button class="btn-outline" @click="$emit('export')">
           <span class="material-symbols-outlined btn-icon">download</span>
           Xuất dữ liệu
@@ -43,6 +70,7 @@
           @reschedule="emit('reschedule', $event)"
           @remind="emit('remind', $event)"
           @cancel="emit('cancel', $event)"
+          @schedule="emit('schedule', $event)"
         />
       </tbody>
     </table>
@@ -110,10 +138,20 @@ defineProps<{
   totalCount: number
   currentPage: number
   totalPages: number
+  searchValue: string
+  statusFilter: string
 }>()
 
+const statusTabs = [
+  { label: 'Tất cả', value: 'all' },
+  { label: 'Đã xác nhận', value: 'confirmed' },
+  { label: 'Chờ xác nhận', value: 'pending' },
+  { label: 'Quá hạn', value: 'overdue' },
+]
+
 const emit = defineEmits<{
-  filter: []
+  'update:searchValue': [value: string]
+  'update:statusFilter': [value: string]
   export: []
   openLink: [candidateId: number]
   viewDetail: [candidateId: number]
@@ -121,6 +159,7 @@ const emit = defineEmits<{
   pageChange: [page: number]
   remind: [candidateId: number]
   cancel: [candidateId: number]
+  schedule: [candidateId: number]
 }>()
 </script>
 
@@ -176,7 +215,113 @@ const emit = defineEmits<{
 .candidate-table__actions {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.75rem;
+}
+
+/* --- Filter Dropdown --- */
+.filter-dropdown {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.filter-select {
+  height: 2.25rem;
+  padding: 0 2.25rem 0 1rem;
+  border-radius: 0.75rem;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  font-family: inherit;
+  color: #475569;
+  outline: none;
+  cursor: pointer;
+  appearance: none;
+  transition: all 0.15s;
+}
+
+.filter-select:hover {
+  border-color: #cbd5e1;
+  background: #f8fafc;
+}
+
+.filter-select:focus {
+  border-color: #4b9af6;
+  box-shadow: 0 0 0 3px rgba(75, 154, 246, 0.1);
+}
+
+.filter-icon {
+  position: absolute;
+  right: 0.75rem;
+  font-size: 1.1rem !important;
+  color: #94a3b8;
+  pointer-events: none;
+}
+
+/* --- Search --- */
+.search-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 15rem;
+}
+
+.search-icon {
+  position: absolute;
+  left: 0.75rem;
+  font-size: 1.1rem !important;
+  color: #94a3b8;
+  pointer-events: none;
+  user-select: none;
+}
+
+.search-input {
+  width: 100%;
+  height: 2.25rem;
+  padding: 0 2.25rem 0 2.375rem;
+  border-radius: 9999px;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  font-size: 0.875rem;
+  font-family: inherit;
+  color: #0f172a;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.search-input::placeholder {
+  color: #94a3b8;
+}
+
+.search-input:focus {
+  border-color: #4b9af6;
+  box-shadow: 0 0 0 3px rgba(75, 154, 246, 0.1);
+}
+
+.search-clear {
+  position: absolute;
+  right: 0.5rem;
+  width: 1.25rem;
+  height: 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 50%;
+  background: #f1f5f9;
+  color: #64748b;
+  cursor: pointer;
+  padding: 0;
+  transition: background 0.15s;
+}
+
+.search-clear:hover {
+  background: #e2e8f0;
+}
+
+.search-clear .material-symbols-outlined {
+  font-size: 0.8rem !important;
 }
 
 .btn-outline {

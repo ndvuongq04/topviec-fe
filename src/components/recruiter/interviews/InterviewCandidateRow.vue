@@ -82,6 +82,15 @@
             @click="handleAction('openLink', close)"
           />
 
+          <!-- Đặt lịch phỏng vấn -->
+          <GlobalDropdownItem
+            icon="calendar_add_on"
+            label="Đặt lịch phỏng vấn"
+            @click="handleAction('schedule', close)"
+          />
+
+          <div class="dropdown-divider-v2"></div>
+
           <!-- Nhắc nhở chọn lịch -->
           <GlobalDropdownItem
             icon="notifications"
@@ -152,9 +161,10 @@ const emit = defineEmits<{
   reschedule: [candidateId: number]
   remind: [candidateId: number]
   cancel: [candidateId: number]
+  schedule: [candidateId: number]
 }>()
 
-function handleAction(action: 'viewDetail' | 'openLink' | 'reschedule' | 'remind' | 'cancel', close: () => void) {
+function handleAction(action: 'viewDetail' | 'openLink' | 'reschedule' | 'remind' | 'cancel' | 'schedule', close: () => void) {
   close()
   emit(action as any, props.candidate.id)
 }
