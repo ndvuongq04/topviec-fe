@@ -36,9 +36,11 @@ import { ref, onMounted, onUnmounted, nextTick, computed } from 'vue'
 const props = withDefaults(defineProps<{
   align?: 'left' | 'right'
   offset?: number
+  direction?: 'up' | 'down'
 }>(), {
   align: 'right',
-  offset: 8
+  offset: 8,
+  direction: 'down'
 })
 
 const isOpen = ref(false)
@@ -67,7 +69,12 @@ function positionMenu() {
   const style: Record<string, string> = {
     position: 'fixed',
     zIndex: '10000',
-    top: `${rect.bottom + props.offset}px`,
+  }
+
+  if (props.direction === 'up') {
+    style.bottom = `${window.innerHeight - rect.top + props.offset}px`
+  } else {
+    style.top = `${rect.bottom + props.offset}px`
   }
 
   if (props.align === 'right') {
@@ -164,6 +171,16 @@ onUnmounted(() => {
 /* Transition */
 .dropdown-enter-active { transition: opacity 0.15s ease, transform 0.15s ease; }
 .dropdown-leave-active { transition: opacity 0.1s ease,  transform 0.1s ease; }
-.dropdown-enter-from  { opacity: 0; transform: translateY(-8px) scale(0.95); }
-.dropdown-leave-to    { opacity: 0; transform: translateY(-4px) scale(0.98); }
+
+/* Mặc định mở xuống: trượt từ trên xuống */
+.dropdown-enter-from, .dropdown-leave-to {
+  opacity: 0;
+  transform: translateY(-8px) scale(0.95);
+}
+
+/* Trường hợp mở lên (CSS selector cho phần tử có style bottom) */
+div[style*="bottom"].dropdown-enter-from,
+div[style*="bottom"].dropdown-leave-to {
+  transform: translateY(8px) scale(0.95);
+}
 </style>

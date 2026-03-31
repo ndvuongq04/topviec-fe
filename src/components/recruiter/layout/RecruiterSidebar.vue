@@ -42,9 +42,42 @@
           <p class="text-sm font-bold truncate">{{ user?.name || 'Recruiter' }}</p>
           <p class="text-xs text-slate-500 truncate">{{ user?.title || 'HR Manager' }}</p>
         </div>
-        <button class="text-slate-400 hover:text-primary transition-colors cursor-pointer">
-          <span class="material-symbols-outlined text-xl">settings</span>
-        </button>
+        <GlobalDropdown align="left" direction="up" :offset="12">
+          <template #trigger="{ toggle, isOpen }">
+            <button
+              class="text-slate-400 hover:text-primary transition-colors cursor-pointer"
+              :class="{ 'text-primary': isOpen }"
+              @click.stop="toggle"
+            >
+              <span class="material-symbols-outlined text-xl">settings</span>
+            </button>
+          </template>
+
+          <template #default="{ close }">
+            <GlobalDropdownItem
+              icon="person_outline"
+              label="Cài đặt tài khoản"
+              @click="close"
+            />
+            <GlobalDropdownItem
+              icon="business"
+              label="Thông tin công ty"
+              @click="close"
+            />
+            <GlobalDropdownItem
+              icon="lock_open"
+              label="Đổi mật khẩu"
+              @click="close"
+            />
+            <div class="h-px bg-slate-100 my-1 mx-2"></div>
+            <GlobalDropdownItem
+              icon="logout"
+              label="Đăng xuất"
+              danger
+              @click="close"
+            />
+          </template>
+        </GlobalDropdown>
       </div>
     </div>
   </aside>
@@ -52,6 +85,8 @@
 
 <script setup lang="ts">
 import { useRoute } from 'vue-router'
+import GlobalDropdown from '@/components/ui/GlobalDropdown.vue'
+import GlobalDropdownItem from '@/components/ui/GlobalDropdownItem.vue'
 
 const route = useRoute()
 
