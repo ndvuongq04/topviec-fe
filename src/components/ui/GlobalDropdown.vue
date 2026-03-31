@@ -19,6 +19,7 @@
       <Transition name="dropdown">
         <div
           v-if="isOpen"
+          ref="menuEl"
           class="dropdown-menu"
           :style="menuStyle"
           @click.stop
@@ -31,7 +32,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, nextTick, computed } from 'vue'
+import { ref, onMounted, onUnmounted, nextTick } from 'vue'
 
 const props = withDefaults(defineProps<{
   align?: 'left' | 'right'
@@ -45,7 +46,8 @@ const props = withDefaults(defineProps<{
 
 const isOpen = ref(false)
 const dropdownRef = ref<HTMLElement | null>(null)
-const menuStyle = ref<Record<string, string>>({})
+const menuEl     = ref<HTMLElement | null>(null)
+const menuStyle  = ref<Record<string, string>>({})
 
 function toggle() {
   const willOpen = !isOpen.value
@@ -65,27 +67,31 @@ function closeMenu() {
 function positionMenu() {
   if (!dropdownRef.value) return
   const rect = dropdownRef.value.getBoundingClientRect()
-  
+
   const style: Record<string, string> = {
     position: 'fixed',
     zIndex: '10000',
   }
 
-  if (props.direction === 'up') {
-    style.bottom = `${window.innerHeight - rect.top + props.offset}px`
-  } else {
-    style.top = `${rect.bottom + props.offset}px`
-  }
-
+  // Horizontal
   if (props.align === 'right') {
     style.right = `${window.innerWidth - rect.right}px`
   } else {
     style.left = `${rect.left}px`
   }
 
-  // Basic viewport overflow check (simplified)
-  // In a real app, we might check if rect.bottom + menuHeight > window.innerHeight
-  
+  // Vertical: auto-detect — mở lên khi không đủ chỗ bên dưới
+  const menuHeight = menuEl.value?.offsetHeight ?? 320
+  const spaceBelow = window.innerHeight - rect.bottom - props.offset
+  const spaceAbove = rect.top - props.offset
+  const openUp = spaceBelow < menuHeight && spaceAbove >= menuHeight
+
+  if (openUp) {
+    style.bottom = `${window.innerHeight - rect.top + props.offset}px`
+  } else {
+    style.top = `${rect.bottom + props.offset}px`
+  }
+
   menuStyle.value = style
 }
 

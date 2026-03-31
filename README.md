@@ -1,777 +1,812 @@
-<template>
-  <div class="page-wrapper">
-    <div class="page-inner">
-
-      <!-- Header: breadcrumb + title + actions -->
-      <JobDetailHeader
-        title="Senior Frontend Engineer"
-        location="Hồ Chí Minh, Quận 1"
-      />
-
-      <!-- 4 stat bento cards -->
-      <JobDetailStats />
-
-      <!-- Two-column body -->
-      <div class="body-grid">
-        <!-- Left: 3 content sections -->
-        <div class="col-main">
-          <JobDetailContent />
-        </div>
-
-        <!-- Right: sidebar info -->
-        <div class="col-side">
-          <JobDetailSideInfo />
-        </div>
-      </div>
-
-    </div>
-  </div>
-</template>
-
-<script setup lang="ts">
-import JobDetailHeader   from './JobDetailHeader.vue'
-import JobDetailStats    from './JobDetailStats.vue'
-import JobDetailContent  from './JobDetailContent.vue'
-import JobDetailSideInfo from './JobDetailSideInfo.vue'
-</script>
-
-<style scoped>
-.page-wrapper {
-  padding: 2rem 2rem 6rem;
-  min-height: 100vh;
-  background: #f6f6f8;
+package com.topviec.topviec_be.controller;
+
+import com.topviec.topviec_be.dto.request.ReqCreateJobPostingDTO;
+import com.topviec.topviec_be.dto.request.ReqUpdateJobPostingDTO;
+import com.topviec.topviec_be.dto.response.ResJobPostingDetail;
+import com.topviec.topviec_be.dto.response.ResultPaginationDTO;
+import com.topviec.topviec_be.service.CompanyService;
+import com.topviec.topviec_be.service.JobPostingService;
+import com.topviec.topviec_be.util.SecurityUtil;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
+
+/**
+ * Controller dành cho Employer — yêu cầu đăng nhập.
+ * Base URL: /api/v1/employer/job-postings
+ */
+@RestController
+@RequestMapping("/employer/job-postings")
+@RequiredArgsConstructor
+@PreAuthorize("hasRole('EMPLOYER')")
+public class EmployerJobPostingController {
+
+    private final JobPostingService jobPostingService;
+    private final CompanyService companyService;
+
+    /**
+     * POST /employer/job-postings
+     * Tạo tin tuyển dụng mới, mặc định trạng thái draft.
+     */
+    @PostMapping
+    public ResponseEntity<ResJobPostingDetail> create(
+            @Valid @RequestBody ReqCreateJobPostingDTO request) {
+
+        Long userId = SecurityUtil.getCurrentUserId();
+        Long companyId = companyService.getCompanyIdByUserId(userId);
+
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(jobPostingService.create(request, userId, companyId));
+    }
+
+    /**
+     * GET /employer/job-postings
+     * Lấy danh sách tin của công ty, hỗ trợ filter + phân trang.
+     * companyId tự động lấy từ JWT → chỉ trả về tin của công ty đang đăng nhập.
+     */
+    @GetMapping
+    public ResponseEntity<ResultPaginationDTO> getList(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) Long industryId,
+            @RequestParam(required = false) Long levelId,
+            @RequestParam(required = false) String workType,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) Boolean isFeatured,
+            @RequestParam(required = false) Boolean isUrgent,
+            @RequestParam(required = false) Long salaryMin,
+            @RequestParam(required = false) Long salaryMax,
+            @RequestParam(required = false) Integer experienceYearsMin,
+            @RequestParam(required = false) Integer experienceYearsMax,
+            @PageableDefault(size = 10, sort = "createdAt") Pageable pageable) {
+
+        Long userId = SecurityUtil.getCurrentUserId();
+        Long companyId = companyService.getCompanyIdByUserId(userId);
+
+        return ResponseEntity.ok(jobPostingService.getList(
+                keyword, companyId, industryId, levelId, workType, status,
+                isFeatured, isUrgent, salaryMin, salaryMax,
+                experienceYearsMin, experienceYearsMax, pageable));
+    }
+
+    /**
+     * PUT /employer/job-postings/{id}
+     * Chỉnh sửa tin tuyển dụng.
+     */
+    @PutMapping("/{id}")
+    public ResponseEntity<ResJobPostingDetail> update(
+            @PathVariable Long id,
+            @Valid @RequestBody ReqUpdateJobPostingDTO request) {
+
+        Long userId = SecurityUtil.getCurrentUserId();
+        Long companyId = companyService.getCompanyIdByUserId(userId);
+
+        return ResponseEntity.ok(jobPostingService.update(id, request, userId, companyId));
+    }
+
+    /**
+     * PATCH /employer/job-postings/{id}/pause
+     * Tạm dừng tin tuyển dụng.
+     */
+    @PatchMapping("/{id}/pause")
+    public ResponseEntity<ResJobPostingDetail> pause(@PathVariable Long id) {
+        Long userId = SecurityUtil.getCurrentUserId();
+        Long companyId = companyService.getCompanyIdByUserId(userId);
+        return ResponseEntity.ok(jobPostingService.pause(id, companyId, userId));
+    }
+
+    /**
+     * PATCH /employer/job-postings/{id}/resume
+     * Mở lại tin tuyển dụng.
+     */
+    @PatchMapping("/{id}/resume")
+    public ResponseEntity<ResJobPostingDetail> resume(@PathVariable Long id) {
+        Long userId = SecurityUtil.getCurrentUserId();
+        Long companyId = companyService.getCompanyIdByUserId(userId);
+        return ResponseEntity.ok(jobPostingService.resume(id, companyId, userId));
+    }
+
+    /**
+     * PATCH /employer/job-postings/{id}/close
+     * Đóng tin tuyển dụng.
+     */
+    @PatchMapping("/{id}/close")
+    public ResponseEntity<ResJobPostingDetail> close(@PathVariable Long id) {
+        Long userId = SecurityUtil.getCurrentUserId();
+        Long companyId = companyService.getCompanyIdByUserId(userId);
+        return ResponseEntity.ok(jobPostingService.close(id, companyId, userId));
+    }
+
+    /**
+     * PATCH /employer/job-postings/{id}/extend
+     * Gia hạn tin tuyển dụng.
+     */
+    @PatchMapping("/{id}/extend")
+    public ResponseEntity<ResJobPostingDetail> extend(
+            @PathVariable Long id,
+            @Valid @RequestBody com.topviec.topviec_be.dto.request.ReqExtendJobPostDTO request) {
+        Long userId = SecurityUtil.getCurrentUserId();
+        Long companyId = companyService.getCompanyIdByUserId(userId);
+        return ResponseEntity.ok(jobPostingService.extend(id, companyId, userId, request));
+    }
+
+    /**
+     * PATCH /employer/job-postings/{id}/refresh
+     * Làm mới tin tuyển dụng (đẩy lên đầu).
+     */
+    @PatchMapping("/{id}/refresh")
+    public ResponseEntity<ResJobPostingDetail> refresh(@PathVariable Long id) {
+        Long userId = SecurityUtil.getCurrentUserId();
+        Long companyId = companyService.getCompanyIdByUserId(userId);
+        return ResponseEntity.ok(jobPostingService.refresh(id, companyId, userId));
+    }
+
+    /**
+     * PATCH /employer/job-postings/{id}/pending-approval
+     * Gửi duyệt tin tuyển dụng.
+     */
+    @PatchMapping("/{id}/pending-approval")
+    public ResponseEntity<ResJobPostingDetail> pendingApproval(@PathVariable Long id) {
+        Long userId = SecurityUtil.getCurrentUserId();
+        Long companyId = companyService.getCompanyIdByUserId(userId);
+        return ResponseEntity.ok(jobPostingService.pendingApproval(id, companyId, userId));
+    }
+}
+
+
+package com.topviec.topviec_be.service.impl;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.topviec.topviec_be.dto.request.ReqCreateJobPostingDTO;
+import com.topviec.topviec_be.dto.request.ReqJobPostLocationDTO;
+import com.topviec.topviec_be.dto.request.ReqJobPostSkillDTO;
+import com.topviec.topviec_be.dto.request.ReqUpdateJobPostingDTO;
+import com.topviec.topviec_be.dto.response.ResJobPostingDetail;
+import com.topviec.topviec_be.dto.response.ResJobPostingSummary;
+import com.topviec.topviec_be.dto.response.ResJobPostLocationDTO;
+import com.topviec.topviec_be.dto.response.ResJobPostSkillDTO;
+import com.topviec.topviec_be.dto.response.ResultPaginationDTO;
+import com.topviec.topviec_be.entity.Company;
+import com.topviec.topviec_be.entity.Industry;
+import com.topviec.topviec_be.entity.JobPostEditLog;
+import com.topviec.topviec_be.entity.JobPostLocation;
+import com.topviec.topviec_be.entity.JobPostSkill;
+import com.topviec.topviec_be.entity.JobPosting;
+import com.topviec.topviec_be.entity.Level;
+import com.topviec.topviec_be.entity.Skill;
+import com.topviec.topviec_be.enums.jobs.EditType;
+import com.topviec.topviec_be.enums.jobs.JobPostStatus;
+import com.topviec.topviec_be.exception.AppException;
+import com.topviec.topviec_be.repository.CompanyRepository;
+import com.topviec.topviec_be.repository.IndustryRepository;
+import com.topviec.topviec_be.repository.JobPostEditLogRepository;
+import com.topviec.topviec_be.repository.JobPostLocationRepository;
+import com.topviec.topviec_be.repository.JobPostSkillRepository;
+import com.topviec.topviec_be.repository.JobPostingRepository;
+import com.topviec.topviec_be.repository.LevelRepository;
+import com.topviec.topviec_be.repository.SkillRepository;
+import com.topviec.topviec_be.service.JobPostingService;
+import com.topviec.topviec_be.specification.JobPostingSpecification;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import com.topviec.topviec_be.dto.request.ReqExtendJobPostDTO;
+
+import java.text.Normalizer;
+import java.util.List;
+import java.util.Map;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+
+@Service
+@RequiredArgsConstructor
+public class JobPostingServiceImpl implements JobPostingService {
+
+    private final JobPostingRepository jobPostingRepository;
+    private final JobPostSkillRepository jobPostSkillRepository;
+    private final JobPostLocationRepository jobPostLocationRepository;
+    private final JobPostEditLogRepository jobPostEditLogRepository;
+    private final CompanyRepository companyRepository;
+    private final IndustryRepository industryRepository;
+    private final LevelRepository levelRepository;
+    private final ObjectMapper objectMapper;
+    private final SkillRepository skillRepository;
+
+    // -------------------------------------------------------------------------
+    // Employer — Create
+    // -------------------------------------------------------------------------
+
+    @Override
+    @Transactional
+    public ResJobPostingDetail create(ReqCreateJobPostingDTO request, Long createdByUserId, Long companyId) {
+        String slug = generateUniqueSlug(request.getTitle());
+
+        JobPosting jobPosting = JobPosting.builder()
+                .companyId(companyId)
+                .createdByUserId(createdByUserId)
+                .title(request.getTitle())
+                .slug(slug)
+                .description(request.getDescription())
+                .requirements(request.getRequirements())
+                .benefits(request.getBenefits())
+                .industryId(request.getIndustryId())
+                .levelId(request.getLevelId())
+                .experienceYearsMin(request.getExperienceYearsMin())
+                .experienceYearsMax(request.getExperienceYearsMax())
+                .salaryMin(request.getSalaryMin())
+                .salaryMax(request.getSalaryMax())
+                .salaryNegotiable(request.getSalaryNegotiable())
+                .workType(request.getWorkType())
+                .headcount(request.getHeadcount())
+                .deadline(request.getDeadline())
+                .status(JobPostStatus.DRAFT.getValue())
+                .isFeatured(Boolean.TRUE.equals(request.getIsFeatured()))
+                .isUrgent(Boolean.TRUE.equals(request.getIsUrgent()))
+                .build();
+
+        JobPosting saved = jobPostingRepository.save(jobPosting);
+
+        saveLocations(saved.getId(), request.getLocations());
+
+        if (request.getSkills() != null) {
+            saveSkills(saved.getId(), request.getSkills());
+        }
+
+        return toDetailResponse(saved);
+    }
+
+    // -------------------------------------------------------------------------
+    // Employer / Admin — Read (list)
+    // -------------------------------------------------------------------------
+
+    @Override
+    @Transactional(readOnly = true)
+    public ResultPaginationDTO getList(String keyword, Long companyId, Long industryId,
+            Long levelId, String workType, String status,
+            Boolean isFeatured, Boolean isUrgent,
+            Long salaryMin, Long salaryMax,
+            Integer experienceYearsMin, Integer experienceYearsMax,
+            Pageable pageable) {
+
+        Specification<JobPosting> spec = JobPostingSpecification.withFilter(
+                keyword, companyId, industryId, levelId, workType, status,
+                isFeatured, isUrgent, salaryMin, salaryMax,
+                experienceYearsMin, experienceYearsMax);
+
+        return toResultPagination(jobPostingRepository.findAll(spec, pageable), pageable);
+    }
+
+    // -------------------------------------------------------------------------
+    // Public — UV Read (chỉ published)
+    // -------------------------------------------------------------------------
+
+    @Override
+    @Transactional(readOnly = true)
+    public ResultPaginationDTO getPublicList(String keyword, Long companyId, Long industryId,
+            Long levelId, String workType,
+            Boolean isFeatured, Boolean isUrgent,
+            Long salaryMin, Long salaryMax,
+            Integer experienceYearsMin, Integer experienceYearsMax,
+            Pageable pageable) {
+
+        Specification<JobPosting> spec = JobPostingSpecification.withPublicFilter(
+                keyword, companyId, industryId, levelId, workType,
+                isFeatured, isUrgent, salaryMin, salaryMax,
+                experienceYearsMin, experienceYearsMax);
+
+        return toResultPagination(jobPostingRepository.findAll(spec, pageable), pageable);
+    }
+
+    // -------------------------------------------------------------------------
+    // Read — Detail
+    // -------------------------------------------------------------------------
+
+    @Override
+    @Transactional
+    public ResJobPostingDetail getDetail(Long id) {
+        JobPosting jobPosting = findByIdOrThrow(id);
+        jobPostingRepository.incrementViewCount(id);
+        return toDetailResponse(jobPosting);
+    }
+
+    // -------------------------------------------------------------------------
+    // Employer — Update
+    // -------------------------------------------------------------------------
+
+    @Override
+    @Transactional
+    public ResJobPostingDetail update(Long id, ReqUpdateJobPostingDTO request, Long updatedByUserId, Long companyId) {
+        JobPosting jobPosting = findByIdOrThrow(id);
+
+        if (!jobPosting.getCompanyId().equals(companyId)) {
+            throw AppException.forbidden("Bạn không có quyền chỉnh sửa tin tuyển dụng của công ty khác");
+        }
+
+        validateEditable(jobPosting);
+        saveEditLog(jobPosting, updatedByUserId);
+
+        if (!jobPosting.getTitle().equals(request.getTitle())) {
+            jobPosting.setSlug(generateUniqueSlugExclude(request.getTitle(), id));
+        }
+
+        jobPosting.setTitle(request.getTitle());
+        jobPosting.setDescription(request.getDescription());
+        jobPosting.setRequirements(request.getRequirements());
+        jobPosting.setBenefits(request.getBenefits());
+        jobPosting.setIndustryId(request.getIndustryId());
+        jobPosting.setLevelId(request.getLevelId());
+        jobPosting.setExperienceYearsMin(request.getExperienceYearsMin());
+        jobPosting.setExperienceYearsMax(request.getExperienceYearsMax());
+        jobPosting.setSalaryMin(request.getSalaryMin());
+        jobPosting.setSalaryMax(request.getSalaryMax());
+        jobPosting.setSalaryNegotiable(request.getSalaryNegotiable());
+        jobPosting.setWorkType(request.getWorkType());
+        jobPosting.setHeadcount(request.getHeadcount());
+        jobPosting.setDeadline(request.getDeadline());
+        jobPosting.setUpdatedBy(updatedByUserId);
+
+        if (request.getIsFeatured() != null)
+            jobPosting.setIsFeatured(request.getIsFeatured());
+        if (request.getIsUrgent() != null)
+            jobPosting.setIsUrgent(request.getIsUrgent());
+
+        if (JobPostStatus.PUBLISHED.getValue().equals(jobPosting.getStatus())) {
+            jobPosting.setEditCount(jobPosting.getEditCount() + 1);
+        }
+
+        jobPosting.setStatus(JobPostStatus.DRAFT.getValue());
+
+        JobPosting updated = jobPostingRepository.save(jobPosting);
+
+        jobPostLocationRepository.deleteByJobPostId(id);
+        jobPostLocationRepository.flush();
+        saveLocations(id, request.getLocations());
+
+        jobPostSkillRepository.deleteByJobPostId(id);
+        jobPostSkillRepository.flush();
+        if (request.getSkills() != null) {
+            saveSkills(id, request.getSkills());
+        }
+
+        return toDetailResponse(updated);
+    }
+
+    // -------------------------------------------------------------------------
+    // Employer — Lifecycle Methods
+    // -------------------------------------------------------------------------
+
+    @Override
+    @Transactional
+    public ResJobPostingDetail pause(Long id, Long companyId, Long updatedByUserId) {
+        JobPosting jobPosting = findByIdOrThrow(id);
+        if (!jobPosting.getCompanyId().equals(companyId)) {
+            throw AppException.forbidden("Bạn không có quyền thao tác trên tin tuyển dụng của công ty khác");
+        }
+        if (!JobPostStatus.PUBLISHED.getValue().equals(jobPosting.getStatus())) {
+            throw AppException.badRequest("Chỉ có thể tạm dừng tin khi đang ở trạng thái PUBLISHED");
+        }
+        saveEditLog(jobPosting, updatedByUserId);
+        jobPosting.setStatus(JobPostStatus.PAUSED.getValue());
+        jobPosting.setUpdatedBy(updatedByUserId);
+        JobPosting saved = jobPostingRepository.save(jobPosting);
+        return toDetailResponse(saved);
+    }
+
+    @Override
+    @Transactional
+    public ResJobPostingDetail resume(Long id, Long companyId, Long updatedByUserId) {
+        JobPosting jobPosting = findByIdOrThrow(id);
+        if (!jobPosting.getCompanyId().equals(companyId)) {
+            throw AppException.forbidden("Bạn không có quyền thao tác trên tin tuyển dụng của công ty khác");
+        }
+        if (!JobPostStatus.PAUSED.getValue().equals(jobPosting.getStatus())) {
+            throw AppException.badRequest("Chỉ có thể mở lại tin khi đang ở trạng thái PAUSED");
+        }
+        saveEditLog(jobPosting, updatedByUserId);
+        jobPosting.setStatus(JobPostStatus.PUBLISHED.getValue());
+        jobPosting.setUpdatedBy(updatedByUserId);
+        JobPosting saved = jobPostingRepository.save(jobPosting);
+        return toDetailResponse(saved);
+    }
+
+    @Override
+    @Transactional
+    public ResJobPostingDetail close(Long id, Long companyId, Long updatedByUserId) {
+        JobPosting jobPosting = findByIdOrThrow(id);
+        if (!jobPosting.getCompanyId().equals(companyId)) {
+            throw AppException.forbidden("Bạn không có quyền thao tác trên tin tuyển dụng của công ty khác");
+        }
+        String status = jobPosting.getStatus();
+        if (!JobPostStatus.PUBLISHED.getValue().equals(status) && !JobPostStatus.PAUSED.getValue().equals(status)) {
+            throw AppException.badRequest("Chỉ có thể đóng tin khi đang ở trạng thái PUBLISHED hoặc PAUSED");
+        }
+        saveEditLog(jobPosting, updatedByUserId);
+        jobPosting.setStatus(JobPostStatus.CLOSED.getValue());
+        jobPosting.setUpdatedBy(updatedByUserId);
+        JobPosting saved = jobPostingRepository.save(jobPosting);
+        return toDetailResponse(saved);
+    }
+
+    @Override
+    @Transactional
+    public ResJobPostingDetail extend(Long id, Long companyId, Long updatedByUserId, ReqExtendJobPostDTO request) {
+        JobPosting jobPosting = findByIdOrThrow(id);
+        if (!jobPosting.getCompanyId().equals(companyId)) {
+            throw AppException.forbidden("Bạn không có quyền thao tác trên tin tuyển dụng của công ty khác");
+        }
+        if (!JobPostStatus.EXPIRED.getValue().equals(jobPosting.getStatus())) {
+            throw AppException.badRequest("Chỉ có thể gia hạn tin khi đã hết hạn (EXPIRED)");
+        }
+        saveEditLog(jobPosting, updatedByUserId);
+        jobPosting.setDeadline(request.getNewDeadline());
+        jobPosting.setStatus(JobPostStatus.PUBLISHED.getValue());
+        jobPosting.setUpdatedBy(updatedByUserId);
+        JobPosting saved = jobPostingRepository.save(jobPosting);
+        return toDetailResponse(saved);
+    }
+
+    @Override
+    @Transactional
+    public ResJobPostingDetail refresh(Long id, Long companyId, Long updatedByUserId) {
+        JobPosting jobPosting = findByIdOrThrow(id);
+        if (!jobPosting.getCompanyId().equals(companyId)) {
+            throw AppException.forbidden("Bạn không có quyền thao tác trên tin tuyển dụng của công ty khác");
+        }
+        if (!JobPostStatus.PUBLISHED.getValue().equals(jobPosting.getStatus())
+                && !JobPostStatus.RENEWED.getValue().equals(jobPosting.getStatus())) {
+            throw AppException.badRequest("Chỉ có thể làm mới tin khi đang ở trạng thái PUBLISHED hoặc RENEWED");
+        }
+        jobPosting.setPublishedAt(java.time.LocalDateTime.now());
+        jobPosting.setRefreshedAt(java.time.LocalDateTime.now());
+        jobPosting.setUpdatedBy(updatedByUserId);
+        JobPosting saved = jobPostingRepository.save(jobPosting);
+        return toDetailResponse(saved);
+    }
+
+    // -------------------------------------------------------------------------
+    // Admin (Content Mod) — Moderation
+    // -------------------------------------------------------------------------
+
+    @Override
+    @Transactional
+    public ResJobPostingDetail approve(Long id, Long adminId) {
+        JobPosting jobPosting = findByIdOrThrow(id);
+        if (!JobPostStatus.PENDING_APPROVAL.getValue().equals(jobPosting.getStatus())
+                && !JobPostStatus.DRAFT.getValue().equals(jobPosting.getStatus())) {
+            throw AppException.badRequest("Chỉ có thể duyệt tin khi đang ở trạng thái PENDING_APPROVAL hoặc DRAFT");
+        }
+
+        jobPosting.setStatus(JobPostStatus.PUBLISHED.getValue());
+        jobPosting.setPublishedAt(java.time.LocalDateTime.now());
+        jobPosting.setUpdatedBy(adminId);
+        jobPosting.setRejectionReason(null);
+        jobPosting.setModerationNote(null);
+
+        JobPosting saved = jobPostingRepository.save(jobPosting);
+        return toDetailResponse(saved);
+    }
+
+    @Override
+    @Transactional
+    public ResJobPostingDetail reject(Long id, Long adminId,
+            com.topviec.topviec_be.dto.request.ReqRejectJobPostDTO request) {
+        JobPosting jobPosting = findByIdOrThrow(id);
+        if (!JobPostStatus.PENDING_APPROVAL.getValue().equals(jobPosting.getStatus())) {
+            throw AppException.badRequest("Chỉ có thể từ chối tin khi đang ở trạng thái PENDING_APPROVAL");
+        }
+
+        jobPosting.setStatus(JobPostStatus.REJECTED.getValue());
+        jobPosting.setRejectionReason(request.getRejectionReason());
+        jobPosting.setModerationNote(request.getModerationNote());
+        jobPosting.setUpdatedBy(adminId);
+
+        JobPosting saved = jobPostingRepository.save(jobPosting);
+        return toDetailResponse(saved);
+    }
+
+    @Override
+    @Transactional
+    public ResJobPostingDetail takedown(Long id, Long adminId,
+            com.topviec.topviec_be.dto.request.ReqRejectJobPostDTO request) {
+        JobPosting jobPosting = findByIdOrThrow(id);
+        String status = jobPosting.getStatus();
+
+        if (JobPostStatus.DRAFT.getValue().equals(status) ||
+                JobPostStatus.PENDING_APPROVAL.getValue().equals(status) ||
+                JobPostStatus.REJECTED.getValue().equals(status)) {
+            throw AppException
+                    .badRequest("Tin không nằm trong trạng thái có thể gỡ (chỉ gỡ tin đã đăng, tạm dừng, gia hạn...)");
+        }
+
+        jobPosting.setStatus(JobPostStatus.REJECTED.getValue());
+        jobPosting.setRejectionReason(request.getRejectionReason());
+        jobPosting.setModerationNote(request.getModerationNote());
+        jobPosting.setUpdatedBy(adminId);
+
+        JobPosting saved = jobPostingRepository.save(jobPosting);
+        return toDetailResponse(saved);
+    }
+
+    @Override
+    public ResJobPostingDetail pendingApproval(Long id, Long companyId, Long updatedByUserId) {
+        JobPosting jobPosting = findByIdOrThrow(id);
+        if (!jobPosting.getCompanyId().equals(companyId)) {
+            throw AppException.forbidden("Bạn không có quyền thao tác trên tin tuyển dụng của công ty khác");
+        }
+        if (!JobPostStatus.DRAFT.getValue().equals(jobPosting.getStatus())) {
+            throw AppException.badRequest("Chỉ có thể gửi duyệt tin khi đang ở trạng thái DRAFT");
+        }
+        // jobPosting.setStatus(JobPostStatus.PENDING_APPROVAL.getValue());
+        jobPosting.setStatus(JobPostStatus.PUBLISHED.getValue()); // Bypass approval for testing
+        jobPosting.setPublishedAt(java.time.LocalDateTime.now()); // Set published time
+        jobPosting.setUpdatedBy(updatedByUserId);
+        JobPosting saved = jobPostingRepository.save(jobPosting);
+        return toDetailResponse(saved);
+    }
+
+    // -------------------------------------------------------------------------
+    // Private helpers
+    // -------------------------------------------------------------------------
+
+    private JobPosting findByIdOrThrow(Long id) {
+        return jobPostingRepository.findByIdAndDeletedAtIsNull(id)
+                .orElseThrow(() -> AppException.notFound("Không tìm thấy tin tuyển dụng"));
+    }
+
+    private void validateEditable(JobPosting jobPosting) {
+        String status = jobPosting.getStatus();
+
+        if (JobPostStatus.DRAFT.getValue().equals(status)
+                || JobPostStatus.REJECTED.getValue().equals(status)
+                || JobPostStatus.RENEWED.getValue().equals(status)) {
+            return;
+        }
+
+        if (JobPostStatus.PUBLISHED.getValue().equals(status)) {
+            if (jobPosting.getEditCount() >= 1) {
+                throw AppException.badRequest("Tin đã được chỉnh sửa 1 lần sau khi đăng, không thể chỉnh sửa thêm");
+            }
+            return;
+        }
+
+        throw AppException.badRequest("Không thể chỉnh sửa tin ở trạng thái: " + status);
+    }
+
+    private void saveEditLog(JobPosting jobPosting, Long editedBy) {
+        try {
+            String snapshot = objectMapper.writeValueAsString(jobPosting);
+            String editType = JobPostStatus.DRAFT.getValue().equals(jobPosting.getStatus())
+                    ? EditType.DRAFT_EDIT.getValue()
+                    : EditType.POST_PUBLISH_EDIT.getValue();
+
+            jobPostEditLogRepository.save(JobPostEditLog.builder()
+                    .jobPostId(jobPosting.getId())
+                    .editedBy(editedBy)
+                    .snapshotBefore(snapshot)
+                    .editType(editType)
+                    .build());
+        } catch (Exception e) {
+            // Không để lỗi audit chặn nghiệp vụ chính
+        }
+    }
+
+    private void saveLocations(Long jobPostId, List<ReqJobPostLocationDTO> locationRequests) {
+        List<JobPostLocation> locations = locationRequests.stream()
+                .map(req -> JobPostLocation.builder()
+                        .jobPostId(jobPostId)
+                        .provinceId(req.getProvinceId())
+                        .addressDetail(req.getAddressDetail())
+                        .isRemote(req.getIsRemote())
+                        .build())
+                .toList();
+        jobPostLocationRepository.saveAll(locations);
+    }
+
+    private void saveSkills(Long jobPostId, List<ReqJobPostSkillDTO> skillRequests) {
+        List<JobPostSkill> skills = skillRequests.stream()
+                .map(req -> JobPostSkill.builder()
+                        .jobPostId(jobPostId)
+                        .skillId(req.getSkillId())
+                        .isRequired(req.getIsRequired())
+                        .proficiencyMin(req.getProficiencyMin())
+                        .build())
+                .toList();
+        jobPostSkillRepository.saveAll(skills);
+    }
+
+    private String generateUniqueSlug(String title) {
+        String baseSlug = toSlug(title);
+        String slug = baseSlug;
+        int count = 1;
+        while (jobPostingRepository.existsBySlugAndDeletedAtIsNull(slug)) {
+            slug = baseSlug + "-" + count++;
+        }
+        return slug;
+    }
+
+    private String generateUniqueSlugExclude(String title, Long excludeId) {
+        String baseSlug = toSlug(title);
+        String slug = baseSlug;
+        int count = 1;
+        while (jobPostingRepository.existsBySlugAndIdNotAndDeletedAtIsNull(slug, excludeId)) {
+            slug = baseSlug + "-" + count++;
+        }
+        return slug;
+    }
+
+    private String toSlug(String input) {
+        String normalized = Normalizer.normalize(input, Normalizer.Form.NFD);
+        Pattern pattern = Pattern.compile("\\p{InCombiningDiacriticalMarks}+");
+        return pattern.matcher(normalized)
+                .replaceAll("")
+                .toLowerCase()
+                .replaceAll("[^a-z0-9\\s-]", "")
+                .replaceAll("\\s+", "-")
+                .replaceAll("-+", "-")
+                .trim();
+    }
+
+    // ── Mapper: dùng cho danh sách (batch query tránh N+1) ───────────────────
+
+    private ResultPaginationDTO toResultPagination(Page<JobPosting> page, Pageable pageable) {
+        List<JobPosting> jobs = page.getContent();
+
+        // Batch query 3 bảng — chỉ tốn 3 query dù có bao nhiêu job
+        Map<Long, Company> companyMap = companyRepository
+                .findAllById(jobs.stream().map(JobPosting::getCompanyId).distinct().toList())
+                .stream().collect(Collectors.toMap(Company::getId, c -> c));
+
+        Map<Long, Industry> industryMap = industryRepository
+                .findAllById(jobs.stream().map(JobPosting::getIndustryId).distinct().toList())
+                .stream().collect(Collectors.toMap(Industry::getId, i -> i));
+
+        Map<Long, Level> levelMap = levelRepository
+                .findAllById(jobs.stream().map(JobPosting::getLevelId).distinct().toList())
+                .stream().collect(Collectors.toMap(Level::getId, l -> l));
+
+        ResultPaginationDTO.Meta meta = new ResultPaginationDTO.Meta();
+        meta.setPage(pageable.getPageNumber());
+        meta.setPageSize(pageable.getPageSize());
+        meta.setPages(page.getTotalPages());
+        meta.setTotals(page.getTotalElements());
+
+        ResultPaginationDTO result = new ResultPaginationDTO();
+        result.setMeta(meta);
+        result.setResult(jobs.stream()
+                .map(j -> toSummaryResponse(j, companyMap, industryMap, levelMap))
+                .toList());
+        return result;
+    }
+
+    private ResJobPostingSummary toSummaryResponse(JobPosting j,
+            Map<Long, Company> companyMap,
+            Map<Long, Industry> industryMap,
+            Map<Long, Level> levelMap) {
+        Company company = companyMap.get(j.getCompanyId());
+        Industry industry = industryMap.get(j.getIndustryId());
+        Level level = levelMap.get(j.getLevelId());
+
+        return ResJobPostingSummary.builder()
+                .id(j.getId())
+                .title(j.getTitle())
+                .slug(j.getSlug())
+                .company(company == null ? null
+                        : ResJobPostingSummary.CompanyDTO.builder()
+                                .id(company.getId())
+                                .name(company.getName())
+                                .slug(company.getSlug())
+                                .logoUrl(company.getLogoUrl())
+                                .address(company.getAddress())
+                                .build())
+                .industry(industry == null ? null
+                        : ResJobPostingSummary.IndustryDTO.builder()
+                                .id(industry.getId())
+                                .name(industry.getName())
+                                .build())
+                .level(level == null ? null
+                        : ResJobPostingSummary.LevelDTO.builder()
+                                .id(level.getId())
+                                .name(level.getName())
+                                .build())
+                .workType(j.getWorkType())
+                .status(j.getStatus())
+                .salaryMin(j.getSalaryMin())
+                .salaryMax(j.getSalaryMax())
+                .salaryNegotiable(j.getSalaryNegotiable())
+                .isFeatured(j.getIsFeatured())
+                .isUrgent(j.getIsUrgent())
+                .viewCount(j.getViewCount())
+                .deadline(j.getDeadline())
+                .publishedAt(j.getPublishedAt())
+                .createdAt(j.getCreatedAt())
+                .build();
+    }
+
+    // ── Mapper: dùng cho chi tiết (kèm locations + skills) ───────────────────
+
+    private ResJobPostingDetail toDetailResponse(JobPosting j) {
+        List<ResJobPostLocationDTO> locations = jobPostLocationRepository
+                .findByJobPostId(j.getId())
+                .stream()
+                .map(loc -> ResJobPostLocationDTO.builder()
+                        .id(loc.getId())
+                        .provinceId(loc.getProvinceId())
+                        .addressDetail(loc.getAddressDetail())
+                        .isRemote(loc.getIsRemote())
+                        .build())
+                .toList();
+
+        List<ResJobPostSkillDTO> skills = jobPostSkillRepository
+                .findByJobPostId(j.getId())
+                .stream()
+                .map(skill -> {
+                    Skill skillEntity = skillRepository.findById(skill.getSkillId()).orElse(null);
+                    return ResJobPostSkillDTO.builder()
+                            .id(skill.getId())
+                            .skillName(skillEntity != null ? skillEntity.getName() : null)
+                            .skillId(skill.getSkillId())
+                            .isRequired(skill.getIsRequired())
+                            .proficiencyMin(skill.getProficiencyMin())
+                            .build();
+                })
+                .toList();
+
+        Company company = companyRepository.findById(j.getCompanyId()).orElse(null);
+        Industry industry = industryRepository.findById(j.getIndustryId()).orElse(null);
+        Level level = levelRepository.findById(j.getLevelId()).orElse(null);
+
+        return ResJobPostingDetail.builder()
+                .id(j.getId())
+                .title(j.getTitle())
+                .slug(j.getSlug())
+                .description(j.getDescription())
+                .requirements(j.getRequirements())
+                .benefits(j.getBenefits())
+                .company(company == null ? null
+                        : ResJobPostingDetail.CompanyDTO.builder()
+                                .id(company.getId())
+                                .name(company.getName())
+                                .slug(company.getSlug())
+                                .logoUrl(company.getLogoUrl())
+                                .build())
+                .industry(industry == null ? null
+                        : ResJobPostingDetail.IndustryDTO.builder()
+                                .id(industry.getId())
+                                .name(industry.getName())
+                                .build())
+                .level(level == null ? null
+                        : ResJobPostingDetail.LevelDTO.builder()
+                                .id(level.getId())
+                                .name(level.getName())
+                                .build())
+                .experienceYearsMin(j.getExperienceYearsMin())
+                .experienceYearsMax(j.getExperienceYearsMax())
+                .salaryMin(j.getSalaryMin())
+                .salaryMax(j.getSalaryMax())
+                .salaryNegotiable(j.getSalaryNegotiable())
+                .workType(j.getWorkType())
+                .headcount(j.getHeadcount())
+                .deadline(j.getDeadline())
+                .status(j.getStatus())
+                .isFeatured(j.getIsFeatured())
+                .isUrgent(j.getIsUrgent())
+                .viewCount(j.getViewCount())
+                .editCount(j.getEditCount())
+                .publishedAt(j.getPublishedAt())
+                .createdAt(j.getCreatedAt())
+                .updatedAt(j.getUpdatedAt())
+                .locations(locations)
+                .skills(skills)
+                .build();
+    }
 }
 
-.page-inner {
-  width: 100%;
-  max-width: 72rem;
-  margin: 0 auto;
-}
-
-/* Two-col body */
-.body-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 2rem;
-}
-@media (min-width: 1024px) {
-  .body-grid {
-    grid-template-columns: 2fr 1fr;
-  }
-}
-
-.col-main { min-width: 0; }
-.col-side  { min-width: 0; }
-</style>
-
-
-<template>
-  <div class="header-wrap">
-    <!-- Breadcrumb -->
-    <nav class="breadcrumb">
-      <span class="breadcrumb-link">Quản lý tin tuyển dụng</span>
-      <span class="material-symbols-outlined breadcrumb-sep">chevron_right</span>
-      <span class="breadcrumb-current">Chi tiết tin</span>
-    </nav>
-
-    <!-- Title row -->
-    <header class="header-body">
-      <div class="header-left">
-        <div class="title-row">
-          <h1 class="page-title">{{ title }}</h1>
-          <span class="status-badge">
-            <span class="status-dot"></span>
-            Đang tuyển
-          </span>
-        </div>
-        <p class="header-location">
-          <span class="material-symbols-outlined loc-icon">location_on</span>
-          {{ location }}
-        </p>
-      </div>
-
-      <div class="header-actions">
-        <button class="btn-outline" type="button">
-          <span class="material-symbols-outlined">edit</span>
-          Chỉnh sửa
-        </button>
-        <button class="btn-outline" type="button">
-          <span class="material-symbols-outlined">pause_circle</span>
-          Tạm dừng
-        </button>
-        <button class="btn-danger" type="button">
-          <span class="material-symbols-outlined">cancel</span>
-          Đóng tin
-        </button>
-      </div>
-    </header>
-  </div>
-</template>
-
-<script setup lang="ts">
-withDefaults(defineProps<{
-  title?: string
-  location?: string
-}>(), {
-  title: 'Senior Frontend Engineer',
-  location: 'Hồ Chí Minh, Quận 1',
-})
-</script>
-
-<style scoped>
-.header-wrap {
-  margin-bottom: 2.5rem;
-}
-
-/* Breadcrumb */
-.breadcrumb {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.75rem;
-  color: #64748b;
-  margin-bottom: 1.5rem;
-}
-.breadcrumb-link {
-  cursor: pointer;
-  transition: color 0.15s;
-}
-.breadcrumb-link:hover { color: #4B9AF6; }
-.breadcrumb-sep { font-size: 0.625rem; }
-.breadcrumb-current { color: #0f172a; font-weight: 500; }
-
-/* Header body */
-.header-body {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-@media (min-width: 768px) {
-  .header-body {
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
-  }
-}
-
-.header-left { display: flex; flex-direction: column; gap: 0.5rem; }
-
-.title-row {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  flex-wrap: wrap;
-}
-
-.page-title {
-  font-size: 1.875rem;
-  font-weight: 800;
-  letter-spacing: -0.025em;
-  color: #0f172a;
-}
-
-.status-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.375rem;
-  padding: 0.25rem 0.75rem;
-  background: #dcfce7;
-  color: #15803d;
-  font-size: 0.75rem;
-  font-weight: 700;
-  border-radius: 9999px;
-}
-.status-dot {
-  width: 0.5rem;
-  height: 0.5rem;
-  border-radius: 50%;
-  background: #22c55e;
-  animation: pulse 2s infinite;
-}
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.4; }
-}
-
-.header-location {
-  display: flex;
-  align-items: center;
-  gap: 0.375rem;
-  font-size: 0.875rem;
-  color: #64748b;
-}
-.loc-icon { font-size: 1rem; }
-
-/* Actions */
-.header-actions {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  flex-wrap: wrap;
-}
-
-.btn-outline,
-.btn-danger {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.375rem;
-  padding: 0.5rem 1rem;
-  border-radius: 0.5rem;
-  font-size: 0.875rem;
-  font-weight: 600;
-  font-family: inherit;
-  cursor: pointer;
-  transition: background 0.15s, opacity 0.15s;
-}
-.btn-outline .material-symbols-outlined,
-.btn-danger .material-symbols-outlined {
-  font-size: 1.125rem;
-}
-.btn-outline {
-  border: 1px solid #e2e8f0;
-  background: #fff;
-  color: #0f172a;
-}
-.btn-outline:hover { background: #f1f5f9; }
-
-.btn-danger {
-  border: none;
-  background: #fee2e2;
-  color: #b91c1c;
-}
-.btn-danger:hover { opacity: 0.85; }
-</style>
-
-
-<template>
-  <div class="stats-grid">
-    <div
-      v-for="stat in stats"
-      :key="stat.label"
-      class="stat-card"
-    >
-      <div class="stat-icon" :style="{ background: stat.iconBg }">
-        <span class="material-symbols-outlined" :style="{ color: stat.iconColor }">{{ stat.icon }}</span>
-      </div>
-      <div>
-        <p class="stat-label">{{ stat.label }}</p>
-        <p class="stat-value">{{ stat.value }}</p>
-      </div>
-    </div>
-  </div>
-</template>
-
-<script setup lang="ts">
-interface Stat {
-  label: string
-  value: string
-  icon: string
-  iconBg: string
-  iconColor: string
-}
-
-withDefaults(defineProps<{
-  stats?: Stat[]
-}>(), {
-  stats: () => [
-    { label: 'Lượt xem',     value: '1,240',  icon: 'visibility',   iconBg: '#eff6ff', iconColor: '#2563eb' },
-    { label: 'Ứng viên',     value: '42',     icon: 'groups',       iconBg: '#fff7ed', iconColor: '#ea580c' },
-    { label: 'Số lần sửa',   value: '1/2',    icon: 'history_edu',  iconBg: '#f5f3ff', iconColor: '#7c3aed' },
-    { label: 'Ngày còn lại', value: '15 ngày',icon: 'schedule',     iconBg: '#fef2f2', iconColor: '#dc2626' },
-  ],
-})
-</script>
-
-<style scoped>
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 1rem;
-  margin-bottom: 2.5rem;
-}
-@media (max-width: 1024px) {
-  .stats-grid { grid-template-columns: repeat(2, 1fr); }
-}
-@media (max-width: 640px) {
-  .stats-grid { grid-template-columns: 1fr; }
-}
-
-.stat-card {
-  background: #fff;
-  border: 1px solid #e2e8f0;
-  border-radius: 0.75rem;
-  padding: 1.25rem;
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  box-shadow: 0 1px 3px rgba(0,0,0,.05);
-  transition: box-shadow 0.15s;
-}
-.stat-card:hover {
-  box-shadow: 0 4px 12px rgba(0,0,0,.08);
-}
-
-.stat-icon {
-  width: 3rem;
-  height: 3rem;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-.stat-icon .material-symbols-outlined { font-size: 1.375rem; }
-
-.stat-label {
-  font-size: 0.75rem;
-  font-weight: 500;
-  color: #64748b;
-  margin-bottom: 0.125rem;
-}
-
-.stat-value {
-  font-size: 1.875rem;
-  font-weight: 800;
-  color: #0f172a;
-  line-height: 1.1;
-}
-</style>
-
-
-<template>
-  <div class="content-sections">
-
-    <!-- Mô tả công việc -->
-    <section class="content-card">
-      <h2 class="section-title">
-        <span class="title-bar"></span>
-        Mô tả công việc
-      </h2>
-      <div class="prose">
-        <p>Chúng tôi đang tìm kiếm một Senior Frontend Engineer tài năng để gia nhập đội ngũ phát triển sản phẩm cốt lõi. Bạn sẽ chịu trách nhiệm xây dựng các giao diện người dùng hiện đại, hiệu năng cao và dễ mở rộng.</p>
-        <ul>
-          <li>Phát triển các tính năng mới cho nền tảng web bằng React/Next.js.</li>
-          <li>Tối ưu hóa hiệu năng ứng dụng và trải nghiệm người dùng (Core Web Vitals).</li>
-          <li>Thiết kế và triển khai các component tái sử dụng trong Design System nội bộ.</li>
-          <li>Hợp tác chặt chẽ với đội ngũ Design và Backend để hoàn thiện sản phẩm.</li>
-        </ul>
-      </div>
-    </section>
-
-    <!-- Yêu cầu ứng viên -->
-    <section class="content-card">
-      <h2 class="section-title">
-        <span class="title-bar"></span>
-        Yêu cầu ứng viên
-      </h2>
-      <div class="prose">
-        <ul>
-          <li>Ít nhất 4 năm kinh nghiệm làm việc với Frontend (React/Vue/Angular).</li>
-          <li>Nắm vững HTML5, CSS3 (Tailwind CSS/SCSS) và JavaScript (ES6+).</li>
-          <li>Có kinh nghiệm với TypeScript và quản lý state (Redux/Zustand).</li>
-          <li>Hiểu biết sâu về kiến trúc ứng dụng web và tối ưu hóa performance.</li>
-          <li>Kỹ năng giải quyết vấn đề tốt và khả năng làm việc nhóm hiệu quả.</li>
-        </ul>
-      </div>
-    </section>
-
-    <!-- Quyền lợi -->
-    <section class="content-card">
-      <h2 class="section-title">
-        <span class="title-bar"></span>
-        Quyền lợi được hưởng
-      </h2>
-      <div class="benefits-grid">
-        <div
-          v-for="benefit in benefits"
-          :key="benefit.icon"
-          class="benefit-item"
-        >
-          <span class="material-symbols-outlined benefit-icon">{{ benefit.icon }}</span>
-          <span class="benefit-text">{{ benefit.text }}</span>
-        </div>
-      </div>
-    </section>
-
-  </div>
-</template>
-
-<script setup lang="ts">
-interface Benefit {
-  icon: string
-  text: string
-}
-
-withDefaults(defineProps<{
-  benefits?: Benefit[]
-}>(), {
-  benefits: () => [
-    { icon: 'payments',        text: 'Lương cạnh tranh + Thưởng tháng 13 & Performance bonus.' },
-    { icon: 'health_and_safety', text: 'Bảo hiểm sức khỏe cao cấp (PVI) cho nhân viên.' },
-    { icon: 'coffee',          text: 'Trang thiết bị hiện đại (Macbook), pantry đầy đủ đồ ăn nhẹ.' },
-    { icon: 'event_available', text: '15 ngày phép năm + 3 ngày nghỉ ốm hưởng nguyên lương.' },
-  ],
-})
-</script>
-
-<style scoped>
-.content-sections {
-  display: flex;
-  flex-direction: column;
-  gap: 2rem;
-}
-
-.content-card {
-  background: #fff;
-  border: 1px solid #e2e8f0;
-  border-radius: 1rem;
-  padding: 2rem;
-  box-shadow: 0 1px 3px rgba(0,0,0,.05);
-}
-
-/* Section title */
-.section-title {
-  display: flex;
-  align-items: center;
-  gap: 0.625rem;
-  font-size: 1.125rem;
-  font-weight: 700;
-  color: #0f172a;
-  margin-bottom: 1.5rem;
-}
-.title-bar {
-  display: inline-block;
-  width: 0.375rem;
-  height: 1.5rem;
-  background: #4B9AF6;
-  border-radius: 9999px;
-  flex-shrink: 0;
-}
-
-/* Prose */
-.prose {
-  color: #334155;
-  line-height: 1.75;
-  font-size: 0.875rem;
-}
-.prose p {
-  margin-bottom: 1rem;
-}
-.prose ul {
-  list-style: disc;
-  padding-left: 1.25rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-/* Benefits */
-.benefits-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.75rem;
-}
-@media (max-width: 640px) {
-  .benefits-grid { grid-template-columns: 1fr; }
-}
-
-.benefit-item {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.75rem;
-  padding: 0.75rem;
-  background: #f1f5f9;
-  border-radius: 0.5rem;
-}
-.benefit-icon {
-  color: #4B9AF6;
-  font-size: 1.25rem;
-  flex-shrink: 0;
-  margin-top: 0.0625rem;
-}
-.benefit-text {
-  font-size: 0.875rem;
-  color: #334155;
-  line-height: 1.6;
-}
-</style>
-
-
-<template>
-  <div class="sidebar-sections">
-
-    <!-- Thông tin chung -->
-    <section class="side-card">
-      <h3 class="side-title">Thông tin chung</h3>
-      <div class="info-list">
-        <div
-          v-for="(item, i) in infoItems"
-          :key="item.label"
-          class="info-row"
-          :class="{ 'no-border': i === infoItems.length - 1 }"
-        >
-          <div class="info-label">
-            <span class="material-symbols-outlined info-icon">{{ item.icon }}</span>
-            <span>{{ item.label }}</span>
-          </div>
-          <span
-            class="info-value"
-            :class="{ 'salary-value': item.highlight }"
-          >{{ item.value }}</span>
-        </div>
-      </div>
-    </section>
-
-    <!-- Mốc thời gian -->
-    <section class="side-card">
-      <h3 class="side-title">Mốc thời gian</h3>
-      <div class="timeline">
-        <div
-          v-for="(event, i) in timeline"
-          :key="event.label"
-          class="timeline-item"
-        >
-          <div
-            class="timeline-dot"
-            :class="{ 'dot-error': event.isDeadline }"
-          ></div>
-          <div class="timeline-body">
-            <p class="timeline-label">{{ event.label }}</p>
-            <p
-              class="timeline-date"
-              :class="{ 'date-error': event.isDeadline }"
-            >{{ event.date }}</p>
-          </div>
-          <!-- Connector line (except last) -->
-          <div v-if="i < timeline.length - 1" class="timeline-line"></div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Chỉ số chuyển đổi -->
-    <section class="conversion-card">
-      <div class="conversion-header">
-        <h3 class="conversion-title">Chỉ số chuyển đổi</h3>
-        <span class="conversion-badge">3.4%</span>
-      </div>
-      <div class="progress-track">
-        <div class="progress-fill" :style="{ width: `${conversionPercent}%` }"></div>
-      </div>
-      <p class="conversion-note">Đã đạt {{ conversionPercent }}/100 CV mục tiêu cho vị trí này.</p>
-    </section>
-
-  </div>
-</template>
-
-<script setup lang="ts">
-interface InfoItem {
-  label: string
-  value: string
-  icon: string
-  highlight?: boolean
-}
-interface TimelineEvent {
-  label: string
-  date: string
-  isDeadline?: boolean
-}
-
-withDefaults(defineProps<{
-  infoItems?: InfoItem[]
-  timeline?: TimelineEvent[]
-  conversionPercent?: number
-}>(), {
-  infoItems: () => [
-    { label: 'Ngành nghề', value: 'IT - Phần mềm',       icon: 'category' },
-    { label: 'Kinh nghiệm', value: '4 năm trở lên',       icon: 'history' },
-    { label: 'Mức lương',   value: '$1500 - $2500',       icon: 'monetization_on', highlight: true },
-    { label: 'Hình thức',   value: 'Toàn thời gian',      icon: 'work' },
-    { label: 'Số lượng',    value: '3 người',             icon: 'person_add' },
-  ],
-  timeline: () => [
-    { label: 'Ngày tạo',  date: '15/10/2023 09:30' },
-    { label: 'Ngày đăng', date: '16/10/2023 14:20' },
-    { label: 'Hạn cuối',  date: '15/11/2023', isDeadline: true },
-  ],
-  conversionPercent: 42,
-})
-</script>
-
-<style scoped>
-.sidebar-sections {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
-/* Shared card */
-.side-card {
-  background: #fff;
-  border: 1px solid #e2e8f0;
-  border-radius: 1rem;
-  padding: 1.5rem;
-  box-shadow: 0 1px 3px rgba(0,0,0,.05);
-}
-
-.side-title {
-  font-size: 1rem;
-  font-weight: 700;
-  color: #0f172a;
-  margin-bottom: 1.5rem;
-}
-
-/* Info list */
-.info-list { display: flex; flex-direction: column; gap: 0; }
-
-.info-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding-bottom: 1rem;
-  margin-bottom: 1rem;
-  border-bottom: 1px solid #e2e8f0;
-}
-.info-row.no-border {
-  padding-bottom: 0;
-  margin-bottom: 0;
-  border-bottom: none;
-}
-
-.info-label {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.875rem;
-  color: #64748b;
-}
-.info-icon { font-size: 1rem; }
-
-.info-value {
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: #0f172a;
-}
-.salary-value {
-  color: #2563eb;
-  font-weight: 700;
-}
-
-/* Timeline */
-.timeline {
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-  position: relative;
-}
 
-.timeline-item {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.75rem;
-  position: relative;
-}
-
-.timeline-dot {
-  width: 1rem;
-  height: 1rem;
-  border-radius: 50%;
-  border: 3px solid #fff;
-  background: #4B9AF6;
-  box-shadow: 0 0 0 2px #4B9AF6;
-  flex-shrink: 0;
-  margin-top: 0.125rem;
-  z-index: 1;
-}
-.dot-error {
-  background: #ef4444;
-  box-shadow: 0 0 0 2px #ef4444;
-}
-
-.timeline-body {
-  padding-bottom: 1.5rem;
-  flex: 1;
-}
-.timeline-item:last-child .timeline-body { padding-bottom: 0; }
-
-.timeline-label {
-  font-size: 0.75rem;
-  font-weight: 700;
-  color: #64748b;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  margin-bottom: 0.25rem;
-}
-
-.timeline-date {
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: #0f172a;
-}
-.date-error {
-  color: #ef4444;
-  font-weight: 700;
-}
-
-/* Vertical connector between dots */
-.timeline-line {
-  position: absolute;
-  left: 0.4375rem; /* center of 1rem dot */
-  top: 1.125rem;
-  bottom: 0;
-  width: 2px;
-  background: #e2e8f0;
-  z-index: 0;
-}
-
-/* Conversion card */
-.conversion-card {
-  background: #dbeafe;
-  border: 1px solid rgba(75,154,246,.2);
-  border-radius: 1rem;
-  padding: 1.5rem;
-}
-
-.conversion-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 1rem;
-}
-
-.conversion-title {
-  font-size: 0.875rem;
-  font-weight: 700;
-  color: #1e40af;
-}
-
-.conversion-badge {
-  font-size: 0.75rem;
-  font-weight: 700;
-  background: #fff;
-  color: #4B9AF6;
-  padding: 0.125rem 0.5rem;
-  border-radius: 9999px;
-}
-
-.progress-track {
-  height: 0.5rem;
-  width: 100%;
-  background: rgba(255,255,255,.5);
-  border-radius: 9999px;
-  overflow: hidden;
-  margin-bottom: 0.5rem;
-}
-
-.progress-fill {
-  height: 100%;
-  background: #4B9AF6;
-  border-radius: 9999px;
-  transition: width 0.6s ease;
-}
-
-.conversion-note {
-  font-size: 0.75rem;
-  color: rgba(30,64,175,.7);
-  font-style: italic;
-}
-</style>

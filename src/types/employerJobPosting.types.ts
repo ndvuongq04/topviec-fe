@@ -99,12 +99,13 @@ export interface JobPostingRow {
   id: number
   title: string
   code: string
-  status: 'active' | 'pending' | 'expiring' | 'draft' | 'closed'
+  status: 'active' | 'pending' | 'expiring' | 'draft' | 'closed' | 'expired' | 'paused' | 'rejected' | 'interviewing' | 'completed'
   postedAt: string
   deadline?: string
   daysLeft?: number
   views?: string | number
   applicants?: string | number
+  editCount?: number
   isUrgent?: boolean
   isFeatured?: boolean
 }

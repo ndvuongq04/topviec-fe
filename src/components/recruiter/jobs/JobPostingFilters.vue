@@ -20,11 +20,12 @@
         placeholder="Tìm kiếm tin tuyển dụng..."
         :value="searchValue"
         @input="$emit('update:searchValue', ($event.target as HTMLInputElement).value)"
+        @keyup.enter="$emit('search')"
       />
       <button
         v-if="searchValue"
         class="search-clear"
-        @click="$emit('update:searchValue', '')"
+        @click="$emit('update:searchValue', ''); $emit('search')"
       >
         <span class="material-symbols-outlined">close</span>
       </button>
@@ -54,8 +55,9 @@ defineProps<{
 }>()
 
 defineEmits<{
-  'update:modelValue':   [value: JobPostingFilterTab]
-  'update:searchValue':  [value: string]
+  'update:modelValue':  [value: JobPostingFilterTab]
+  'update:searchValue': [value: string]
+  'search':             []
 }>()
 </script>
 

@@ -73,68 +73,84 @@
     <!-- Actions -->
     <td class="td td--right">
       <div class="actions">
-        <!-- Draft: chỉ edit + delete -->
-        <template v-if="job.status === 'draft'">
-          <button class="btn-action" title="Chỉnh sửa" @click="$emit('edit', job.id)">
-            <span class="material-symbols-outlined icon-xl">edit</span>
-          </button>
-          <button class="btn-action btn-action--danger" title="Xóa" @click="$emit('delete', job.id)">
-            <span class="material-symbols-outlined icon-xl">delete</span>
-          </button>
-        </template>
-
-        <!-- Pending: nút gửi duyệt nhanh -->
-        <template v-else-if="job.status === 'pending'">
-          <button class="btn-submit" @click="$emit('submit', job.id)">Gửi duyệt</button>
-          <GlobalDropdown>
-            <template #default="{ close }">
-              <GlobalDropdownItem icon="visibility" label="Xem chi tiết" @click="handleAction('view', job.id, close)" />
-              <GlobalDropdownItem icon="group" label="Danh sách ứng viên" @click="handleAction('applications', job.id, close)" />
-              <GlobalDropdownItem icon="edit" label="Chỉnh sửa tin" @click="handleAction('edit', job.id, close)" />
-              <GlobalDropdownItem icon="send" label="Gửi duyệt tin" @click="handleAction('submit', job.id, close)" />
-              <div class="dropdown-divider-v2"></div>
-              <GlobalDropdownItem icon="delete" label="Xóa tin" danger @click="handleAction('delete', job.id, close)" />
-            </template>
-          </GlobalDropdown>
-        </template>
-
-        <!-- Expiring: nút gia hạn nhanh -->
-        <template v-else-if="job.status === 'expiring'">
-          <button class="btn-extend" @click="$emit('extend', job.id)">Gia hạn</button>
-          <GlobalDropdown>
-            <template #default="{ close }">
-              <GlobalDropdownItem icon="visibility" label="Xem chi tiết" @click="handleAction('view', job.id, close)" />
-              <GlobalDropdownItem icon="group" label="Danh sách ứng viên" @click="handleAction('applications', job.id, close)" />
-              <GlobalDropdownItem icon="edit" label="Chỉnh sửa tin" @click="handleAction('edit', job.id, close)" />
-              <GlobalDropdownItem icon="update" label="Gia hạn tin" @click="handleAction('extend', job.id, close)" />
-              <div class="dropdown-divider-v2"></div>
-              <GlobalDropdownItem icon="block" label="Đóng tin" danger @click="handleAction('close', job.id, close)" />
-              <GlobalDropdownItem icon="delete" label="Xóa tin" danger @click="handleAction('delete', job.id, close)" />
-            </template>
-          </GlobalDropdown>
-        </template>
-
-        <!-- Active + default: icon actions + dropdown -->
-        <template v-else>
-          <button class="btn-action" title="Chỉnh sửa" @click="$emit('edit', job.id)">
-            <span class="material-symbols-outlined icon-xl">edit</span>
-          </button>
-          <button class="btn-action" title="Sao chép" @click="$emit('copy', job.id)">
-            <span class="material-symbols-outlined icon-xl">content_copy</span>
-          </button>
-          <GlobalDropdown>
-            <template #default="{ close }">
-              <GlobalDropdownItem icon="visibility" label="Xem chi tiết" @click="handleAction('view', job.id, close)" />
-              <GlobalDropdownItem icon="group" label="Danh sách ứng viên" @click="handleAction('applications', job.id, close)" />
-              <GlobalDropdownItem icon="edit" label="Chỉnh sửa tin" @click="handleAction('edit', job.id, close)" />
-              <GlobalDropdownItem icon="send" label="Gửi duyệt tin" @click="handleAction('submit', job.id, close)" />
-              <GlobalDropdownItem icon="update" label="Gia hạn tin" @click="handleAction('extend', job.id, close)" />
-              <div class="dropdown-divider-v2"></div>
-              <GlobalDropdownItem icon="block" label="Đóng tin" danger @click="handleAction('close', job.id, close)" />
-              <GlobalDropdownItem icon="delete" label="Xóa tin" danger @click="handleAction('delete', job.id, close)" />
-            </template>
-          </GlobalDropdown>
-        </template>
+        <GlobalDropdown>
+          <template #default="{ close }">
+            <!-- Xem chi tiết: luôn bật -->
+            <GlobalDropdownItem
+              icon="visibility"
+              label="Xem chi tiết"
+              @click="handleAction('view', job.id, close)"
+            />
+            <!-- Danh sách ứng viên: tắt khi draft -->
+            <GlobalDropdownItem
+              icon="group"
+              label="Danh sách ứng viên"
+              :disabled="!canViewApplications"
+              :tooltip="!canViewApplications ? 'Tin nháp chưa có ứng viên nộp đơn' : undefined"
+              @click="handleAction('applications', job.id, close)"
+            />
+            <div class="dropdown-divider-v2" />
+            <!-- Chỉnh sửa: DRAFT/REJECTED/RENEWED luôn được; PUBLISHED chỉ khi editCount < 1 -->
+            <GlobalDropdownItem
+              icon="edit"
+              label="Chỉnh sửa tin"
+              :disabled="!canEdit"
+              :tooltip="!canEdit ? editDisabledReason : undefined"
+              @click="handleAction('edit', job.id, close)"
+            />
+            <!-- Gửi duyệt: chỉ khi DRAFT -->
+            <GlobalDropdownItem
+              icon="send"
+              label="Gửi tin cho duyệt"
+              :disabled="!canSubmit"
+              :tooltip="!canSubmit ? 'Chỉ có thể gửi duyệt khi tin đang ở trạng thái Nháp' : undefined"
+              @click="handleAction('submit', job.id, close)"
+            />
+            <!-- Tạm dừng: chỉ khi PUBLISHED -->
+            <GlobalDropdownItem
+              icon="pause_circle"
+              label="Tạm dừng tin tuyển dụng"
+              :disabled="!canPause"
+              :tooltip="!canPause ? 'Chỉ có thể tạm dừng khi tin đang ở trạng thái Đang tuyển' : undefined"
+              @click="handleAction('pause', job.id, close)"
+            />
+            <!-- Gia hạn: chỉ khi EXPIRED -->
+            <GlobalDropdownItem
+              icon="update"
+              label="Gia hạn tin tuyển dụng"
+              :disabled="!canExtend"
+              :tooltip="!canExtend ? 'Chỉ có thể gia hạn khi tin đã ở trạng thái Hết hạn' : undefined"
+              @click="handleAction('extend', job.id, close)"
+            />
+            <!-- Bắt đầu phỏng vấn: chỉ khi PUBLISHED -->
+            <GlobalDropdownItem
+              icon="groups"
+              label="Bắt đầu phỏng vấn"
+              :disabled="!canInterview"
+              :tooltip="!canInterview ? 'Chỉ có thể bắt đầu phỏng vấn khi tin đang ở trạng thái Đang tuyển' : undefined"
+              @click="handleAction('interview', job.id, close)"
+            />
+            <div class="dropdown-divider-v2" />
+            <!-- Đóng tin: PUBLISHED hoặc PAUSED -->
+            <GlobalDropdownItem
+              icon="block"
+              label="Đóng tin tuyển dụng"
+              :disabled="!canClose"
+              :tooltip="!canClose ? 'Chỉ có thể đóng tin khi đang ở trạng thái Đang tuyển hoặc Tạm dừng' : undefined"
+              danger
+              @click="handleAction('close', job.id, close)"
+            />
+            <!-- Xóa tin: DRAFT / REJECTED / CLOSED / EXPIRED / COMPLETED -->
+            <GlobalDropdownItem
+              icon="delete"
+              label="Xóa tin"
+              :disabled="!canDelete"
+              :tooltip="!canDelete ? 'Không thể xóa tin đang hoạt động, hãy đóng tin trước' : undefined"
+              danger
+              @click="handleAction('delete', job.id, close)"
+            />
+          </template>
+        </GlobalDropdown>
       </div>
     </td>
   </tr>
@@ -149,13 +165,15 @@ import type { JobPostingRow } from '@/types/employerJobPosting.types'
 const props = defineProps<{ job: JobPostingRow }>()
 
 const emit = defineEmits<{
-  view:   [id: number]
-  edit:   [id: number]
-  copy:   [id: number]
-  submit: [id: number]
-  extend: [id: number]
-  close:  [id: number]
-  delete: [id: number]
+  view:      [id: number]
+  edit:      [id: number]
+  copy:      [id: number]
+  submit:    [id: number]
+  pause:     [id: number]
+  extend:    [id: number]
+  interview: [id: number]
+  close:     [id: number]
+  delete:    [id: number]
   applications: [id: number]
 }>()
 
@@ -164,20 +182,67 @@ function handleAction(event: any, id: number, close: () => void) {
   emit(event, id)
 }
 
+// Xem chi tiết: luôn bật — không cần computed
+
+// Danh sách ứng viên: tắt khi draft
+const canViewApplications = computed(() => props.job.status !== 'draft')
+
+// Chỉnh sửa: DRAFT/REJECTED/RENEWED luôn được; PUBLISHED/EXPIRING chỉ khi editCount < 1
+const canEdit = computed(() => {
+  const s = props.job.status
+  if (['draft', 'rejected', 'renewed'].includes(s)) return true
+  if (s === 'active' || s === 'expiring') return (props.job.editCount ?? 0) < 1
+  return false
+})
+const editDisabledReason = computed(() => {
+  const s = props.job.status
+  if (s === 'active' || s === 'expiring')
+    return 'Tin đã được chỉnh sửa 1 lần sau khi đăng, không thể chỉnh sửa thêm'
+  return 'Không thể chỉnh sửa tin ở trạng thái này'
+})
+
+// Gửi duyệt: chỉ khi DRAFT
+const canSubmit = computed(() => props.job.status === 'draft')
+
+// Tạm dừng: chỉ khi PUBLISHED (active/expiring)
+const canPause = computed(() => ['active', 'expiring'].includes(props.job.status))
+
+// Gia hạn: chỉ khi EXPIRED
+const canExtend = computed(() => props.job.status === 'expired')
+
+// Bắt đầu phỏng vấn: chỉ khi PUBLISHED
+const canInterview = computed(() => ['active', 'expiring'].includes(props.job.status))
+
+// Đóng tin: PUBLISHED hoặc PAUSED
+const canClose = computed(() => ['active', 'expiring', 'paused'].includes(props.job.status))
+
+// Xóa tin: DRAFT / REJECTED / CLOSED / EXPIRED / COMPLETED
+const canDelete = computed(() => ['draft', 'rejected', 'closed', 'expired', 'completed'].includes(props.job.status))
+
 const statusChipClass = computed(() => ({
-  'status-chip--active':   props.job.status === 'active',
-  'status-chip--pending':  props.job.status === 'pending',
-  'status-chip--expiring': props.job.status === 'expiring',
-  'status-chip--draft':    props.job.status === 'draft',
-  'status-chip--closed':   props.job.status === 'closed',
+  'status-chip--active':       props.job.status === 'active',
+  'status-chip--pending':      props.job.status === 'pending',
+  'status-chip--expiring':     props.job.status === 'expiring',
+  'status-chip--draft':        props.job.status === 'draft',
+  'status-chip--closed':       props.job.status === 'closed',
+  'status-chip--expired':      props.job.status === 'expired',
+  'status-chip--paused':       props.job.status === 'paused',
+  'status-chip--rejected':     props.job.status === 'rejected',
+  'status-chip--interviewing': props.job.status === 'interviewing',
+  'status-chip--completed':    props.job.status === 'completed',
 }))
 
 const statusLabel = computed(() => ({
-  active:   'Đang tuyển',
-  pending:  'Chờ duyệt',
-  expiring: 'Sắp hết hạn',
-  draft:    'Nháp',
-  closed:   'Đã đóng',
+  active:       'Đang tuyển',
+  pending:      'Chờ duyệt',
+  expiring:     'Sắp hết hạn',
+  draft:        'Nháp',
+  closed:       'Đã đóng',
+  expired:      'Hết hạn',
+  paused:       'Tạm dừng',
+  rejected:     'Bị từ chối',
+  interviewing: 'Đang phỏng vấn',
+  completed:    'Đã hoàn thành',
 }[props.job.status] ?? props.job.status))
 </script>
 
@@ -213,11 +278,16 @@ const statusLabel = computed(() => ({
 .status-chip__dot { width: 0.375rem; height: 0.375rem; border-radius: 50%; background: currentColor; }
 .status-chip__dot--pulse { animation: pulse 1.5s ease-in-out infinite; }
 @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.3; } }
-.status-chip--active   { background: #dbeafe; color: #2563eb; }
-.status-chip--pending  { background: var(--color-tertiary-light); color: var(--color-tertiary-text); }
-.status-chip--expiring { background: var(--color-error-light);   color: var(--color-error-text); }
-.status-chip--draft    { background: #f1f5f9; color: #64748b; }
-.status-chip--closed   { background: #f1f5f9; color: #94a3b8; }
+.status-chip--active       { background: #dbeafe; color: #2563eb; }
+.status-chip--pending      { background: var(--color-tertiary-light); color: var(--color-tertiary-text); }
+.status-chip--expiring     { background: var(--color-error-light);   color: var(--color-error-text); }
+.status-chip--draft        { background: #f1f5f9; color: #64748b; }
+.status-chip--closed       { background: #f1f5f9; color: #94a3b8; }
+.status-chip--expired      { background: #fee2e2; color: #b91c1c; }
+.status-chip--paused       { background: #ffedd5; color: #c2410c; }
+.status-chip--rejected     { background: #ffe4e6; color: #be123c; }
+.status-chip--interviewing { background: #e0f2fe; color: #0369a1; }
+.status-chip--completed    { background: #e0e7ff; color: #4338ca; }
 
 /* Performance */
 .performance { display: flex; justify-content: center; gap: 1.5rem; }

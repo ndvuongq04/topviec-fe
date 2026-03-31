@@ -21,9 +21,10 @@
       <JobPostingFilters
         v-model="activeFilter"
         v-model:searchValue="searchValue"
+        @search="handleSearch"
       />
       <JobPostingTable
-        :jobs="filteredJobs"
+        :jobs="jobs"
         @view="handleView"
         @edit="handleEdit"
         @copy="handleCopy"
@@ -35,7 +36,7 @@
       />
       <JobPostingPagination
         v-model:currentPage="currentPage"
-        :total="stats.total"
+        :total="totalJobs"
         :per-page="10"
       />
     </div>
@@ -44,8 +45,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, watch, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { employerJobPostingService } from '@/services/employerJobPosting.service'
+import { JobPostingStatus } from '@/constants/jobPosting.constants'
+import type { ResJobPostingDetail } from '@/types/jobPosting.types'
 import JobPostingStatsGrid  from '@/components/recruiter/jobs/JobPostingStatsGrid.vue'
 import JobPostingFilters    from '@/components/recruiter/jobs/JobPostingFilters.vue'
 import JobPostingTable      from '@/components/recruiter/jobs/JobPostingTable.vue'
@@ -55,45 +59,120 @@ import type { JobPostingRow, JobPostingStats } from '@/types/employerJobPosting.
 
 // ── State ────────────────────────────────────────────────
 const activeFilter = ref<JobPostingFilterTab>('all')
-const currentPage  = ref(1)
+const currentPage  = ref(0)
+const searchValue  = ref('')
 const router = useRouter()
 
-// ── Mock data (thay bằng store/service thực tế) ──────────
-const stats: JobPostingStats = { total: 24, active: 12, pending: 5, expiring: 3 }
+const jobs      = ref<JobPostingRow[]>([])
+const totalJobs = ref(0)
+const stats     = ref<JobPostingStats>({ total: 0, active: 0, pending: 0, expiring: 0 })
 
-const allJobs: JobPostingRow[] = [
-  {
-    id: 1, title: 'Senior Product Designer (UI/UX)', code: 'JOB-2023-001',
-    status: 'active', postedAt: '15/10/2023', deadline: '30/11/2023',
-    daysLeft: 12, views: '1,240', applicants: 86, isUrgent: true,
-  },
-  {
-    id: 2, title: 'Fullstack Developer (NodeJS/React)', code: 'JOB-2023-005',
-    status: 'pending', postedAt: '18/10/2023', deadline: '15/12/2023',
-    views: 0, applicants: 0,
-  },
-  {
-    id: 3, title: 'Marketing Manager', code: 'JOB-2023-012',
-    status: 'expiring', postedAt: '01/10/2023', deadline: '20/11/2023',
-    daysLeft: 2, views: '2,845', applicants: 156, isFeatured: true,
-  },
-  {
-    id: 4, title: 'Kế toán trưởng (Chưa đặt tên)', code: 'JOB-DRAFT-09',
-    status: 'draft', postedAt: '20/11/2023',
-  },
-]
+// ── Status mapping ───────────────────────────────────────
+const tabToStatus: Partial<Record<JobPostingFilterTab, JobPostingStatus>> = {
+  active:       JobPostingStatus.PUBLISHED,
+  pending:      JobPostingStatus.PENDING_APPROVAL,
+  draft:        JobPostingStatus.DRAFT,
+  closed:       JobPostingStatus.CLOSED,
+  expired:      JobPostingStatus.EXPIRED,
+  interviewing: JobPostingStatus.INTERVIEWING,
+  completed:    JobPostingStatus.COMPLETED,
+}
 
-// ── Computed ─────────────────────────────────────────────
-const filteredJobs = computed<JobPostingRow[]>(() => {
-  if (activeFilter.value === 'all') return allJobs
-  return allJobs.filter(j => j.status === activeFilter.value)
+function mapStatus(apiStatus: string): JobPostingRow['status'] {
+  const map: Record<string, JobPostingRow['status']> = {
+    [JobPostingStatus.PUBLISHED]:        'active',
+    [JobPostingStatus.RENEWED]:          'active',
+    [JobPostingStatus.SCHEDULED]:        'pending',
+    [JobPostingStatus.PENDING_APPROVAL]: 'pending',
+    [JobPostingStatus.DRAFT]:            'draft',
+    [JobPostingStatus.PAUSED]:           'paused',
+    [JobPostingStatus.CLOSED]:           'closed',
+    [JobPostingStatus.EXPIRED]:          'expired',
+    [JobPostingStatus.REJECTED]:         'rejected',
+    [JobPostingStatus.INTERVIEWING]:     'interviewing',
+    [JobPostingStatus.COMPLETED]:        'completed',
+  }
+  return map[apiStatus] ?? 'draft'
+}
+
+function mapToRow(job: ResJobPostingDetail): JobPostingRow {
+  const deadline = job.deadline ? new Date(job.deadline) : null
+  const now      = new Date()
+  const daysLeft = deadline
+    ? Math.ceil((deadline.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+    : undefined
+  const uiStatus = mapStatus(job.status)
+
+  return {
+    id:         job.id,
+    title:      job.title,
+    code:       `JOB-${String(job.id).padStart(5, '0')}`,
+    status:     daysLeft !== undefined && daysLeft <= 3 && uiStatus === 'active' ? 'expiring' : uiStatus,
+    postedAt:   job.publishedAt
+      ? new Date(job.publishedAt).toLocaleDateString('vi-VN')
+      : new Date(job.createdAt).toLocaleDateString('vi-VN'),
+    deadline:   deadline ? deadline.toLocaleDateString('vi-VN') : undefined,
+    daysLeft:   daysLeft !== undefined && daysLeft > 0 ? daysLeft : undefined,
+    views:      job.viewCount,
+    applicants: job.applicationCount ?? 0,
+    editCount:  job.editCount,
+    isUrgent:   job.isUrgent,
+    isFeatured: job.isFeatured,
+  }
+}
+
+// ── API calls ────────────────────────────────────────────
+async function fetchJobs() {
+  const res = await employerJobPostingService.getList({
+    status:  tabToStatus[activeFilter.value],
+    keyword: searchValue.value || undefined,
+    page:    currentPage.value,
+    size:    10,
+  })
+  jobs.value      = res.result.map(mapToRow)
+  totalJobs.value = res.meta.totals
+}
+
+async function fetchStats() {
+  const [allRes, activeRes, pendingRes] = await Promise.all([
+    employerJobPostingService.getList({ size: 1 }),
+    employerJobPostingService.getList({ status: JobPostingStatus.PUBLISHED, size: 1 }),
+    employerJobPostingService.getList({ status: JobPostingStatus.PENDING_APPROVAL, size: 1 }),
+  ])
+  stats.value = {
+    total:   allRes.meta.totals,
+    active:  activeRes.meta.totals,
+    pending: pendingRes.meta.totals,
+    expiring: 0,
+  }
+}
+
+// ── Watchers ─────────────────────────────────────────────
+watch(activeFilter, () => {
+  if (currentPage.value !== 0) {
+    currentPage.value = 0 // triggers currentPage watcher → fetchJobs
+  } else {
+    fetchJobs()
+  }
 })
 
-// ── Handlers (kết nối store/service thực tế tại đây) ─────
+function handleSearch() {
+  if (currentPage.value !== 0) {
+    currentPage.value = 0
+  } else {
+    fetchJobs()
+  }
+}
+
+watch(currentPage, fetchJobs)
+
+onMounted(() => {
+  fetchJobs()
+  fetchStats()
+})
+
+// ── Handlers ─────────────────────────────────────────────
 const handleExport = () => console.log('export')
-const handleFilter = () => console.log('open filter panel')
-const handleSort   = () => console.log('open sort panel')
-const searchValue  = ref('')
 const handleView   = (id: number) => console.log('view', id)
 const handleEdit   = (id: number) => console.log('edit', id)
 const handleCopy   = (id: number) => console.log('copy', id)
@@ -102,11 +181,7 @@ const handleExtend = (id: number) => console.log('extend', id)
 const handleClose  = (id: number) => console.log('close', id)
 const handleDelete = (id: number) => console.log('delete', id)
 const handleViewApplications = (id: number) => {
-  // Chuyển hướng sang trang danh sách ứng viên của tin tuyển dụng
-  router.push({ 
-    name: 'recruiter-job-applications', 
-    params: { id } 
-  })
+  router.push({ name: 'recruiter-job-applications', params: { id } })
 }
 </script>
 

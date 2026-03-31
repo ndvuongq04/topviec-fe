@@ -105,8 +105,8 @@ function handleClick(e: MouseEvent) {
   right: calc(100% + 12px);
   top: 50%;
   transform: translateY(-50%);
-  background: #1e293b;
-  color: #f8fafc;
+  background: #0a0f1a;
+  color: #f1f5f9;
   font-size: 0.75rem;
   font-weight: 500;
   line-height: 1.4;
@@ -125,7 +125,7 @@ function handleClick(e: MouseEvent) {
   top: 50%;
   transform: translateY(-50%);
   border: 6px solid transparent;
-  border-left-color: #1e293b;
+  border-left-color: #0a0f1a;
 }
 
 /* Show tooltip on hover of parent wrapper */
