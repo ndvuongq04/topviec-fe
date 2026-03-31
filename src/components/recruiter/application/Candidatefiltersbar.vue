@@ -10,7 +10,8 @@
           :class="['tab-chip', activeTab === tab.value ? 'tab-chip--active' : 'tab-chip--default']"
           @click="$emit('update:activeTab', tab.value)"
         >
-          {{ tab.label }} ({{ tab.count.toLocaleString() }})
+          {{ tab.label }}
+          <span v-if="tab.count > 0" class="tab-count">{{ tab.count.toLocaleString() }}</span>
         </button>
       </div>
 
@@ -18,16 +19,16 @@
       <div class="search-wrap">
         <span class="search-icon material-symbols-outlined">search</span>
         <input
-          :value="searchValue"
+          v-model="localInput"
           type="text"
           class="search-input"
-          placeholder="Tìm tên, email ứng viên..."
-          @input="$emit('update:searchValue', ($event.target as HTMLInputElement).value)"
+          placeholder="Tìm tên, email ứng viên... (Enter để tìm)"
+          @keyup.enter="commitSearch"
         />
         <button
-          v-if="searchValue"
+          v-if="localInput"
           class="search-clear"
-          @click="$emit('update:searchValue', '')"
+          @click="clearSearch"
         >
           <span class="material-symbols-outlined">close</span>
         </button>
@@ -37,22 +38,34 @@
 </template>
 
 <script setup lang="ts">
-defineProps<{
-  position:  string
-  status:    string
-  dateRange: string
+import { ref, watch } from 'vue'
+
+const props = defineProps<{
   activeTab: string
   tabs:      any[]
   searchValue: string
 }>()
 
-defineEmits<{
-  'update:position':    [v: string]
-  'update:status':      [v: string]
-  'update:dateRange':   [v: string]
+const emit = defineEmits<{
   'update:activeTab':   [v: string]
   'update:searchValue': [v: string]
 }>()
+
+const localInput = ref(props.searchValue)
+
+// Sync khi parent reset search từ bên ngoài
+watch(() => props.searchValue, (val) => {
+  localInput.value = val
+})
+
+function commitSearch() {
+  emit('update:searchValue', localInput.value.trim())
+}
+
+function clearSearch() {
+  localInput.value = ''
+  emit('update:searchValue', '')
+}
 </script>
 
 <style scoped>
@@ -84,6 +97,9 @@ defineEmits<{
 .tabs-group::-webkit-scrollbar { display: none; }
 
 .tab-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
   padding: 0.5rem 1.25rem;
   border-radius: 9999px;
   font-size: 0.875rem;
@@ -97,13 +113,21 @@ defineEmits<{
 .tab-chip:hover { background: #e2e8f0; }
 .tab-chip--active  { background: #4B9AF6; color: #fff; box-shadow: 0 4px 12px rgba(75,154,246,.2); }
 
+.tab-count {
+  background: rgba(0,0,0,.1);
+  border-radius: 9999px;
+  padding: 0.1rem 0.5rem;
+  font-size: 0.75rem;
+}
+.tab-chip--active .tab-count { background: rgba(255,255,255,.25); }
+
 /* Search Styles */
 .search-wrap {
   position: relative;
   display: flex;
   align-items: center;
   width: 100%;
-  max-width: 320px;
+  max-width: 340px;
   margin-left: auto;
 }
 .search-icon {
@@ -119,7 +143,7 @@ defineEmits<{
   padding: 0 2.75rem 0 3rem;
   border: 1px solid #e2e8f0;
   border-radius: 9999px;
-  font-size: 1rem;
+  font-size: 0.9375rem;
   color: #0f172a;
   outline: none;
   background: #f8fafc;

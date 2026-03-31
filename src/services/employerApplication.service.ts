@@ -14,8 +14,8 @@ const employerApplicationService = {
    * Lấy danh sách hồ sơ ứng tuyển của 1 tin tuyển dụng.
    */
   async getApplicationsByJobPost(
-    jobPostId: number, 
-    params: { status?: string; page?: number; size?: number; sort?: string }
+    jobPostId: number,
+    params: { status?: string; page?: number; size?: number; sort?: string; search?: string }
   ): Promise<ResEmployerApplicationPagination> {
     const res = await axiosInstance.get<RestResponse<ResEmployerApplicationPagination>>(
       `${BASE_URL}/job/${jobPostId}`, 

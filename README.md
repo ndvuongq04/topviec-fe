@@ -1,812 +1,240 @@
 package com.topviec.topviec_be.controller;
 
-import com.topviec.topviec_be.dto.request.ReqCreateJobPostingDTO;
-import com.topviec.topviec_be.dto.request.ReqUpdateJobPostingDTO;
-import com.topviec.topviec_be.dto.response.ResJobPostingDetail;
+import com.topviec.topviec_be.dto.request.ReqUpdateApplicationStatusDTO;
+import com.topviec.topviec_be.dto.request.ReqEvaluateApplicationDTO;
+import com.topviec.topviec_be.dto.response.ResEmployerApplicationDTO;
 import com.topviec.topviec_be.dto.response.ResultPaginationDTO;
+import com.topviec.topviec_be.service.ApplicationService;
 import com.topviec.topviec_be.service.CompanyService;
-import com.topviec.topviec_be.service.JobPostingService;
 import com.topviec.topviec_be.util.SecurityUtil;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 /**
- * Controller dành cho Employer — yêu cầu đăng nhập.
- * Base URL: /api/v1/employer/job-postings
+ * Controller dành cho Employer nhận và xem CV ứng tuyển.
+ * Base URL: /api/v1/employer/applications
  */
 @RestController
-@RequestMapping("/employer/job-postings")
+@RequestMapping("/employer/applications")
 @RequiredArgsConstructor
 @PreAuthorize("hasRole('EMPLOYER')")
-public class EmployerJobPostingController {
+public class EmployerApplicationController {
 
-    private final JobPostingService jobPostingService;
+    private final ApplicationService applicationService;
     private final CompanyService companyService;
 
     /**
-     * POST /employer/job-postings
-     * Tạo tin tuyển dụng mới, mặc định trạng thái draft.
+     * Lấy danh sách hồ sơ ứng tuyển của 1 tin tuyển dụng.
      */
-    @PostMapping
-    public ResponseEntity<ResJobPostingDetail> create(
-            @Valid @RequestBody ReqCreateJobPostingDTO request) {
-
-        Long userId = SecurityUtil.getCurrentUserId();
-        Long companyId = companyService.getCompanyIdByUserId(userId);
-
-        return ResponseEntity
-                .status(HttpStatus.CREATED)
-                .body(jobPostingService.create(request, userId, companyId));
-    }
-
-    /**
-     * GET /employer/job-postings
-     * Lấy danh sách tin của công ty, hỗ trợ filter + phân trang.
-     * companyId tự động lấy từ JWT → chỉ trả về tin của công ty đang đăng nhập.
-     */
-    @GetMapping
-    public ResponseEntity<ResultPaginationDTO> getList(
-            @RequestParam(required = false) String keyword,
-            @RequestParam(required = false) Long industryId,
-            @RequestParam(required = false) Long levelId,
-            @RequestParam(required = false) String workType,
+    @GetMapping("/job/{jobPostId}")
+    public ResponseEntity<ResultPaginationDTO> getApplicationsByJobPost(
+            @PathVariable Long jobPostId,
             @RequestParam(required = false) String status,
-            @RequestParam(required = false) Boolean isFeatured,
-            @RequestParam(required = false) Boolean isUrgent,
-            @RequestParam(required = false) Long salaryMin,
-            @RequestParam(required = false) Long salaryMax,
-            @RequestParam(required = false) Integer experienceYearsMin,
-            @RequestParam(required = false) Integer experienceYearsMax,
             @PageableDefault(size = 10, sort = "createdAt") Pageable pageable) {
 
         Long userId = SecurityUtil.getCurrentUserId();
         Long companyId = companyService.getCompanyIdByUserId(userId);
 
-        return ResponseEntity.ok(jobPostingService.getList(
-                keyword, companyId, industryId, levelId, workType, status,
-                isFeatured, isUrgent, salaryMin, salaryMax,
-                experienceYearsMin, experienceYearsMax, pageable));
+        return ResponseEntity.ok(
+                applicationService.getApplicationsByJobPost(userId, companyId, jobPostId, status, pageable));
     }
 
     /**
-     * PUT /employer/job-postings/{id}
-     * Chỉnh sửa tin tuyển dụng.
+     * Xem chi tiết 1 hồ sơ ứng tuyển. Tự động chuyển status PENDING -> SEEN.
      */
-    @PutMapping("/{id}")
-    public ResponseEntity<ResJobPostingDetail> update(
-            @PathVariable Long id,
-            @Valid @RequestBody ReqUpdateJobPostingDTO request) {
+    @GetMapping("/{applicationId}")
+    public ResponseEntity<ResEmployerApplicationDTO> getApplicationDetail(
+            @PathVariable Long applicationId) {
 
         Long userId = SecurityUtil.getCurrentUserId();
         Long companyId = companyService.getCompanyIdByUserId(userId);
 
-        return ResponseEntity.ok(jobPostingService.update(id, request, userId, companyId));
+        return ResponseEntity.ok(
+                applicationService.getApplicationDetailByEmployer(userId, companyId, applicationId));
     }
 
     /**
-     * PATCH /employer/job-postings/{id}/pause
-     * Tạm dừng tin tuyển dụng.
+     * NTD cập nhật trạng thái CV ứng tuyển (ví dụ: interviewing, rejected, hired...).
      */
-    @PatchMapping("/{id}/pause")
-    public ResponseEntity<ResJobPostingDetail> pause(@PathVariable Long id) {
+    @PatchMapping("/{applicationId}/status")
+    public ResponseEntity<ResEmployerApplicationDTO> updateApplicationStatus(
+            @PathVariable Long applicationId,
+            @Valid @RequestBody ReqUpdateApplicationStatusDTO request) {
+
         Long userId = SecurityUtil.getCurrentUserId();
         Long companyId = companyService.getCompanyIdByUserId(userId);
-        return ResponseEntity.ok(jobPostingService.pause(id, companyId, userId));
+
+        return ResponseEntity.ok(
+                applicationService.changeApplicationStatus(userId, companyId, applicationId, request));
     }
 
     /**
-     * PATCH /employer/job-postings/{id}/resume
-     * Mở lại tin tuyển dụng.
+     * NTD đánh giá (cho điểm, ghi chú, gán tag) CV.
      */
-    @PatchMapping("/{id}/resume")
-    public ResponseEntity<ResJobPostingDetail> resume(@PathVariable Long id) {
-        Long userId = SecurityUtil.getCurrentUserId();
-        Long companyId = companyService.getCompanyIdByUserId(userId);
-        return ResponseEntity.ok(jobPostingService.resume(id, companyId, userId));
-    }
+    @PatchMapping("/{applicationId}/evaluate")
+    public ResponseEntity<ResEmployerApplicationDTO> evaluateApplication(
+            @PathVariable Long applicationId,
+            @Valid @RequestBody ReqEvaluateApplicationDTO request) {
 
-    /**
-     * PATCH /employer/job-postings/{id}/close
-     * Đóng tin tuyển dụng.
-     */
-    @PatchMapping("/{id}/close")
-    public ResponseEntity<ResJobPostingDetail> close(@PathVariable Long id) {
         Long userId = SecurityUtil.getCurrentUserId();
         Long companyId = companyService.getCompanyIdByUserId(userId);
-        return ResponseEntity.ok(jobPostingService.close(id, companyId, userId));
-    }
 
-    /**
-     * PATCH /employer/job-postings/{id}/extend
-     * Gia hạn tin tuyển dụng.
-     */
-    @PatchMapping("/{id}/extend")
-    public ResponseEntity<ResJobPostingDetail> extend(
-            @PathVariable Long id,
-            @Valid @RequestBody com.topviec.topviec_be.dto.request.ReqExtendJobPostDTO request) {
-        Long userId = SecurityUtil.getCurrentUserId();
-        Long companyId = companyService.getCompanyIdByUserId(userId);
-        return ResponseEntity.ok(jobPostingService.extend(id, companyId, userId, request));
-    }
-
-    /**
-     * PATCH /employer/job-postings/{id}/refresh
-     * Làm mới tin tuyển dụng (đẩy lên đầu).
-     */
-    @PatchMapping("/{id}/refresh")
-    public ResponseEntity<ResJobPostingDetail> refresh(@PathVariable Long id) {
-        Long userId = SecurityUtil.getCurrentUserId();
-        Long companyId = companyService.getCompanyIdByUserId(userId);
-        return ResponseEntity.ok(jobPostingService.refresh(id, companyId, userId));
-    }
-
-    /**
-     * PATCH /employer/job-postings/{id}/pending-approval
-     * Gửi duyệt tin tuyển dụng.
-     */
-    @PatchMapping("/{id}/pending-approval")
-    public ResponseEntity<ResJobPostingDetail> pendingApproval(@PathVariable Long id) {
-        Long userId = SecurityUtil.getCurrentUserId();
-        Long companyId = companyService.getCompanyIdByUserId(userId);
-        return ResponseEntity.ok(jobPostingService.pendingApproval(id, companyId, userId));
+        return ResponseEntity.ok(
+                applicationService.evaluateApplication(userId, companyId, applicationId, request));
     }
 }
 
 
-package com.topviec.topviec_be.service.impl;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.topviec.topviec_be.dto.request.ReqCreateJobPostingDTO;
-import com.topviec.topviec_be.dto.request.ReqJobPostLocationDTO;
-import com.topviec.topviec_be.dto.request.ReqJobPostSkillDTO;
-import com.topviec.topviec_be.dto.request.ReqUpdateJobPostingDTO;
-import com.topviec.topviec_be.dto.response.ResJobPostingDetail;
-import com.topviec.topviec_be.dto.response.ResJobPostingSummary;
-import com.topviec.topviec_be.dto.response.ResJobPostLocationDTO;
-import com.topviec.topviec_be.dto.response.ResJobPostSkillDTO;
-import com.topviec.topviec_be.dto.response.ResultPaginationDTO;
-import com.topviec.topviec_be.entity.Company;
-import com.topviec.topviec_be.entity.Industry;
-import com.topviec.topviec_be.entity.JobPostEditLog;
-import com.topviec.topviec_be.entity.JobPostLocation;
-import com.topviec.topviec_be.entity.JobPostSkill;
-import com.topviec.topviec_be.entity.JobPosting;
-import com.topviec.topviec_be.entity.Level;
-import com.topviec.topviec_be.entity.Skill;
-import com.topviec.topviec_be.enums.jobs.EditType;
-import com.topviec.topviec_be.enums.jobs.JobPostStatus;
-import com.topviec.topviec_be.exception.AppException;
-import com.topviec.topviec_be.repository.CompanyRepository;
-import com.topviec.topviec_be.repository.IndustryRepository;
-import com.topviec.topviec_be.repository.JobPostEditLogRepository;
-import com.topviec.topviec_be.repository.JobPostLocationRepository;
-import com.topviec.topviec_be.repository.JobPostSkillRepository;
-import com.topviec.topviec_be.repository.JobPostingRepository;
-import com.topviec.topviec_be.repository.LevelRepository;
-import com.topviec.topviec_be.repository.SkillRepository;
-import com.topviec.topviec_be.service.JobPostingService;
-import com.topviec.topviec_be.specification.JobPostingSpecification;
-import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.domain.Specification;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import com.topviec.topviec_be.dto.request.ReqExtendJobPostDTO;
-
-import java.text.Normalizer;
-import java.util.List;
-import java.util.Map;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-
-@Service
-@RequiredArgsConstructor
-public class JobPostingServiceImpl implements JobPostingService {
-
-    private final JobPostingRepository jobPostingRepository;
-    private final JobPostSkillRepository jobPostSkillRepository;
-    private final JobPostLocationRepository jobPostLocationRepository;
-    private final JobPostEditLogRepository jobPostEditLogRepository;
-    private final CompanyRepository companyRepository;
-    private final IndustryRepository industryRepository;
-    private final LevelRepository levelRepository;
-    private final ObjectMapper objectMapper;
-    private final SkillRepository skillRepository;
-
-    // -------------------------------------------------------------------------
-    // Employer — Create
-    // -------------------------------------------------------------------------
-
-    @Override
-    @Transactional
-    public ResJobPostingDetail create(ReqCreateJobPostingDTO request, Long createdByUserId, Long companyId) {
-        String slug = generateUniqueSlug(request.getTitle());
-
-        JobPosting jobPosting = JobPosting.builder()
-                .companyId(companyId)
-                .createdByUserId(createdByUserId)
-                .title(request.getTitle())
-                .slug(slug)
-                .description(request.getDescription())
-                .requirements(request.getRequirements())
-                .benefits(request.getBenefits())
-                .industryId(request.getIndustryId())
-                .levelId(request.getLevelId())
-                .experienceYearsMin(request.getExperienceYearsMin())
-                .experienceYearsMax(request.getExperienceYearsMax())
-                .salaryMin(request.getSalaryMin())
-                .salaryMax(request.getSalaryMax())
-                .salaryNegotiable(request.getSalaryNegotiable())
-                .workType(request.getWorkType())
-                .headcount(request.getHeadcount())
-                .deadline(request.getDeadline())
-                .status(JobPostStatus.DRAFT.getValue())
-                .isFeatured(Boolean.TRUE.equals(request.getIsFeatured()))
-                .isUrgent(Boolean.TRUE.equals(request.getIsUrgent()))
-                .build();
-
-        JobPosting saved = jobPostingRepository.save(jobPosting);
-
-        saveLocations(saved.getId(), request.getLocations());
-
-        if (request.getSkills() != null) {
-            saveSkills(saved.getId(), request.getSkills());
-        }
-
-        return toDetailResponse(saved);
-    }
-
-    // -------------------------------------------------------------------------
-    // Employer / Admin — Read (list)
+ // -------------------------------------------------------------------------
+    // API cho Employer
     // -------------------------------------------------------------------------
 
     @Override
     @Transactional(readOnly = true)
-    public ResultPaginationDTO getList(String keyword, Long companyId, Long industryId,
-            Long levelId, String workType, String status,
-            Boolean isFeatured, Boolean isUrgent,
-            Long salaryMin, Long salaryMax,
-            Integer experienceYearsMin, Integer experienceYearsMax,
-            Pageable pageable) {
-
-        Specification<JobPosting> spec = JobPostingSpecification.withFilter(
-                keyword, companyId, industryId, levelId, workType, status,
-                isFeatured, isUrgent, salaryMin, salaryMax,
-                experienceYearsMin, experienceYearsMax);
-
-        return toResultPagination(jobPostingRepository.findAll(spec, pageable), pageable);
-    }
-
-    // -------------------------------------------------------------------------
-    // Public — UV Read (chỉ published)
-    // -------------------------------------------------------------------------
-
-    @Override
-    @Transactional(readOnly = true)
-    public ResultPaginationDTO getPublicList(String keyword, Long companyId, Long industryId,
-            Long levelId, String workType,
-            Boolean isFeatured, Boolean isUrgent,
-            Long salaryMin, Long salaryMax,
-            Integer experienceYearsMin, Integer experienceYearsMax,
-            Pageable pageable) {
-
-        Specification<JobPosting> spec = JobPostingSpecification.withPublicFilter(
-                keyword, companyId, industryId, levelId, workType,
-                isFeatured, isUrgent, salaryMin, salaryMax,
-                experienceYearsMin, experienceYearsMax);
-
-        return toResultPagination(jobPostingRepository.findAll(spec, pageable), pageable);
-    }
-
-    // -------------------------------------------------------------------------
-    // Read — Detail
-    // -------------------------------------------------------------------------
-
-    @Override
-    @Transactional
-    public ResJobPostingDetail getDetail(Long id) {
-        JobPosting jobPosting = findByIdOrThrow(id);
-        jobPostingRepository.incrementViewCount(id);
-        return toDetailResponse(jobPosting);
-    }
-
-    // -------------------------------------------------------------------------
-    // Employer — Update
-    // -------------------------------------------------------------------------
-
-    @Override
-    @Transactional
-    public ResJobPostingDetail update(Long id, ReqUpdateJobPostingDTO request, Long updatedByUserId, Long companyId) {
-        JobPosting jobPosting = findByIdOrThrow(id);
-
-        if (!jobPosting.getCompanyId().equals(companyId)) {
-            throw AppException.forbidden("Bạn không có quyền chỉnh sửa tin tuyển dụng của công ty khác");
-        }
-
-        validateEditable(jobPosting);
-        saveEditLog(jobPosting, updatedByUserId);
-
-        if (!jobPosting.getTitle().equals(request.getTitle())) {
-            jobPosting.setSlug(generateUniqueSlugExclude(request.getTitle(), id));
-        }
-
-        jobPosting.setTitle(request.getTitle());
-        jobPosting.setDescription(request.getDescription());
-        jobPosting.setRequirements(request.getRequirements());
-        jobPosting.setBenefits(request.getBenefits());
-        jobPosting.setIndustryId(request.getIndustryId());
-        jobPosting.setLevelId(request.getLevelId());
-        jobPosting.setExperienceYearsMin(request.getExperienceYearsMin());
-        jobPosting.setExperienceYearsMax(request.getExperienceYearsMax());
-        jobPosting.setSalaryMin(request.getSalaryMin());
-        jobPosting.setSalaryMax(request.getSalaryMax());
-        jobPosting.setSalaryNegotiable(request.getSalaryNegotiable());
-        jobPosting.setWorkType(request.getWorkType());
-        jobPosting.setHeadcount(request.getHeadcount());
-        jobPosting.setDeadline(request.getDeadline());
-        jobPosting.setUpdatedBy(updatedByUserId);
-
-        if (request.getIsFeatured() != null)
-            jobPosting.setIsFeatured(request.getIsFeatured());
-        if (request.getIsUrgent() != null)
-            jobPosting.setIsUrgent(request.getIsUrgent());
-
-        if (JobPostStatus.PUBLISHED.getValue().equals(jobPosting.getStatus())) {
-            jobPosting.setEditCount(jobPosting.getEditCount() + 1);
-        }
-
-        jobPosting.setStatus(JobPostStatus.DRAFT.getValue());
-
-        JobPosting updated = jobPostingRepository.save(jobPosting);
-
-        jobPostLocationRepository.deleteByJobPostId(id);
-        jobPostLocationRepository.flush();
-        saveLocations(id, request.getLocations());
-
-        jobPostSkillRepository.deleteByJobPostId(id);
-        jobPostSkillRepository.flush();
-        if (request.getSkills() != null) {
-            saveSkills(id, request.getSkills());
-        }
-
-        return toDetailResponse(updated);
-    }
-
-    // -------------------------------------------------------------------------
-    // Employer — Lifecycle Methods
-    // -------------------------------------------------------------------------
-
-    @Override
-    @Transactional
-    public ResJobPostingDetail pause(Long id, Long companyId, Long updatedByUserId) {
-        JobPosting jobPosting = findByIdOrThrow(id);
-        if (!jobPosting.getCompanyId().equals(companyId)) {
-            throw AppException.forbidden("Bạn không có quyền thao tác trên tin tuyển dụng của công ty khác");
-        }
-        if (!JobPostStatus.PUBLISHED.getValue().equals(jobPosting.getStatus())) {
-            throw AppException.badRequest("Chỉ có thể tạm dừng tin khi đang ở trạng thái PUBLISHED");
-        }
-        saveEditLog(jobPosting, updatedByUserId);
-        jobPosting.setStatus(JobPostStatus.PAUSED.getValue());
-        jobPosting.setUpdatedBy(updatedByUserId);
-        JobPosting saved = jobPostingRepository.save(jobPosting);
-        return toDetailResponse(saved);
-    }
-
-    @Override
-    @Transactional
-    public ResJobPostingDetail resume(Long id, Long companyId, Long updatedByUserId) {
-        JobPosting jobPosting = findByIdOrThrow(id);
-        if (!jobPosting.getCompanyId().equals(companyId)) {
-            throw AppException.forbidden("Bạn không có quyền thao tác trên tin tuyển dụng của công ty khác");
-        }
-        if (!JobPostStatus.PAUSED.getValue().equals(jobPosting.getStatus())) {
-            throw AppException.badRequest("Chỉ có thể mở lại tin khi đang ở trạng thái PAUSED");
-        }
-        saveEditLog(jobPosting, updatedByUserId);
-        jobPosting.setStatus(JobPostStatus.PUBLISHED.getValue());
-        jobPosting.setUpdatedBy(updatedByUserId);
-        JobPosting saved = jobPostingRepository.save(jobPosting);
-        return toDetailResponse(saved);
-    }
-
-    @Override
-    @Transactional
-    public ResJobPostingDetail close(Long id, Long companyId, Long updatedByUserId) {
-        JobPosting jobPosting = findByIdOrThrow(id);
-        if (!jobPosting.getCompanyId().equals(companyId)) {
-            throw AppException.forbidden("Bạn không có quyền thao tác trên tin tuyển dụng của công ty khác");
-        }
-        String status = jobPosting.getStatus();
-        if (!JobPostStatus.PUBLISHED.getValue().equals(status) && !JobPostStatus.PAUSED.getValue().equals(status)) {
-            throw AppException.badRequest("Chỉ có thể đóng tin khi đang ở trạng thái PUBLISHED hoặc PAUSED");
-        }
-        saveEditLog(jobPosting, updatedByUserId);
-        jobPosting.setStatus(JobPostStatus.CLOSED.getValue());
-        jobPosting.setUpdatedBy(updatedByUserId);
-        JobPosting saved = jobPostingRepository.save(jobPosting);
-        return toDetailResponse(saved);
-    }
-
-    @Override
-    @Transactional
-    public ResJobPostingDetail extend(Long id, Long companyId, Long updatedByUserId, ReqExtendJobPostDTO request) {
-        JobPosting jobPosting = findByIdOrThrow(id);
-        if (!jobPosting.getCompanyId().equals(companyId)) {
-            throw AppException.forbidden("Bạn không có quyền thao tác trên tin tuyển dụng của công ty khác");
-        }
-        if (!JobPostStatus.EXPIRED.getValue().equals(jobPosting.getStatus())) {
-            throw AppException.badRequest("Chỉ có thể gia hạn tin khi đã hết hạn (EXPIRED)");
-        }
-        saveEditLog(jobPosting, updatedByUserId);
-        jobPosting.setDeadline(request.getNewDeadline());
-        jobPosting.setStatus(JobPostStatus.PUBLISHED.getValue());
-        jobPosting.setUpdatedBy(updatedByUserId);
-        JobPosting saved = jobPostingRepository.save(jobPosting);
-        return toDetailResponse(saved);
-    }
-
-    @Override
-    @Transactional
-    public ResJobPostingDetail refresh(Long id, Long companyId, Long updatedByUserId) {
-        JobPosting jobPosting = findByIdOrThrow(id);
-        if (!jobPosting.getCompanyId().equals(companyId)) {
-            throw AppException.forbidden("Bạn không có quyền thao tác trên tin tuyển dụng của công ty khác");
-        }
-        if (!JobPostStatus.PUBLISHED.getValue().equals(jobPosting.getStatus())
-                && !JobPostStatus.RENEWED.getValue().equals(jobPosting.getStatus())) {
-            throw AppException.badRequest("Chỉ có thể làm mới tin khi đang ở trạng thái PUBLISHED hoặc RENEWED");
-        }
-        jobPosting.setPublishedAt(java.time.LocalDateTime.now());
-        jobPosting.setRefreshedAt(java.time.LocalDateTime.now());
-        jobPosting.setUpdatedBy(updatedByUserId);
-        JobPosting saved = jobPostingRepository.save(jobPosting);
-        return toDetailResponse(saved);
-    }
-
-    // -------------------------------------------------------------------------
-    // Admin (Content Mod) — Moderation
-    // -------------------------------------------------------------------------
-
-    @Override
-    @Transactional
-    public ResJobPostingDetail approve(Long id, Long adminId) {
-        JobPosting jobPosting = findByIdOrThrow(id);
-        if (!JobPostStatus.PENDING_APPROVAL.getValue().equals(jobPosting.getStatus())
-                && !JobPostStatus.DRAFT.getValue().equals(jobPosting.getStatus())) {
-            throw AppException.badRequest("Chỉ có thể duyệt tin khi đang ở trạng thái PENDING_APPROVAL hoặc DRAFT");
-        }
-
-        jobPosting.setStatus(JobPostStatus.PUBLISHED.getValue());
-        jobPosting.setPublishedAt(java.time.LocalDateTime.now());
-        jobPosting.setUpdatedBy(adminId);
-        jobPosting.setRejectionReason(null);
-        jobPosting.setModerationNote(null);
-
-        JobPosting saved = jobPostingRepository.save(jobPosting);
-        return toDetailResponse(saved);
-    }
-
-    @Override
-    @Transactional
-    public ResJobPostingDetail reject(Long id, Long adminId,
-            com.topviec.topviec_be.dto.request.ReqRejectJobPostDTO request) {
-        JobPosting jobPosting = findByIdOrThrow(id);
-        if (!JobPostStatus.PENDING_APPROVAL.getValue().equals(jobPosting.getStatus())) {
-            throw AppException.badRequest("Chỉ có thể từ chối tin khi đang ở trạng thái PENDING_APPROVAL");
-        }
-
-        jobPosting.setStatus(JobPostStatus.REJECTED.getValue());
-        jobPosting.setRejectionReason(request.getRejectionReason());
-        jobPosting.setModerationNote(request.getModerationNote());
-        jobPosting.setUpdatedBy(adminId);
-
-        JobPosting saved = jobPostingRepository.save(jobPosting);
-        return toDetailResponse(saved);
-    }
-
-    @Override
-    @Transactional
-    public ResJobPostingDetail takedown(Long id, Long adminId,
-            com.topviec.topviec_be.dto.request.ReqRejectJobPostDTO request) {
-        JobPosting jobPosting = findByIdOrThrow(id);
-        String status = jobPosting.getStatus();
-
-        if (JobPostStatus.DRAFT.getValue().equals(status) ||
-                JobPostStatus.PENDING_APPROVAL.getValue().equals(status) ||
-                JobPostStatus.REJECTED.getValue().equals(status)) {
-            throw AppException
-                    .badRequest("Tin không nằm trong trạng thái có thể gỡ (chỉ gỡ tin đã đăng, tạm dừng, gia hạn...)");
-        }
-
-        jobPosting.setStatus(JobPostStatus.REJECTED.getValue());
-        jobPosting.setRejectionReason(request.getRejectionReason());
-        jobPosting.setModerationNote(request.getModerationNote());
-        jobPosting.setUpdatedBy(adminId);
-
-        JobPosting saved = jobPostingRepository.save(jobPosting);
-        return toDetailResponse(saved);
-    }
-
-    @Override
-    public ResJobPostingDetail pendingApproval(Long id, Long companyId, Long updatedByUserId) {
-        JobPosting jobPosting = findByIdOrThrow(id);
-        if (!jobPosting.getCompanyId().equals(companyId)) {
-            throw AppException.forbidden("Bạn không có quyền thao tác trên tin tuyển dụng của công ty khác");
-        }
-        if (!JobPostStatus.DRAFT.getValue().equals(jobPosting.getStatus())) {
-            throw AppException.badRequest("Chỉ có thể gửi duyệt tin khi đang ở trạng thái DRAFT");
-        }
-        // jobPosting.setStatus(JobPostStatus.PENDING_APPROVAL.getValue());
-        jobPosting.setStatus(JobPostStatus.PUBLISHED.getValue()); // Bypass approval for testing
-        jobPosting.setPublishedAt(java.time.LocalDateTime.now()); // Set published time
-        jobPosting.setUpdatedBy(updatedByUserId);
-        JobPosting saved = jobPostingRepository.save(jobPosting);
-        return toDetailResponse(saved);
-    }
-
-    // -------------------------------------------------------------------------
-    // Private helpers
-    // -------------------------------------------------------------------------
-
-    private JobPosting findByIdOrThrow(Long id) {
-        return jobPostingRepository.findByIdAndDeletedAtIsNull(id)
+    public ResultPaginationDTO getApplicationsByJobPost(Long userId, Long companyId, Long jobPostId, String status, Pageable pageable) {
+        JobPosting job = jobPostingRepository.findByIdAndDeletedAtIsNull(jobPostId)
                 .orElseThrow(() -> AppException.notFound("Không tìm thấy tin tuyển dụng"));
-    }
-
-    private void validateEditable(JobPosting jobPosting) {
-        String status = jobPosting.getStatus();
-
-        if (JobPostStatus.DRAFT.getValue().equals(status)
-                || JobPostStatus.REJECTED.getValue().equals(status)
-                || JobPostStatus.RENEWED.getValue().equals(status)) {
-            return;
+        
+        if (!job.getCompanyId().equals(companyId)) {
+            throw AppException.forbidden("Bạn không có quyền xem hồ sơ của tin tuyển dụng này");
         }
 
-        if (JobPostStatus.PUBLISHED.getValue().equals(status)) {
-            if (jobPosting.getEditCount() >= 1) {
-                throw AppException.badRequest("Tin đã được chỉnh sửa 1 lần sau khi đăng, không thể chỉnh sửa thêm");
-            }
-            return;
-        }
-
-        throw AppException.badRequest("Không thể chỉnh sửa tin ở trạng thái: " + status);
-    }
-
-    private void saveEditLog(JobPosting jobPosting, Long editedBy) {
-        try {
-            String snapshot = objectMapper.writeValueAsString(jobPosting);
-            String editType = JobPostStatus.DRAFT.getValue().equals(jobPosting.getStatus())
-                    ? EditType.DRAFT_EDIT.getValue()
-                    : EditType.POST_PUBLISH_EDIT.getValue();
-
-            jobPostEditLogRepository.save(JobPostEditLog.builder()
-                    .jobPostId(jobPosting.getId())
-                    .editedBy(editedBy)
-                    .snapshotBefore(snapshot)
-                    .editType(editType)
-                    .build());
-        } catch (Exception e) {
-            // Không để lỗi audit chặn nghiệp vụ chính
-        }
-    }
-
-    private void saveLocations(Long jobPostId, List<ReqJobPostLocationDTO> locationRequests) {
-        List<JobPostLocation> locations = locationRequests.stream()
-                .map(req -> JobPostLocation.builder()
-                        .jobPostId(jobPostId)
-                        .provinceId(req.getProvinceId())
-                        .addressDetail(req.getAddressDetail())
-                        .isRemote(req.getIsRemote())
-                        .build())
-                .toList();
-        jobPostLocationRepository.saveAll(locations);
-    }
-
-    private void saveSkills(Long jobPostId, List<ReqJobPostSkillDTO> skillRequests) {
-        List<JobPostSkill> skills = skillRequests.stream()
-                .map(req -> JobPostSkill.builder()
-                        .jobPostId(jobPostId)
-                        .skillId(req.getSkillId())
-                        .isRequired(req.getIsRequired())
-                        .proficiencyMin(req.getProficiencyMin())
-                        .build())
-                .toList();
-        jobPostSkillRepository.saveAll(skills);
-    }
-
-    private String generateUniqueSlug(String title) {
-        String baseSlug = toSlug(title);
-        String slug = baseSlug;
-        int count = 1;
-        while (jobPostingRepository.existsBySlugAndDeletedAtIsNull(slug)) {
-            slug = baseSlug + "-" + count++;
-        }
-        return slug;
-    }
-
-    private String generateUniqueSlugExclude(String title, Long excludeId) {
-        String baseSlug = toSlug(title);
-        String slug = baseSlug;
-        int count = 1;
-        while (jobPostingRepository.existsBySlugAndIdNotAndDeletedAtIsNull(slug, excludeId)) {
-            slug = baseSlug + "-" + count++;
-        }
-        return slug;
-    }
-
-    private String toSlug(String input) {
-        String normalized = Normalizer.normalize(input, Normalizer.Form.NFD);
-        Pattern pattern = Pattern.compile("\\p{InCombiningDiacriticalMarks}+");
-        return pattern.matcher(normalized)
-                .replaceAll("")
-                .toLowerCase()
-                .replaceAll("[^a-z0-9\\s-]", "")
-                .replaceAll("\\s+", "-")
-                .replaceAll("-+", "-")
-                .trim();
-    }
-
-    // ── Mapper: dùng cho danh sách (batch query tránh N+1) ───────────────────
-
-    private ResultPaginationDTO toResultPagination(Page<JobPosting> page, Pageable pageable) {
-        List<JobPosting> jobs = page.getContent();
-
-        // Batch query 3 bảng — chỉ tốn 3 query dù có bao nhiêu job
-        Map<Long, Company> companyMap = companyRepository
-                .findAllById(jobs.stream().map(JobPosting::getCompanyId).distinct().toList())
-                .stream().collect(Collectors.toMap(Company::getId, c -> c));
-
-        Map<Long, Industry> industryMap = industryRepository
-                .findAllById(jobs.stream().map(JobPosting::getIndustryId).distinct().toList())
-                .stream().collect(Collectors.toMap(Industry::getId, i -> i));
-
-        Map<Long, Level> levelMap = levelRepository
-                .findAllById(jobs.stream().map(JobPosting::getLevelId).distinct().toList())
-                .stream().collect(Collectors.toMap(Level::getId, l -> l));
-
+        Page<Application> applicationPage = applicationRepository.findByJobPost(jobPostId, status, pageable);
+        
         ResultPaginationDTO.Meta meta = new ResultPaginationDTO.Meta();
         meta.setPage(pageable.getPageNumber());
         meta.setPageSize(pageable.getPageSize());
-        meta.setPages(page.getTotalPages());
-        meta.setTotals(page.getTotalElements());
+        meta.setPages(applicationPage.getTotalPages());
+        meta.setTotals(applicationPage.getTotalElements());
 
         ResultPaginationDTO result = new ResultPaginationDTO();
         result.setMeta(meta);
-        result.setResult(jobs.stream()
-                .map(j -> toSummaryResponse(j, companyMap, industryMap, levelMap))
+        result.setResult(applicationPage.getContent().stream()
+                .map(this::toEmployerResponse)
                 .toList());
+
         return result;
     }
 
-    private ResJobPostingSummary toSummaryResponse(JobPosting j,
-            Map<Long, Company> companyMap,
-            Map<Long, Industry> industryMap,
-            Map<Long, Level> levelMap) {
-        Company company = companyMap.get(j.getCompanyId());
-        Industry industry = industryMap.get(j.getIndustryId());
-        Level level = levelMap.get(j.getLevelId());
+    @Override
+    @Transactional
+    public ResEmployerApplicationDTO getApplicationDetailByEmployer(Long userId, Long companyId, Long applicationId) {
+        Application application = applicationRepository.findById(applicationId)
+                .orElseThrow(() -> AppException.notFound("Không tìm thấy đơn ứng tuyển"));
+        
+        JobPosting job = application.getJobPosting();
+        if (job == null || !job.getCompanyId().equals(companyId)) {
+            throw AppException.forbidden("Bạn không có quyền xem đơn ứng tuyển này");
+        }
 
-        return ResJobPostingSummary.builder()
-                .id(j.getId())
-                .title(j.getTitle())
-                .slug(j.getSlug())
-                .company(company == null ? null
-                        : ResJobPostingSummary.CompanyDTO.builder()
-                                .id(company.getId())
-                                .name(company.getName())
-                                .slug(company.getSlug())
-                                .logoUrl(company.getLogoUrl())
-                                .address(company.getAddress())
-                                .build())
-                .industry(industry == null ? null
-                        : ResJobPostingSummary.IndustryDTO.builder()
-                                .id(industry.getId())
-                                .name(industry.getName())
-                                .build())
-                .level(level == null ? null
-                        : ResJobPostingSummary.LevelDTO.builder()
-                                .id(level.getId())
-                                .name(level.getName())
-                                .build())
-                .workType(j.getWorkType())
-                .status(j.getStatus())
-                .salaryMin(j.getSalaryMin())
-                .salaryMax(j.getSalaryMax())
-                .salaryNegotiable(j.getSalaryNegotiable())
-                .isFeatured(j.getIsFeatured())
-                .isUrgent(j.getIsUrgent())
-                .viewCount(j.getViewCount())
-                .deadline(j.getDeadline())
-                .publishedAt(j.getPublishedAt())
-                .createdAt(j.getCreatedAt())
-                .build();
+        // Chuyển status PENDING -> SEEN
+        if (ApplicationStatus.PENDING.getValue().equals(application.getStatus())) {
+            application.setStatus(ApplicationStatus.SEEN.getValue());
+            application.setViewedAt(LocalDateTime.now());
+            application = applicationRepository.save(application);
+        }
+
+        return toEmployerResponse(application);
     }
 
-    // ── Mapper: dùng cho chi tiết (kèm locations + skills) ───────────────────
+    @Override
+    @Transactional
+    public ResEmployerApplicationDTO changeApplicationStatus(Long userId, Long companyId, Long applicationId, ReqUpdateApplicationStatusDTO request) {
+        Application application = applicationRepository.findById(applicationId)
+                .orElseThrow(() -> AppException.notFound("Không tìm thấy đơn ứng tuyển"));
+        
+        JobPosting job = application.getJobPosting();
+        if (job == null || !job.getCompanyId().equals(companyId)) {
+            throw AppException.forbidden("Bạn không có quyền sửa đơn ứng tuyển này");
+        }
 
-    private ResJobPostingDetail toDetailResponse(JobPosting j) {
-        List<ResJobPostLocationDTO> locations = jobPostLocationRepository
-                .findByJobPostId(j.getId())
-                .stream()
-                .map(loc -> ResJobPostLocationDTO.builder()
-                        .id(loc.getId())
-                        .provinceId(loc.getProvinceId())
-                        .addressDetail(loc.getAddressDetail())
-                        .isRemote(loc.getIsRemote())
-                        .build())
-                .toList();
+        ApplicationStatus currentStatus = ApplicationStatus.fromValue(application.getStatus());
+        ApplicationStatus nextStatus = ApplicationStatus.fromValue(request.getStatus());
 
-        List<ResJobPostSkillDTO> skills = jobPostSkillRepository
-                .findByJobPostId(j.getId())
-                .stream()
-                .map(skill -> {
-                    Skill skillEntity = skillRepository.findById(skill.getSkillId()).orElse(null);
-                    return ResJobPostSkillDTO.builder()
-                            .id(skill.getId())
-                            .skillName(skillEntity != null ? skillEntity.getName() : null)
-                            .skillId(skill.getSkillId())
-                            .isRequired(skill.getIsRequired())
-                            .proficiencyMin(skill.getProficiencyMin())
-                            .build();
-                })
-                .toList();
+        if (!currentStatus.canTransitionTo(nextStatus)) {
+            throw AppException.badRequest("Không thể chuyển trạng thái từ " + currentStatus.getValue() + " sang " + nextStatus.getValue());
+        }
 
-        Company company = companyRepository.findById(j.getCompanyId()).orElse(null);
-        Industry industry = industryRepository.findById(j.getIndustryId()).orElse(null);
-        Level level = levelRepository.findById(j.getLevelId()).orElse(null);
+        application.setStatus(nextStatus.getValue());
+        if (request.getNote() != null) {
+            application.setRecruiterNote(request.getNote());
+        }
 
-        return ResJobPostingDetail.builder()
-                .id(j.getId())
-                .title(j.getTitle())
-                .slug(j.getSlug())
-                .description(j.getDescription())
-                .requirements(j.getRequirements())
-                .benefits(j.getBenefits())
-                .company(company == null ? null
-                        : ResJobPostingDetail.CompanyDTO.builder()
-                                .id(company.getId())
-                                .name(company.getName())
-                                .slug(company.getSlug())
-                                .logoUrl(company.getLogoUrl())
-                                .build())
-                .industry(industry == null ? null
-                        : ResJobPostingDetail.IndustryDTO.builder()
-                                .id(industry.getId())
-                                .name(industry.getName())
-                                .build())
-                .level(level == null ? null
-                        : ResJobPostingDetail.LevelDTO.builder()
-                                .id(level.getId())
-                                .name(level.getName())
-                                .build())
-                .experienceYearsMin(j.getExperienceYearsMin())
-                .experienceYearsMax(j.getExperienceYearsMax())
-                .salaryMin(j.getSalaryMin())
-                .salaryMax(j.getSalaryMax())
-                .salaryNegotiable(j.getSalaryNegotiable())
-                .workType(j.getWorkType())
-                .headcount(j.getHeadcount())
-                .deadline(j.getDeadline())
-                .status(j.getStatus())
-                .isFeatured(j.getIsFeatured())
-                .isUrgent(j.getIsUrgent())
-                .viewCount(j.getViewCount())
-                .editCount(j.getEditCount())
-                .publishedAt(j.getPublishedAt())
-                .createdAt(j.getCreatedAt())
-                .updatedAt(j.getUpdatedAt())
-                .locations(locations)
-                .skills(skills)
+        if (nextStatus == ApplicationStatus.REJECTED) {
+            application.setRejectedAt(LocalDateTime.now());
+        } else if (nextStatus == ApplicationStatus.HIRED) {
+            application.setHiredAt(LocalDateTime.now());
+        }
+
+        Application saved = applicationRepository.save(application);
+        return toEmployerResponse(saved);
+    }
+
+    @Override
+    @Transactional
+    public ResEmployerApplicationDTO evaluateApplication(Long userId, Long companyId, Long applicationId, ReqEvaluateApplicationDTO request) {
+        Application application = applicationRepository.findById(applicationId)
+                .orElseThrow(() -> AppException.notFound("Không tìm thấy đơn ứng tuyển"));
+        
+        JobPosting job = application.getJobPosting();
+        if (job == null || !job.getCompanyId().equals(companyId)) {
+            throw AppException.forbidden("Bạn không có quyền đánh giá đơn ứng tuyển này");
+        }
+
+        if (request.getRating() != null) {
+            application.setRecruiterRating(request.getRating());
+        }
+        if (request.getNote() != null) {
+            application.setRecruiterNote(request.getNote());
+        }
+        if (request.getTags() != null) {
+            application.setRecruiterTags(request.getTags());
+        }
+
+        Application saved = applicationRepository.save(application);
+        return toEmployerResponse(saved);
+    }
+
+    private ResEmployerApplicationDTO toEmployerResponse(Application a) {
+        User user = null;
+        CandidateProfile profile = null;
+        Cvs cv = null;
+
+        if (a.getCandidateUserId() != null) {
+            user = userRepository.findById(a.getCandidateUserId()).orElse(null);
+            profile = candidateProfileRepository.findByUserId(a.getCandidateUserId()).orElse(null);
+        }
+        
+        if (a.getCvId() != null) {
+            cv = cvsRepository.findById(a.getCvId()).orElse(null);
+        }
+
+        JobPosting job = a.getJobPosting();
+
+        return ResEmployerApplicationDTO.builder()
+                .id(a.getId())
+                .jobPostId(a.getJobPostId())
+                .jobTitle(job != null ? job.getTitle() : null)
+                .candidateUserId(a.getCandidateUserId())
+                .candidateName(profile != null ? profile.getFullName() : (user != null ? "User " + user.getId() : "Unknown"))
+                .candidateEmail(user != null ? user.getEmail() : null)
+                .candidatePhone(profile != null ? profile.getPhoneDisplay() : null)
+                .candidateAvatar(profile != null ? profile.getAvatarUrl() : null)
+                .cvId(a.getCvId())
+                .cvFileUrl(cv != null ? cv.getFileUrl() : null)
+                .cvPdfUrl(cv != null ? cv.getPdfUrl() : null)
+                .status(a.getStatus())
+                .applyMethod(a.getApplyMethod())
+                .recruiterRating(a.getRecruiterRating())
+                .recruiterNote(a.getRecruiterNote())
+                .recruiterTags(a.getRecruiterTags())
+                .viewedAt(a.getViewedAt())
+                .createdAt(a.getCreatedAt())
+                .updatedAt(a.getUpdatedAt())
                 .build();
     }
-}
-
-

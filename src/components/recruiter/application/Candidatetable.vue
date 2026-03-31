@@ -1,6 +1,13 @@
 <template>
   <div class="table-card">
-    <table class="candidate-table">
+
+    <!-- Empty state -->
+    <div v-if="candidates.length === 0" class="empty-state">
+      <span class="material-symbols-outlined empty-icon">folder_open</span>
+      <p>Không có hồ sơ ứng tuyển nào</p>
+    </div>
+
+    <table v-else class="candidate-table">
       <thead>
         <tr class="table-head-row">
           <th class="th">Ứng viên</th>
@@ -21,22 +28,30 @@
           <!-- Candidate info -->
           <td class="td">
             <div class="candidate-info">
-              <img :src="c.avatar" :alt="c.name" class="candidate-avatar" />
+              <img
+                v-if="c.candidateAvatar"
+                :src="c.candidateAvatar"
+                :alt="c.candidateName"
+                class="candidate-avatar"
+              />
+              <div v-else class="candidate-avatar avatar-placeholder">
+                {{ initials(c.candidateName) }}
+              </div>
               <div>
-                <p class="candidate-name">{{ c.name }}</p>
-                <p class="candidate-email">{{ c.email }}</p>
+                <p class="candidate-name">{{ c.candidateName }}</p>
+                <p class="candidate-email">{{ c.candidateEmail }}</p>
               </div>
             </div>
           </td>
 
           <!-- Position -->
           <td class="td">
-            <p class="cell-text">{{ c.position }}</p>
+            <p class="cell-text">{{ c.jobTitle }}</p>
           </td>
 
           <!-- Applied at -->
           <td class="td">
-            <p class="cell-text cell-text--muted">{{ c.appliedAt }}</p>
+            <p class="cell-text cell-text--muted">{{ formatDate(c.createdAt) }}</p>
           </td>
 
           <!-- Rating -->
@@ -46,23 +61,23 @@
                 v-for="n in 5"
                 :key="n"
                 class="material-symbols-outlined star-icon"
-                :style="n <= c.rating ? { fontVariationSettings: `'FILL' 1` } : {}"
+                :style="c.recruiterRating && n <= c.recruiterRating ? { fontVariationSettings: `'FILL' 1` } : {}"
               >star</span>
             </div>
           </td>
 
           <!-- Status -->
           <td class="td">
-            <span :class="`status-badge status-badge--${c.status}`">
-              {{ statusLabel[c.status] }}
+            <span :class="['status-badge', `status-badge--${c.status}`]">
+              {{ STATUS_LABEL[c.status] ?? c.status }}
             </span>
           </td>
 
           <!-- Actions -->
           <td class="td td--right">
             <div class="action-group">
-              <button 
-                class="action-btn" 
+              <button
+                class="action-btn"
                 title="Xem chi tiết"
                 @click.stop="goToDetail(c.id)"
               >
@@ -71,7 +86,12 @@
               <button class="action-btn" title="Phân loại nhanh">
                 <span class="material-symbols-outlined">label</span>
               </button>
-              <button class="action-btn" title="Tải CV">
+              <button
+                v-if="c.cvFileUrl"
+                class="action-btn"
+                title="Tải CV"
+                @click.stop="downloadCv(c.cvFileUrl)"
+              >
                 <span class="material-symbols-outlined">download</span>
               </button>
             </div>
@@ -81,20 +101,39 @@
     </table>
 
     <!-- Pagination -->
-    <div class="pagination">
+    <div v-if="meta.totals > 0" class="pagination">
       <p class="pagination-info">
-        Hiển thị <strong>1-10</strong> trong <strong>1,284</strong> hồ sơ
+        Hiển thị
+        <strong>{{ pageStart }}-{{ pageEnd }}</strong>
+        trong
+        <strong>{{ meta.totals.toLocaleString() }}</strong>
+        hồ sơ
       </p>
       <div class="pagination-controls">
-        <button class="page-btn page-btn--nav" disabled>
+        <button
+          class="page-btn page-btn--nav"
+          :disabled="meta.page === 0"
+          @click="$emit('page-change', meta.page - 1)"
+        >
           <span class="material-symbols-outlined">chevron_left</span>
         </button>
-        <button class="page-btn page-btn--active">1</button>
-        <button class="page-btn">2</button>
-        <button class="page-btn">3</button>
-        <span class="page-ellipsis">...</span>
-        <button class="page-btn">129</button>
-        <button class="page-btn page-btn--nav">
+
+        <template v-for="(p, idx) in visiblePages" :key="idx">
+          <span v-if="p === '...'" class="page-ellipsis">...</span>
+          <button
+            v-else
+            :class="['page-btn', p === meta.page ? 'page-btn--active' : '']"
+            @click="$emit('page-change', p as number)"
+          >
+            {{ (p as number) + 1 }}
+          </button>
+        </template>
+
+        <button
+          class="page-btn page-btn--nav"
+          :disabled="meta.page >= meta.pages - 1"
+          @click="$emit('page-change', meta.page + 1)"
+        >
           <span class="material-symbols-outlined">chevron_right</span>
         </button>
       </div>
@@ -103,28 +142,82 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import type { ResEmployerApplicationDTO } from '@/types/employerApplication.types'
+import type { PaginationMeta } from '@/types/common.types'
 
-defineProps<{ candidates: any[] }>()
+const props = defineProps<{
+  candidates: ResEmployerApplicationDTO[]
+  meta: PaginationMeta
+}>()
+
+const emit = defineEmits<{
+  'page-change': [page: number]
+}>()
 
 const router = useRouter()
 const route = useRoute()
 
-const statusLabel: Record<string, string> = {
-  new:      'Mới',
-  viewed:   'Đã xem',
-  fit:      'Phù hợp',
-  consider: 'Cân nhắc',
-  rejected: 'Từ chối',
+const STATUS_LABEL: Record<string, string> = {
+  pending:          'Chờ xem',
+  invited:          'Được mời',
+  seen:             'Đã xem',
+  considering:      'Cân nhắc',
+  cv_passed:        'Đạt vòng CV',
+  schedule_pending: 'Chờ chọn lịch',
+  overdue:          'Quá hạn',
+  interviewing:     'Phỏng vấn',
+  offered:          'Gửi đề nghị',
+  hired:            'Đã tuyển',
+  rejected:         'Từ chối',
+  withdrawn:        'Rút đơn',
+  expired:          'Hết hạn',
 }
 
-const goToDetail = (candidateId: string) => {
+const pageStart = computed(() => props.meta.page * props.meta.pageSize + 1)
+const pageEnd   = computed(() => Math.min((props.meta.page + 1) * props.meta.pageSize, props.meta.totals))
+
+const visiblePages = computed(() => {
+  const total   = props.meta.pages
+  const current = props.meta.page
+  if (total <= 7) return Array.from({ length: total }, (_, i) => i)
+
+  const pages: (number | string)[] = []
+  if (current > 2) { pages.push(0); pages.push('...') }
+  for (let i = Math.max(0, current - 1); i <= Math.min(total - 1, current + 1); i++) {
+    pages.push(i)
+  }
+  if (current < total - 3) { pages.push('...'); pages.push(total - 1) }
+  return pages
+})
+
+function initials(name: string): string {
+  return name
+    .split(' ')
+    .filter(Boolean)
+    .slice(-2)
+    .map(w => w[0].toUpperCase())
+    .join('')
+}
+
+function formatDate(iso: string): string {
+  if (!iso) return '-'
+  const d = new Date(iso)
+  return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`
+}
+
+function downloadCv(url: string) {
+  window.open(url, '_blank')
+}
+
+const goToDetail = (candidateId: number) => {
   router.push({
     name: 'recruiter-application-detail',
     params: {
       id: route.params.id,
-      applicationId: candidateId
-    }
+      applicationId: candidateId,
+    },
   })
 }
 </script>
@@ -138,6 +231,19 @@ const goToDetail = (candidateId: string) => {
   box-shadow: 0 1px 3px rgba(0,0,0,.06);
   overflow: hidden;
 }
+
+/* Empty state */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  color: #94a3b8;
+  gap: 0.75rem;
+}
+.empty-icon { font-size: 3rem !important; }
+.empty-state p { font-size: 0.9375rem; }
 
 .candidate-table { width: 100%; border-collapse: collapse; text-align: left; }
 
@@ -160,7 +266,23 @@ const goToDetail = (candidateId: string) => {
 
 /* Candidate info */
 .candidate-info { display: flex; align-items: center; gap: 0.75rem; }
-.candidate-avatar { width: 2.5rem; height: 2.5rem; border-radius: 9999px; object-fit: cover; }
+.candidate-avatar {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 9999px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+.avatar-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #e0e7ff;
+  color: #4338ca;
+  font-size: 0.875rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
 .candidate-name  { font-size: 1.125rem; font-weight: 700; color: #0f172a; }
 .candidate-email { font-size: 0.75rem; color: #64748b; margin-top: 0.125rem; }
 
@@ -179,11 +301,19 @@ const goToDetail = (candidateId: string) => {
   font-size: 0.75rem;
   font-weight: 700;
 }
-.status-badge--new      { background: #dbeafe; color: #2563eb; }
-.status-badge--viewed   { background: #e0e7ff; color: #4338ca; }
-.status-badge--fit      { background: #d1fae5; color: #059669; }
-.status-badge--consider { background: #fef3c7; color: #d97706; }
-.status-badge--rejected { background: #fee2e2; color: #dc2626; }
+.status-badge--pending          { background: #dbeafe; color: #2563eb; }
+.status-badge--invited          { background: #cffafe; color: #0e7490; }
+.status-badge--seen             { background: #e0e7ff; color: #4338ca; }
+.status-badge--considering      { background: #fef3c7; color: #d97706; }
+.status-badge--cv_passed        { background: #d1fae5; color: #059669; }
+.status-badge--schedule_pending { background: #ffedd5; color: #ea580c; }
+.status-badge--overdue          { background: #fee2e2; color: #dc2626; }
+.status-badge--interviewing     { background: #fce7f3; color: #db2777; }
+.status-badge--offered          { background: #d1fae5; color: #047857; }
+.status-badge--hired            { background: #dcfce7; color: #16a34a; }
+.status-badge--rejected         { background: #fee2e2; color: #dc2626; }
+.status-badge--withdrawn        { background: #f1f5f9; color: #64748b; }
+.status-badge--expired          { background: #f1f5f9; color: #94a3b8; }
 
 /* Actions */
 .action-group { display: inline-flex; gap: 0.25rem; }
