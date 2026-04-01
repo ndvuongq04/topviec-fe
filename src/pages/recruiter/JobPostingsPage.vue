@@ -33,6 +33,7 @@
         @resume="handleResume"
         @extend="handleExtend"
         @refresh="handleRefresh"
+        @interview="handleInterview"
         @close="handleClose"
         @delete="handleDelete"
         @restore="handleRestore"
@@ -125,6 +126,33 @@
       </div>
     </GlobalModal>
 
+    <!-- ── Start Interviewing Modal ───────────────────────── -->
+    <GlobalModal
+      :visible="isInterviewModalVisible"
+      title="Bắt đầu phỏng vấn"
+      :subtitle="`Tin: ${interviewingJob?.title}`"
+      variant="primary"
+      icon="groups"
+      confirm-text="Bắt đầu phỏng vấn"
+      confirm-icon="play_arrow"
+      :loading="isInterviewLoading"
+      @close="isInterviewModalVisible = false"
+      @confirm="confirmStartInterviewing"
+    >
+      <div class="space-y-3">
+        <p class="text-slate-600 dark:text-slate-400">
+          Tất cả ứng viên đã qua CV sẽ được chuyển sang trạng thái <strong>Đang phỏng vấn</strong>.
+          Tin tuyển dụng cũng sẽ chuyển sang giai đoạn phỏng vấn.
+        </p>
+        <div class="p-3 bg-blue-50 border border-blue-100 rounded-lg flex gap-3">
+          <span class="material-symbols-outlined text-blue-500">info</span>
+          <p class="text-xs text-blue-700 font-medium">
+            Lưu ý: Hành động này không thể hoàn tác. Hãy đảm bảo bạn đã hoàn thành vòng sàng lọc CV.
+          </p>
+        </div>
+      </div>
+    </GlobalModal>
+
   </div>
 </template>
 
@@ -132,6 +160,7 @@
 import { ref, watch, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { employerJobPostingService } from '@/services/employerJobPosting.service'
+import employerInterviewService from '@/services/employerInterview.service'
 import { useToast } from '@/composables/useToast'
 import { JobPostingStatus } from '@/constants/jobPosting.constants'
 import type { ResJobPostingDetail } from '@/types/jobPosting.types'
@@ -170,6 +199,11 @@ const submittingJob        = ref<{ id: number; title: string } | null>(null)
 const isDeleteModalVisible = ref(false)
 const isDeleteLoading      = ref(false)
 const deletingJob          = ref<{ id: number; title: string } | null>(null)
+
+// Start Interviewing Modal State
+const isInterviewModalVisible = ref(false)
+const isInterviewLoading      = ref(false)
+const interviewingJob         = ref<{ id: number; title: string } | null>(null)
 
 // ── Status mapping ───────────────────────────────────────
 const tabToStatus: Partial<Record<JobPostingFilterTab, JobPostingStatus>> = {
@@ -467,6 +501,48 @@ const handleRestore = async (id: number) => {
 }
 const handleViewApplications = (id: number) => {
   router.push({ name: 'recruiter-job-applications', params: { id } })
+}
+
+const handleInterview = async (id: number) => {
+  const job = jobs.value.find(j => j.id === id)
+  if (!job) return
+
+  try {
+    const readiness = await employerInterviewService.checkReadiness(id)
+    if (!readiness.hasCvPassed) {
+      toast.error('Chưa đủ điều kiện', 'Chưa có ứng viên nào qua vòng sàng lọc CV. Hãy duyệt CV trước khi bắt đầu phỏng vấn.')
+      return
+    }
+    interviewingJob.value = { id: job.id, title: job.title }
+    isInterviewModalVisible.value = true
+  } catch (err: any) {
+    const msg = err?.response?.data?.message ?? 'Không thể kiểm tra trạng thái. Vui lòng thử lại.'
+    toast.error('Lỗi', msg)
+  }
+}
+
+const confirmStartInterviewing = async () => {
+  if (!interviewingJob.value) return
+
+  isInterviewLoading.value = true
+  try {
+    const id = interviewingJob.value.id
+    await employerInterviewService.startInterviewing(id)
+
+    const idx = jobs.value.findIndex(j => j.id === id)
+    if (idx !== -1) {
+      jobs.value[idx] = { ...jobs.value[idx], status: 'interviewing' }
+    }
+
+    toast.success('Bắt đầu phỏng vấn!', `Tin tuyển dụng "${interviewingJob.value.title}" đã chuyển sang giai đoạn phỏng vấn.`)
+    fetchStats()
+    isInterviewModalVisible.value = false
+  } catch (err: any) {
+    const msg = err?.response?.data?.message ?? 'Không thể bắt đầu phỏng vấn. Vui lòng thử lại.'
+    toast.error('Lỗi', msg)
+  } finally {
+    isInterviewLoading.value = false
+  }
 }
 </script>
 

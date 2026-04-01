@@ -143,13 +143,13 @@
               :tooltip="!canRefresh ? 'Chỉ có thể làm mới khi tin đang ở trạng thái Đang tuyển' : undefined"
               @click="handleAction('refresh', job.id, close)"
             />
-            <!-- Bắt đầu phỏng vấn: chỉ khi PUBLISHED -->
+            <!-- Bắt đầu phỏng vấn: chỉ khi CLOSED -->
             <GlobalDropdownItem
               v-if="job.status !== 'deleted'"
               icon="groups"
               label="Bắt đầu phỏng vấn"
               :disabled="!canInterview"
-              :tooltip="!canInterview ? 'Chỉ có thể bắt đầu phỏng vấn khi tin đang ở trạng thái Đang tuyển' : undefined"
+              :tooltip="!canInterview ? 'Chỉ có thể bắt đầu phỏng vấn khi tin đã đóng' : undefined"
               @click="handleAction('interview', job.id, close)"
             />
             <div class="dropdown-divider-v2" v-if="job.status !== 'deleted'" />
@@ -249,8 +249,8 @@ const canExtend = computed(() => props.job.status === 'expired')
 // Làm mới: chỉ khi PUBLISHED (active/expiring)
 const canRefresh = computed(() => ['active', 'expiring'].includes(props.job.status))
 
-// Bắt đầu phỏng vấn: chỉ khi PUBLISHED
-const canInterview = computed(() => ['active', 'expiring'].includes(props.job.status))
+// Bắt đầu phỏng vấn: chỉ khi CLOSED
+const canInterview = computed(() => props.job.status === 'closed')
 
 // Đóng tin: PUBLISHED hoặc PAUSED
 const canClose = computed(() => ['active', 'expiring', 'paused'].includes(props.job.status))

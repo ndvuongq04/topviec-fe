@@ -23,6 +23,7 @@
           @resume="$emit('resume', $event)"
           @extend="$emit('extend', $event)"
           @refresh="$emit('refresh', $event)"
+          @interview="$emit('interview', $event)"
           @close="$emit('close', $event)"
           @delete="$emit('delete', $event)"
           @restore="$emit('restore', $event)"
@@ -51,6 +52,7 @@ defineEmits<{
   resume: [id: number]
   extend: [id: number]
   refresh: [id: number]
+  interview: [id: number]
   close:  [id: number]
   delete: [id: number]
   restore: [id: number]
