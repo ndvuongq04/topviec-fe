@@ -36,6 +36,7 @@ export interface ReqCreateInterviewScheduleDTO {
 
 export interface ReqUpdateInterviewScheduleDTO {
   scheduledAt?: string;
+  interviewType?: InterviewType;
   location?: string;
   meetingLink?: string;
   interviewerNote?: string;

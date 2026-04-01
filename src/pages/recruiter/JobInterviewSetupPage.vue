@@ -18,6 +18,72 @@
       @delete="handleDeleteStage"
     />
 
+    <!-- ── Reschedule Modal ───────────────────────────────── -->
+    <GlobalModal
+      :visible="isRescheduleVisible"
+      title="Đổi lịch phỏng vấn"
+      :subtitle="rescheduleCandidate?.name"
+      icon="event_repeat"
+      confirm-text="Lưu thay đổi"
+      confirm-icon="save"
+      :loading="isRescheduleLoading"
+      @close="isRescheduleVisible = false"
+      @confirm="confirmReschedule"
+    >
+      <div class="reschedule-form">
+        <div class="reschedule-form__row">
+          <div class="reschedule-form__field">
+            <label class="reschedule-form__label">Ngày phỏng vấn</label>
+            <input v-model="rescheduleForm.date" type="date" class="reschedule-form__input" />
+          </div>
+          <div class="reschedule-form__field">
+            <label class="reschedule-form__label">Giờ phỏng vấn</label>
+            <input v-model="rescheduleForm.time" type="time" class="reschedule-form__input" />
+          </div>
+        </div>
+
+        <!-- Hình thức -->
+        <div class="reschedule-form__field">
+          <label class="reschedule-form__label">Hình thức phỏng vấn</label>
+          <div class="reschedule-form__mode-toggle">
+            <button
+              type="button"
+              class="reschedule-form__mode-btn"
+              :class="{ 'reschedule-form__mode-btn--active': rescheduleForm.interviewType !== 'onsite' }"
+              @click="setRescheduleType('online')"
+            >
+              <span class="material-symbols-outlined">videocam</span>
+              Trực tuyến
+            </button>
+            <button
+              type="button"
+              class="reschedule-form__mode-btn"
+              :class="{ 'reschedule-form__mode-btn--active': rescheduleForm.interviewType === 'onsite' }"
+              @click="setRescheduleType('onsite')"
+            >
+              <span class="material-symbols-outlined">location_on</span>
+              Trực tiếp
+            </button>
+          </div>
+        </div>
+
+        <!-- Link hoặc địa điểm tuỳ hình thức -->
+        <div v-if="rescheduleForm.interviewType !== 'onsite'" class="reschedule-form__field">
+          <label class="reschedule-form__label">Link họp (Google Meet / Zoom)</label>
+          <input v-model="rescheduleForm.meetingLink" type="url" class="reschedule-form__input" placeholder="https://meet.google.com/..." />
+        </div>
+        <div v-else class="reschedule-form__field">
+          <label class="reschedule-form__label">Địa điểm phỏng vấn</label>
+          <input v-model="rescheduleForm.location" type="text" class="reschedule-form__input" placeholder="Nhập địa chỉ văn phòng..." />
+        </div>
+
+        <div class="reschedule-form__field">
+          <label class="reschedule-form__label">Ghi chú cho người phỏng vấn</label>
+          <textarea v-model="rescheduleForm.note" class="reschedule-form__input reschedule-form__textarea" rows="2" placeholder="Nhập ghi chú..." />
+        </div>
+      </div>
+    </GlobalModal>
+
     <InterviewCandidateTable
       :stage-name="activeStageName"
       :candidates="filteredCandidates"
@@ -49,6 +115,7 @@ import employerApplicationService from '@/services/employerApplication.service'
 import type { ResInterviewRoundDTO, ResInterviewScheduleDTO } from '@/types/interview.types'
 import type { ResEmployerApplicationDTO } from '@/types/employerApplication.types'
 import { useToast } from '@/composables/useToast'
+import GlobalModal from '@/components/ui/GlobalModal.vue'
 
 const route  = useRoute()
 const router = useRouter()
@@ -62,6 +129,20 @@ const activeStageId = ref<number | null>(null)
 const currentPage   = ref(0) // 0-based per skill-Pagination.md
 const searchValue   = ref('')
 const statusFilter  = ref('all')
+
+// ── Reschedule Modal State ─────────────────────────────────
+const isRescheduleVisible = ref(false)
+const isRescheduleLoading = ref(false)
+const rescheduleScheduleId = ref<number | null>(null)
+const rescheduleCandidate  = ref<{ name: string } | null>(null)
+const rescheduleForm = ref({
+  date:          '',
+  time:          '',
+  interviewType: 'online' as string,
+  meetingLink:   '',
+  location:      '',
+  note:          '',
+})
 
 // ── API Data ───────────────────────────────────────────────
 const rounds         = ref<ResInterviewRoundDTO[]>([])
@@ -273,8 +354,55 @@ function handleViewDetail(applicationId: number) {
   })
 }
 
-function handleReschedule(candidateId: number) {
-  console.log('Reschedule interview for candidate:', candidateId)
+function setRescheduleType(type: 'online' | 'onsite') {
+  rescheduleForm.value.interviewType = type
+}
+
+function handleReschedule(applicationId: number) {
+  const schedule = scheduleByAppId.value.get(applicationId)
+  if (!schedule) return
+
+  const dt = new Date(schedule.scheduledAt)
+  rescheduleScheduleId.value = schedule.id
+  rescheduleCandidate.value  = { name: schedule.candidateName }
+  rescheduleForm.value = {
+    date:          dt.toISOString().split('T')[0],
+    time:          dt.toTimeString().slice(0, 5),
+    interviewType: schedule.interviewType,
+    meetingLink:   schedule.meetingLink ?? '',
+    location:      schedule.location ?? '',
+    note:          schedule.interviewerNote ?? '',
+  }
+  isRescheduleVisible.value = true
+}
+
+async function confirmReschedule() {
+  if (!rescheduleScheduleId.value || !rescheduleForm.value.date || !rescheduleForm.value.time) {
+    toast.error('Thiếu thông tin', 'Vui lòng chọn ngày và giờ phỏng vấn.')
+    return
+  }
+
+  isRescheduleLoading.value = true
+  try {
+    const isOnsite = rescheduleForm.value.interviewType === 'onsite'
+    const updated = await employerInterviewService.updateSchedule(rescheduleScheduleId.value, {
+      scheduledAt:     `${rescheduleForm.value.date}T${rescheduleForm.value.time}:00`,
+      interviewType:   rescheduleForm.value.interviewType as 'online' | 'onsite' | 'phone',
+      meetingLink:     !isOnsite ? rescheduleForm.value.meetingLink || undefined : undefined,
+      location:        isOnsite  ? rescheduleForm.value.location    || undefined : undefined,
+      interviewerNote: rescheduleForm.value.note || undefined,
+    })
+
+    const idx = roundSchedules.value.findIndex(s => s.id === rescheduleScheduleId.value)
+    if (idx !== -1) roundSchedules.value[idx] = updated
+
+    toast.success('Đổi lịch thành công!', `Lịch phỏng vấn của ${rescheduleCandidate.value?.name} đã được cập nhật.`)
+    isRescheduleVisible.value = false
+  } catch (err: any) {
+    toast.error('Lỗi', err?.response?.data?.message ?? 'Không thể đổi lịch. Vui lòng thử lại.')
+  } finally {
+    isRescheduleLoading.value = false
+  }
 }
 
 function handleRemind(candidateId: number) {
@@ -366,5 +494,35 @@ async function handleDeleteStage(stageId: number) {
 .breadcrumb__current {
   color: #0f172a;
   font-weight: 600;
+}
+
+/* Reschedule form */
+.reschedule-form { display: flex; flex-direction: column; gap: 1rem; padding: 0.25rem 0; }
+.reschedule-form__row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.reschedule-form__field { display: flex; flex-direction: column; gap: 0.375rem; }
+.reschedule-form__label { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #64748b; }
+.reschedule-form__input {
+  width: 100%; padding: 0.75rem 1rem; box-sizing: border-box;
+  background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 0.625rem;
+  font-size: 0.875rem; font-family: inherit; color: #0f172a;
+  outline: none; transition: border-color 0.18s, box-shadow 0.18s;
+}
+.reschedule-form__input:focus { border-color: #4b9af6; box-shadow: 0 0 0 3px rgba(75,154,246,0.15); }
+.reschedule-form__textarea { resize: none; }
+.reschedule-form__mode-toggle {
+  display: flex; gap: 0.25rem; padding: 0.25rem;
+  background: #f8fafc; border-radius: 0.75rem; width: fit-content;
+}
+.reschedule-form__mode-btn {
+  display: flex; align-items: center; gap: 0.4rem;
+  padding: 0.5rem 1.25rem; border-radius: 0.625rem; border: none;
+  background: transparent; font-size: 0.875rem; font-weight: 500;
+  font-family: inherit; color: #64748b; cursor: pointer;
+  transition: background 0.18s, color 0.18s, box-shadow 0.18s;
+}
+.reschedule-form__mode-btn .material-symbols-outlined { font-size: 1.1rem; }
+.reschedule-form__mode-btn--active {
+  background: #fff; color: #4b9af6; font-weight: 700;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
 }
 </style>
