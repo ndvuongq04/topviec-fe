@@ -86,6 +86,8 @@
           <GlobalDropdownItem
             icon="calendar_add_on"
             label="Đặt lịch phỏng vấn"
+            :disabled="candidate.hasSchedule"
+            :tooltip="candidate.hasSchedule ? 'Ứng viên đã có lịch phỏng vấn trong vòng này' : undefined"
             @click="handleAction('schedule', close)"
           />
 
@@ -149,6 +151,8 @@ interface InterviewCandidate {
   format: string
   formatType: 'online' | 'offline'
   status: 'confirmed' | 'pending' | 'overdue'
+  hasSchedule?: boolean
+  scheduleStatus?: string
 }
 
 const props = defineProps<{

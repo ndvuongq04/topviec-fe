@@ -15,8 +15,9 @@
       <div class="schedule-page__main">
         <InterviewCandidateSection
           v-model="candidateForm"
-          :candidates="candidates"
-          :rounds="rounds"
+          :candidates="candidateOptions"
+          :rounds="roundOptions"
+          :disabled="true"
         />
 
         <InterviewScheduleSection v-model="scheduleForm" />
@@ -27,7 +28,7 @@
       <!-- Right column -->
       <div class="schedule-page__sidebar">
         <InterviewSummaryCard
-          :candidate-name="selectedCandidateName"
+          :candidate-name="candidateName"
           :date="scheduleForm.date"
           :time="scheduleForm.time"
           :mode="scheduleForm.mode"
@@ -42,69 +43,113 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import { useRoute } from 'vue-router'
+import { ref, computed, onMounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import Breadcrumb from '@/components/ui/Breadcrumb.vue'
 import InterviewCandidateSection from '@/components/recruiter/interviews/interview-schedule/Interviewcandidatesection.vue'
 import InterviewScheduleSection from '@/components/recruiter/interviews/interview-schedule/Interviewschedulesection.vue'
 import InterviewNoteSection from '@/components/recruiter/interviews/interview-schedule/Interviewnotesection.vue'
 import InterviewSummaryCard from '@/components/recruiter/interviews/interview-schedule/Interviewsummarycard.vue'
 import InterviewTipCard from '@/components/recruiter/interviews/interview-schedule/Interviewtipcard.vue'
+import employerInterviewService from '@/services/employerInterview.service'
+import employerApplicationService from '@/services/employerApplication.service'
+import { useToast } from '@/composables/useToast'
+import type { ResInterviewRoundDTO } from '@/types/interview.types'
+import type { ResEmployerApplicationDTO } from '@/types/employerApplication.types'
 
-const route = useRoute()
-const jobId = route.query.jobId
+const route  = useRoute()
+const router = useRouter()
+const toast  = useToast()
+
+// ── Query params ──────────────────────────────────────────
+const jobId        = Number(route.query.jobId)
+const applicationId = Number(route.query.applicationId)
+const roundId      = Number(route.query.roundId)
 
 const breadcrumbItems = computed(() => [
   { label: 'Thiết lập phỏng vấn', to: `/recruiter/jobs/${jobId}/interview-setup` },
   { label: 'Đặt lịch phỏng vấn thủ công' },
 ])
 
-// ─── Static data (thay bằng API) ─────────────────────────────────────────────
-const candidates = [
-  { id: '1', label: 'Nguyễn Văn A - Frontend Developer' },
-  { id: '2', label: 'Trần Thị B - Senior UI/UX Designer' },
-  { id: '3', label: 'Lê Hoàng C - Backend Engineer' },
-]
+// ── API Data ──────────────────────────────────────────────
+const application = ref<ResEmployerApplicationDTO | null>(null)
+const rounds      = ref<ResInterviewRoundDTO[]>([])
 
-const rounds = [
-  { value: '1', label: 'Vòng 1' },
-  { value: '2', label: 'Vòng 2' },
-  { value: '3', label: 'Vòng 3' },
-  { value: 'final', label: 'Final' },
-]
+// ── Computed options for the (disabled) section ───────────
+const candidateName = computed(() => application.value?.candidateName ?? '')
 
-// ─── Form state ───────────────────────────────────────────────────────────────
-const candidateForm = ref({ candidateId: '', round: '1' })
+const candidateOptions = computed(() => {
+  if (!application.value) return []
+  return [{
+    id:    String(application.value.id),
+    label: `${application.value.candidateName} - ${application.value.candidateEmail}`,
+  }]
+})
+
+const roundOptions = computed(() =>
+  rounds.value.map(r => ({
+    value: String(r.id),
+    label: `Vòng ${r.roundNumber} - ${r.roundName}`,
+  }))
+)
+
+// ── Form state ────────────────────────────────────────────
+const candidateForm = ref({
+  candidateId: String(applicationId),
+  round:       String(roundId),
+})
 
 const scheduleForm = ref({
-  date: '',
-  time: '',
-  mode: 'online' as 'online' | 'offline',
+  date:        '',
+  time:        '',
+  mode:        'online' as 'online' | 'offline',
   meetingLink: '',
-  location: '',
+  location:    '',
 })
 
-const note = ref('')
+const note       = ref('')
 const submitting = ref(false)
 
-// ─── Computed ─────────────────────────────────────────────────────────────────
-const selectedCandidateName = computed(() => {
-  const found = candidates.find(c => c.id === candidateForm.value.candidateId)
-  return found ? found.label.split(' - ')[0] : ''
-})
+// ── API Calls ─────────────────────────────────────────────
+async function fetchData() {
+  try {
+    const [appRes, roundsRes] = await Promise.all([
+      employerApplicationService.getApplicationDetailByEmployer(applicationId),
+      employerInterviewService.getRounds(jobId),
+    ])
+    application.value = appRes
+    rounds.value      = roundsRes
+  } catch (err: any) {
+    toast.error('Lỗi', err?.response?.data?.message ?? 'Không thể tải thông tin.')
+  }
+}
 
-// ─── Handler ─────────────────────────────────────────────────────────────────
+onMounted(fetchData)
+
+// ── Submit ────────────────────────────────────────────────
 async function handleSubmit() {
+  if (!scheduleForm.value.date || !scheduleForm.value.time) {
+    toast.error('Thiếu thông tin', 'Vui lòng chọn ngày và giờ phỏng vấn.')
+    return
+  }
+
   submitting.value = true
   try {
-    // TODO: gọi API tạo lịch phỏng vấn
-    const payload = {
-      ...candidateForm.value,
-      ...scheduleForm.value,
-      note: note.value,
-    }
-    console.log('Submit payload:', payload)
-    await new Promise(r => setTimeout(r, 1200)) // mock delay
+    const scheduledAt = `${scheduleForm.value.date}T${scheduleForm.value.time}:00`
+
+    await employerInterviewService.createSchedule(roundId, {
+      applicationId,
+      scheduledAt,
+      interviewType: scheduleForm.value.mode === 'offline' ? 'onsite' : 'online',
+      meetingLink:   scheduleForm.value.mode === 'online' ? scheduleForm.value.meetingLink || undefined : undefined,
+      location:      scheduleForm.value.mode === 'offline' ? scheduleForm.value.location || undefined : undefined,
+      interviewerNote: note.value || undefined,
+    })
+
+    toast.success('Đặt lịch thành công!', `Đã tạo lịch phỏng vấn cho ${candidateName.value}.`)
+    router.push(`/recruiter/jobs/${jobId}/interview-setup`)
+  } catch (err: any) {
+    toast.error('Lỗi', err?.response?.data?.message ?? 'Không thể tạo lịch phỏng vấn. Vui lòng thử lại.')
   } finally {
     submitting.value = false
   }

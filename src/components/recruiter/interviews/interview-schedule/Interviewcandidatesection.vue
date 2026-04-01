@@ -15,8 +15,10 @@
           <span class="material-symbols-outlined field__icon-left">search</span>
           <select
             class="field__select"
+            :class="{ 'field__select--disabled': disabled }"
             :value="modelValue.candidateId"
-            @change="emit('update:modelValue', {
+            :disabled="disabled"
+            @change="!disabled && emit('update:modelValue', {
               ...modelValue,
               candidateId: ($event.target as HTMLSelectElement).value
             })"
@@ -38,9 +40,10 @@
             v-for="round in rounds"
             :key="round.value"
             class="round-btn"
-            :class="{ 'round-btn--active': modelValue.round === round.value }"
+            :class="{ 'round-btn--active': modelValue.round === round.value, 'round-btn--disabled': disabled }"
             type="button"
-            @click="emit('update:modelValue', { ...modelValue, round: round.value })"
+            :disabled="disabled"
+            @click="!disabled && emit('update:modelValue', { ...modelValue, round: round.value })"
           >
             {{ round.label }}
           </button>
@@ -70,6 +73,7 @@ defineProps<{
   modelValue: ModelValue
   candidates: Candidate[]
   rounds: RoundOption[]
+  disabled?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -203,5 +207,12 @@ const emit = defineEmits<{
   background: #e0f2fe;
   color: #4B9AF6;
   font-weight: 700;
+}
+
+.field__select--disabled,
+.round-btn--disabled {
+  opacity: 0.75;
+  cursor: not-allowed;
+  pointer-events: none;
 }
 </style>

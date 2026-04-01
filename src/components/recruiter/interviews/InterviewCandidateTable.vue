@@ -32,11 +32,12 @@
             placeholder="Tìm kiếm ứng viên..."
             :value="searchValue"
             @input="$emit('update:searchValue', ($event.target as HTMLInputElement).value)"
+            @keyup.enter="$emit('search')"
           />
           <button
             v-if="searchValue"
             class="search-clear"
-            @click="$emit('update:searchValue', '')"
+            @click="$emit('update:searchValue', ''); $emit('search')"
           >
             <span class="material-symbols-outlined">close</span>
           </button>
@@ -130,6 +131,8 @@ interface InterviewCandidate {
   format: string
   formatType: 'online' | 'offline'
   status: 'confirmed' | 'pending' | 'overdue'
+  hasSchedule?: boolean
+  scheduleStatus?: string
 }
 
 defineProps<{
@@ -143,16 +146,20 @@ defineProps<{
 }>()
 
 const statusTabs = [
-  { label: 'Tất cả', value: 'all' },
-  { label: 'Đã xác nhận', value: 'confirmed' },
-  { label: 'Chờ xác nhận', value: 'pending' },
-  { label: 'Quá hạn', value: 'overdue' },
+  { label: 'Tất cả',        value: 'all' },
+  { label: 'Chưa lên lịch', value: 'unscheduled' },
+  { label: 'Chờ phản hồi',  value: 'scheduled' },
+  { label: 'Đã xác nhận',   value: 'confirmed' },
+  { label: 'Đã hoàn thành', value: 'completed' },
+  { label: 'Đã hủy',        value: 'cancelled' },
+  { label: 'Vắng mặt',      value: 'no_show' },
 ]
 
 const emit = defineEmits<{
   'update:searchValue': [value: string]
   'update:statusFilter': [value: string]
   export: []
+  search: []
   openLink: [candidateId: number]
   viewDetail: [candidateId: number]
   reschedule: [candidateId: number]

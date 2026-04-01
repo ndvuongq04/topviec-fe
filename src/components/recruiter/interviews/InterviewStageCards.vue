@@ -108,25 +108,55 @@
     <!-- Add Stage Modal (Global) -->
     <GlobalModal
       :visible="isAddingStage"
-      :title="'Thêm vòng phỏng vấn mới'"
+      title="Thêm vòng phỏng vấn mới"
       confirm-text="Thêm vòng"
       confirm-icon="add"
       max-width="md"
       @close="closeAddModal"
       @confirm="submitAddStage"
     >
-      <div class="py-2">
-        <label class="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-widest">
-          Tên vòng phỏng vấn (ví dụ: Technical, Culture Fit...)
+      <div class="add-form">
+        <!-- Tên vòng -->
+        <div class="add-form__field">
+          <label class="add-form__label">Tên vòng phỏng vấn <span class="add-form__required">*</span></label>
+          <input
+            v-model="addForm.roundName"
+            type="text"
+            class="add-form__input"
+            placeholder="Ví dụ: Technical Interview, Culture Fit..."
+            ref="addInputRef"
+          />
+        </div>
+
+        <!-- Mô tả -->
+        <div class="add-form__field">
+          <label class="add-form__label">Mô tả</label>
+          <textarea
+            v-model="addForm.description"
+            class="add-form__input add-form__textarea"
+            placeholder="Mô tả nội dung hoặc tiêu chí đánh giá của vòng này..."
+            rows="2"
+          />
+        </div>
+
+        <!-- Thời lượng dự kiến -->
+        <div class="add-form__field">
+          <label class="add-form__label">Thời lượng dự kiến (phút)</label>
+          <input
+            v-model.number="addForm.expectedDuration"
+            type="number"
+            min="15"
+            step="15"
+            class="add-form__input"
+            placeholder="Ví dụ: 60"
+          />
+        </div>
+
+        <!-- Vòng cuối -->
+        <label class="add-form__checkbox-row">
+          <input v-model="addForm.isFinal" type="checkbox" class="add-form__checkbox" />
+          <span class="add-form__checkbox-label">Đây là vòng phỏng vấn cuối cùng</span>
         </label>
-        <input
-          v-model="addStageName"
-          type="text"
-          class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all bg-slate-50/50 text-slate-900"
-          placeholder="Nhập tên vòng..."
-          @keyup.enter="submitAddStage"
-          ref="addInputRef"
-        />
       </div>
     </GlobalModal>
   </section>
@@ -153,7 +183,7 @@ defineProps<{
 const emit = defineEmits<{
   select: [stageId: number]
   rename: [stageId: number, newName: string]
-  add: [name: string]
+  add: [data: { roundName: string; description?: string; expectedDuration?: number; isFinal?: boolean }]
   delete: [stageId: number]
 }>()
 
@@ -192,27 +222,28 @@ function submitRename() {
 
 // --- Add Stage Logic ---
 const isAddingStage = ref(false)
-const addStageName = ref('')
 const addInputRef = ref<HTMLInputElement | null>(null)
+const addForm = ref({ roundName: '', description: '', expectedDuration: undefined as number | undefined, isFinal: false })
 
 function openAddModal() {
-  addStageName.value = ''
+  addForm.value = { roundName: '', description: '', expectedDuration: undefined, isFinal: false }
   isAddingStage.value = true
-  nextTick(() => {
-    addInputRef.value?.focus()
-  })
+  nextTick(() => addInputRef.value?.focus())
 }
 
 function closeAddModal() {
   isAddingStage.value = false
-  addStageName.value = ''
 }
 
 function submitAddStage() {
-  if (addStageName.value.trim()) {
-    emit('add', addStageName.value.trim())
-    closeAddModal()
-  }
+  if (!addForm.value.roundName.trim()) return
+  emit('add', {
+    roundName:        addForm.value.roundName.trim(),
+    description:      addForm.value.description.trim() || undefined,
+    expectedDuration: addForm.value.expectedDuration || undefined,
+    isFinal:          addForm.value.isFinal || undefined,
+  })
+  closeAddModal()
 }
 
 // --- Delete Logic ---
@@ -479,6 +510,24 @@ async function handleRemove(stage: Stage) {
   font-weight: 900;
   color: #fff;
 }
+
+/* --- Add Form --- */
+.add-form { display: flex; flex-direction: column; gap: 1rem; padding: 0.25rem 0; }
+.add-form__field { display: flex; flex-direction: column; gap: 0.375rem; }
+.add-form__label { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #64748b; }
+.add-form__required { color: #ef4444; }
+.add-form__input {
+  width: 100%; padding: 0.75rem 1rem;
+  background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 0.625rem;
+  font-size: 0.875rem; font-family: inherit; color: #0f172a;
+  outline: none; transition: border-color 0.18s, box-shadow 0.18s;
+  box-sizing: border-box;
+}
+.add-form__input:focus { border-color: #4b9af6; box-shadow: 0 0 0 3px rgba(75,154,246,0.15); }
+.add-form__textarea { resize: none; }
+.add-form__checkbox-row { display: flex; align-items: center; gap: 0.625rem; cursor: pointer; }
+.add-form__checkbox { width: 1rem; height: 1rem; accent-color: #4b9af6; cursor: pointer; }
+.add-form__checkbox-label { font-size: 0.875rem; font-weight: 500; color: #475569; }
 
 .stage-total__unit {
   font-size: 0.875rem;            /* 14px – metadata đi kèm */
