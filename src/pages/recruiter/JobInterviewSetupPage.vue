@@ -33,12 +33,26 @@
       <div class="reschedule-form">
         <div class="reschedule-form__row">
           <div class="reschedule-form__field">
-            <label class="reschedule-form__label">Ngày phỏng vấn</label>
-            <input v-model="rescheduleForm.date" type="date" class="reschedule-form__input" />
+            <label class="reschedule-form__label">Ngày phỏng vấn <span class="reschedule-form__required">*</span></label>
+            <input
+              v-model="rescheduleForm.date"
+              type="date"
+              class="reschedule-form__input"
+              :class="{ 'reschedule-form__input--error': rescheduleErrors.date }"
+              @change="rescheduleErrors.date = ''"
+            />
+            <span v-if="rescheduleErrors.date" class="reschedule-form__error">{{ rescheduleErrors.date }}</span>
           </div>
           <div class="reschedule-form__field">
-            <label class="reschedule-form__label">Giờ phỏng vấn</label>
-            <input v-model="rescheduleForm.time" type="time" class="reschedule-form__input" />
+            <label class="reschedule-form__label">Giờ phỏng vấn <span class="reschedule-form__required">*</span></label>
+            <input
+              v-model="rescheduleForm.time"
+              type="time"
+              class="reschedule-form__input"
+              :class="{ 'reschedule-form__input--error': rescheduleErrors.time }"
+              @change="rescheduleErrors.time = ''"
+            />
+            <span v-if="rescheduleErrors.time" class="reschedule-form__error">{{ rescheduleErrors.time }}</span>
           </div>
         </div>
 
@@ -69,12 +83,28 @@
 
         <!-- Link hoặc địa điểm tuỳ hình thức -->
         <div v-if="rescheduleForm.interviewType !== 'onsite'" class="reschedule-form__field">
-          <label class="reschedule-form__label">Link họp (Google Meet / Zoom)</label>
-          <input v-model="rescheduleForm.meetingLink" type="url" class="reschedule-form__input" placeholder="https://meet.google.com/..." />
+          <label class="reschedule-form__label">Link họp (Google Meet / Zoom) <span class="reschedule-form__required">*</span></label>
+          <input
+            v-model="rescheduleForm.meetingLink"
+            type="url"
+            class="reschedule-form__input"
+            :class="{ 'reschedule-form__input--error': rescheduleErrors.meetingLink }"
+            placeholder="https://meet.google.com/..."
+            @input="rescheduleErrors.meetingLink = ''"
+          />
+          <span v-if="rescheduleErrors.meetingLink" class="reschedule-form__error">{{ rescheduleErrors.meetingLink }}</span>
         </div>
         <div v-else class="reschedule-form__field">
-          <label class="reschedule-form__label">Địa điểm phỏng vấn</label>
-          <input v-model="rescheduleForm.location" type="text" class="reschedule-form__input" placeholder="Nhập địa chỉ văn phòng..." />
+          <label class="reschedule-form__label">Địa điểm phỏng vấn <span class="reschedule-form__required">*</span></label>
+          <input
+            v-model="rescheduleForm.location"
+            type="text"
+            class="reschedule-form__input"
+            :class="{ 'reschedule-form__input--error': rescheduleErrors.location }"
+            placeholder="Nhập địa chỉ văn phòng..."
+            @input="rescheduleErrors.location = ''"
+          />
+          <span v-if="rescheduleErrors.location" class="reschedule-form__error">{{ rescheduleErrors.location }}</span>
         </div>
 
         <div class="reschedule-form__field">
@@ -111,9 +141,8 @@ import { useRoute, useRouter } from 'vue-router'
 import InterviewStageCards from '@/components/recruiter/interviews/InterviewStageCards.vue'
 import InterviewCandidateTable from '@/components/recruiter/interviews/InterviewCandidateTable.vue'
 import employerInterviewService from '@/services/employerInterview.service'
-import employerApplicationService from '@/services/employerApplication.service'
 import type { ResInterviewRoundDTO, ResInterviewScheduleDTO } from '@/types/interview.types'
-import type { ResEmployerApplicationDTO } from '@/types/employerApplication.types'
+import { INTERVIEW_STATUS, INTERVIEW_TYPE } from '@/constants/interview.constants'
 import { useToast } from '@/composables/useToast'
 import GlobalModal from '@/components/ui/GlobalModal.vue'
 
@@ -143,11 +172,10 @@ const rescheduleForm = ref({
   location:      '',
   note:          '',
 })
+const rescheduleErrors = ref<Record<string, string>>({})
 
 // ── API Data ───────────────────────────────────────────────
 const rounds         = ref<ResInterviewRoundDTO[]>([])
-const interviewApps  = ref<ResEmployerApplicationDTO[]>([])
-const totalApps      = ref(0)
 const roundSchedules = ref<ResInterviewScheduleDTO[]>([])
 
 // ── Computed: Stage cards ──────────────────────────────────
@@ -165,48 +193,30 @@ const activeStageName = computed(() => {
   return r ? `Vòng ${r.roundNumber} - ${r.roundName}` : ''
 })
 
-// ── Computed: Schedule lookup per applicationId ────────────
-const scheduleByAppId = computed(() => {
-  const map = new Map<number, ResInterviewScheduleDTO>()
-  for (const s of roundSchedules.value) {
-    map.set(s.applicationId, s)
-  }
-  return map
-})
-
 // ── Computed: Active round interviewers ────────────────────
 const activeRoundInterviewers = computed(() =>
   rounds.value.find(r => r.id === activeStageId.value)?.interviewers ?? []
 )
 
-// ── Computed: Merge apps + schedules → candidate rows ─────
-const allCandidates = computed(() =>
-  interviewApps.value.map(app =>
-    mapToCandidate(app, scheduleByAppId.value.get(app.id), activeRoundInterviewers.value)
-  )
+// ── Computed: Map schedules → candidate rows ───────────────
+const filteredCandidates = computed(() =>
+  roundSchedules.value.map(s => mapToCandidate(s, activeRoundInterviewers.value))
 )
 
-// ── Computed: Status filter (client-side on current page) ──
-const filteredCandidates = computed(() => {
-  const f = statusFilter.value
-  if (f === 'all')         return allCandidates.value
-  if (f === 'unscheduled') return allCandidates.value.filter(c => !c.hasSchedule)
-  return allCandidates.value.filter(c => c.hasSchedule && c.scheduleStatus === f)
-})
-
 // ── Computed: Pagination ───────────────────────────────────
+const totalApps  = computed(() => filteredCandidates.value.length)
 const totalPages = computed(() => Math.ceil(totalApps.value / PAGE_SIZE))
 
 // ── Helpers ────────────────────────────────────────────────
 function mapApiStatusToUi(status: string): 'confirmed' | 'pending' | 'overdue' {
-  if (status === 'confirmed' || status === 'completed') return 'confirmed'
-  if (status === 'no_show')                             return 'overdue'
+  if (status === INTERVIEW_STATUS.CONFIRMED || status === INTERVIEW_STATUS.COMPLETED) return 'confirmed'
+  if (status === INTERVIEW_STATUS.NO_SHOW)                                            return 'overdue'
   return 'pending'
 }
 
 function mapInterviewType(type: string): { label: string; formatType: 'online' | 'offline' } {
-  if (type === 'online') return { label: 'Trực tuyến', formatType: 'online' }
-  if (type === 'phone')  return { label: 'Điện thoại', formatType: 'online' }
+  if (type === INTERVIEW_TYPE.ONLINE) return { label: 'Trực tuyến', formatType: 'online' }
+  if (type === INTERVIEW_TYPE.PHONE)  return { label: 'Điện thoại', formatType: 'online' }
   return { label: 'Trực tiếp', formatType: 'offline' }
 }
 
@@ -231,49 +241,30 @@ function getInitials(name: string): string {
 }
 
 function mapToCandidate(
-  app: ResEmployerApplicationDTO,
-  schedule?: ResInterviewScheduleDTO,
+  schedule: ResInterviewScheduleDTO,
   interviewers: { id: number; name: string }[] = [],
 ) {
   const firstInterviewer = interviewers[0]
-  const base = {
-    id:        app.id,
-    name:      app.candidateName,
-    role:      app.candidateEmail,
-    avatarUrl: app.candidateAvatar ?? '',
+  const { label, formatType } = mapInterviewType(schedule.interviewType)
+  return {
+    id:        schedule.applicationId,
+    name:      schedule.candidateName,
+    role:      schedule.candidateEmail,
+    avatarUrl: '',
     interviewer: firstInterviewer
       ? { id: firstInterviewer.id, name: firstInterviewer.name, initials: getInitials(firstInterviewer.name) }
       : { id: 0, name: '—', initials: '?' },
-  }
-
-  if (schedule) {
-    const { label, formatType } = mapInterviewType(schedule.interviewType)
-    return {
-      ...base,
-      hasSchedule:    true,
-      scheduleStatus: schedule.status,
-      dateLabel:      formatDateLabel(schedule.scheduledAt),
-      dateFormatted:  new Date(schedule.scheduledAt).toLocaleDateString('vi-VN', {
-        day: 'numeric', month: 'long', year: 'numeric',
-      }),
-      format:     schedule.meetingLink
-        ? (schedule.meetingLink.includes('meet.google') ? 'Google Meet' : 'Zoom Meeting')
-        : label,
-      formatType,
-      status: mapApiStatusToUi(schedule.status),
-    }
-  }
-
-  // No schedule yet → hiển thị "Chưa lên lịch"
-  return {
-    ...base,
-    hasSchedule:    false,
-    scheduleStatus: undefined,
-    dateLabel:      'Chưa lên lịch',
-    dateFormatted:  '',
-    format:         '—',
-    formatType:     'offline' as const,
-    status:         'pending' as const,
+    hasSchedule:    true,
+    scheduleStatus: schedule.status,
+    dateLabel:      formatDateLabel(schedule.scheduledAt),
+    dateFormatted:  new Date(schedule.scheduledAt).toLocaleDateString('vi-VN', {
+      day: 'numeric', month: 'long', year: 'numeric',
+    }),
+    format:     schedule.interviewType === INTERVIEW_TYPE.ONLINE && schedule.meetingLink
+      ? (schedule.meetingLink.includes('meet.google') ? 'Google Meet' : 'Trực tuyến')
+      : label,
+    formatType,
+    status: mapApiStatusToUi(schedule.status),
   }
 }
 
@@ -289,26 +280,13 @@ async function fetchRounds() {
   }
 }
 
-async function fetchApplications() {
-  try {
-    const res = await employerApplicationService.getApplicationsByJobPost(jobId.value, {
-      status: 'interviewing',
-      page:   currentPage.value,
-      size:   PAGE_SIZE,
-      search: searchValue.value || undefined,
-    })
-    interviewApps.value = res.result
-    totalApps.value     = res.meta.totals
-  } catch (err: any) {
-    toast.error('Lỗi', err?.response?.data?.message ?? 'Không thể tải danh sách ứng viên.')
-  }
-}
-
 async function fetchSchedules() {
   if (activeStageId.value === null) return
   try {
     roundSchedules.value = await employerInterviewService.getSchedules(jobId.value, {
       roundId: activeStageId.value,
+      status:  statusFilter.value !== 'all' ? statusFilter.value : undefined,
+      search:  searchValue.value.trim() || undefined,
     })
   } catch (err: any) {
     toast.error('Lỗi', err?.response?.data?.message ?? 'Không thể tải lịch phỏng vấn.')
@@ -316,17 +294,12 @@ async function fetchSchedules() {
 }
 
 // ── Watchers ───────────────────────────────────────────────
-// Đổi vòng → refetch lịch của vòng đó (ứng viên không đổi)
-watch(activeStageId, () => {
-  fetchSchedules()
-})
-
-// Đổi trang → refetch ứng viên
-watch(currentPage, fetchApplications)
+watch(activeStageId, () => { fetchSchedules() })
+watch(statusFilter,  () => { fetchSchedules() })
 
 onMounted(async () => {
   await fetchRounds()
-  await Promise.all([fetchApplications(), fetchSchedules()])
+  await fetchSchedules()
 })
 
 // ── Handlers ───────────────────────────────────────────────
@@ -335,8 +308,7 @@ function handleSelectStage(stageId: number) {
 }
 
 function handleSearch() {
-  currentPage.value = 0
-  fetchApplications()
+  fetchSchedules()
 }
 
 function handleExport() {
@@ -359,7 +331,7 @@ function setRescheduleType(type: 'online' | 'onsite') {
 }
 
 function handleReschedule(applicationId: number) {
-  const schedule = scheduleByAppId.value.get(applicationId)
+  const schedule = roundSchedules.value.find(s => s.applicationId === applicationId)
   if (!schedule) return
 
   const dt = new Date(schedule.scheduledAt)
@@ -373,19 +345,43 @@ function handleReschedule(applicationId: number) {
     location:      schedule.location ?? '',
     note:          schedule.interviewerNote ?? '',
   }
+  rescheduleErrors.value = {}
   isRescheduleVisible.value = true
 }
 
-async function confirmReschedule() {
-  if (!rescheduleScheduleId.value || !rescheduleForm.value.date || !rescheduleForm.value.time) {
-    toast.error('Thiếu thông tin', 'Vui lòng chọn ngày và giờ phỏng vấn.')
-    return
+function validateReschedule(): boolean {
+  const errors: Record<string, string> = {}
+  const f = rescheduleForm.value
+
+  if (!f.date) {
+    errors.date = 'Vui lòng chọn ngày phỏng vấn.'
+  } else if (!f.time) {
+    errors.time = 'Vui lòng chọn giờ phỏng vấn.'
+  } else {
+    const scheduledAt = new Date(`${f.date}T${f.time}`)
+    if (scheduledAt <= new Date()) {
+      errors.date = 'Thời gian phỏng vấn phải ở tương lai.'
+    }
   }
+
+  if (f.interviewType !== 'onsite' && !f.meetingLink.trim()) {
+    errors.meetingLink = 'Vui lòng nhập link họp.'
+  }
+  if (f.interviewType === 'onsite' && !f.location.trim()) {
+    errors.location = 'Vui lòng nhập địa điểm phỏng vấn.'
+  }
+
+  rescheduleErrors.value = errors
+  return Object.keys(errors).length === 0
+}
+
+async function confirmReschedule() {
+  if (!validateReschedule()) return
 
   isRescheduleLoading.value = true
   try {
     const isOnsite = rescheduleForm.value.interviewType === 'onsite'
-    const updated = await employerInterviewService.updateSchedule(rescheduleScheduleId.value, {
+    const updated = await employerInterviewService.updateSchedule(rescheduleScheduleId.value!, {
       scheduledAt:     `${rescheduleForm.value.date}T${rescheduleForm.value.time}:00`,
       interviewType:   rescheduleForm.value.interviewType as 'online' | 'onsite' | 'phone',
       meetingLink:     !isOnsite ? rescheduleForm.value.meetingLink || undefined : undefined,
@@ -525,4 +521,8 @@ async function handleDeleteStage(stageId: number) {
   background: #fff; color: #4b9af6; font-weight: 700;
   box-shadow: 0 1px 4px rgba(0,0,0,0.08);
 }
+.reschedule-form__required { color: #ef4444; margin-left: 2px; }
+.reschedule-form__input--error { border-color: #ef4444 !important; }
+.reschedule-form__input--error:focus { box-shadow: 0 0 0 3px rgba(239,68,68,0.15) !important; }
+.reschedule-form__error { font-size: 0.75rem; color: #ef4444; font-weight: 500; margin-top: 2px; }
 </style>

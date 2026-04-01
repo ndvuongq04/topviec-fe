@@ -106,8 +106,8 @@
           <GlobalDropdownItem
             icon="event_repeat"
             label="Đổi lịch phỏng vấn"
-            :disabled="candidate.status === 'pending'"
-            :tooltip="candidate.status === 'pending' ? 'Chờ ứng viên phản hồi trước khi đổi lịch' : ''"
+            :disabled="candidate.status === 'completed'"
+            :tooltip="candidate.status === 'completed' ? 'Phỏng vấn đã kết thúc, không thể đổi lịch' : ''"
             @click="handleAction('reschedule', close)"
           />
 
@@ -132,6 +132,7 @@
 import { computed } from 'vue'
 import GlobalDropdown from '@/components/ui/GlobalDropdown.vue'
 import GlobalDropdownItem from '@/components/ui/GlobalDropdownItem.vue'
+import { INTERVIEW_STATUS_OPTIONS } from '@/constants/interview.constants'
 
 interface Interviewer {
   id: number
@@ -150,7 +151,7 @@ interface InterviewCandidate {
   interviewer: Interviewer
   format: string
   formatType: 'online' | 'offline'
-  status: 'confirmed' | 'pending' | 'overdue'
+  status: 'confirmed' | 'pending' | 'overdue'| 'completed' | 'cancelled' | 'no_show'
   hasSchedule?: boolean
   scheduleStatus?: string
 }
@@ -178,23 +179,31 @@ const formatIcon = computed(() =>
   props.candidate.formatType === 'online' ? 'videocam' : 'apartment'
 )
 
-const statusClass = computed(() => ({
-  confirmed: 'status-badge--success',
-  pending:   'status-badge--warning',
-  overdue:   'status-badge--error',
-})[props.candidate.status] ?? '')
+const COLOR_CLASS: Record<string, string> = {
+  default: 'status-badge--warning',
+  blue:    'status-badge--info',
+  green:   'status-badge--success',
+  gray:    'status-badge--neutral',
+  red:     'status-badge--error',
+  orange:  'status-badge--orange',
+}
 
-const statusDotClass = computed(() => ({
-  confirmed: 'status-badge__dot--success',
-  pending:   'status-badge__dot--warning',
-  overdue:   'status-badge__dot--error',
-})[props.candidate.status] ?? '')
+const DOT_COLOR_CLASS: Record<string, string> = {
+  default: 'status-badge__dot--warning',
+  blue:    'status-badge__dot--info',
+  green:   'status-badge__dot--success',
+  gray:    'status-badge__dot--neutral',
+  red:     'status-badge__dot--error',
+  orange:  'status-badge__dot--orange',
+}
 
-const statusLabel = computed(() => ({
-  confirmed: 'Xác nhận',
-  pending:   'Chờ phản hồi',
-  overdue:   'Quá hạn',
-})[props.candidate.status] ?? props.candidate.status)
+const activeStatusOption = computed(() =>
+  INTERVIEW_STATUS_OPTIONS.find(o => o.value === props.candidate.scheduleStatus)
+)
+
+const statusClass    = computed(() => COLOR_CLASS[activeStatusOption.value?.color ?? 'default'] ?? '')
+const statusDotClass = computed(() => DOT_COLOR_CLASS[activeStatusOption.value?.color ?? 'default'] ?? '')
+const statusLabel    = computed(() => activeStatusOption.value?.label ?? props.candidate.scheduleStatus ?? '')
 </script>
 
 <style scoped>
@@ -249,11 +258,17 @@ const statusLabel = computed(() => ({
 .status-badge--success { background: #d1fae5; color: #059669; }
 .status-badge--warning { background: #fef3c7; color: #d97706; }
 .status-badge--error   { background: #fee2e2; color: #ef4444; }
+.status-badge--info    { background: #dbeafe; color: #2563eb; }
+.status-badge--neutral { background: #f1f5f9; color: #64748b; }
+.status-badge--orange  { background: #ffedd5; color: #ea580c; }
 
 .status-badge__dot { width: 0.375rem; height: 0.375rem; border-radius: 9999px; margin-right: 0.5rem; }
 .status-badge__dot--success { background: #10b981; }
 .status-badge__dot--warning { background: #f59e0b; }
 .status-badge__dot--error   { background: #ef4444; }
+.status-badge__dot--info    { background: #3b82f6; }
+.status-badge__dot--neutral { background: #94a3b8; }
+.status-badge__dot--orange  { background: #f97316; }
 
 /* Divider inside global dropdown content */
 .dropdown-divider-v2 {

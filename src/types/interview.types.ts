@@ -169,9 +169,3 @@ export interface ResOverdueApplicationDTO {
   currentRoundNumber: number;
 }
 
-export interface ResInterviewReadinessDTO {
-  isJobClosed: boolean;
-  hasRounds: boolean;
-  hasCvPassed: boolean;
-  ready: boolean;
-}

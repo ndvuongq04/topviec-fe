@@ -7,7 +7,6 @@ import type {
   ResInterviewResultDTO,
   ResInterviewHistoryDTO,
   ResOverdueApplicationDTO,
-  ResInterviewReadinessDTO,
   ReqCreateInterviewRoundDTO,
   ReqUpdateInterviewRoundDTO,
   ReqCreateInterviewScheduleDTO,
@@ -27,7 +26,6 @@ export const useEmployerInterviewStore = defineStore('employerInterview', () => 
   const currentResult = ref<ResInterviewResultDTO | null>(null);
   const interviewHistory = ref<ResInterviewHistoryDTO | null>(null);
   const overdueApplications = ref<ResOverdueApplicationDTO[]>([]);
-  const readiness = ref<ResInterviewReadinessDTO | null>(null);
   const loading = ref(false);
   const error = ref<string | null>(null);
 
@@ -265,18 +263,6 @@ export const useEmployerInterviewStore = defineStore('employerInterview', () => 
     }
   }
 
-  async function fetchReadiness(jobPostId: number) {
-    loading.value = true;
-    error.value = null;
-    try {
-      readiness.value = await employerInterviewService.checkReadiness(jobPostId);
-    } catch (err) {
-      setError(err);
-    } finally {
-      loading.value = false;
-    }
-  }
-
   async function startInterviewing(jobPostId: number) {
     loading.value = true;
     error.value = null;
@@ -309,7 +295,6 @@ export const useEmployerInterviewStore = defineStore('employerInterview', () => 
     currentResult.value = null;
     interviewHistory.value = null;
     overdueApplications.value = [];
-    readiness.value = null;
     loading.value = false;
     error.value = null;
   }
@@ -321,7 +306,6 @@ export const useEmployerInterviewStore = defineStore('employerInterview', () => 
     currentResult,
     interviewHistory,
     overdueApplications,
-    readiness,
     loading,
     error,
     // actions
@@ -341,7 +325,6 @@ export const useEmployerInterviewStore = defineStore('employerInterview', () => 
     extendDeadline,
     forceSchedule,
     updateOffer,
-    fetchReadiness,
     startInterviewing,
     completeRecruitment,
     reset

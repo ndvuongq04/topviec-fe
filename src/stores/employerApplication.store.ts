@@ -1,10 +1,9 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import employerApplicationService from '@/services/employerApplication.service';
-import type { 
-  ResEmployerApplicationDTO, 
-  ReqUpdateApplicationStatusDTO, 
-  ReqEvaluateApplicationDTO 
+import type {
+  ResEmployerApplicationDTO,
+  ReqUpdateApplicationDTO
 } from '@/types/employerApplication.types';
 import type { PaginationMeta } from '@/types/common.types';
 
@@ -31,7 +30,7 @@ export const useEmployerApplicationStore = defineStore('employerApplication', ()
 
   /** Fetch applications for a specific job post */
   async function fetchApplicationsByJob(
-    jobPostId: number, 
+    jobPostId: number,
     params: { status?: string; page?: number; size?: number; sort?: string }
   ) {
     loading.value = true;
@@ -54,13 +53,13 @@ export const useEmployerApplicationStore = defineStore('employerApplication', ()
     try {
       const data = await employerApplicationService.getApplicationDetailByEmployer(applicationId);
       currentApplication.value = data;
-      
+
       // Update in list if present
       const index = applications.value.findIndex(app => app.id === applicationId);
       if (index !== -1) {
         applications.value[index] = data;
       }
-      
+
       return data;
     } catch (err) {
       setError(err);
@@ -70,47 +69,22 @@ export const useEmployerApplicationStore = defineStore('employerApplication', ()
     }
   }
 
-  /** Update application status */
-  async function updateStatus(applicationId: number, reqData: ReqUpdateApplicationStatusDTO) {
+  /** Update application status and/or evaluation */
+  async function updateApplication(applicationId: number, reqData: ReqUpdateApplicationDTO) {
     loading.value = true;
     error.value = null;
     try {
-      const data = await employerApplicationService.changeApplicationStatus(applicationId, reqData);
-      
-      if (currentApplication.value?.id === applicationId) {
-        currentApplication.value = data;
-      }
-      
-      const index = applications.value.findIndex(app => app.id === applicationId);
-      if (index !== -1) {
-        applications.value[index] = data;
-      }
-      
-      return data;
-    } catch (err) {
-      setError(err);
-      throw err;
-    } finally {
-      loading.value = false;
-    }
-  }
+      const data = await employerApplicationService.updateApplication(applicationId, reqData);
 
-  /** Evaluate application */
-  async function evaluate(applicationId: number, reqData: ReqEvaluateApplicationDTO) {
-    loading.value = true;
-    error.value = null;
-    try {
-      const data = await employerApplicationService.evaluateApplication(applicationId, reqData);
-      
       if (currentApplication.value?.id === applicationId) {
         currentApplication.value = data;
       }
-      
+
       const index = applications.value.findIndex(app => app.id === applicationId);
       if (index !== -1) {
         applications.value[index] = data;
       }
-      
+
       return data;
     } catch (err) {
       setError(err);
@@ -139,8 +113,7 @@ export const useEmployerApplicationStore = defineStore('employerApplication', ()
     // actions
     fetchApplicationsByJob,
     fetchApplicationDetail,
-    updateStatus,
-    evaluate,
+    updateApplication,
     reset,
   };
 });

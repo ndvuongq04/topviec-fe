@@ -1,10 +1,9 @@
 import axiosInstance from './axios';
 import type { RestResponse } from '@/types/common.types';
-import type { 
-  ResEmployerApplicationDTO, 
-  ResEmployerApplicationPagination, 
-  ReqUpdateApplicationStatusDTO, 
-  ReqEvaluateApplicationDTO 
+import type {
+  ResEmployerApplicationDTO,
+  ResEmployerApplicationPagination,
+  ReqUpdateApplicationDTO
 } from '@/types/employerApplication.types';
 
 const BASE_URL = '/employer/applications';
@@ -18,7 +17,7 @@ const employerApplicationService = {
     params: { status?: string; page?: number; size?: number; sort?: string; search?: string }
   ): Promise<ResEmployerApplicationPagination> {
     const res = await axiosInstance.get<RestResponse<ResEmployerApplicationPagination>>(
-      `${BASE_URL}/job/${jobPostId}`, 
+      `${BASE_URL}/job/${jobPostId}`,
       { params }
     );
     return res.data.data;
@@ -33,28 +32,14 @@ const employerApplicationService = {
   },
 
   /**
-   * NTD cập nhật trạng thái CV ứng tuyển (ví dụ: interviewing, rejected, hired...).
+   * NTD cập nhật trạng thái và/hoặc đánh giá (cho điểm, ghi chú, gán tag) CV ứng tuyển.
    */
-  async changeApplicationStatus(
-    applicationId: number, 
-    data: ReqUpdateApplicationStatusDTO
+  async updateApplication(
+    applicationId: number,
+    data: ReqUpdateApplicationDTO
   ): Promise<ResEmployerApplicationDTO> {
     const res = await axiosInstance.patch<RestResponse<ResEmployerApplicationDTO>>(
-      `${BASE_URL}/${applicationId}/status`, 
-      data
-    );
-    return res.data.data;
-  },
-
-  /**
-   * NTD đánh giá (cho điểm, ghi chú, gán tag) CV.
-   */
-  async evaluateApplication(
-    applicationId: number, 
-    data: ReqEvaluateApplicationDTO
-  ): Promise<ResEmployerApplicationDTO> {
-    const res = await axiosInstance.patch<RestResponse<ResEmployerApplicationDTO>>(
-      `${BASE_URL}/${applicationId}/evaluate`, 
+      `${BASE_URL}/${applicationId}`,
       data
     );
     return res.data.data;

@@ -147,8 +147,8 @@ defineProps<{
 
 const statusTabs = [
   { label: 'Tất cả',        value: 'all' },
-  { label: 'Chưa lên lịch', value: 'unscheduled' },
-  { label: 'Chờ phản hồi',  value: 'scheduled' },
+  { label: 'Chờ lên lịch', value: 'pending' },
+  { label: 'Chờ UV xác nhận',  value: 'scheduled' },
   { label: 'Đã xác nhận',   value: 'confirmed' },
   { label: 'Đã hoàn thành', value: 'completed' },
   { label: 'Đã hủy',        value: 'cancelled' },

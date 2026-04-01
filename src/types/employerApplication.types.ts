@@ -3,14 +3,10 @@ import type { ApplicationStatus, ApplyMethod } from '@/constants/application.con
 
 // ─── Request ──────────────────────────────────────────────
 
-export interface ReqUpdateApplicationStatusDTO {
-  status: ApplicationStatus | string;
+export interface ReqUpdateApplicationDTO {
+  status?: ApplicationStatus | string;
   note?: string;
-}
-
-export interface ReqEvaluateApplicationDTO {
-  rating: number; // 1-5
-  note?: string;
+  rating?: number; // 1-5
   tags?: string;
 }
 

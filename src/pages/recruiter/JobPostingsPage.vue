@@ -503,22 +503,12 @@ const handleViewApplications = (id: number) => {
   router.push({ name: 'recruiter-job-applications', params: { id } })
 }
 
-const handleInterview = async (id: number) => {
+const handleInterview = (id: number) => {
   const job = jobs.value.find(j => j.id === id)
   if (!job) return
 
-  try {
-    const readiness = await employerInterviewService.checkReadiness(id)
-    if (!readiness.hasCvPassed) {
-      toast.error('Chưa đủ điều kiện', 'Chưa có ứng viên nào qua vòng sàng lọc CV. Hãy duyệt CV trước khi bắt đầu phỏng vấn.')
-      return
-    }
-    interviewingJob.value = { id: job.id, title: job.title }
-    isInterviewModalVisible.value = true
-  } catch (err: any) {
-    const msg = err?.response?.data?.message ?? 'Không thể kiểm tra trạng thái. Vui lòng thử lại.'
-    toast.error('Lỗi', msg)
-  }
+  interviewingJob.value = { id: job.id, title: job.title }
+  isInterviewModalVisible.value = true
 }
 
 const confirmStartInterviewing = async () => {

@@ -1,4 +1,5 @@
 export const INTERVIEW_STATUS = {
+  PENDING: 'pending',
   SCHEDULED: 'scheduled',
   CONFIRMED: 'confirmed',
   COMPLETED: 'completed',
@@ -24,11 +25,12 @@ export const OFFER_RESULT = {
 export type OfferResult = typeof OFFER_RESULT[keyof typeof OFFER_RESULT];
 
 export const INTERVIEW_STATUS_OPTIONS = [
-  { value: INTERVIEW_STATUS.SCHEDULED, label: 'Đã lên lịch', color: 'blue' },
+  { value: INTERVIEW_STATUS.PENDING, label: 'Chờ lên lịch', color: 'default' },
+  { value: INTERVIEW_STATUS.SCHEDULED, label: 'Chờ UV phản hồi', color: 'blue' },
   { value: INTERVIEW_STATUS.CONFIRMED, label: 'Đã xác nhận', color: 'green' },
   { value: INTERVIEW_STATUS.COMPLETED, label: 'Đã hoàn thành', color: 'gray' },
   { value: INTERVIEW_STATUS.CANCELLED, label: 'Đã hủy', color: 'red' },
-  { value: INTERVIEW_STATUS.NO_SHOW, label: 'Không đến', color: 'orange' },
+  { value: INTERVIEW_STATUS.NO_SHOW, label: 'UV vắng mặt', color: 'orange' },
 ];
 
 export const INTERVIEW_TYPE_OPTIONS = [

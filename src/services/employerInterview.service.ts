@@ -15,7 +15,6 @@ import type {
   ReqExtendDeadlineDTO,
   ReqForceScheduleDTO,
   ReqOfferResultDTO,
-  ResInterviewReadinessDTO,
   ReqCompleteRecruitmentDTO
 } from '@/types/interview.types';
 import type { ResEmployerApplicationDTO } from '@/types/employerApplication.types';
@@ -66,7 +65,7 @@ const employerInterviewService = {
     await axiosInstance.post(`${BASE_URL}/interview-rounds/${roundId}/schedule-slots`, data);
   },
 
-  async getSchedules(jobPostId: number, params?: { roundId?: number; status?: string }): Promise<ResInterviewScheduleDTO[]> {
+  async getSchedules(jobPostId: number, params?: { roundId?: number; status?: string; search?: string }): Promise<ResInterviewScheduleDTO[]> {
     const res = await axiosInstance.get<RestResponse<ResInterviewScheduleDTO[]>>(
       `${BASE_URL}/job-postings/${jobPostId}/interview-schedules`,
       { params }
@@ -144,13 +143,6 @@ const employerInterviewService = {
   },
 
   // ─── Job interview phase ──────────────────────────────────────────────────
-
-  async checkReadiness(jobPostId: number): Promise<ResInterviewReadinessDTO> {
-    const res = await axiosInstance.get<RestResponse<ResInterviewReadinessDTO>>(
-      `${BASE_URL}/job-postings/${jobPostId}/interview-readiness`
-    );
-    return res.data.data;
-  },
 
   async startInterviewing(jobPostId: number): Promise<void> {
     await axiosInstance.patch(`${BASE_URL}/job-postings/${jobPostId}/start-interviewing`);

@@ -86,42 +86,18 @@ async function fetchApplication() {
 }
 
 async function handleSave(data: { status: string; rating: number; note: string; tags: { label: string }[] }) {
-  const SCREENED_STATUSES = ['cv_passed', 'considering', 'rejected']
-
   try {
-    const promises: Promise<any>[] = []
-
-    // Gọi changeApplicationStatus nếu status thuộc nhóm sàng lọc và khác status hiện tại
-    if (data.status && SCREENED_STATUSES.includes(data.status) && data.status !== application.value?.status) {
-      promises.push(
-        employerApplicationService.changeApplicationStatus(applicationId.value, { status: data.status })
-      )
-    }
-
-    // Gọi evaluateApplication cho rating / note / tags
-    promises.push(
-      employerApplicationService.evaluateApplication(applicationId.value, {
-        rating: data.rating,
-        note:   data.note,
-        tags:   data.tags.map(t => t.label).join(','),
-      })
-    )
-
-    const results = await Promise.allSettled(promises)
-    const failed  = results.filter(r => r.status === 'rejected')
-
-    if (failed.length === 0) {
-      toast.success('Đã lưu đánh giá')
-      // Cập nhật status local nếu đã đổi
-      if (application.value && data.status && SCREENED_STATUSES.includes(data.status)) {
-        application.value = { ...application.value, status: data.status as any }
-      }
-    } else {
-      toast.error('Lưu thất bại', 'Một số thông tin chưa được lưu')
-    }
+    const updated = await employerApplicationService.updateApplication(applicationId.value, {
+      status: data.status || undefined,
+      rating: data.rating || undefined,
+      note:   data.note   || undefined,
+      tags:   data.tags.length ? data.tags.map(t => t.label).join(',') : undefined,
+    })
+    application.value = updated
+    toast.success('Đã lưu đánh giá')
   } catch (err: any) {
     const msg = err?.response?.data?.message ?? 'Lưu đánh giá thất bại'
-    toast.error('Lỗi', typeof msg === 'string' ? msg : msg?.[0])
+    toast.error('Lưu thất bại', typeof msg === 'string' ? msg : Object.values(msg)[0] as string)
   }
 }
 
