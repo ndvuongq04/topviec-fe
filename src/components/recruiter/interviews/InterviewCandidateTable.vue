@@ -72,6 +72,7 @@
           @remind="emit('remind', $event)"
           @cancel="emit('cancel', $event)"
           @schedule="emit('schedule', $event)"
+          @evaluate="emit('evaluate', $event)"
         />
       </tbody>
     </table>
@@ -167,6 +168,7 @@ const emit = defineEmits<{
   remind: [candidateId: number]
   cancel: [candidateId: number]
   schedule: [candidateId: number]
+  evaluate: [candidateId: number]
 }>()
 </script>
 

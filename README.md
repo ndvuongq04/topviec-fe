@@ -51,12 +51,14 @@ public class InterviewServiceImpl implements InterviewService {
             throw AppException.badRequest("Tin tuyển dụng đã hoàn thành, không thể tạo vòng phỏng vấn mới");
         }
 
-        boolean hasInterviewing = !applicationRepository
-                .findByJobPostIdAndStatusAndDeletedAtIsNull(jobPostId, ApplicationStatus.INTERVIEWING.getValue())
-                .isEmpty();
-        if (hasInterviewing) {
-            throw AppException.badRequest("Không thể tạo vòng mới khi đã có ứng viên đang phỏng vấn");
-        }
+        // boolean hasInterviewing = !applicationRepository
+        // .findByJobPostIdAndStatusAndDeletedAtIsNull(jobPostId,
+        // ApplicationStatus.INTERVIEWING.getValue())
+        // .isEmpty();
+        // if (hasInterviewing) {
+        // throw AppException.badRequest("Không thể tạo vòng mới khi đã có ứng viên đang
+        // phỏng vấn");
+        // }
 
         int nextRoundNumber = roundRepository.findMaxRoundNumber(jobPostId) + 1;
 
@@ -374,16 +376,26 @@ public class InterviewServiceImpl implements InterviewService {
     @Override
     @Transactional(readOnly = true)
     public List<ResInterviewScheduleDTO> getSchedules(Long jobPostId, Long companyId,
-            Long roundId, String status) {
+            Long roundId, String status, String search) {
         findJobAndValidateOwnership(jobPostId, companyId);
 
         List<Interview> interviews = interviewRepository.findByJobPostId(jobPostId, roundId, status);
 
-        return interviews.stream().map(i -> {
+        List<ResInterviewScheduleDTO> result = interviews.stream().map(i -> {
             InterviewRound round = i.getRound();
             Application application = i.getApplication();
             return toScheduleResponse(i, round, application);
         }).toList();
+
+        if (search != null && !search.isBlank()) {
+            String keyword = search.toLowerCase().trim();
+            result = result.stream()
+                    .filter(dto -> dto.getCandidateName() != null
+                            && dto.getCandidateName().toLowerCase().contains(keyword))
+                    .toList();
+        }
+
+        return result;
     }
 
     @Override
@@ -403,6 +415,9 @@ public class InterviewServiceImpl implements InterviewService {
 
         if (request.getScheduledAt() != null) {
             interview.setScheduledAt(request.getScheduledAt());
+        }
+        if (request.getInterviewType() != null) {
+            interview.setInterviewType(request.getInterviewType());
         }
         if (request.getLocation() != null) {
             interview.setLocation(request.getLocation());
@@ -436,7 +451,8 @@ public class InterviewServiceImpl implements InterviewService {
         }
 
         interview.setStatus(InterviewStatus.CANCELLED.getValue());
-        interview.setDeletedAt(LocalDateTime.now());
+        // Không set deletedAt khi hủy lịch — chỉ đổi status để lịch vẫn hiển thị trong danh sách
+        // deletedAt chỉ dùng khi xóa hẳn khỏi hệ thống
         interview.setUpdatedBy(userId);
         interviewRepository.save(interview);
 
@@ -723,7 +739,7 @@ public class InterviewServiceImpl implements InterviewService {
                 .isJobClosed(isJobClosed)
                 .hasRounds(hasRounds)
                 .hasCvPassed(hasCvPassed)
-                .ready(isJobClosed && hasRounds && hasCvPassed)
+                .ready(isJobClosed && hasCvPassed)
                 .build();
     }
 
@@ -738,6 +754,37 @@ public class InterviewServiceImpl implements InterviewService {
             throw AppException.badRequest("Không có ứng viên nào ở trạng thái CV_PASSED");
         }
 
+        // Tạo vòng 1 mặc định nếu chưa có
+        InterviewRound round1 = roundRepository
+                .findByJobPostIdAndRoundNumberAndDeletedAtIsNull(jobPostId, 1)
+                .orElseGet(() -> {
+                    InterviewRound defaultRound = InterviewRound.builder()
+                            .jobPostId(jobPostId)
+                            .roundNumber(1)
+                            .roundName("Vòng 1")
+                            .isFinal(false)
+                            .createdBy(userId)
+                            .updatedBy(userId)
+                            .build();
+                    return roundRepository.save(defaultRound);
+                });
+
+        // Tạo Interview record PENDING cho từng UV cv_passed vào vòng 1
+        for (Application app : cvPassedApps) {
+            boolean alreadyExists = interviewRepository
+                    .existsByApplicationIdAndRoundIdAndDeletedAtIsNull(app.getId(), round1.getId());
+            if (!alreadyExists) {
+                Interview interview = Interview.builder()
+                        .applicationId(app.getId())
+                        .roundId(round1.getId())
+                        .status(InterviewStatus.PENDING.getValue())
+                        .scheduledBy(userId)
+                        .build();
+                interviewRepository.save(interview);
+            }
+        }
+
+        // Chuyển tất cả UV cv_passed sang interviewing
         applicationRepository.bulkUpdateStatus(jobPostId,
                 ApplicationStatus.CV_PASSED.getValue(),
                 ApplicationStatus.INTERVIEWING.getValue());

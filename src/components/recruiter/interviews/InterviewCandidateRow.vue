@@ -111,6 +111,15 @@
             @click="handleAction('reschedule', close)"
           />
 
+          <!-- Đánh giá phỏng vấn -->
+          <GlobalDropdownItem
+            icon="rate_review"
+            label="Đánh giá phỏng vấn"
+            :disabled="candidate.scheduleStatus !== 'confirmed'"
+            :tooltip="candidate.scheduleStatus !== 'confirmed' ? 'Chỉ đánh giá được khi ứng viên đã xác nhận lịch' : ''"
+            @click="handleAction('evaluate', close)"
+          />
+
           <div class="dropdown-divider-v2"></div>
 
           <!-- Hủy lịch -->
@@ -167,9 +176,10 @@ const emit = defineEmits<{
   remind: [candidateId: number]
   cancel: [candidateId: number]
   schedule: [candidateId: number]
+  evaluate: [candidateId: number]
 }>()
 
-function handleAction(action: 'viewDetail' | 'openLink' | 'reschedule' | 'remind' | 'cancel' | 'schedule', close: () => void) {
+function handleAction(action: 'viewDetail' | 'openLink' | 'reschedule' | 'remind' | 'cancel' | 'schedule' | 'evaluate', close: () => void) {
   close()
   emit(action as any, props.candidate.id)
 }

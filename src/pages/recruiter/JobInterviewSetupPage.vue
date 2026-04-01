@@ -130,8 +130,88 @@
       @remind="handleRemind"
       @cancel="handleCancel"
       @schedule="handleSchedule"
+      @evaluate="handleEvaluate"
       @page-change="currentPage = $event - 1"
     />
+
+    <!-- ── Evaluate Modal ─────────────────────────────────── -->
+    <GlobalModal
+      :visible="isEvaluateVisible"
+      title="Đánh giá phỏng vấn"
+      :subtitle="evaluateCandidate?.name"
+      icon="rate_review"
+      confirm-text="Lưu đánh giá"
+      confirm-icon="save"
+      :loading="isEvaluateLoading"
+      @close="isEvaluateVisible = false"
+      @confirm="confirmEvaluate"
+    >
+      <div class="reschedule-form">
+        <!-- Kết quả -->
+        <div class="reschedule-form__field">
+          <label class="reschedule-form__label">Kết quả <span class="reschedule-form__required">*</span></label>
+          <div class="evaluate-result-toggle">
+            <button
+              type="button"
+              class="evaluate-result-btn evaluate-result-btn--pass"
+              :class="{ 'evaluate-result-btn--active': evaluateForm.result === 'PASS' }"
+              @click="evaluateForm.result = 'PASS'; evaluateErrors.result = ''"
+            >
+              <span class="material-symbols-outlined">check_circle</span>
+              Đạt (PASS)
+            </button>
+            <button
+              type="button"
+              class="evaluate-result-btn evaluate-result-btn--fail"
+              :class="{ 'evaluate-result-btn--active': evaluateForm.result === 'FAIL' }"
+              @click="evaluateForm.result = 'FAIL'; evaluateErrors.result = ''"
+            >
+              <span class="material-symbols-outlined">cancel</span>
+              Không đạt (FAIL)
+            </button>
+          </div>
+          <span v-if="evaluateErrors.result" class="reschedule-form__error">{{ evaluateErrors.result }}</span>
+        </div>
+
+        <!-- Điểm đánh giá (1-5 sao) -->
+        <div class="reschedule-form__field">
+          <label class="reschedule-form__label">Điểm đánh giá</label>
+          <div class="evaluate-stars">
+            <button
+              v-for="star in 5"
+              :key="star"
+              type="button"
+              class="evaluate-star"
+              :class="{ 'evaluate-star--active': evaluateForm.rating !== null && star <= evaluateForm.rating }"
+              @click="evaluateForm.rating = evaluateForm.rating === star ? null : star; evaluateErrors.rating = ''"
+            >
+              <span class="material-symbols-outlined">star</span>
+            </button>
+            <span v-if="evaluateForm.rating" class="evaluate-stars__label">{{ evaluateForm.rating }}/5</span>
+          </div>
+          <span v-if="evaluateErrors.rating" class="reschedule-form__error">{{ evaluateErrors.rating }}</span>
+        </div>
+
+        <!-- Ghi chú -->
+        <div class="reschedule-form__field">
+          <label class="reschedule-form__label">Ghi chú nhận xét</label>
+          <textarea
+            v-model="evaluateForm.note"
+            class="reschedule-form__input reschedule-form__textarea"
+            rows="3"
+            placeholder="Nhận xét về ứng viên..."
+          />
+        </div>
+
+        <!-- Thông báo ứng viên -->
+        <div class="reschedule-form__field">
+          <label class="reschedule-form__checkbox-label">
+            <input v-model="evaluateForm.notifyCandidate" type="checkbox" />
+            Gửi email thông báo kết quả cho ứng viên
+          </label>
+        </div>
+      </div>
+    </GlobalModal>
   </div>
 </template>
 
@@ -144,11 +224,13 @@ import employerInterviewService from '@/services/employerInterview.service'
 import type { ResInterviewRoundDTO, ResInterviewScheduleDTO } from '@/types/interview.types'
 import { INTERVIEW_STATUS, INTERVIEW_TYPE } from '@/constants/interview.constants'
 import { useToast } from '@/composables/useToast'
+import { useConfirm } from '@/composables/useConfirm'
 import GlobalModal from '@/components/ui/GlobalModal.vue'
 
 const route  = useRoute()
 const router = useRouter()
-const toast  = useToast()
+const toast   = useToast()
+const { confirm } = useConfirm()
 const jobId  = computed(() => Number(route.params.id))
 
 const PAGE_SIZE = 10
@@ -158,6 +240,19 @@ const activeStageId = ref<number | null>(null)
 const currentPage   = ref(0) // 0-based per skill-Pagination.md
 const searchValue   = ref('')
 const statusFilter  = ref('all')
+
+// ── Evaluate Modal State ───────────────────────────────────
+const isEvaluateVisible  = ref(false)
+const isEvaluateLoading  = ref(false)
+const evaluateScheduleId = ref<number | null>(null)
+const evaluateCandidate  = ref<{ name: string } | null>(null)
+const evaluateForm = ref({
+  result:          '' as 'PASS' | 'FAIL' | '',
+  rating:          null as number | null,
+  note:            '',
+  notifyCandidate: false,
+})
+const evaluateErrors = ref<Record<string, string>>({})
 
 // ── Reschedule Modal State ─────────────────────────────────
 const isRescheduleVisible = ref(false)
@@ -405,8 +500,26 @@ function handleRemind(candidateId: number) {
   console.log('Send reminder to candidate:', candidateId)
 }
 
-function handleCancel(candidateId: number) {
-  console.log('Cancel interview for candidate:', candidateId)
+async function handleCancel(applicationId: number) {
+  const schedule = roundSchedules.value.find(s => s.applicationId === applicationId)
+  if (!schedule) return
+
+  const ok = await confirm({
+    title: 'Hủy lịch phỏng vấn',
+    message: `Bạn có chắc muốn hủy lịch phỏng vấn của ${schedule.candidateName}?`,
+    confirmText: 'Hủy lịch',
+    confirmColor: 'red',
+    icon: 'event_busy',
+  })
+  if (!ok) return
+
+  try {
+    await employerInterviewService.deleteSchedule(schedule.id)
+    roundSchedules.value = roundSchedules.value.filter(s => s.id !== schedule.id)
+    toast.success('Đã hủy lịch', `Lịch phỏng vấn của ${schedule.candidateName} đã được hủy.`)
+  } catch (err: any) {
+    toast.error('Lỗi', err?.response?.data?.message ?? 'Không thể hủy lịch. Vui lòng thử lại.')
+  }
 }
 
 function handleSchedule(applicationId: number) {
@@ -414,6 +527,49 @@ function handleSchedule(applicationId: number) {
     name: 'recruiter-interview-create',
     query: { jobId: jobId.value, applicationId, roundId: activeStageId.value ?? undefined },
   })
+}
+
+function handleEvaluate(applicationId: number) {
+  const schedule = roundSchedules.value.find(s => s.applicationId === applicationId)
+  if (!schedule) return
+
+  evaluateScheduleId.value = schedule.id
+  evaluateCandidate.value  = { name: schedule.candidateName }
+  evaluateForm.value = { result: '', rating: null, note: '', notifyCandidate: false }
+  evaluateErrors.value = {}
+  isEvaluateVisible.value = true
+}
+
+async function confirmEvaluate() {
+  const errors: Record<string, string> = {}
+  if (!evaluateForm.value.result) {
+    errors.result = 'Vui lòng chọn kết quả phỏng vấn.'
+  }
+  if (evaluateForm.value.rating !== null && (evaluateForm.value.rating < 1 || evaluateForm.value.rating > 5)) {
+    errors.rating = 'Điểm đánh giá phải từ 1 đến 5.'
+  }
+  if (Object.keys(errors).length > 0) {
+    evaluateErrors.value = errors
+    return
+  }
+
+  isEvaluateLoading.value = true
+  try {
+    await employerInterviewService.createResult(evaluateScheduleId.value!, {
+      result:          evaluateForm.value.result as 'PASS' | 'FAIL',
+      rating:          evaluateForm.value.rating ?? undefined,
+      note:            evaluateForm.value.note || undefined,
+      notifyCandidate: evaluateForm.value.notifyCandidate,
+    })
+
+    await fetchSchedules()
+    toast.success('Đánh giá thành công!', `Đã lưu kết quả phỏng vấn của ${evaluateCandidate.value?.name}.`)
+    isEvaluateVisible.value = false
+  } catch (err: any) {
+    toast.error('Lỗi', err?.response?.data?.message ?? 'Không thể lưu kết quả. Vui lòng thử lại.')
+  } finally {
+    isEvaluateLoading.value = false
+  }
 }
 
 async function handleRenameStage(stageId: number, newName: string) {
@@ -525,4 +681,42 @@ async function handleDeleteStage(stageId: number) {
 .reschedule-form__input--error { border-color: #ef4444 !important; }
 .reschedule-form__input--error:focus { box-shadow: 0 0 0 3px rgba(239,68,68,0.15) !important; }
 .reschedule-form__error { font-size: 0.75rem; color: #ef4444; font-weight: 500; margin-top: 2px; }
+.reschedule-form__checkbox-label {
+  display: flex; align-items: center; gap: 0.5rem;
+  font-size: 0.875rem; color: #334155; cursor: pointer;
+}
+.reschedule-form__checkbox-label input[type="checkbox"] { width: 1rem; height: 1rem; cursor: pointer; accent-color: #4b9af6; }
+
+/* ── Evaluate result toggle ── */
+.evaluate-result-toggle { display: flex; gap: 0.75rem; }
+.evaluate-result-btn {
+  flex: 1; display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+  padding: 0.75rem 1rem; border-radius: 0.75rem; border: 2px solid #e2e8f0;
+  background: #f8fafc; font-size: 0.875rem; font-weight: 600;
+  font-family: inherit; color: #94a3b8; cursor: pointer;
+  transition: all 0.18s;
+}
+.evaluate-result-btn .material-symbols-outlined { font-size: 1.2rem; }
+.evaluate-result-btn--pass:hover { border-color: #22c55e; color: #16a34a; background: #f0fdf4; }
+.evaluate-result-btn--pass.evaluate-result-btn--active {
+  border-color: #22c55e; color: #16a34a; background: #f0fdf4;
+  box-shadow: 0 0 0 3px rgba(34,197,94,0.15);
+}
+.evaluate-result-btn--fail:hover { border-color: #ef4444; color: #dc2626; background: #fef2f2; }
+.evaluate-result-btn--fail.evaluate-result-btn--active {
+  border-color: #ef4444; color: #dc2626; background: #fef2f2;
+  box-shadow: 0 0 0 3px rgba(239,68,68,0.15);
+}
+
+/* ── Star rating ── */
+.evaluate-stars { display: flex; align-items: center; gap: 0.25rem; }
+.evaluate-star {
+  background: none; border: none; padding: 0.125rem; cursor: pointer;
+  color: #cbd5e1; transition: color 0.15s, transform 0.15s;
+}
+.evaluate-star .material-symbols-outlined { font-size: 1.75rem; font-variation-settings: 'FILL' 0; }
+.evaluate-star--active .material-symbols-outlined { font-variation-settings: 'FILL' 1; }
+.evaluate-star--active { color: #f59e0b; }
+.evaluate-star:hover { color: #f59e0b; transform: scale(1.15); }
+.evaluate-stars__label { margin-left: 0.5rem; font-size: 0.875rem; font-weight: 700; color: #f59e0b; }
 </style>
