@@ -267,16 +267,27 @@ import InterviewStageCards from '@/components/recruiter/interviews/InterviewStag
 import InterviewCandidateTable from '@/components/recruiter/interviews/InterviewCandidateTable.vue'
 import employerInterviewService from '@/services/employerInterview.service'
 import type { ResInterviewRoundDTO, ResInterviewScheduleDTO } from '@/types/interview.types'
-import { INTERVIEW_STATUS, INTERVIEW_TYPE } from '@/constants/interview.constants'
+import { INTERVIEW_STATUS, INTERVIEW_TYPE, OFFER_RESULT } from '@/constants/interview.constants'
 import { useToast } from '@/composables/useToast'
 import { useConfirm } from '@/composables/useConfirm'
 import GlobalModal from '@/components/ui/GlobalModal.vue'
 
-const route  = useRoute()
 const router = useRouter()
-const toast   = useToast()
+const route  = useRoute()
+const toast  = useToast()
 const { confirm } = useConfirm()
-const jobId  = computed(() => Number(route.params.id))
+
+const jobId = computed(() => Number(route.params.id))
+
+// ── Offer Modal State ──────────────────────────────────────
+const isOfferVisible  = ref(false)
+const isOfferLoading  = ref(false)
+const offerApplicationId = ref<number | null>(null)
+const offerCandidate  = ref<{ name: string } | null>(null)
+const offerForm = ref({
+  result: '' as typeof OFFER_RESULT[keyof typeof OFFER_RESULT] | '',
+})
+const offerErrors = ref<Record<string, string>>({})
 
 const PAGE_SIZE = 10
 
@@ -314,16 +325,6 @@ const rescheduleForm = ref({
 })
 const rescheduleErrors = ref<Record<string, string>>({})
 
-// ── Offer Modal State ──────────────────────────────────────
-const isOfferVisible  = ref(false)
-const isOfferLoading  = ref(false)
-const offerApplicationId = ref<number | null>(null)
-const offerCandidate  = ref<{ name: string } | null>(null)
-const offerForm = ref({
-  result: '' as 'accepted' | 'declined' | '',
-})
-const offerErrors = ref<Record<string, string>>({})
-
 // ── API Data ───────────────────────────────────────────────
 const rounds         = ref<ResInterviewRoundDTO[]>([])
 const roundSchedules = ref<ResInterviewScheduleDTO[]>([])
@@ -349,9 +350,10 @@ const activeRoundInterviewers = computed(() =>
 )
 
 // ── Computed: Map schedules → candidate rows ───────────────
-const filteredCandidates = computed(() =>
-  roundSchedules.value.map(s => mapToCandidate(s, activeRoundInterviewers.value))
-)
+const filteredCandidates = computed(() => {
+  const isFinal = rounds.value.find(r => r.id === activeStageId.value)?.isFinal ?? false
+  return roundSchedules.value.map(s => mapToCandidate(s, activeRoundInterviewers.value, isFinal))
+})
 
 // ── Computed: Pagination ───────────────────────────────────
 const totalApps  = computed(() => filteredCandidates.value.length)
@@ -393,6 +395,7 @@ function getInitials(name: string): string {
 function mapToCandidate(
   schedule: ResInterviewScheduleDTO,
   interviewers: { id: number; name: string }[] = [],
+  isFinalRound: boolean = false
 ) {
   const firstInterviewer = interviewers[0]
   const { label, formatType } = mapInterviewType(schedule.interviewType)
@@ -416,6 +419,7 @@ function mapToCandidate(
     formatType,
     status: mapApiStatusToUi(schedule.status),
     applicationStatus: schedule.applicationStatus,
+    isFinalRound,
   }
 }
 
@@ -648,7 +652,7 @@ async function confirmOffer() {
   isOfferLoading.value = true
   try {
     await employerInterviewService.updateOffer(offerApplicationId.value!, {
-      result: offerForm.value.result as 'accepted' | 'declined'
+      result: offerForm.value.result as any
     })
 
     await fetchSchedules()

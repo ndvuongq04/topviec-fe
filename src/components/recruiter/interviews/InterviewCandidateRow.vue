@@ -126,8 +126,8 @@
           <GlobalDropdownItem
             icon="card_giftcard"
             label="Phát hành Offer"
-            :disabled="candidate.applicationStatus !== 'offered'"
-            :tooltip="candidate.applicationStatus !== 'offered' ? 'Chỉ được offer sau khi PASS vòng cuối' : ''"
+            :disabled="!candidate.isFinalRound || candidate.scheduleStatus !== 'completed' || ['offered', 'hired', 'rejected', 'completed'].includes(candidate.applicationStatus || '')"
+            :tooltip="!candidate.isFinalRound ? 'Chỉ được offer ở vòng phỏng vấn cuối' : (candidate.scheduleStatus !== 'completed' ? 'Cần hoàn thành phỏng vấn trước khi offer' : (['offered', 'hired', 'rejected', 'completed'].includes(candidate.applicationStatus || '') ? 'Ứng viên đã có kết quả offer hoặc đã kết thúc quy trình' : ''))"
             @click="handleAction('offer', close)"
           />
 
@@ -175,6 +175,7 @@ interface InterviewCandidate {
   hasSchedule?: boolean
   scheduleStatus?: string
   applicationStatus?: string
+  isFinalRound?: boolean
 }
 
 const props = defineProps<{

@@ -52,8 +52,10 @@
             <div class="dropdown-divider-v2"></div>
 
             <GlobalDropdownItem
-              icon="cancel"
-              label="Kết thúc phỏng vấn"
+              icon="verified"
+              label="Hoàn thành tuyển dụng"
+              :disabled="job.status !== JobPostingStatus.INTERVIEWING"
+              :tooltip="job.status !== JobPostingStatus.INTERVIEWING ? 'Chỉ có thể hoàn thành khi đang ở trạng thái Phỏng vấn' : undefined"
               danger
               @click="handleAction('finish-interview', close)"
             />
