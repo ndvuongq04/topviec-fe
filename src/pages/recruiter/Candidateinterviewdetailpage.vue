@@ -94,7 +94,7 @@
 
         <!-- Per-round evaluation forms -->
         <div
-          v-for="(round, idx) in (history?.rounds ?? []).filter(r => r.scheduleId)"
+          v-for="(round, idx) in displayedRounds"
           :key="idx"
           class="round-eval"
         >
@@ -266,6 +266,16 @@ const STATUS_MAP: Record<string, { label: string; cls: string }> = {
 const statusConfig = computed(() =>
   STATUS_MAP[history.value?.currentStatus ?? ''] ?? { label: history.value?.currentStatus ?? '', cls: 'status-chip--pending' }
 )
+
+// ── Filtered rounds ─────────────────────────────────────────
+const displayedRounds = computed(() => {
+  if (!history.value?.rounds) return []
+  const roundNum = Number(route.query.roundNumber)
+  if (roundNum) {
+    return history.value.rounds.filter(r => r.roundNumber === roundNum && r.scheduleId)
+  }
+  return history.value.rounds.filter(r => r.scheduleId)
+})
 
 // ── Timeline items ───────────────────────────────────────────
 const timelineItems = computed(() => {

@@ -481,9 +481,11 @@ function handleOpenLink(candidateId: number) {
 }
 
 function handleViewDetail(applicationId: number) {
+  const roundNum = rounds.value.find(r => r.id === activeStageId.value)?.roundNumber
   router.push({
     name: 'recruiter-job-interview-candidate-detail',
     params: { id: jobId.value, applicationId },
+    query: { roundNumber: roundNum }
   })
 }
 
