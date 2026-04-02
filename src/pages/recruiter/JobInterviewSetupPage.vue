@@ -1,12 +1,18 @@
 <template>
   <div class="interview-page">
-    <nav class="breadcrumb">
-      <router-link :to="{ name: 'recruiter-interviews' }" class="breadcrumb__link">
-        Quản lý lịch phỏng vấn
-      </router-link>
-      <span class="material-symbols-outlined breadcrumb__sep">chevron_right</span>
-      <span class="breadcrumb__current">Thiết lập phỏng vấn</span>
-    </nav>
+    <div class="page-topbar">
+      <nav class="breadcrumb">
+        <router-link :to="{ name: 'recruiter-interviews' }" class="breadcrumb__link">
+          Quản lý lịch phỏng vấn
+        </router-link>
+        <span class="material-symbols-outlined breadcrumb__sep">chevron_right</span>
+        <span class="breadcrumb__current">Thiết lập phỏng vấn</span>
+      </nav>
+      <button class="btn-overdue" @click="goToOverduePage">
+        <span class="material-symbols-outlined">schedule</span>
+        Xử lý quá hạn
+      </button>
+    </div>
 
     <InterviewStageCards
       :stages="stageCards"
@@ -699,6 +705,10 @@ async function handleDeleteStage(stageId: number) {
     toast.error('Lỗi', err?.response?.data?.message ?? 'Không thể xóa vòng. Vui lòng thử lại.')
   }
 }
+
+function goToOverduePage() {
+  router.push({ name: 'recruiter-interview-overdue', query: { jobId: jobId.value } })
+}
 </script>
 
 <style scoped>
@@ -710,6 +720,32 @@ async function handleDeleteStage(stageId: number) {
   background: #f6f6f8;
   font-family: 'Manrope', sans-serif;
 }
+
+.page-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.btn-overdue {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 1.125rem;
+  background: #fff7ed;
+  color: #c2410c;
+  border: 1px solid #fed7aa;
+  border-radius: 0.625rem;
+  font-size: 0.875rem;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.18s, border-color 0.18s;
+}
+.btn-overdue .material-symbols-outlined { font-size: 1.1rem; }
+.btn-overdue:hover { background: #ffedd5; border-color: #fdba74; }
 
 .breadcrumb {
   display: flex;
