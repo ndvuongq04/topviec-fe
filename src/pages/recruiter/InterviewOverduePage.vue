@@ -45,11 +45,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import { useEmployerInterviewStore } from '@/stores/employerInterview.store'
-import { useEmployerJobPostingStore } from '@/stores/employerJobPosting.store'
+import { ref, onMounted, computed } from 'vue'
+import { useRoute } from 'vue-router'
 import { useToast } from '@/composables/useToast'
+import employerInterviewService from '@/services/employerInterview.service'
+import type { ResOverdueApplicationDTO, ReqForceScheduleDTO } from '@/types/interview.types'
 import OverdueStatsGrid from '@/components/recruiter/interviews/interview-overdue/OverdueStatsGrid.vue'
 import OverdueTable from '@/components/recruiter/interviews/interview-overdue/OverdueTable.vue'
 import Breadcrumb from '@/components/ui/Breadcrumb.vue'
@@ -62,42 +62,12 @@ const breadcrumbItems = [
 ]
 
 const route = useRoute()
-const router = useRouter()
-const interviewStore = useEmployerInterviewStore()
-const jobStore = useEmployerJobPostingStore()
 const toast = useToast()
+const jobPostId = Number(route.params.id)
 
 // --- State ---
-const selectedJobId = ref<number | null>(null)
 const loading = ref(false)
-const jobs = ref([
-  { id: 1, title: 'Senior Frontend Developer (Vue.js)' },
-  { id: 2, title: 'Product Designer (Figma)' }
-])
-
-const overdueApplications = ref([
-  {
-    applicationId: 101,
-    candidateName: 'Nguyễn Văn A',
-    candidateEmail: 'nguyenvana@gmail.com',
-    reminderCount: 3,
-    reminderDeadline: new Date(Date.now() - 86400000 * 2).toISOString() // 2 ngày trước
-  },
-  {
-    applicationId: 102,
-    candidateName: 'Trần Thị B',
-    candidateEmail: 'tranthib@outlook.com',
-    reminderCount: 1,
-    reminderDeadline: new Date(Date.now() - 3600000 * 5).toISOString() // 5 giờ trước
-  },
-  {
-    applicationId: 103,
-    candidateName: 'Lê Hoàng C',
-    candidateEmail: 'lehoangc@company.com',
-    reminderCount: 5,
-    reminderDeadline: new Date(Date.now() - 86400000 * 4).toISOString() // 4 ngày trước
-  }
-])
+const overdueApplications = ref<ResOverdueApplicationDTO[]>([])
 
 const isExtendModalOpen = ref(false)
 const isForceScheduleModalOpen = ref(false)
@@ -106,16 +76,20 @@ const selectedApp = computed(() => overdueApplications.value.find(a => a.applica
 const isExtending = ref(false)
 const isForceScheduling = ref(false)
 
-// --- Lifecycle ---
-onMounted(async () => {
-  // await jobStore.fetchJobs({ size: 100 })
-  selectedJobId.value = jobs.value[0].id
-})
+// --- Fetch overdue ---
+async function fetchOverdue() {
+  loading.value = true
+  try {
+    overdueApplications.value = await employerInterviewService.getOverdueApplications(jobPostId)
+  } catch (e: any) {
+    toast.error('Lỗi', e?.response?.data?.message ?? 'Không thể tải danh sách ứng viên quá hạn.')
+  } finally {
+    loading.value = false
+  }
+}
 
-// --- Watchers ---
-watch(selectedJobId, (newId) => {
-  // if (newId) interviewStore.fetchOverdue(newId)
-})
+// --- Lifecycle ---
+onMounted(fetchOverdue)
 
 // --- Actions ---
 function handleExtendDeadline(applicationId: number) {
@@ -127,19 +101,13 @@ async function confirmExtend(days: number) {
   if (!selectedApp.value) return
 
   isExtending.value = true
-  
-  // Giả lập API call
-  await new Promise(resolve => setTimeout(resolve, 800))
-  
   try {
-    // Cập nhật local data (Mock)
-    const baseDate = new Date(selectedApp.value.reminderDeadline)
-    selectedApp.value.reminderDeadline = new Date(baseDate.getTime() + days * 86400000).toISOString()
-    
+    await employerInterviewService.extendDeadline(selectedApp.value.applicationId, { extendDays: days })
     toast.success('Thành công', `Đã gia hạn thêm ${days} ngày cho ứng viên.`)
     isExtendModalOpen.value = false
-  } catch {
-    toast.error('Lỗi', 'Không thể gia hạn thời gian.')
+    fetchOverdue()
+  } catch (e: any) {
+    toast.error('Lỗi', e?.response?.data?.message ?? 'Không thể gia hạn thời gian.')
   } finally {
     isExtending.value = false
   }
@@ -150,25 +118,24 @@ function handleForceSchedule(applicationId: number) {
   isForceScheduleModalOpen.value = true
 }
 
-async function confirmForceSchedule(data: any) {
+async function confirmForceSchedule(form: { date: string; time: string; interviewType: 'online' | 'onsite'; meetingLink: string; location: string }) {
   if (!selectedApp.value) return
 
-  isForceScheduling.value = true
-  
-  // Giả lập API call
-  await new Promise(resolve => setTimeout(resolve, 1000))
-  
-  try {
-    // Xóa ứng viên khỏi danh sách (vì đã có lịch mới)
-    const idx = overdueApplications.value.findIndex(a => a.applicationId === selectedApp.value?.applicationId)
-    if (idx !== -1) {
-      overdueApplications.value.splice(idx, 1)
-    }
+  const payload: ReqForceScheduleDTO = {
+    scheduledAt: new Date(`${form.date}T${form.time}:00`).toISOString(),
+    interviewType: form.interviewType,
+    meetingLink: form.interviewType === 'online' ? form.meetingLink : undefined,
+    location: form.interviewType === 'onsite' ? form.location : undefined,
+  }
 
+  isForceScheduling.value = true
+  try {
+    await employerInterviewService.forceSchedule(selectedApp.value.applicationId, payload)
     toast.success('Thành công', `Đã đặt lịch phỏng vấn hộ cho ${selectedApp.value.candidateName}.`)
     isForceScheduleModalOpen.value = false
-  } catch {
-    toast.error('Lỗi', 'Không thể đặt lịch phỏng vấn.')
+    fetchOverdue()
+  } catch (e: any) {
+    toast.error('Lỗi', e?.response?.data?.message ?? 'Không thể đặt lịch phỏng vấn.')
   } finally {
     isForceScheduling.value = false
   }
