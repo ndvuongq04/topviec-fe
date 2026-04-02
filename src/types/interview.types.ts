@@ -120,6 +120,7 @@ export interface ResInterviewScheduleDTO {
   status: InterviewStatus;
   confirmedByCandidate: boolean;
   interviewerNote?: string;
+  applicationStatus?: string;
   createdAt: string;
   updatedAt: string;
 }

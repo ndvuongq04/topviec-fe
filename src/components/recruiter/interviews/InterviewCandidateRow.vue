@@ -122,6 +122,17 @@
 
           <div class="dropdown-divider-v2"></div>
 
+          <!-- Offer -->
+          <GlobalDropdownItem
+            icon="card_giftcard"
+            label="Phát hành Offer"
+            :disabled="candidate.applicationStatus !== 'offered'"
+            :tooltip="candidate.applicationStatus !== 'offered' ? 'Chỉ được offer sau khi PASS vòng cuối' : ''"
+            @click="handleAction('offer', close)"
+          />
+
+          <div class="dropdown-divider-v2"></div>
+
           <!-- Hủy lịch -->
           <GlobalDropdownItem
             icon="cancel"
@@ -163,6 +174,7 @@ interface InterviewCandidate {
   status: 'confirmed' | 'pending' | 'overdue'| 'completed' | 'cancelled' | 'no_show'
   hasSchedule?: boolean
   scheduleStatus?: string
+  applicationStatus?: string
 }
 
 const props = defineProps<{
@@ -177,9 +189,10 @@ const emit = defineEmits<{
   cancel: [candidateId: number]
   schedule: [candidateId: number]
   evaluate: [candidateId: number]
+  offer: [candidateId: number]
 }>()
 
-function handleAction(action: 'viewDetail' | 'openLink' | 'reschedule' | 'remind' | 'cancel' | 'schedule' | 'evaluate', close: () => void) {
+function handleAction(action: 'viewDetail' | 'openLink' | 'reschedule' | 'remind' | 'cancel' | 'schedule' | 'evaluate' | 'offer', close: () => void) {
   close()
   emit(action as any, props.candidate.id)
 }

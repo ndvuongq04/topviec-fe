@@ -131,8 +131,53 @@
       @cancel="handleCancel"
       @schedule="handleSchedule"
       @evaluate="handleEvaluate"
+      @offer="handleOffer"
       @page-change="currentPage = $event - 1"
     />
+
+    <!-- ── Offer Modal ────────────────────────────────────── -->
+    <GlobalModal
+      :visible="isOfferVisible"
+      title="Cập nhật kết quả Offer"
+      :subtitle="offerCandidate?.name"
+      icon="card_giftcard"
+      confirm-text="Xác nhận"
+      confirm-icon="check_circle"
+      :loading="isOfferLoading"
+      @close="isOfferVisible = false"
+      @confirm="confirmOffer"
+    >
+      <div class="reschedule-form">
+        <div class="reschedule-form__field">
+          <label class="reschedule-form__label">Kết quả từ ứng viên <span class="reschedule-form__required">*</span></label>
+          <div class="evaluate-result-toggle">
+            <button
+              type="button"
+              class="evaluate-result-btn evaluate-result-btn--pass"
+              :class="{ 'evaluate-result-btn--active': offerForm.result === 'accepted' }"
+              @click="offerForm.result = 'accepted'"
+            >
+              <span class="material-symbols-outlined">check_circle</span>
+              Đồng ý (ACCEPTED)
+            </button>
+            <button
+              type="button"
+              class="evaluate-result-btn evaluate-result-btn--fail"
+              :class="{ 'evaluate-result-btn--active': offerForm.result === 'declined' }"
+              @click="offerForm.result = 'declined'"
+            >
+              <span class="material-symbols-outlined">cancel</span>
+              Từ chối (DECLINED)
+            </button>
+          </div>
+          <span v-if="offerErrors.result" class="reschedule-form__error">{{ offerErrors.result }}</span>
+        </div>
+        <p class="offer-tip">
+          <span class="material-symbols-outlined">info</span>
+          Lưu ý: Nếu ứng viên từ chối, đơn ứng tuyển sẽ bị chuyển sang trạng thái <strong>Bị từ chối</strong>.
+        </p>
+      </div>
+    </GlobalModal>
 
     <!-- ── Evaluate Modal ─────────────────────────────────── -->
     <GlobalModal
@@ -269,6 +314,16 @@ const rescheduleForm = ref({
 })
 const rescheduleErrors = ref<Record<string, string>>({})
 
+// ── Offer Modal State ──────────────────────────────────────
+const isOfferVisible  = ref(false)
+const isOfferLoading  = ref(false)
+const offerApplicationId = ref<number | null>(null)
+const offerCandidate  = ref<{ name: string } | null>(null)
+const offerForm = ref({
+  result: '' as 'accepted' | 'declined' | '',
+})
+const offerErrors = ref<Record<string, string>>({})
+
 // ── API Data ───────────────────────────────────────────────
 const rounds         = ref<ResInterviewRoundDTO[]>([])
 const roundSchedules = ref<ResInterviewScheduleDTO[]>([])
@@ -360,6 +415,7 @@ function mapToCandidate(
       : label,
     formatType,
     status: mapApiStatusToUi(schedule.status),
+    applicationStatus: schedule.applicationStatus,
   }
 }
 
@@ -572,6 +628,39 @@ async function confirmEvaluate() {
   }
 }
 
+function handleOffer(applicationId: number) {
+  const schedule = roundSchedules.value.find(s => s.applicationId === applicationId)
+  if (!schedule) return
+
+  offerApplicationId.value = applicationId
+  offerCandidate.value     = { name: schedule.candidateName }
+  offerForm.value          = { result: '' }
+  offerErrors.value        = {}
+  isOfferVisible.value     = true
+}
+
+async function confirmOffer() {
+  if (!offerForm.value.result) {
+    offerErrors.value = { result: 'Vui lòng chọn kết quả từ ứng viên.' }
+    return
+  }
+
+  isOfferLoading.value = true
+  try {
+    await employerInterviewService.updateOffer(offerApplicationId.value!, {
+      result: offerForm.value.result as 'accepted' | 'declined'
+    })
+
+    await fetchSchedules()
+    toast.success('Thành công!', `Đã cập nhật kết quả offer của ${offerCandidate.value?.name}.`)
+    isOfferVisible.value = false
+  } catch (err: any) {
+    toast.error('Lỗi', err?.response?.data?.message ?? 'Không thể cập nhật offer. Vui lòng thử lại.')
+  } finally {
+    isOfferLoading.value = false
+  }
+}
+
 async function handleRenameStage(stageId: number, newName: string) {
   try {
     const updated = await employerInterviewService.updateRound(stageId, { roundName: newName })
@@ -719,4 +808,17 @@ async function handleDeleteStage(stageId: number) {
 .evaluate-star--active { color: #f59e0b; }
 .evaluate-star:hover { color: #f59e0b; transform: scale(1.15); }
 .evaluate-stars__label { margin-left: 0.5rem; font-size: 0.875rem; font-weight: 700; color: #f59e0b; }
+
+.offer-tip {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: #f0f9ff;
+  border-radius: 0.75rem;
+  color: #0369a1;
+  font-size: 0.8125rem;
+  line-height: 1.4;
+}
+.offer-tip .material-symbols-outlined { font-size: 1.1rem; color: #0ea5e9; }
 </style>

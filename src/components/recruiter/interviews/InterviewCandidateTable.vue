@@ -73,6 +73,7 @@
           @cancel="emit('cancel', $event)"
           @schedule="emit('schedule', $event)"
           @evaluate="emit('evaluate', $event)"
+          @offer="emit('offer', $event)"
         />
       </tbody>
     </table>
@@ -169,6 +170,7 @@ const emit = defineEmits<{
   cancel: [candidateId: number]
   schedule: [candidateId: number]
   evaluate: [candidateId: number]
+  offer: [candidateId: number]
 }>()
 </script>
 
