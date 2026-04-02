@@ -37,12 +37,7 @@
                 </button>
               </div>
             </div>
-          <div
-            class="stage-card__count"
-            :class="stage.id === activeStageId ? 'stage-card__count--active' : ''"
-          >
-            {{ String(stage.count).padStart(2, '0') }}
-          </div>
+
         </div>
         <div class="stage-card__progress">
           <div class="stage-card__bar">
@@ -171,7 +166,7 @@ interface Stage {
   id: number
   label: string
   name: string
-  count: number
+
 }
 
 defineProps<{
@@ -407,19 +402,7 @@ async function handleRemove(stage: Stage) {
   font-size: 1.125rem;
 }
 
-.stage-card__count {
-  background: #f1f5f9;
-  color: #94a3b8;
-  padding: 0.25rem 0.75rem;
-  border-radius: 9999px;
-  font-size: 1.125rem;            /* 18px – số nổi bật item chính */
-  font-weight: 900;
-}
 
-.stage-card__count--active {
-  background: rgba(75, 154, 246, 0.1);
-  color: #4b9af6;
-}
 
 .stage-card__progress {
   margin-top: 1rem;

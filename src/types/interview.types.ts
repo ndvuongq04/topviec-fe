@@ -154,6 +154,7 @@ export interface ResInterviewHistoryDTO {
   applicationId: number;
   candidateName: string;
   currentStatus: string;
+  cvUrl?: string;
   rounds: RoundHistory[];
 }
 

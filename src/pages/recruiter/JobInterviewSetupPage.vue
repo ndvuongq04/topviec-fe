@@ -341,7 +341,7 @@ const stageCards = computed(() =>
     id:    r.id,
     label: `Vòng ${r.roundNumber}`,
     name:  r.roundName,
-    count: r.candidateCount,
+
   }))
 )
 

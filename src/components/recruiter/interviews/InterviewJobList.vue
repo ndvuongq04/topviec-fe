@@ -1,19 +1,23 @@
 <template>
   <div>
-    <!-- Section header -->
-    <div class="section-header">
-      <h4>Tin tuyển dụng đang hoạt động</h4>
-      <router-link to="/recruiter/job-postings" class="view-all-link">
-        Xem tất cả
-      </router-link>
+    <!-- Loading -->
+    <div v-if="isLoading" class="list-state">
+      <span class="material-symbols-outlined spinning">autorenew</span>
+      <p>Đang tải...</p>
     </div>
 
-    <!-- Table -->
-    <div class="job-list">
+    <!-- Empty -->
+    <div v-else-if="jobPostings.length === 0" class="list-state list-state--empty">
+      <span class="material-symbols-outlined">inbox</span>
+      <p>Không có tin tuyển dụng nào</p>
+    </div>
+
+    <!-- Table rows -->
+    <div v-else class="job-list">
       <InterviewJobRow
         v-for="job in jobPostings"
         :key="job.id"
-       :job="job"
+        :job="job"
         :is-active="activeId === job.id"
         @click="activeId = job.id"
         @view-detail="handleViewDetail(job.id)"
@@ -76,7 +80,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import InterviewJobRow from './InterviewJobRow.vue'
 import { employerJobPostingService } from '@/services/employerJobPosting.service'
@@ -88,14 +92,33 @@ import type { ResEmployerApplicationDTO } from '@/types/employerApplication.type
 import GlobalModal from '@/components/ui/GlobalModal.vue'
 import { useToast } from '@/composables/useToast'
 
+type FilterTab = 'all' | 'interviewing' | 'completed'
+
 type IconVariant = 'blue-light' | 'blue-solid' | 'orange' | 'purple' | 'green' | 'rose'
 const ICON_VARIANTS: IconVariant[] = ['blue-light', 'blue-solid', 'orange', 'purple', 'green', 'rose']
+
+const STATUS_MAP: Record<FilterTab, JobPostingStatus | undefined> = {
+  all: undefined,
+  interviewing: JobPostingStatus.INTERVIEWING,
+  completed: JobPostingStatus.COMPLETED,
+}
+
+const props = defineProps<{
+  statusFilter: FilterTab
+  keyword: string
+  currentPage: number
+}>()
+
+const emit = defineEmits<{
+  'update:total': [total: number]
+}>()
 
 const router = useRouter()
 
 const rawJobs = ref<ResJobPostingDetail[]>([])
 const isLoading = ref(false)
 const activeId = ref<number | null>(null)
+const weeklyCountMap = ref<Record<number, number>>({})
 const toast = useToast()
 
 // ── Complete Recruitment State ─────────────────────────────
@@ -112,7 +135,7 @@ const jobPostings = computed(() =>
     department: job.industry?.name ?? '',
     level: job.level?.name ?? '',
     candidateCount: job.applicationCount,
-    interviewsPerWeek: 0,
+    interviewsPerWeek: weeklyCountMap.value[job.id] ?? 0,
     icon: 'work',
     iconVariant: ICON_VARIANTS[index % ICON_VARIANTS.length],
     status: job.status,
@@ -120,20 +143,64 @@ const jobPostings = computed(() =>
   }))
 )
 
-async function fetchInterviewingJobs() {
+function getCurrentWeekRange(): { start: Date; end: Date } {
+  const now = new Date()
+  const diffToMonday = (now.getDay() + 6) % 7
+  const start = new Date(now)
+  start.setHours(0, 0, 0, 0)
+  start.setDate(now.getDate() - diffToMonday)
+  const end = new Date(start)
+  end.setDate(start.getDate() + 6)
+  end.setHours(23, 59, 59, 999)
+  return { start, end }
+}
+
+async function fetchWeeklyCounts(jobIds: number[]) {
+  const { start, end } = getCurrentWeekRange()
+  const results = await Promise.allSettled(
+    jobIds.map(id => employerInterviewService.getSchedules(id))
+  )
+  const map: Record<number, number> = {}
+  results.forEach((result, idx) => {
+    if (result.status === 'fulfilled') {
+      map[jobIds[idx]] = result.value.filter(s => {
+        const d = new Date(s.scheduledAt)
+        return d >= start && d <= end
+      }).length
+    } else {
+      map[jobIds[idx]] = 0
+    }
+  })
+  weeklyCountMap.value = map
+}
+
+async function fetchJobs() {
   isLoading.value = true
   try {
-    const res = await employerJobPostingService.getList({ status: JobPostingStatus.INTERVIEWING, size: 50 })
+    const res = await employerJobPostingService.getList({
+      status: STATUS_MAP[props.statusFilter],
+      keyword: props.keyword || undefined,
+      page: props.currentPage,
+      size: 10,
+    })
     rawJobs.value = res.result
+    emit('update:total', res.meta.totals)
     if (res.result.length > 0) activeId.value = res.result[0].id
+    else activeId.value = null
+    // Fetch weekly counts in background (non-blocking)
+    if (res.result.length > 0) fetchWeeklyCounts(res.result.map(j => j.id))
   } catch (err) {
-    console.error('Failed to fetch interviewing jobs:', err)
+    console.error('Failed to fetch jobs:', err)
   } finally {
     isLoading.value = false
   }
 }
 
-onMounted(fetchInterviewingJobs)
+watch(
+  [() => props.statusFilter, () => props.keyword, () => props.currentPage],
+  fetchJobs,
+  { immediate: true }
+)
 
 function handleViewDetail(jobId: number) {
   router.push({ name: 'recruiter-job-interview-setup', params: { id: jobId } })
@@ -171,7 +238,7 @@ async function confirmCompleteRecruitment() {
     })
     toast.success('Thành công!', 'Đã hoàn thành quy trình tuyển dụng.')
     isCompleteVisible.value = false
-    await fetchInterviewingJobs() // Refresh list
+    await fetchJobs()
   } catch (err: any) {
     toast.error('Lỗi', err?.response?.data?.message ?? 'Không thể hoàn thành tuyển dụng.')
   } finally {
@@ -183,36 +250,30 @@ async function confirmCompleteRecruitment() {
 <style scoped>
 @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@700&display=swap');
 
-.section-header {
-  font-family: 'Manrope', sans-serif;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 1rem;
-}
-.section-header h4 {
-  font-size: 1.125rem;
-  font-weight: 700;
-  color: #0f172a;
-}
-
-.view-all-link {
-  font-size: 1rem;
-  font-weight: 700;
-  color: #4B9AF6;
-  text-decoration: none;
-}
-.view-all-link:hover { text-decoration: underline; }
-
 .job-list {
   background: #fff;
-  border-radius: 1rem;
-  border: 1px solid #f1f5f9;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
-/* Modal styles — reused from JobInterviewSetupPage.vue but kept localized if needed */
-.complete-recruitment { display: flex; flex-direction: column; gap: 1.5rem; padding: 0.25rem 0; width: 100%; box-sizing: border-box;}
+/* Loading / empty state */
+.list-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 3rem 1.5rem;
+  color: #94a3b8;
+  font-size: 0.875rem;
+  font-family: 'Manrope', sans-serif;
+}
+.list-state .material-symbols-outlined { font-size: 2.5rem; }
+.list-state--empty .material-symbols-outlined { color: #cbd5e1; }
+
+@keyframes spin { to { transform: rotate(360deg); } }
+.spinning { animation: spin 1s linear infinite; }
+
+/* Modal styles */
+.complete-recruitment { display: flex; flex-direction: column; gap: 1.5rem; padding: 0.25rem 0; width: 100%; box-sizing: border-box; }
 .complete-alert {
   display: flex; gap: 1rem; padding: 1.25rem;
   background: #fff1f2; border: 1px solid #fecaca; border-radius: 1rem;
