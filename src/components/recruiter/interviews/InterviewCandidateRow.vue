@@ -69,18 +69,18 @@
           <!-- Xem chi tiết -->
           <GlobalDropdownItem
             icon="visibility"
-            label="Xem chi tiết"
+            label="Xem lịch sử PV"
             @click="handleAction('viewDetail', close)"
           />
 
           <!-- Mở link -->
-          <GlobalDropdownItem
+          <!-- <GlobalDropdownItem
             icon="link"
             label="Mở link phỏng vấn"
             :disabled="candidate.status !== 'confirmed'"
             :tooltip="candidate.status !== 'confirmed' ? 'Chỉ khả dụng khi lịch đã được xác nhận' : ''"
             @click="handleAction('openLink', close)"
-          />
+          /> -->
 
           <!-- Đặt lịch phỏng vấn -->
           <GlobalDropdownItem
