@@ -69,7 +69,7 @@
           <!-- Xem chi tiết -->
           <GlobalDropdownItem
             icon="visibility"
-            label="Xem lịch sử PV"
+            label="Xem chi tiết PV"
             @click="handleAction('viewDetail', close)"
           />
 
