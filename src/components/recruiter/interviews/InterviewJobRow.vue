@@ -48,6 +48,12 @@
               label="Cấu hình vòng PV"
               @click="handleAction('setup-rounds', close)"
             />
+ 
+            <GlobalDropdownItem
+              icon="description"
+              label="Xem tin tuyển dụng"
+              @click="handleAction('view-job-detail', close)"
+            />
 
             <div class="dropdown-divider-v2"></div>
 
@@ -100,9 +106,10 @@ const emit = defineEmits<{
   (e: 'view-detail'): void
   (e: 'setup-rounds'): void
   (e: 'finish-interview'): void
+  (e: 'view-job-detail'): void
 }>()
 
-function handleAction(event: 'view-detail' | 'setup-rounds' | 'finish-interview', close: () => void) {
+function handleAction(event: 'view-detail' | 'setup-rounds' | 'finish-interview' | 'view-job-detail', close: () => void) {
   close()
   emit(event as any)
 }

@@ -23,6 +23,7 @@
         @view-detail="handleViewDetail(job.id)"
         @setup-rounds="handleSetupRounds(job.id)"
         @finish-interview="handleFinishInterview(job.id)"
+        @view-job-detail="handleViewJobDetail(job.id)"
       />
     </div>
 
@@ -208,6 +209,10 @@ function handleViewDetail(jobId: number) {
 
 function handleSetupRounds(jobId: number) {
   router.push({ name: 'recruiter-job-interview-stages', params: { id: jobId } })
+}
+
+function handleViewJobDetail(jobId: number) {
+  router.push({ name: 'recruiter-jobs-detail', params: { id: jobId } })
 }
 
 async function handleFinishInterview(jobId: number) {
