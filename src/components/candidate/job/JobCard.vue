@@ -78,11 +78,11 @@ const emit = defineEmits<{
       </div>
       <div>
         <h3
-          class="font-bold text-text-main dark:text-white group-hover:text-primary transition-colors pr-6"
+          class="text-lg font-bold text-text-main dark:text-white group-hover:text-primary transition-colors pr-6"
         >
           {{ props.title }}
         </h3>
-        <p class="text-sm text-text-muted">{{ props.company }}</p>
+        <p class="text-base text-text-muted">{{ props.company }}</p>
       </div>
     </div>
 
@@ -91,7 +91,7 @@ const emit = defineEmits<{
       <span
         v-for="tag in props.tags"
         :key="tag"
-        class="px-2.5 py-1 rounded-md bg-slate-100 dark:bg-slate-800 text-xs font-medium text-text-muted dark:text-gray-400"
+        class="px-2.5 py-1 rounded-md bg-slate-100 dark:bg-slate-800 text-sm font-medium text-text-muted dark:text-gray-400"
       >
         {{ tag }}
       </span>
@@ -101,7 +101,7 @@ const emit = defineEmits<{
     <div
       class="flex items-center justify-between mt-auto pt-4 border-t border-slate-100 dark:border-slate-800"
     >
-      <div class="flex items-center gap-1 text-slate-500 text-sm">
+      <div class="flex items-center gap-1 text-slate-500 text-base">
         <span class="material-symbols-outlined text-base">attach_money</span>
         <span class="font-semibold text-text-main dark:text-gray-300">
           {{ props.salaryMin }} - {{ props.salaryMax }}
@@ -111,15 +111,15 @@ const emit = defineEmits<{
       <!-- Hot badge hoặc posted time -->
       <span
         v-if="props.isHot"
-        class="text-xs text-primary bg-primary/10 px-2 py-0.5 rounded-full font-medium"
+        class="text-sm text-primary bg-primary/10 px-2 py-0.5 rounded-full font-medium"
       >
         Hot
       </span>
-      <span v-else class="text-xs text-slate-400">{{ props.postedAt }}</span>
+      <span v-else class="text-sm text-slate-400">{{ props.postedAt }}</span>
     </div>
 
     <!-- Location -->
-    <div class="flex items-center gap-1 text-slate-400 text-xs mt-2">
+    <div class="flex items-center gap-1 text-slate-400 text-sm mt-2">
       <span class="material-symbols-outlined text-sm">location_on</span>
       {{ props.location }}
     </div>

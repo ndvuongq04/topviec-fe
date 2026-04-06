@@ -2,8 +2,7 @@
 // DefaultLayout: Layout bọc toàn bộ trang có auth
 // Bao gồm: CandidateHeader (top) + CandidateSidebar (left) + <slot> (main content) + AppBottomNav (mobile)
 import CandidateHeader from "@/components/candidate/layout/CandidateHeader.vue";
-import CandidateSidebar from "@/components/candidate/sidebar/CandidateSidebar.vue";
-// import CandidateBottomNav from "@/components/candidate/layout/CandidateBottomNav.vue";
+import CandidateFooter from "@/components/candidate/layout/CandidateFooter.vue";
 import { RouterView } from "vue-router";
 </script>
 
@@ -14,18 +13,15 @@ import { RouterView } from "vue-router";
     <!-- Header fixed top -->
     <CandidateHeader />
 
-    <!-- Body: sidebar + nội dung chính — pt-[57px] để bù chiều cao header fixed -->
+    <!-- Main Content Area — pt-[65px] to match fixed header height exactly -->
     <div
-      class="layout-container flex grow flex-col md:flex-row max-w-[1440px] mx-auto w-full p-4 gap-6 pt-[73px]"
+      class="layout-container flex grow flex-col w-full pt-[65px] pb-10"
     >
-      <!-- Sidebar trái (ẩn trên mobile) -->
-      <CandidateSidebar />
-
-      <!-- Nội dung trang (router-view hoặc slot) -->
+      <!-- Content (router-view) -->
       <RouterView />
     </div>
 
-    <!-- Bottom nav chỉ hiện trên mobile -->
-    <CandidateBottomNav />
+    <!-- Footer -->
+    <CandidateFooter />
   </div>
 </template>

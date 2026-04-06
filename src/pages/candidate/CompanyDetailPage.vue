@@ -60,7 +60,7 @@ async function toggleFollow() {
 </script>
 
 <template>
-  <main class="flex-grow w-full max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
+  <main class="flex-grow w-full">
     <div v-if="loading" class="flex flex-col items-center justify-center py-20 gap-4">
       <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
       <p class="text-text-muted">Đang tải thông tin công ty...</p>
@@ -93,16 +93,16 @@ async function toggleFollow() {
         
         <!-- Text Info -->
         <div class="flex-1 flex flex-col gap-1 pb-2">
-          <h1 class="text-3xl font-bold sm:text-4xl text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] shadow-black">
+          <h1 class="text-3xl font-extrabold sm:text-5xl text-white drop-shadow-[0_4px_8px_rgba(0,0,0,0.8)] tracking-tight">
             {{ company.name }}
           </h1>
-          <div class="flex flex-wrap gap-4 mt-2 text-sm text-gray-300 sm:text-text-muted">
-            <div class="flex items-center gap-1" v-if="company.address">
-              <span class="material-symbols-outlined text-[18px]">location_on</span>
+          <div class="flex flex-wrap gap-4 mt-2 text-base text-gray-200 sm:text-gray-300">
+            <div class="flex items-center gap-1.5" v-if="company.address">
+              <span class="material-symbols-outlined text-[20px]">location_on</span>
               <span>{{ company.address }}</span>
             </div>
-            <div class="flex items-center gap-1" v-if="company.companySize">
-              <span class="material-symbols-outlined text-[18px]">group</span>
+            <div class="flex items-center gap-1.5" v-if="company.companySize">
+              <span class="material-symbols-outlined text-[20px]">group</span>
               <span>Quy mô: {{ company.companySize }}</span>
             </div>
           </div>
@@ -129,7 +129,7 @@ async function toggleFollow() {
     <div v-if="company" class="sticky top-16 z-40 bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-sm border-b border-gray-200 dark:border-gray-800 mb-8">
       <div class="flex gap-8 overflow-x-auto no-scrollbar">
         <a class="flex items-center gap-2 border-b-[3px] border-primary py-4 text-primary" href="#">
-          <span class="text-sm font-bold whitespace-nowrap">TỔNG QUAN</span>
+          <span class="text-base font-bold whitespace-nowrap">TỔNG QUAN</span>
         </a>
       </div>
     </div>
@@ -140,23 +140,23 @@ async function toggleFollow() {
       <div class="lg:col-span-2 space-y-6">
         <!-- Dashboard/Who We Are -->
         <section class="rounded-2xl bg-surface-light dark:bg-surface-dark border border-gray-100 dark:border-gray-800 p-6 sm:p-8 shadow-sm">
-          <h2 class="text-2xl font-bold text-text-main dark:text-white mb-4">Giới thiệu công ty</h2>
-          <div class="prose prose-slate dark:prose-invert max-w-none text-text-muted dark:text-gray-300 leading-relaxed whitespace-pre-line">
+          <h2 class="text-3xl font-extrabold text-text-main dark:text-white mb-6 tracking-tight">Giới thiệu công ty</h2>
+          <div class="prose prose-slate dark:prose-invert max-w-none text-text-muted dark:text-gray-300 text-base leading-relaxed whitespace-pre-line">
             {{ company.description || 'Chưa có thông tin giới thiệu chi tiết.' }}
           </div>
         </section>
 
         <!-- Culture -->
         <section v-if="company.culture" class="rounded-2xl bg-surface-light dark:bg-surface-dark border border-gray-100 dark:border-gray-800 p-6 sm:p-8 shadow-sm">
-          <h2 class="text-2xl font-bold text-text-main dark:text-white mb-4">Văn hóa và môi trường làm việc</h2>
-          <div class="prose prose-slate dark:prose-invert max-w-none text-text-muted dark:text-gray-300 leading-relaxed whitespace-pre-line">
+          <h2 class="text-3xl font-extrabold text-text-main dark:text-white mb-6 tracking-tight">Văn hóa và môi trường làm việc</h2>
+          <div class="prose prose-slate dark:prose-invert max-w-none text-text-muted dark:text-gray-300 text-base leading-relaxed whitespace-pre-line">
             {{ company.culture }}
           </div>
         </section>
 
         <!-- Benefits -->
         <section v-if="parsedBenefits.length > 0" class="rounded-2xl bg-surface-light dark:bg-surface-dark border border-gray-100 dark:border-gray-800 p-6 sm:p-8 shadow-sm">
-          <h2 class="text-2xl font-bold text-text-main dark:text-white mb-4">Phúc lợi</h2>
+          <h2 class="text-3xl font-extrabold text-text-main dark:text-white mb-6 tracking-tight">Phúc lợi</h2>
           <ul class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <li v-for="(benefit, index) in parsedBenefits" :key="index" class="flex items-start gap-3">
               <div class="mt-1 flex items-center justify-center size-6 rounded-full bg-emerald-100 text-emerald-600 shrink-0">
@@ -169,7 +169,7 @@ async function toggleFollow() {
         
         <!-- Job Openings -->
         <section class="rounded-2xl bg-surface-light dark:bg-surface-dark border border-gray-100 dark:border-gray-800 p-6 sm:p-8 shadow-sm">
-          <h2 class="text-2xl font-bold text-text-main dark:text-white mb-4">Tuyển dụng</h2>
+          <h2 class="text-3xl font-extrabold text-text-main dark:text-white mb-6 tracking-tight">Tuyển dụng</h2>
           <div class="text-text-muted dark:text-gray-400">
             Hiện tại các công việc đang tuyển của công ty sẽ được hiển thị ở đây.
           </div>
@@ -185,48 +185,48 @@ async function toggleFollow() {
             <div class="flex items-start gap-3" v-if="company.website">
               <span class="material-symbols-outlined text-text-muted mt-0.5">language</span>
               <div>
-                <p class="text-xs font-semibold text-text-muted uppercase tracking-wider">Website</p>
-                <a :href="company.website" target="_blank" class="text-sm font-medium text-primary hover:underline break-all">{{ company.website }}</a>
+                <p class="text-sm font-bold text-text-muted uppercase tracking-wider">Website</p>
+                <a :href="company.website" target="_blank" class="text-base font-bold text-primary hover:underline break-all">{{ company.website }}</a>
               </div>
             </div>
             
             <div class="flex items-start gap-3" v-if="company.foundedYear">
               <span class="material-symbols-outlined text-text-muted mt-0.5">calendar_month</span>
               <div>
-                <p class="text-xs font-semibold text-text-muted uppercase tracking-wider">Năm thành lập</p>
-                <p class="text-sm font-medium text-text-main dark:text-white">{{ company.foundedYear }}</p>
+                <p class="text-sm font-bold text-text-muted uppercase tracking-wider">Năm thành lập</p>
+                <p class="text-base font-bold text-text-main dark:text-white">{{ company.foundedYear }}</p>
               </div>
             </div>
 
             <div class="flex items-start gap-3" v-if="company.companySize">
               <span class="material-symbols-outlined text-text-muted mt-0.5">group</span>
               <div>
-                <p class="text-xs font-semibold text-text-muted uppercase tracking-wider">Quy mô</p>
-                <p class="text-sm font-medium text-text-main dark:text-white">{{ company.companySize }}</p>
+                <p class="text-sm font-bold text-text-muted uppercase tracking-wider">Quy mô</p>
+                <p class="text-base font-bold text-text-main dark:text-white">{{ company.companySize }}</p>
               </div>
             </div>
             
             <div class="flex items-start gap-3" v-if="company.address">
               <span class="material-symbols-outlined text-text-muted mt-0.5">location_on</span>
               <div>
-                <p class="text-xs font-semibold text-text-muted uppercase tracking-wider">Địa chỉ</p>
-                <p class="text-sm font-medium text-text-main dark:text-white">{{ company.address }}</p>
+                <p class="text-sm font-bold text-text-muted uppercase tracking-wider">Địa chỉ</p>
+                <p class="text-base font-bold text-text-main dark:text-white">{{ company.address }}</p>
               </div>
             </div>
 
              <div class="flex items-start gap-3" v-if="company.email">
               <span class="material-symbols-outlined text-text-muted mt-0.5">email</span>
               <div>
-                <p class="text-xs font-semibold text-text-muted uppercase tracking-wider">Email</p>
-                <a :href="'mailto:' + company.email" class="text-sm font-medium text-primary hover:underline break-all">{{ company.email }}</a>
+                <p class="text-sm font-bold text-text-muted uppercase tracking-wider">Email</p>
+                <a :href="'mailto:' + company.email" class="text-base font-bold text-primary hover:underline break-all">{{ company.email }}</a>
               </div>
             </div>
 
              <div class="flex items-start gap-3" v-if="company.phone">
               <span class="material-symbols-outlined text-text-muted mt-0.5">call</span>
               <div>
-                <p class="text-xs font-semibold text-text-muted uppercase tracking-wider">Hotline</p>
-                <a :href="'tel:' + company.phone" class="text-sm font-medium text-text-main dark:text-white hover:underline">{{ company.phone }}</a>
+                <p class="text-sm font-bold text-text-muted uppercase tracking-wider">Hotline</p>
+                <a :href="'tel:' + company.phone" class="text-base font-bold text-text-main dark:text-white hover:underline">{{ company.phone }}</a>
               </div>
             </div>
 

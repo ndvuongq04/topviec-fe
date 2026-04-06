@@ -1,13 +1,23 @@
 <script setup lang="ts">
 import { useAuthStore } from "@/stores/auth.store";
 import { useRouter } from "vue-router";
-import { ref, onMounted, onUnmounted } from "vue";
+import { ref, computed, onMounted, onUnmounted } from "vue";
 
 const authStore = useAuthStore();
 const router = useRouter();
 
 const isDropdownOpen = ref(false);
 const dropdownRef = ref<HTMLElement | null>(null);
+
+// Derived user display values
+const displayName = computed(() => {
+  if (!authStore.user?.email) return "Người dùng";
+  return authStore.user.email.split("@")[0];
+});
+
+const avatarInitial = computed(() => {
+  return displayName.value.charAt(0).toUpperCase();
+});
 
 function toggleDropdown() {
   isDropdownOpen.value = !isDropdownOpen.value;
@@ -17,7 +27,6 @@ function closeDropdown() {
   isDropdownOpen.value = false;
 }
 
-// Click ra ngoài thì đóng dropdown
 function handleClickOutside(event: MouseEvent) {
   if (dropdownRef.value && !dropdownRef.value.contains(event.target as Node)) {
     closeDropdown();
@@ -40,121 +49,187 @@ async function handleLogout() {
     <!-- Logo -->
     <router-link to="/" class="flex items-center gap-2 text-primary">
       <span class="material-symbols-outlined text-3xl">work_history</span>
-      <h2
-        class="text-text-main dark:text-white text-xl font-bold leading-tight tracking-tight"
-      >
+      <h2 class="text-text-main dark:text-white text-2xl font-bold leading-tight tracking-tight">
         TopViec
       </h2>
     </router-link>
 
+    <!-- Right side -->
+    <div class="flex flex-1 justify-end gap-6 items-center">
 
-    <!-- Right side: nav + actions -->
-    <div class="flex flex-1 justify-end gap-8 items-center">
-      <!-- Nav links -->
-      <nav class="hidden md:flex items-center gap-9">
+      <!-- === CHƯA ĐĂNG NHẬP === -->
+      <template v-if="!authStore.isAuthenticated">
+        <!-- Link nhà tuyển dụng -->
         <router-link
-          to="/"
-          class="text-text-main dark:text-gray-200 text-sm font-medium hover:text-primary transition-colors"
+          to="/recruiter/register"
+          class="hidden lg:flex items-center gap-1 text-primary hover:text-blue-700 text-base font-bold transition-colors"
         >
-          Tìm việc
+          <span class="material-symbols-outlined text-xl">corporate_fare</span>
+          <span>Nhà tuyển dụng</span>
         </router-link>
-      </nav>
 
-      <!-- Action buttons -->
-      <div class="flex gap-3 items-center">
-
+        <!-- Đăng nhập -->
         <router-link
-    to="/recruiter/register"
-    class="hidden lg:flex items-center gap-1 text-primary hover:text-blue-700 text-sm font-bold mr-2 transition-colors"
-  >
-    <span class="material-symbols-outlined text-lg">corporate_fare</span>
-    <span>Nhà tuyển dụng</span>
-  </router-link>
-        <!-- Post CV button -->
+          to="/login"
+          class="flex items-center justify-center rounded-3xl h-10 px-5 border border-primary text-primary hover:bg-primary/5 text-base font-bold transition-colors"
+        >
+          Đăng nhập
+        </router-link>
+
+        <!-- Đăng ký -->
+        <router-link
+          to="/register"
+          class="flex items-center justify-center rounded-3xl h-10 px-5 bg-primary hover:bg-blue-700 text-white text-base font-bold transition-colors shadow-lg shadow-blue-500/30"
+        >
+          Đăng ký ngay
+        </router-link>
+      </template>
+
+      <!-- === ĐÃ ĐĂNG NHẬP === -->
+      <template v-else>
+        <!-- Link nhà tuyển dụng -->
+        <router-link
+          to="/recruiter/register"
+          class="hidden lg:flex items-center gap-1 text-primary hover:text-blue-700 text-base font-bold transition-colors"
+        >
+          <span class="material-symbols-outlined text-xl">corporate_fare</span>
+          <span>Nhà tuyển dụng</span>
+        </router-link>
+
+        <!-- CV Online button -->
         <button
-          class="flex items-center justify-center rounded-3xl h-10 px-5 bg-primary hover:bg-blue-600 text-white text-sm font-bold leading-normal tracking-wide transition-colors shadow-lg shadow-blue-500/30 cursor-pointer"
+          class="flex items-center justify-center rounded-3xl h-10 px-5 bg-primary hover:bg-blue-600 text-white text-base font-bold transition-colors shadow-lg shadow-blue-500/30 cursor-pointer"
           @click="router.push('/my-cvs')"
         >
-          <span class="truncate">CV online</span>
+          CV online
         </button>
 
-        <!-- Notification button -->
-        <button
-          class="flex items-center justify-center rounded-full h-10 w-10 bg-slate-100 dark:bg-slate-800 text-text-main dark:text-white hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors cursor-pointer"
-        >
-          <span class="material-symbols-outlined text-xl">notifications</span>
-        </button>
-
-        <!-- Avatar + dropdown -->
+        <!-- Avatar + Tên + Dropdown -->
         <div class="relative" ref="dropdownRef">
-          <!-- Avatar: click để toggle -->
+          <!-- Trigger -->
           <div
-            class="bg-center bg-no-repeat bg-cover rounded-full h-10 w-10 border-2 border-slate-200 dark:border-slate-700 cursor-pointer"
-            style="
-              background-image: url(&quot;https://lh3.googleusercontent.com/aida-public/AB6AXuAUMf5jhzgfycMQc9RC_fwMLK5Bu4D8XAL7dymhVlIxZ1jx5E0bqG051yH_B6kjghR9qM8TnIyTzeE7CshRVIPXf4LNRlV4g9vrj87PKW4hz4gx_kq7-VLba5hLvJQNDyg4c_bwcQHMxlaYHfdausES5bNIm7a1_PouZIKdlsCRyxyJ9pmELkRb5ebQeP53_loDQVZQt44eYlxPdLRCCTYEeBPRaNt1nh0sVqlMToYfpKegdWFjxrCRhWmQMo0mI-VjpHLoAftYlYQH&quot;);
-            "
+            class="flex items-center gap-2.5 cursor-pointer group"
             @click="toggleDropdown"
-          />
+          >
+            <!-- Avatar -->
+            <div
+              class="h-9 w-9 rounded-full border-2 border-slate-200 dark:border-slate-700 flex items-center justify-center bg-primary text-white text-sm font-bold uppercase shadow-sm group-hover:border-primary transition-colors shrink-0"
+            >
+              {{ avatarInitial }}
+            </div>
+
+            <!-- Tên người dùng -->
+            <div class="hidden md:flex flex-col leading-tight">
+              <span class="text-base font-semibold text-text-main dark:text-white truncate max-w-[120px]">
+                {{ displayName }}
+              </span>
+              <span class="text-xs text-slate-400 dark:text-slate-500 uppercase tracking-wide">
+                Ứng viên
+              </span>
+            </div>
+
+            <span
+              class="material-symbols-outlined text-slate-400 text-[18px] transition-transform duration-200"
+              :class="{ 'rotate-180': isDropdownOpen }"
+            >
+              expand_more
+            </span>
+          </div>
 
           <!-- Dropdown menu -->
           <Transition
             enter-active-class="transition-all duration-200"
-            enter-from-class="opacity-0 translate-y-2"
-            enter-to-class="opacity-100 translate-y-0"
+            enter-from-class="opacity-0 translate-y-2 scale-95"
+            enter-to-class="opacity-100 translate-y-0 scale-100"
             leave-active-class="transition-all duration-150"
-            leave-from-class="opacity-100 translate-y-0"
-            leave-to-class="opacity-0 translate-y-2"
+            leave-from-class="opacity-100 translate-y-0 scale-100"
+            leave-to-class="opacity-0 translate-y-2 scale-95"
           >
             <div
               v-if="isDropdownOpen"
-              class="absolute right-0 mt-2 w-56 bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl py-2 z-[60]"
+              class="absolute right-0 mt-3 w-60 bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl py-2 z-[60] origin-top-right"
             >
-              <router-link
-                to="/profile"
-                class="flex items-center gap-3 px-4 py-2 text-sm text-text-main dark:text-gray-200 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer"
-                @click="closeDropdown"
-              >
-                <span class="material-symbols-outlined text-lg opacity-70"
-                  >person</span
+              <!-- User info header -->
+              <div class="px-4 py-3 border-b border-slate-100 dark:border-slate-800">
+                <div class="flex items-center gap-3">
+                  <div class="h-10 w-10 rounded-full bg-primary flex items-center justify-center text-white font-bold text-sm shrink-0">
+                    {{ avatarInitial }}
+                  </div>
+                  <div class="min-w-0">
+                    <p class="text-sm font-bold text-text-main dark:text-white truncate">{{ displayName }}</p>
+                    <p class="text-xs text-slate-400 truncate">{{ authStore.user?.email }}</p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Navigation links -->
+              <div class="py-1">
+                <router-link
+                  to="/profile"
+                  class="flex items-center gap-3 px-4 py-2 text-base text-text-main dark:text-gray-200 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer"
+                  @click="closeDropdown"
                 >
-                Thông tin cá nhân
-              </router-link>
+                  <span class="material-symbols-outlined text-lg opacity-70">person</span>
+                  Thông tin cá nhân
+                </router-link>
 
-              <router-link
-                to="/change-password"
-                class="flex items-center gap-3 px-4 py-2 text-sm text-text-main dark:text-gray-200 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer"
-                @click="closeDropdown"
-              >
-                <span class="material-symbols-outlined text-lg opacity-70"
-                  >lock</span
+                <router-link
+                  to="/change-password"
+                  class="flex items-center gap-3 px-4 py-2 text-base text-text-main dark:text-gray-200 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer"
+                  @click="closeDropdown"
                 >
-                Đổi mật khẩu
-              </router-link>
+                  <span class="material-symbols-outlined text-lg opacity-70">lock</span>
+                  Đổi mật khẩu
+                </router-link>
+              </div>
 
-              <router-link
-                to="/notification-settings"
-                class="flex items-center gap-3 px-4 py-2 text-sm text-text-main dark:text-gray-200 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer"
-                @click="closeDropdown"
-              >
-                <span class="material-symbols-outlined text-lg opacity-70"
-                  >notifications_active</span
+              <div class="h-px bg-slate-100 dark:bg-slate-800 mx-3" />
+
+              <div class="py-1">
+                <router-link
+                  to="/saved-jobs"
+                  class="flex items-center gap-3 px-4 py-2 text-base text-text-main dark:text-gray-200 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer"
+                  @click="closeDropdown"
                 >
-                Cài đặt thông báo
-              </router-link>
+                  <span class="material-symbols-outlined text-lg opacity-70">bookmark</span>
+                  Việc đã lưu
+                </router-link>
 
-              <div class="h-px bg-slate-100 dark:bg-slate-800 my-1" />
+                <router-link
+                  to="/applied-jobs"
+                  class="flex items-center gap-3 px-4 py-2 text-base text-text-main dark:text-gray-200 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer"
+                  @click="closeDropdown"
+                >
+                  <span class="material-symbols-outlined text-lg opacity-70">send</span>
+                  Việc đã ứng tuyển
+                </router-link>
 
-              <button
-                class="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors font-medium cursor-pointer"
-                @click="handleLogout"
-              >
-                <span class="material-symbols-outlined text-lg">logout</span>
-                Đăng xuất
-              </button>
+                <router-link
+                  to="/interviews"
+                  class="flex items-center gap-3 px-4 py-2 text-base text-text-main dark:text-gray-200 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer"
+                  @click="closeDropdown"
+                >
+                  <span class="material-symbols-outlined text-lg opacity-70">chat_bubble</span>
+                  Lịch phỏng vấn
+                </router-link>
+              </div>
+
+              <div class="h-px bg-slate-100 dark:bg-slate-800 mx-3" />
+
+              <div class="py-1">
+                <button
+                  class="w-full flex items-center gap-3 px-4 py-2 text-base text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors font-medium cursor-pointer"
+                  @click="handleLogout"
+                >
+                  <span class="material-symbols-outlined text-lg">logout</span>
+                  Đăng xuất
+                </button>
+              </div>
             </div>
           </Transition>
         </div>
-      </div>
+      </template>
+
     </div>
   </header>
 </template>

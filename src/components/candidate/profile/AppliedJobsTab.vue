@@ -5,12 +5,12 @@
       <div class="p-5 sm:p-6">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h2 class="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight">Việc làm đã ứng tuyển</h2>
-            <p class="text-slate-500 dark:text-gray-400 text-sm mt-1">Theo dõi trạng thái và tiến độ các đơn ứng tuyển.</p>
+            <h2 class="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">Việc làm đã ứng tuyển</h2>
+            <p class="text-slate-500 dark:text-gray-400 text-base mt-1">Theo dõi trạng thái và tiến độ các đơn ứng tuyển.</p>
           </div>
           <div v-if="!loading" class="flex items-center gap-2">
-            <span class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-sm font-bold bg-primary/10 text-primary border border-primary/20">
-              <span class="material-symbols-outlined text-[16px]">send</span>
+            <span class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-base font-bold bg-primary/10 text-primary border border-primary/20">
+              <span class="material-symbols-outlined text-[18px]">send</span>
               {{ meta.totals }} đơn
             </span>
           </div>
@@ -22,7 +22,7 @@
           v-for="filter in filterOptions" 
           :key="filter.value"
           @click="handleFilterChange(filter.value)"
-          class="whitespace-nowrap px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all duration-200"
+          class="whitespace-nowrap px-3.5 py-1.5 rounded-lg text-sm font-bold transition-all duration-200"
           :class="activeFilter === filter.value 
             ? 'bg-primary text-white shadow-md shadow-primary/20' 
             : 'text-slate-500 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-slate-700'"
@@ -72,18 +72,18 @@
           <div class="flex-grow min-w-0">
             <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-2">
               <div class="min-w-0">
-                <h3 class="text-base font-bold text-slate-900 dark:text-white group-hover:text-primary transition-colors truncate">
+                <h3 class="text-lg font-bold text-slate-900 dark:text-white group-hover:text-primary transition-colors truncate">
                   {{ app.jobPosting?.title || 'Công việc không còn tồn tại' }}
                 </h3>
-                <p class="text-slate-500 dark:text-gray-400 text-sm mt-0.5 truncate">{{ app.jobPosting?.company.name || 'N/A' }}</p>
+                <p class="text-slate-500 dark:text-gray-400 text-base mt-0.5 truncate">{{ app.jobPosting?.company.name || 'N/A' }}</p>
               </div>
-              <div :class="getStatusClasses(app.status)" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold border shrink-0 self-start">
+              <div :class="getStatusClasses(app.status)" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold border shrink-0 self-start">
                 <span class="material-symbols-outlined text-[14px]">{{ getStatusIcon(app.status) }}</span>
                 {{ getStatusLabel(app.status) }}
               </div>
             </div>
 
-            <div class="mt-3 flex flex-wrap items-center gap-x-5 gap-y-1.5 text-xs text-slate-500 dark:text-gray-400">
+            <div class="mt-3 flex flex-wrap items-center gap-x-5 gap-y-1.5 text-sm text-slate-500 dark:text-gray-400">
               <div class="flex items-center gap-1">
                 <span class="material-symbols-outlined text-[14px]">calendar_today</span>
                 Nộp: <span class="font-medium text-slate-700 dark:text-gray-300 ml-0.5">{{ formatDate(app.createdAt) }}</span>

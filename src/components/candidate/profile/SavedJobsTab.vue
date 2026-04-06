@@ -5,12 +5,12 @@
       <div class="p-5 sm:p-6">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h2 class="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight">Việc làm đã lưu</h2>
-            <p class="text-slate-500 dark:text-gray-400 text-sm mt-1">Xem và quản lý các công việc bạn đã lưu.</p>
+            <h2 class="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">Việc làm đã lưu</h2>
+            <p class="text-slate-500 dark:text-gray-400 text-base mt-1">Xem và quản lý các công việc bạn đã lưu.</p>
           </div>
           <div v-if="savedJobStore.meta.totals > 0" class="flex items-center gap-2">
-            <span class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-sm font-bold bg-primary/10 text-primary border border-primary/20">
-              <span class="material-symbols-outlined text-[16px]">bookmark</span>
+            <span class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-base font-bold bg-primary/10 text-primary border border-primary/20">
+              <span class="material-symbols-outlined text-[18px]">bookmark</span>
               {{ savedJobStore.meta.totals }} đã lưu
             </span>
           </div>
@@ -27,7 +27,7 @@
         >
           <span v-if="isAllSelected" class="material-symbols-outlined text-xs font-bold">check</span>
         </div>
-        <span class="text-xs font-medium text-slate-500 dark:text-gray-400">
+        <span class="text-sm font-medium text-slate-500 dark:text-gray-400">
           {{ isAllSelected ? 'Bỏ chọn tất cả' : 'Chọn tất cả' }}
         </span>
       </div>

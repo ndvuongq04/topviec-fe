@@ -86,15 +86,15 @@ async function handleBookmark(id: number) {
   <div class="flex flex-col gap-4">
     <!-- Header section -->
     <div class="flex items-center justify-between">
-      <h2 class="text-xl font-bold text-text-main dark:text-white">
+      <h2 class="text-3xl font-extrabold text-text-main dark:text-white tracking-tight">
         Gợi ý cho bạn
       </h2>
       <a
-        class="text-primary text-sm font-semibold hover:underline flex items-center gap-1"
+        class="text-primary text-base font-bold hover:underline flex items-center gap-1"
         href="#"
       >
         Xem tất cả
-        <span class="material-symbols-outlined text-base">arrow_forward</span>
+        <span class="material-symbols-outlined text-lg">arrow_forward</span>
       </a>
     </div>
 

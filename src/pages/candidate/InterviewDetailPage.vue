@@ -2,7 +2,6 @@
 import { ref, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import GlobalModal from '@/components/ui/GlobalModal.vue'
-import Breadcrumb from '@/components/ui/Breadcrumb.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -66,8 +65,7 @@ const slots = ref([
 </script>
 
 <template>
-  <main class="flex-1 min-w-0 max-w-5xl mx-auto w-full p-4 md:p-6 pb-20">
-    <Breadcrumb class="mb-6" :items="[{ label: 'Lịch phỏng vấn', to: '/interviews' }, { label: 'Chi tiết phỏng vấn' }]" />
+  <main class="flex-1 min-w-0 pb-20 max-w-[1440px] mx-auto w-full px-4 md:px-10 py-6">
 
     <!-- Unified Header Card -->
     <div class="bg-white dark:bg-surface-dark rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden mb-8">
@@ -80,15 +78,15 @@ const slots = ref([
             <div>
               <div class="flex items-center gap-2 mb-2">
                 <span :class="[
-                  'px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider border',
+                  'px-2 py-0.5 rounded text-xs font-black uppercase tracking-wider border',
                   interviewStatus === 'PendingSelection' ? 'bg-amber-50 text-amber-600 border-amber-200/50' : 'bg-primary/10 text-primary border-primary/20'
                 ]">
                   {{ interviewStatus === 'PendingSelection' ? 'Cần xác nhận' : 'Đã lên lịch' }}
                 </span>
-                <span class="text-xs font-bold text-slate-400">• Vòng Technical Interview</span>
+                <span class="text-sm font-bold text-slate-400">• Vòng Technical Interview</span>
               </div>
-              <h1 class="text-2xl md:text-4xl font-black text-slate-900 dark:text-white leading-tight mb-2">Senior UI/UX Designer</h1>
-              <p class="text-slate-500 dark:text-gray-400 font-bold">TopViec Technology</p>
+              <h1 class="text-3xl md:text-4xl font-black text-slate-900 dark:text-white leading-tight mb-2">Senior UI/UX Designer</h1>
+              <p class="text-slate-500 dark:text-gray-400 text-base font-bold">TopViec Technology</p>
             </div>
           </div>
 
@@ -103,7 +101,7 @@ const slots = ref([
             </button>
             <div v-else class="flex flex-col gap-3">
               <template v-if="interviewType === 'Online'">
-                <button class="w-full md:px-10 py-4 bg-primary text-white rounded-xl font-black text-sm shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2">
+                <button class="w-full md:px-10 py-4 bg-primary text-white rounded-xl font-black text-base shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2">
                   <span class="material-symbols-outlined text-xl">videocam</span>
                   Vào phòng họp
                 </button>
@@ -112,13 +110,13 @@ const slots = ref([
                 <a 
                   :href="officeInfo.mapLink" 
                   target="_blank"
-                  class="w-full md:px-10 py-4 bg-primary text-white rounded-xl font-black text-sm shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2"
+                  class="w-full md:px-10 py-4 bg-primary text-white rounded-xl font-black text-base shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2"
                 >
                   <span class="material-symbols-outlined text-xl">near_me</span>
                   Chỉ đường
                 </a>
               </template>
-              <p class="text-[10px] text-slate-400 text-center font-black uppercase tracking-widest">Bắt đầu sau 15 phút nữa</p>
+              <p class="text-xs text-slate-400 text-center font-black uppercase tracking-widest">Bắt đầu sau 15 phút nữa</p>
             </div>
           </div>
         </div>
@@ -127,28 +125,28 @@ const slots = ref([
       <!-- Quick Stats Sub-bar -->
       <div class="px-6 md:px-8 py-4 bg-slate-50/50 dark:bg-slate-800/30 border-t border-slate-100 dark:border-slate-800 grid grid-cols-2 md:grid-cols-4 gap-6">
         <div>
-          <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 font-manrope">THỜI GIAN</p>
+          <p class="text-xs font-black text-slate-400 uppercase tracking-widest mb-1.5 font-manrope">THỜI GIAN</p>
           <div class="flex items-center gap-2 text-slate-700 dark:text-slate-200">
             <span class="material-symbols-outlined text-primary text-[18px]">schedule</span>
-            <span class="text-xs font-black">45 Phút</span>
+            <span class="text-sm font-black">45 Phút</span>
           </div>
         </div>
         <div>
-          <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 font-manrope">HÌNH THỨC</p>
+          <p class="text-xs font-black text-slate-400 uppercase tracking-widest mb-1.5 font-manrope">HÌNH THỨC</p>
           <div class="flex items-center gap-2 text-slate-700 dark:text-slate-200">
             <span class="material-symbols-outlined text-primary text-[18px]">{{ interviewType === 'Online' ? 'videocam' : 'location_on' }}</span>
-            <span class="text-xs font-black">{{ interviewType === 'Online' ? 'Trực tuyến' : 'Tại văn phòng' }}</span>
+            <span class="text-sm font-black">{{ interviewType === 'Online' ? 'Trực tuyến' : 'Tại văn phòng' }}</span>
           </div>
         </div>
         <div class="hidden md:block">
-          <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 font-manrope">NGƯỜI PHỎNG VẤN</p>
+          <p class="text-xs font-black text-slate-400 uppercase tracking-widest mb-1.5 font-manrope">NGƯỜI PHỎNG VẤN</p>
           <div class="flex items-center gap-2 text-slate-700 dark:text-slate-200">
             <span class="material-symbols-outlined text-primary text-[18px]">groups</span>
-            <span class="text-xs font-black">02 Chuyên gia</span>
+            <span class="text-sm font-black">02 Chuyên gia</span>
           </div>
         </div>
         <div class="hidden md:block">
-          <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 font-manrope">TRẠNG THÁI</p>
+          <p class="text-xs font-black text-slate-400 uppercase tracking-widest mb-1.5 font-manrope">TRẠNG THÁI</p>
           <div class="flex items-center gap-2 text-emerald-600 dark:text-emerald-400">
             <span class="material-symbols-outlined text-[18px]">check_circle</span>
             <span class="text-xs font-black uppercase">Sẵn sàng</span>
@@ -201,11 +199,11 @@ const slots = ref([
 
         <!-- Meeting Notes / Instructions -->
         <div class="bg-white dark:bg-surface-dark rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm">
-          <h3 class="font-black text-slate-900 dark:text-white flex items-center gap-2 mb-6 text-base">
+          <h3 class="font-black text-slate-900 dark:text-white flex items-center gap-2 mb-6 text-lg">
             <span class="material-symbols-outlined text-primary">description</span>
             Ghi chú từ nhà tuyển dụng
           </h3>
-          <div class="space-y-4 text-sm text-slate-600 dark:text-gray-400 leading-relaxed font-medium">
+          <div class="space-y-4 text-base text-slate-600 dark:text-gray-400 leading-relaxed font-medium">
             <p>Chào bạn, buổi phỏng vấn này sẽ tập trung vào kỹ năng chuyên môn về UI/UX Design cũng như khả năng xử lý bài toán thực tế.</p>
             <div class="p-4 bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-100 dark:border-amber-800/30 text-amber-800 dark:text-amber-300">
                <p class="font-black flex items-center gap-2 mb-2">
@@ -229,46 +227,46 @@ const slots = ref([
       <div class="lg:col-span-4 space-y-6">
         <!-- Location Card (Only for Offline) -->
         <div v-if="interviewType === 'Offline'" class="bg-white dark:bg-surface-dark rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm">
-          <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-6">Địa điểm phỏng vấn</p>
+          <p class="text-xs font-black text-slate-400 uppercase tracking-widest mb-6">Địa điểm phỏng vấn</p>
           <div class="flex items-start gap-3 mb-6">
             <div class="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center shrink-0 border border-primary/10">
               <span class="material-symbols-outlined text-primary">location_on</span>
             </div>
             <div>
-              <p class="text-xs font-black text-slate-900 dark:text-white mb-1">{{ officeInfo.room }}</p>
-              <p class="text-[11px] text-slate-500 dark:text-gray-400 font-bold leading-relaxed">{{ officeInfo.address }}</p>
+              <p class="text-sm font-black text-slate-900 dark:text-white mb-1">{{ officeInfo.room }}</p>
+              <p class="text-xs text-slate-500 dark:text-gray-400 font-bold leading-relaxed">{{ officeInfo.address }}</p>
             </div>
           </div>
-          <a :href="officeInfo.mapLink" target="_blank" class="w-full py-3 border-2 border-slate-100 dark:border-slate-800 text-slate-600 dark:text-slate-300 rounded-xl font-black text-xs hover:bg-slate-50 dark:hover:bg-slate-800 transition-all flex items-center justify-center gap-2">
+          <a :href="officeInfo.mapLink" target="_blank" class="w-full py-3 border-2 border-slate-100 dark:border-slate-800 text-slate-600 dark:text-slate-300 rounded-xl font-black text-sm hover:bg-slate-50 dark:hover:bg-slate-800 transition-all flex items-center justify-center gap-2">
             <span class="material-symbols-outlined text-base">map</span>
             Mở Bản đồ
           </a>
         </div>
         <!-- Recruiter Card -->
         <div class="bg-white dark:bg-surface-dark rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm">
-          <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-6">Người phụ trách</p>
+          <p class="text-xs font-black text-slate-400 uppercase tracking-widest mb-6">Người phụ trách</p>
           <div class="flex items-center gap-4 mb-6">
             <div class="w-16 h-16 rounded-2xl overflow-hidden border-2 border-slate-50 dark:border-slate-800 shrink-0">
               <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuBCBt3MGVNjatqeeeyAhWAf1J2_oG2jUPoMTS7mrgehmZMhNM-Qqg3zAdchBk0msb2VNLl2mBoZsgmUJNqm3i_VxCDqYdcUzmlmQo7f9fyuNDlgmI3KvNZUMwjj-hWqHpWzs66l7RQqCThoO-wdwRMWIpSgHB0tCd_N9ZE7k121BmkXGbh-EusUO9ji0vtgIMwSgOmtNMg_1XG14DbjIGAT6_N0Rio3Ikipjyp65UV4De6yqkAPI4b-nCA6Vgh6YGmHysbDiffIrg" class="w-full h-full object-cover" />
             </div>
             <div>
-              <h4 class="font-black text-slate-900 dark:text-white text-base">Lê Hồng Quân</h4>
-              <p class="text-slate-500 dark:text-gray-400 text-xs font-bold mt-0.5">Senior Talent Acquisition</p>
+              <h4 class="font-black text-slate-900 dark:text-white text-lg">Lê Hồng Quân</h4>
+              <p class="text-slate-500 dark:text-gray-400 text-sm font-bold mt-0.5">Senior Talent Acquisition</p>
             </div>
           </div>
           
           <div class="grid grid-cols-2 gap-3 mb-6">
             <div class="bg-slate-50 dark:bg-slate-800 p-3 rounded-xl border border-slate-100 dark:border-slate-700/50">
-              <p class="text-[8px] font-black text-slate-400 uppercase tracking-tighter mb-1">Fan-rate</p>
-              <p class="text-xs font-black text-slate-700 dark:text-white">98%</p>
+              <p class="text-xs font-black text-slate-400 uppercase tracking-tighter mb-1">Fan-rate</p>
+              <p class="text-sm font-black text-slate-700 dark:text-white">98%</p>
             </div>
             <div class="bg-slate-50 dark:bg-slate-800 p-3 rounded-xl border border-slate-100 dark:border-slate-700/50">
-              <p class="text-[8px] font-black text-slate-400 uppercase tracking-tighter mb-1">Phản hồi</p>
-              <p class="text-xs font-black text-slate-700 dark:text-white">&lt; 1h</p>
+              <p class="text-xs font-black text-slate-400 uppercase tracking-tighter mb-1">Phản hồi</p>
+              <p class="text-sm font-black text-slate-700 dark:text-white">&lt; 1h</p>
             </div>
           </div>
 
-          <button class="w-full py-3 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-xl font-black text-xs hover:opacity-90 transition-all flex items-center justify-center gap-2">
+          <button class="w-full py-3 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-xl font-black text-sm hover:opacity-90 transition-all flex items-center justify-center gap-2">
             <span class="material-symbols-outlined text-base">chat_bubble</span>
             Nhắn tin trao đổi
           </button>
@@ -277,11 +275,11 @@ const slots = ref([
         <!-- Helpful Tips -->
         <div class="bg-primary/5 dark:bg-primary/10 rounded-2xl border border-primary/10 dark:border-primary/20 p-6 relative overflow-hidden group">
           <div class="absolute -right-4 -bottom-4 w-20 h-20 bg-primary/10 rounded-full blur-2xl group-hover:scale-110 transition-transform"></div>
-          <h4 class="text-base font-black text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+          <h4 class="text-lg font-black text-slate-900 dark:text-white mb-4 flex items-center gap-2">
             <span class="material-symbols-outlined text-primary text-xl">lightbulb</span>
             Mẹo thành công
           </h4>
-          <ul class="space-y-4 text-slate-600 dark:text-gray-400 text-xs font-bold leading-relaxed relative z-10">
+          <ul class="space-y-4 text-slate-600 dark:text-gray-400 text-sm font-bold leading-relaxed relative z-10">
             <li class="pl-4 relative">
               <span class="absolute left-0 top-0 text-primary font-black">•</span>
               Tập trung nói về các vấn đề bạn đã giải quyết thay vì chỉ show sản phẩm.

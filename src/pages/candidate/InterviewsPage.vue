@@ -2,7 +2,6 @@
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import GlobalModal from '@/components/ui/GlobalModal.vue'
-import Breadcrumb from '@/components/ui/Breadcrumb.vue'
 
 const router = useRouter()
 
@@ -114,19 +113,17 @@ const slots = ref([
 </script>
 
 <template>
-  <main class="flex-1 min-w-0 max-w-5xl mx-auto w-full p-4 md:p-6 pb-20">
-    <Breadcrumb class="mb-6" :items="[{ label: 'Trang chủ', to: '/' }, { label: 'Lịch phỏng vấn' }]" />
-
+  <main class="flex-1 min-w-0 pb-20 max-w-[1440px] mx-auto w-full px-4 md:px-10 py-6">
     <!-- Unified Header Card -->
     <div class="bg-white dark:bg-surface-dark rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden mb-6">
       <div class="p-5 sm:p-6">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h2 class="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight">Lịch phỏng vấn</h2>
-            <p class="text-slate-500 dark:text-gray-400 text-sm mt-1">Theo dõi các buổi phỏng vấn sắp tới và xem lại lịch sử.</p>
+            <h2 class="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">Lịch phỏng vấn</h2>
+            <p class="text-slate-500 dark:text-gray-400 text-base mt-1">Theo dõi các buổi phỏng vấn sắp tới và xem lại lịch sử.</p>
           </div>
           <div class="flex items-center gap-2">
-            <span class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-sm font-bold bg-primary/10 text-primary border border-primary/20">
+            <span class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-base font-bold bg-primary/10 text-primary border border-primary/20">
               <span class="material-symbols-outlined text-[16px]">calendar_today</span>
               {{ upcomingInterviews.length }} lịch sắp tới
             </span>
@@ -138,7 +135,7 @@ const slots = ref([
       <div class="px-5 sm:px-6 py-3 bg-slate-50/50 dark:bg-slate-800/30 border-t border-slate-100 dark:border-slate-800 flex items-center gap-2 overflow-x-auto scrollbar-hide">
         <button 
           @click="activeTab = 'upcoming'"
-          class="whitespace-nowrap px-4 py-1.5 rounded-lg text-xs font-black transition-all duration-200 uppercase tracking-wider"
+          class="whitespace-nowrap px-4 py-1.5 rounded-lg text-sm font-black transition-all duration-200 uppercase tracking-wider"
           :class="activeTab === 'upcoming' 
             ? 'bg-primary text-white shadow-md shadow-primary/20' 
             : 'text-slate-500 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-slate-700'"
@@ -147,7 +144,7 @@ const slots = ref([
         </button>
         <button 
           @click="activeTab = 'history'"
-          class="whitespace-nowrap px-4 py-1.5 rounded-lg text-xs font-black transition-all duration-200 uppercase tracking-wider"
+          class="whitespace-nowrap px-4 py-1.5 rounded-lg text-sm font-black transition-all duration-200 uppercase tracking-wider"
           :class="activeTab === 'history' 
             ? 'bg-primary text-white shadow-md shadow-primary/20' 
             : 'text-slate-500 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-slate-700'"
@@ -196,8 +193,8 @@ const slots = ref([
       <!-- Section: Confirmed Interviews -->
       <div class="space-y-4">
         <div class="flex items-center gap-2 px-1">
-          <span class="material-symbols-outlined text-primary text-lg">event_available</span>
-          <h3 class="text-sm font-black text-slate-900 dark:text-white uppercase tracking-widest">Đã xác nhận ({{ upcomingInterviews.length }})</h3>
+          <span class="material-symbols-outlined text-primary text-xl">event_available</span>
+          <h3 class="text-base font-black text-slate-900 dark:text-white uppercase tracking-widest">Đã xác nhận ({{ upcomingInterviews.length }})</h3>
         </div>
 
         <div v-if="upcomingInterviews.length === 0" class="bg-white dark:bg-surface-dark py-12 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 flex flex-col items-center justify-center text-center">
@@ -217,8 +214,8 @@ const slots = ref([
                 <span class="material-symbols-outlined text-primary text-2xl">apartment</span>
               </div>
               <div class="min-w-0 flex-grow">
-                <h4 class="font-black text-slate-900 dark:text-white text-base truncate">{{ interview.jobTitle }}</h4>
-                <div class="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 text-slate-500 dark:text-gray-400 text-xs font-bold">
+                <h4 class="font-black text-slate-900 dark:text-white text-lg truncate">{{ interview.jobTitle }}</h4>
+                <div class="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 text-slate-500 dark:text-gray-400 text-sm font-bold">
                   <span class="flex items-center gap-1">
                     <span class="material-symbols-outlined text-[14px]">calendar_today</span>
                     {{ interview.date }}
@@ -233,7 +230,7 @@ const slots = ref([
             </div>
             
             <div class="flex items-center gap-3 pt-3 md:pt-0 border-t md:border-t-0 border-slate-50 dark:border-slate-800 justify-between md:justify-end">
-              <div class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-[10px] font-black uppercase tracking-widest border border-slate-100 dark:border-slate-700">
+              <div class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-black uppercase tracking-widest border border-slate-100 dark:border-slate-700">
                 {{ interview.round }}
               </div>
               <button class="p-2 text-slate-400 hover:text-primary transition-colors">
