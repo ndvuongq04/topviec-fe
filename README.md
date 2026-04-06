@@ -1,1029 +1,862 @@
-package com.topviec.topviec_be.service.impl;
-
-import com.topviec.topviec_be.dto.request.*;
-import com.topviec.topviec_be.dto.response.*;
-import com.topviec.topviec_be.entity.*;
-import com.topviec.topviec_be.enums.application.ApplicationStatus;
-import com.topviec.topviec_be.enums.interview.*;
-import com.topviec.topviec_be.enums.jobs.JobPostStatus;
-import com.topviec.topviec_be.exception.AppException;
-import com.topviec.topviec_be.repository.*;
-import com.topviec.topviec_be.service.InterviewService;
-import com.topviec.topviec_be.service.TokenService;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.time.Duration;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-
-@Service
-@RequiredArgsConstructor
-@Slf4j
-public class InterviewServiceImpl implements InterviewService {
-
-    private final InterviewRoundRepository roundRepository;
-    private final InterviewRoundInterviewerRepository interviewerRepository;
-    private final InterviewSlotRepository slotRepository;
-    private final InterviewRepository interviewRepository;
-    private final InterviewResultRepository resultRepository;
-    private final ApplicationRepository applicationRepository;
-    private final JobPostingRepository jobPostingRepository;
-    private final UserRepository userRepository;
-    private final CandidateProfileRepository candidateProfileRepository;
-    private final TokenService tokenService;
-
-    // =========================================================================
-    // Vòng phỏng vấn
-    // =========================================================================
-
-    @Override
-    @Transactional
-    public ResInterviewRoundDTO createRound(Long jobPostId, Long userId, Long companyId,
-            ReqCreateInterviewRoundDTO request) {
-
-        JobPosting job = findJobAndValidateOwnership(jobPostId, companyId);
-
-        if (JobPostStatus.COMPLETED.getValue().equals(job.getStatus())) {
-            throw AppException.badRequest("Tin tuyển dụng đã hoàn thành, không thể tạo vòng phỏng vấn mới");
-        }
-
-        // boolean hasInterviewing = !applicationRepository
-        // .findByJobPostIdAndStatusAndDeletedAtIsNull(jobPostId,
-        // ApplicationStatus.INTERVIEWING.getValue())
-        // .isEmpty();
-        // if (hasInterviewing) {
-        // throw AppException.badRequest("Không thể tạo vòng mới khi đã có ứng viên đang
-        // phỏng vấn");
-        // }
-
-        int nextRoundNumber = roundRepository.findMaxRoundNumber(jobPostId) + 1;
-
-        if (Boolean.TRUE.equals(request.getIsFinal())) {
-            List<InterviewRound> existingRounds = roundRepository
-                    .findByJobPostIdAndDeletedAtIsNullOrderByRoundNumberAsc(jobPostId);
-            for (InterviewRound r : existingRounds) {
-                if (Boolean.TRUE.equals(r.getIsFinal())) {
-                    r.setIsFinal(false);
-                    r.setUpdatedBy(userId);
-                    roundRepository.save(r);
-                }
-            }
-        }
-
-        InterviewRound round = InterviewRound.builder()
-                .jobPostId(jobPostId)
-                .roundNumber(nextRoundNumber)
-                .roundName(request.getRoundName())
-                .description(request.getDescription())
-                .expectedDuration(request.getExpectedDuration())
-                .isFinal(request.getIsFinal() != null ? request.getIsFinal() : false)
-                .createdBy(userId)
-                .build();
-
-        round = roundRepository.save(round);
-
-        if (request.getInterviewers() != null) {
-            for (ReqCreateInterviewRoundDTO.InterviewerDTO dto : request.getInterviewers()) {
-                InterviewRoundInterviewer interviewer = InterviewRoundInterviewer.builder()
-                        .roundId(round.getId())
-                        .interviewerName(dto.getName())
-                        .interviewerEmail(dto.getEmail())
-                        .interviewerPhone(dto.getPhone())
-                        .createdBy(userId)
-                        .build();
-                interviewerRepository.save(interviewer);
-            }
-        }
-
-        return toRoundResponse(round);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<ResInterviewRoundDTO> getRounds(Long jobPostId, Long companyId) {
-        findJobAndValidateOwnership(jobPostId, companyId);
-
-        List<InterviewRound> rounds = roundRepository
-                .findByJobPostIdAndDeletedAtIsNullOrderByRoundNumberAsc(jobPostId);
-
-        return rounds.stream().map(this::toRoundResponse).toList();
-    }
-
-    @Override
-    @Transactional
-    public ResInterviewRoundDTO updateRound(Long roundId, Long userId, Long companyId,
-            ReqUpdateInterviewRoundDTO request) {
-
-        InterviewRound round = roundRepository.findByIdAndDeletedAtIsNull(roundId)
-                .orElseThrow(() -> AppException.notFound("Không tìm thấy vòng phỏng vấn"));
-
-        findJobAndValidateOwnership(round.getJobPostId(), companyId);
-
-        if (interviewRepository.findByApplicationIdAndRoundIdAndDeletedAtIsNull(null, roundId).isPresent()) {
-            List<Interview> existingInterviews = interviewRepository
-                    .findByJobPostId(round.getJobPostId(), roundId, null);
-            if (!existingInterviews.isEmpty()) {
-                throw AppException.badRequest("Không thể sửa vòng phỏng vấn đã có ứng viên tham gia");
-            }
-        }
-
-        if (request.getRoundName() != null) {
-            round.setRoundName(request.getRoundName());
-        }
-        if (request.getDescription() != null) {
-            round.setDescription(request.getDescription());
-        }
-        if (request.getExpectedDuration() != null) {
-            round.setExpectedDuration(request.getExpectedDuration());
-        }
-        if (request.getIsFinal() != null) {
-            if (Boolean.TRUE.equals(request.getIsFinal())) {
-                List<InterviewRound> existingRounds = roundRepository
-                        .findByJobPostIdAndDeletedAtIsNullOrderByRoundNumberAsc(round.getJobPostId());
-                for (InterviewRound r : existingRounds) {
-                    if (Boolean.TRUE.equals(r.getIsFinal()) && !r.getId().equals(roundId)) {
-                        r.setIsFinal(false);
-                        r.setUpdatedBy(userId);
-                        roundRepository.save(r);
-                    }
-                }
-            }
-            round.setIsFinal(request.getIsFinal());
-        }
-
-        round.setUpdatedBy(userId);
-        round = roundRepository.save(round);
-
-        if (request.getInterviewers() != null && !request.getInterviewers().isEmpty()) {
-            interviewerRepository.deleteByRoundId(roundId);
-            interviewerRepository.flush(); // Ép flush xuống DB trước khi insert
-            for (ReqCreateInterviewRoundDTO.InterviewerDTO dto : request.getInterviewers()) {
-                InterviewRoundInterviewer interviewer = InterviewRoundInterviewer.builder()
-                        .roundId(round.getId())
-                        .interviewerName(dto.getName())
-                        .interviewerEmail(dto.getEmail())
-                        .interviewerPhone(dto.getPhone())
-                        .createdBy(userId)
-                        .build();
-                interviewerRepository.save(interviewer);
-            }
-        }
-
-        return toRoundResponse(round);
-    }
-
-    @Override
-    @Transactional
-    public void deleteRound(Long roundId, Long userId, Long companyId) {
-        InterviewRound round = roundRepository.findByIdAndDeletedAtIsNull(roundId)
-                .orElseThrow(() -> AppException.notFound("Không tìm thấy vòng phỏng vấn"));
-
-        findJobAndValidateOwnership(round.getJobPostId(), companyId);
-
-        List<Interview> existingInterviews = interviewRepository
-                .findByJobPostId(round.getJobPostId(), roundId, null);
-        if (!existingInterviews.isEmpty()) {
-            throw AppException.badRequest("Không thể xóa vòng phỏng vấn đã có ứng viên tham gia");
-        }
-
-        // Xóa dữ liệu liên quan theo thứ tự để tránh vi phạm FK
-        interviewerRepository.deleteByRoundId(roundId); // xóa danh sách interviewer
-        slotRepository.deleteByRoundId(roundId); // xóa các slot đề xuất
-        roundRepository.delete(round); // xóa thật vòng phỏng vấn
-        roundRepository.flush(); // Đẩy database state ngay lập tức
-
-        // Sắp xếp lại thứ tự vòng phỏng vấn
-        List<InterviewRound> remainingRounds = roundRepository
-                .findByJobPostIdAndDeletedAtIsNullOrderByRoundNumberAsc(round.getJobPostId());
-        int newNumber = 1;
-        for (InterviewRound r : remainingRounds) {
-            r.setRoundNumber(newNumber++);
-            roundRepository.save(r);
-        }
-    }
-
-    // =========================================================================
-    // Lịch phỏng vấn — Cách 1: NTT đặt lịch thủ công
-    // =========================================================================
-
-    @Override
-    @Transactional
-    public ResInterviewScheduleDTO createSchedule(Long roundId, Long userId, Long companyId,
-            ReqCreateInterviewScheduleDTO request) {
-
-        InterviewRound round = roundRepository.findByIdAndDeletedAtIsNull(roundId)
-                .orElseThrow(() -> AppException.notFound("Không tìm thấy vòng phỏng vấn"));
-
-        findJobAndValidateOwnership(round.getJobPostId(), companyId);
-
-        Application application = applicationRepository.findById(request.getApplicationId())
-                .orElseThrow(() -> AppException.notFound("Không tìm thấy đơn ứng tuyển"));
-
-        if (!ApplicationStatus.INTERVIEWING.getValue().equals(application.getStatus())) {
-            throw AppException.badRequest("Ứng viên không ở trạng thái INTERVIEWING");
-        }
-
-        softDeleteExistingInterview(application.getId(), roundId, userId);
-
-        // Bỏ reminderCount — đã xóa khỏi entity Interview
-        Interview interview = Interview.builder()
-                .applicationId(application.getId())
-                .roundId(roundId)
-                .scheduledAt(request.getScheduledAt())
-                .durationMinutes(request.getDurationMinutes())
-                .interviewType(request.getInterviewType())
-                .location(request.getLocation())
-                .meetingLink(request.getMeetingLink())
-                .interviewerNote(request.getInterviewerNote())
-                .status(InterviewStatus.SCHEDULED.getValue())
-                .confirmedByCandidate(false)
-                .scheduledBy(userId)
-                .build();
-
-        interview = interviewRepository.save(interview);
-
-        log.info("📧 [TODO] Gửi email xác nhận lịch PV cho application={}, round={}", application.getId(), roundId);
-
-        return toScheduleResponse(interview, round, application);
-    }
-
-    // =========================================================================
-    // Lịch phỏng vấn — Cách 2: Tạo slot cho UV chọn
-    // =========================================================================
-
-    @Override
-    @Transactional
-    public void createSlots(Long roundId, Long userId, Long companyId,
-            ReqCreateInterviewSlotsDTO request) {
-
-        InterviewRound round = roundRepository.findByIdAndDeletedAtIsNull(roundId)
-                .orElseThrow(() -> AppException.notFound("Không tìm thấy vòng phỏng vấn"));
-
-        findJobAndValidateOwnership(round.getJobPostId(), companyId);
-
-        if (request.getDeadline().isBefore(LocalDateTime.now())) {
-            throw AppException.badRequest("Deadline phải là thời gian trong tương lai");
-        }
-
-        // Check duplicate: slot đã tồn tại cho round này chưa
-        boolean alreadyHasSlots = slotRepository.existsByRoundId(roundId);
-        if (alreadyHasSlots) {
-            throw AppException.badRequest("Vòng phỏng vấn này đã có slot rồi");
-        }
-
-        // Tạo slots 1 lần cho round — không còn loop theo UV
-        for (ReqCreateInterviewSlotsDTO.SlotDTO slotDto : request.getSlots()) {
-            InterviewSlot slot = InterviewSlot.builder()
-                    .roundId(roundId)
-                    .proposedAt(slotDto.getProposedAt())
-                    .interviewType(slotDto.getInterviewType())
-                    .location(slotDto.getLocation())
-                    .meetingLink(slotDto.getMeetingLink())
-                    .build();
-            slotRepository.save(slot);
-        }
-
-        Duration ttl = Duration.between(LocalDateTime.now(), request.getDeadline());
-
-        // Loop UV chỉ để: validate, lưu reminder Redis, generate token, đổi status
-        for (Long applicationId : request.getApplicationIds()) {
-            Application application = applicationRepository.findById(applicationId)
-                    .orElseThrow(() -> AppException.notFound("Không tìm thấy đơn ứng tuyển: " + applicationId));
-
-            if (!ApplicationStatus.INTERVIEWING.getValue().equals(application.getStatus())) {
-                throw AppException.badRequest("Ứng viên " + applicationId + " không ở trạng thái INTERVIEWING");
-            }
-
-            // Lưu reminder info vào Redis thay vì lưu trong Interview entity
-            tokenService.storeReminderInfo(applicationId, roundId, request.getDeadline(), ttl);
-
-            String token = tokenService.generateInterviewSlotToken(applicationId, roundId, ttl);
-            application.setStatus(ApplicationStatus.SCHEDULE_PENDING.getValue());
-            applicationRepository.save(application);
-
-            log.info("📧 [TODO] Gửi email slot cho application={}, round={}, token={}", applicationId, roundId, token);
-        }
-    }
-
-    // =========================================================================
-    // UV chọn slot (public, không cần auth)
-    // =========================================================================
-
-    @Override
-    @Transactional
-    public String confirmSlot(String token, Long slotId) {
-        String payload = tokenService.verifyInterviewSlotToken(token);
-        String[] parts = payload.split(":");
-        Long tokenApplicationId = Long.parseLong(parts[0]);
-        Long tokenRoundId = Long.parseLong(parts[1]);
-
-        InterviewSlot slot = slotRepository.findById(slotId)
-                .orElseThrow(() -> AppException.notFound("Không tìm thấy ca phỏng vấn"));
-
-        // Chỉ validate slot thuộc đúng round (không còn applicationId trong slot)
-        if (!slot.getRoundId().equals(tokenRoundId)) {
-            throw AppException.badRequest("Ca phỏng vấn không thuộc vòng phỏng vấn này");
-        }
-
-        // Check UV đã chọn slot cho round này chưa (thay vì check isSelected trên
-        // slot)
-        boolean alreadySelected = interviewRepository
-                .existsByApplicationIdAndRoundIdAndDeletedAtIsNull(tokenApplicationId, tokenRoundId);
-        if (alreadySelected) {
-            throw AppException.badRequest("Bạn đã chọn lịch phỏng vấn cho vòng này rồi");
-        }
-
-        // Tạo Interview record — bỏ reminderCount, không còn update isSelected trên
-        // slot
-        Interview interview = Interview.builder()
-                .applicationId(tokenApplicationId)
-                .roundId(tokenRoundId)
-                .slotId(slot.getId())
-                .scheduledAt(slot.getProposedAt())
-                .interviewType(slot.getInterviewType())
-                .location(slot.getLocation())
-                .meetingLink(slot.getMeetingLink())
-                .status(InterviewStatus.CONFIRMED.getValue())
-                .confirmedByCandidate(true)
-                .scheduledBy(0L)
-                .build();
-
-        interviewRepository.save(interview);
-
-        Application application = applicationRepository.findById(tokenApplicationId).orElse(null);
-        if (application != null) {
-            application.setStatus(ApplicationStatus.INTERVIEWING.getValue());
-            applicationRepository.save(application);
-        }
-
-        // Xóa token + reminder info khỏi Redis sau khi UV chọn slot thành công
-        tokenService.invalidateInterviewSlotToken(token);
-        tokenService.deleteReminderInfo(tokenApplicationId, tokenRoundId);
-
-        log.info("📧 [TODO] Gửi email xác nhận slot cho application={}, round={}", tokenApplicationId, tokenRoundId);
-
-        return "Xác nhận lịch phỏng vấn thành công!";
-    }
-
-    // =========================================================================
-    // Danh sách lịch PV
-    // =========================================================================
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<ResInterviewScheduleDTO> getSchedules(Long jobPostId, Long companyId,
-            Long roundId, String status, String search) {
-        findJobAndValidateOwnership(jobPostId, companyId);
-
-        List<Interview> interviews = interviewRepository.findByJobPostId(jobPostId, roundId, status);
-
-        List<ResInterviewScheduleDTO> result = interviews.stream().map(i -> {
-            InterviewRound round = i.getRound();
-            Application application = i.getApplication();
-            return toScheduleResponse(i, round, application);
-        }).toList();
-
-        if (search != null && !search.isBlank()) {
-            String keyword = search.toLowerCase().trim();
-            result = result.stream()
-                    .filter(dto -> dto.getCandidateName() != null
-                            && dto.getCandidateName().toLowerCase().contains(keyword))
-                    .toList();
-        }
-
-        return result;
-    }
-
-    @Override
-    @Transactional
-    public ResInterviewScheduleDTO updateSchedule(Long scheduleId, Long userId, Long companyId,
-            ReqUpdateInterviewScheduleDTO request) {
-
-        Interview interview = interviewRepository.findByIdAndDeletedAtIsNull(scheduleId)
-                .orElseThrow(() -> AppException.notFound("Không tìm thấy lịch phỏng vấn"));
-
-        InterviewRound round = interview.getRound();
-        findJobAndValidateOwnership(round.getJobPostId(), companyId);
-
-        if (InterviewStatus.COMPLETED.getValue().equals(interview.getStatus())) {
-            throw AppException.badRequest("Buổi phỏng vấn đã diễn ra, không thể sửa");
-        }
-
-        if (request.getScheduledAt() != null) {
-            interview.setScheduledAt(request.getScheduledAt());
-        }
-        if (request.getInterviewType() != null) {
-            interview.setInterviewType(request.getInterviewType());
-        }
-        if (request.getLocation() != null) {
-            interview.setLocation(request.getLocation());
-        }
-        if (request.getMeetingLink() != null) {
-            interview.setMeetingLink(request.getMeetingLink());
-        }
-        if (request.getInterviewerNote() != null) {
-            interview.setInterviewerNote(request.getInterviewerNote());
-        }
-
-        interview.setUpdatedBy(userId);
-        interview = interviewRepository.save(interview);
-
-        log.info("📧 [TODO] Gửi email thông báo thay đổi lịch PV schedule={}", scheduleId);
-
-        return toScheduleResponse(interview, round, interview.getApplication());
-    }
-
-    @Override
-    @Transactional
-    public void deleteSchedule(Long scheduleId, Long userId, Long companyId) {
-        Interview interview = interviewRepository.findByIdAndDeletedAtIsNull(scheduleId)
-                .orElseThrow(() -> AppException.notFound("Không tìm thấy lịch phỏng vấn"));
-
-        InterviewRound round = interview.getRound();
-        findJobAndValidateOwnership(round.getJobPostId(), companyId);
-
-        if (InterviewStatus.COMPLETED.getValue().equals(interview.getStatus())) {
-            throw AppException.badRequest("Buổi phỏng vấn đã diễn ra, không thể hủy");
-        }
-
-        interview.setStatus(InterviewStatus.CANCELLED.getValue());
-        // Không set deletedAt khi hủy lịch — chỉ đổi status để lịch vẫn hiển thị trong
-        // danh sách
-        // deletedAt chỉ dùng khi xóa hẳn khỏi hệ thống
-        interview.setUpdatedBy(userId);
-        interviewRepository.save(interview);
-
-        log.info("📧 [TODO] Gửi email thông báo hủy lịch PV schedule={}", scheduleId);
-    }
-
-    // =========================================================================
-    // Kết quả phỏng vấn
-    // =========================================================================
-
-    @Override
-    @Transactional
-    public ResInterviewResultDTO createResult(Long scheduleId, Long userId, Long companyId,
-            ReqInterviewResultDTO request) {
-
-        Interview interview = interviewRepository.findByIdAndDeletedAtIsNull(scheduleId)
-                .orElseThrow(() -> AppException.notFound("Không tìm thấy lịch phỏng vấn"));
-
-        InterviewRound round = interview.getRound();
-        findJobAndValidateOwnership(round.getJobPostId(), companyId);
-
-        if (interview.getScheduledAt().isAfter(LocalDateTime.now())) {
-            throw AppException.badRequest("Buổi phỏng vấn chưa diễn ra");
-        }
-
-        if (resultRepository.existsByInterviewId(scheduleId)) {
-            throw AppException.badRequest("Đã có kết quả cho buổi phỏng vấn này");
-        }
-
-        interview.setStatus(InterviewStatus.COMPLETED.getValue());
-        interview.setUpdatedBy(userId);
-        interviewRepository.save(interview);
-
-        InterviewResultStatus resultStatus = InterviewResultStatus.fromValue(request.getResult());
-
-        InterviewResult result = InterviewResult.builder()
-                .interviewId(scheduleId)
-                .result(resultStatus.getValue())
-                .rating(request.getRating())
-                .note(request.getNote())
-                .notifyCandidate(request.getNotifyCandidate() != null ? request.getNotifyCandidate() : false)
-                .evaluatedBy(userId)
-                .evaluatedAt(LocalDateTime.now())
-                .build();
-
-        result = resultRepository.save(result);
-
-        Application application = applicationRepository.findById(interview.getApplicationId()).orElse(null);
-        if (application != null) {
-            handlePostResult(application, round, resultStatus, Boolean.TRUE.equals(request.getNotifyCandidate()),
-                    userId);
-        }
-
-        return toResultResponse(result);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public ResInterviewResultDTO getResult(Long scheduleId, Long companyId) {
-        Interview interview = interviewRepository.findByIdAndDeletedAtIsNull(scheduleId)
-                .orElseThrow(() -> AppException.notFound("Không tìm thấy lịch phỏng vấn"));
-
-        findJobAndValidateOwnership(interview.getRound().getJobPostId(), companyId);
-
-        InterviewResult result = resultRepository.findByInterviewId(scheduleId)
-                .orElseThrow(() -> AppException.notFound("Chưa có kết quả cho buổi phỏng vấn này"));
-
-        return toResultResponse(result);
-    }
-
-    // =========================================================================
-    // Lịch sử PV
-    // =========================================================================
-
-    @Override
-    @Transactional(readOnly = true)
-    public ResInterviewHistoryDTO getInterviewHistory(Long applicationId, Long companyId) {
-        Application application = applicationRepository.findById(applicationId)
-                .orElseThrow(() -> AppException.notFound("Không tìm thấy đơn ứng tuyển"));
-
-        findJobAndValidateOwnership(application.getJobPostId(), companyId);
-
-        List<InterviewRound> rounds = roundRepository
-                .findByJobPostIdAndDeletedAtIsNullOrderByRoundNumberAsc(application.getJobPostId());
-
-        List<Interview> interviews = interviewRepository
-                .findByApplicationIdAndDeletedAtIsNullOrderByRoundId(applicationId);
-
-        List<ResInterviewHistoryDTO.RoundHistory> roundHistories = new ArrayList<>();
-        for (InterviewRound round : rounds) {
-            ResInterviewHistoryDTO.RoundHistory.RoundHistoryBuilder builder = ResInterviewHistoryDTO.RoundHistory
-                    .builder()
-                    .roundNumber(round.getRoundNumber())
-                    .roundName(round.getRoundName())
-                    .isFinal(round.getIsFinal());
-
-            Interview interview = interviews.stream()
-                    .filter(i -> i.getRoundId().equals(round.getId()))
-                    .findFirst().orElse(null);
-
-            if (interview != null) {
-                builder.scheduleId(interview.getId())
-                        .scheduledAt(interview.getScheduledAt())
-                        .interviewType(interview.getInterviewType())
-                        .scheduleStatus(interview.getStatus());
-
-                resultRepository.findByInterviewId(interview.getId()).ifPresent(result -> {
-                    builder.result(result.getResult())
-                            .rating(result.getRating())
-                            .note(result.getNote())
-                            .evaluatedAt(result.getEvaluatedAt());
-                });
-            }
-
-            roundHistories.add(builder.build());
-        }
-
-        String candidateName = getCandidateName(application.getCandidateUserId());
-
-        return ResInterviewHistoryDTO.builder()
-                .applicationId(applicationId)
-                .candidateName(candidateName)
-                .currentStatus(application.getStatus())
-                .rounds(roundHistories)
-                .build();
-    }
-
-    // =========================================================================
-    // Overdue
-    // =========================================================================
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<ResOverdueApplicationDTO> getOverdueApplications(Long jobPostId, Long companyId) {
-        findJobAndValidateOwnership(jobPostId, companyId);
-
-        List<Application> overdueApps = applicationRepository
-                .findByJobPostIdAndStatusAndDeletedAtIsNull(jobPostId, ApplicationStatus.OVERDUE.getValue());
-
-        return overdueApps.stream().map(app -> {
-            String candidateName = getCandidateName(app.getCandidateUserId());
-            User user = userRepository.findById(app.getCandidateUserId()).orElse(null);
-            CandidateProfile profile = candidateProfileRepository
-                    .findByUserId(app.getCandidateUserId()).orElse(null);
-
-            // Tìm round hiện tại của UV để lấy reminder info từ Redis
-            List<InterviewRound> rounds = roundRepository
-                    .findByJobPostIdAndDeletedAtIsNullOrderByRoundNumberAsc(jobPostId);
-            InterviewRound currentRound = findCurrentRoundForApplication(app.getId(), rounds);
-
-            // Đọc reminder info từ Redis
-            ReminderInfo reminderInfo = currentRound != null
-                    ? tokenService.getReminderInfo(app.getId(), currentRound.getId())
-                    : null;
-
-            return ResOverdueApplicationDTO.builder()
-                    .applicationId(app.getId())
-                    .candidateUserId(app.getCandidateUserId())
-                    .candidateName(candidateName)
-                    .candidateEmail(user != null ? user.getEmail() : null)
-                    .candidatePhone(profile != null ? profile.getPhoneDisplay() : null)
-                    .reminderCount(reminderInfo != null ? reminderInfo.getReminderCount() : 0)
-                    .firstReminderAt(reminderInfo != null ? reminderInfo.getLastRemindedAt() : null)
-                    .reminderDeadline(reminderInfo != null ? reminderInfo.getDeadline() : null)
-                    .currentRoundName(currentRound != null ? currentRound.getRoundName() : null)
-                    .currentRoundNumber(currentRound != null ? currentRound.getRoundNumber() : null)
-                    .build();
-        }).toList();
-    }
-
-    @Override
-    @Transactional
-    public void extendDeadline(Long applicationId, Long userId, Long companyId,
-            ReqExtendDeadlineDTO request) {
-
-        Application application = applicationRepository.findById(applicationId)
-                .orElseThrow(() -> AppException.notFound("Không tìm thấy đơn ứng tuyển"));
-
-        findJobAndValidateOwnership(application.getJobPostId(), companyId);
-
-        if (!ApplicationStatus.OVERDUE.getValue().equals(application.getStatus())) {
-            throw AppException.badRequest("Chỉ có thể gia hạn cho ứng viên quá hạn");
-        }
-
-        application.setStatus(ApplicationStatus.SCHEDULE_PENDING.getValue());
-        applicationRepository.save(application);
-
-        log.info("📧 [TODO] Gửi lại email slot cho application={}, gia hạn thêm {} ngày",
-                applicationId, request.getExtendDays());
-    }
-
-    @Override
-    @Transactional
-    public ResInterviewScheduleDTO forceSchedule(Long applicationId, Long userId, Long companyId,
-            ReqForceScheduleDTO request) {
-
-        Application application = applicationRepository.findById(applicationId)
-                .orElseThrow(() -> AppException.notFound("Không tìm thấy đơn ứng tuyển"));
-
-        findJobAndValidateOwnership(application.getJobPostId(), companyId);
-
-        if (!ApplicationStatus.OVERDUE.getValue().equals(application.getStatus())) {
-            throw AppException.badRequest("Chỉ có thể đặt lịch hộ cho ứng viên quá hạn");
-        }
-
-        List<InterviewRound> rounds = roundRepository
-                .findByJobPostIdAndDeletedAtIsNullOrderByRoundNumberAsc(application.getJobPostId());
-        InterviewRound currentRound = findCurrentRoundForApplication(application.getId(), rounds);
-
-        if (currentRound == null) {
-            throw AppException.badRequest("Không tìm thấy vòng phỏng vấn phù hợp");
-        }
-
-        softDeleteExistingInterview(application.getId(), currentRound.getId(), userId);
-
-        Interview interview = Interview.builder()
-                .applicationId(application.getId())
-                .roundId(currentRound.getId())
-                .scheduledAt(request.getScheduledAt())
-                .interviewType(request.getInterviewType())
-                .location(request.getLocation())
-                .meetingLink(request.getMeetingLink())
-                .status(InterviewStatus.SCHEDULED.getValue())
-                .confirmedByCandidate(false)
-                .scheduledBy(userId)
-                .build();
-
-        interview = interviewRepository.save(interview);
-
-        application.setStatus(ApplicationStatus.INTERVIEWING.getValue());
-        applicationRepository.save(application);
-
-        log.info("📧 [TODO] Gửi email xác nhận lịch PV (force) cho application={}", applicationId);
-
-        return toScheduleResponse(interview, currentRound, application);
-    }
-
-    // =========================================================================
-    // Offer
-    // =========================================================================
-
-    @Override
-    @Transactional
-    public ResEmployerApplicationDTO updateOffer(Long applicationId, Long userId, Long companyId,
-            ReqOfferResultDTO request) {
-
-        Application application = applicationRepository.findById(applicationId)
-                .orElseThrow(() -> AppException.notFound("Không tìm thấy đơn ứng tuyển"));
-
-        findJobAndValidateOwnership(application.getJobPostId(), companyId);
-
-        // if (!ApplicationStatus.OFFERED.getValue().equals(application.getStatus())) {
-        // throw AppException.badRequest("Ứng viên không ở trạng thái OFFERED");
-        // }
-
-        if (request.getResult() == OfferResult.ACCEPTED) {
-            application.setStatus(ApplicationStatus.OFFERED.getValue());
-        } else if (request.getResult() == OfferResult.DECLINED) {
-            application.setStatus(ApplicationStatus.REJECTED.getValue());
-            application.setRejectedAt(LocalDateTime.now());
-            application.setRejectionReason("Ứng viên từ chối offer");
-        }
-
-        applicationRepository.save(application);
-
-        return toOfferResponse(application);
-    }
-
-    // =========================================================================
-    // Job Posting interview phase
-    // =========================================================================
-
-    @Override
-    @Transactional(readOnly = true)
-    public ResInterviewReadinessDTO checkReadiness(Long jobPostId, Long companyId) {
-        JobPosting job = findJobAndValidateOwnership(jobPostId, companyId);
-
-        boolean isJobClosed = JobPostStatus.CLOSED.getValue().equals(job.getStatus());
-        boolean hasRounds = roundRepository.countByJobPostIdActive(jobPostId) > 0;
-        boolean hasCvPassed = !applicationRepository
-                .findByJobPostIdAndStatusAndDeletedAtIsNull(jobPostId, ApplicationStatus.CV_PASSED.getValue())
-                .isEmpty();
-
-        return ResInterviewReadinessDTO.builder()
-                .isJobClosed(isJobClosed)
-                .hasRounds(hasRounds)
-                .hasCvPassed(hasCvPassed)
-                .ready(isJobClosed && hasCvPassed)
-                .build();
-    }
-
-    @Override
-    @Transactional
-    public void startInterviewing(Long jobPostId, Long userId, Long companyId) {
-        JobPosting job = findJobAndValidateOwnership(jobPostId, companyId);
-
-        List<Application> cvPassedApps = applicationRepository
-                .findByJobPostIdAndStatusAndDeletedAtIsNull(jobPostId, ApplicationStatus.CV_PASSED.getValue());
-        if (cvPassedApps.isEmpty()) {
-            throw AppException.badRequest("Không có ứng viên nào ở trạng thái CV_PASSED");
-        }
-
-        // Tạo vòng 1 mặc định nếu chưa có
-        InterviewRound round1 = roundRepository
-                .findByJobPostIdAndRoundNumberAndDeletedAtIsNull(jobPostId, 1)
-                .orElseGet(() -> {
-                    InterviewRound defaultRound = InterviewRound.builder()
-                            .jobPostId(jobPostId)
-                            .roundNumber(1)
-                            .roundName("Vòng 1")
-                            .isFinal(false)
-                            .createdBy(userId)
-                            .updatedBy(userId)
-                            .build();
-                    return roundRepository.save(defaultRound);
-                });
-
-        // Tạo Interview record PENDING cho từng UV cv_passed vào vòng 1
-        for (Application app : cvPassedApps) {
-            boolean alreadyExists = interviewRepository
-                    .existsByApplicationIdAndRoundIdAndDeletedAtIsNull(app.getId(), round1.getId());
-            if (!alreadyExists) {
-                Interview interview = Interview.builder()
-                        .applicationId(app.getId())
-                        .roundId(round1.getId())
-                        .status(InterviewStatus.PENDING.getValue())
-                        .scheduledBy(userId)
-                        .build();
-                interviewRepository.save(interview);
-            }
-        }
-
-        // Chuyển tất cả UV cv_passed sang interviewing
-        applicationRepository.bulkUpdateStatus(jobPostId,
-                ApplicationStatus.CV_PASSED.getValue(),
-                ApplicationStatus.INTERVIEWING.getValue());
-
-        job.setStatus(JobPostStatus.INTERVIEWING.getValue());
-        job.setUpdatedBy(userId);
-        jobPostingRepository.save(job);
-    }
-
-    @Override
-    @Transactional
-    public void completeRecruitment(Long jobPostId, Long userId, Long companyId,
-            ReqCompleteRecruitmentDTO request) {
-
-        JobPosting job = findJobAndValidateOwnership(jobPostId, companyId);
-
-        if (!JobPostStatus.INTERVIEWING.getValue().equals(job.getStatus())) {
-            throw AppException.badRequest("Tin tuyển dụng phải ở trạng thái INTERVIEWING");
-        }
-
-        List<Application> offeredApps = applicationRepository
-                .findByJobPostIdAndStatusAndDeletedAtIsNull(jobPostId, ApplicationStatus.OFFERED.getValue());
-        if (offeredApps.isEmpty()) {
-            throw AppException.badRequest("Cần có ít nhất 1 ứng viên ở trạng thái OFFERED");
-        }
-
-        for (Long appId : request.getApplicationIds()) {
-            Application app = applicationRepository.findById(appId)
-                    .orElseThrow(() -> AppException.notFound("Không tìm thấy đơn ứng tuyển: " + appId));
-            if (!ApplicationStatus.OFFERED.getValue().equals(app.getStatus())) {
-                throw AppException.badRequest("Ứng viên " + appId + " không ở trạng thái OFFERED");
-            }
-            if (!app.getJobPostId().equals(jobPostId)) {
-                throw AppException.badRequest("Ứng viên " + appId + " không thuộc tin tuyển dụng này");
-            }
-        }
-
-        for (Long appId : request.getApplicationIds()) {
-            Application app = applicationRepository.findById(appId).orElseThrow();
-            app.setStatus(ApplicationStatus.HIRED.getValue());
-            app.setHiredAt(LocalDateTime.now());
-            applicationRepository.save(app);
-        }
-
-        applicationRepository.bulkRejectExcluding(jobPostId, request.getApplicationIds());
-
-        job.setStatus(JobPostStatus.COMPLETED.getValue());
-        job.setUpdatedBy(userId);
-        jobPostingRepository.save(job);
-    }
-
-    // =========================================================================
-    // Private helpers
-    // =========================================================================
-
-    private JobPosting findJobAndValidateOwnership(Long jobPostId, Long companyId) {
-        JobPosting job = jobPostingRepository.findByIdAndDeletedAtIsNull(jobPostId)
-                .orElseThrow(() -> AppException.notFound("Không tìm thấy tin tuyển dụng"));
-
-        if (!job.getCompanyId().equals(companyId)) {
-            throw AppException.forbidden("Bạn không có quyền truy cập tin tuyển dụng này");
-        }
-
-        return job;
-    }
-
-    private void softDeleteExistingInterview(Long applicationId, Long roundId, Long userId) {
-        interviewRepository.findByApplicationIdAndRoundIdAndDeletedAtIsNull(applicationId, roundId)
-                .ifPresent(existing -> {
-                    existing.setDeletedAt(LocalDateTime.now());
-                    existing.setUpdatedBy(userId);
-                    interviewRepository.save(existing);
-                });
-    }
-
-    private void handlePostResult(Application application, InterviewRound round,
-            InterviewResultStatus resultStatus, boolean notifyCandidate, long userId) {
-
-        if (resultStatus == InterviewResultStatus.FAIL) {
-            application.setStatus(ApplicationStatus.REJECTED.getValue());
-            application.setRejectedAt(LocalDateTime.now());
-            applicationRepository.save(application);
-            if (notifyCandidate) {
-                log.info("📧 [TODO] Gửi email thông báo FAIL cho application={}", application.getId());
-            }
-        } else if (resultStatus == InterviewResultStatus.PASS) {
-            if (Boolean.TRUE.equals(round.getIsFinal())) {
-                // application.setStatus(ApplicationStatus.OFFERED.getValue());
-                // applicationRepository.save(application);
-                log.info("🎉 Application {} pass vòng cuối, chuyển OFFERED", application.getId());
-            } else {
-                roundRepository.findNextRound(round.getJobPostId(), round.getRoundNumber())
-                        .ifPresent(nextRound -> {
-                            log.info("➡️ Application {} pass vòng {}, tiếp tục vòng {}",
-                                    application.getId(), round.getRoundNumber(), nextRound.getRoundNumber());
-
-                            // Tạo Interview PENDING cho vòng tiếp theo
-                            boolean alreadyExists = interviewRepository
-                                    .existsByApplicationIdAndRoundIdAndDeletedAtIsNull(
-                                            application.getId(), nextRound.getId());
-                            if (!alreadyExists) {
-                                Interview interview = Interview.builder()
-                                        .applicationId(application.getId())
-                                        .roundId(nextRound.getId())
-                                        .status(InterviewStatus.PENDING.getValue())
-                                        .scheduledBy(userId) // hệ thống tự tạo, không có user cụ thể
-                                        .build();
-                                interviewRepository.save(interview);
-                            }
-
-                            // Chuyển status application sang INTERVIEWING
-                            application.setStatus(ApplicationStatus.INTERVIEWING.getValue());
-                            applicationRepository.save(application);
-
-                            if (notifyCandidate) {
-                                log.info("📧 [TODO] Gửi email thông báo PASS + slot vòng tiếp cho application={}",
-                                        application.getId());
-                            }
-                        });
-            }
-        }
-    }
-
-    private InterviewRound findCurrentRoundForApplication(Long applicationId, List<InterviewRound> rounds) {
-        List<Interview> interviews = interviewRepository
-                .findByApplicationIdAndDeletedAtIsNullOrderByRoundId(applicationId);
-
-        for (InterviewRound round : rounds) {
-            boolean hasPassedThisRound = interviews.stream()
-                    .filter(i -> i.getRoundId().equals(round.getId()))
-                    .anyMatch(i -> {
-                        InterviewResult result = resultRepository.findByInterviewId(i.getId()).orElse(null);
-                        return result != null
-                                && InterviewResultStatus.PASS.getValue().equals(result.getResult());
-                    });
-            if (!hasPassedThisRound) {
-                return round;
-            }
-        }
-        return null;
-    }
-
-    private String getCandidateName(Long candidateUserId) {
-        CandidateProfile profile = candidateProfileRepository.findByUserId(candidateUserId).orElse(null);
-        if (profile != null && profile.getFullName() != null) {
-            return profile.getFullName();
-        }
-        User user = userRepository.findById(candidateUserId).orElse(null);
-        return user != null ? "User " + user.getId() : "Unknown";
-    }
-
-    // ── Mappers ──────────────────────────────────────────────────────────────
-
-    private ResInterviewRoundDTO toRoundResponse(InterviewRound round) {
-        List<InterviewRoundInterviewer> interviewers = interviewerRepository.findByRoundId(round.getId());
-
-        return ResInterviewRoundDTO.builder()
-                .id(round.getId())
-                .jobPostId(round.getJobPostId())
-                .roundNumber(round.getRoundNumber())
-                .roundName(round.getRoundName())
-                .description(round.getDescription())
-                .expectedDuration(round.getExpectedDuration())
-                .isFinal(round.getIsFinal())
-                .interviewers(interviewers.stream()
-                        .map(i -> ResInterviewRoundDTO.InterviewerInfo.builder()
-                                .id(i.getId())
-                                .name(i.getInterviewerName())
-                                .email(i.getInterviewerEmail())
-                                .phone(i.getInterviewerPhone())
-                                .build())
-                        .toList())
-                .createdAt(round.getCreatedAt())
-                .build();
-    }
-
-    private ResInterviewScheduleDTO toScheduleResponse(Interview interview, InterviewRound round,
-            Application application) {
-        String candidateName = getCandidateName(application.getCandidateUserId());
-        User user = userRepository.findById(application.getCandidateUserId()).orElse(null);
-        CandidateProfile profile = candidateProfileRepository.findByUserId(application.getCandidateUserId())
-                .orElse(null);
-
-        return ResInterviewScheduleDTO.builder()
-                .id(interview.getId())
-                .applicationId(interview.getApplicationId())
-                .roundId(interview.getRoundId())
-                .roundNumber(round != null ? round.getRoundNumber() : null)
-                .roundName(round != null ? round.getRoundName() : null)
-                .candidateName(candidateName)
-                .candidateEmail(user != null ? user.getEmail() : null)
-                .candidatePhone(profile != null ? profile.getPhoneDisplay() : null)
-                .scheduledAt(interview.getScheduledAt())
-                .durationMinutes(interview.getDurationMinutes())
-                .interviewType(interview.getInterviewType())
-                .location(interview.getLocation())
-                .meetingLink(interview.getMeetingLink())
-                .status(interview.getStatus())
-                .confirmedByCandidate(interview.getConfirmedByCandidate())
-                .interviewerNote(interview.getInterviewerNote())
-                .applicationStatus(application.getStatus())
-                .createdAt(interview.getCreatedAt())
-                .updatedAt(interview.getUpdatedAt())
-                .build();
-    }
-
-    private ResInterviewResultDTO toResultResponse(InterviewResult result) {
-        return ResInterviewResultDTO.builder()
-                .id(result.getId())
-                .interviewId(result.getInterviewId())
-                .result(result.getResult())
-                .rating(result.getRating())
-                .note(result.getNote())
-                .notifyCandidate(result.getNotifyCandidate())
-                .evaluatedBy(result.getEvaluatedBy())
-                .evaluatedAt(result.getEvaluatedAt())
-                .build();
-    }
-
-    private ResEmployerApplicationDTO toOfferResponse(Application a) {
-        User user = userRepository.findById(a.getCandidateUserId()).orElse(null);
-        CandidateProfile profile = candidateProfileRepository.findByUserId(a.getCandidateUserId()).orElse(null);
-        JobPosting job = a.getJobPosting();
-
-        return ResEmployerApplicationDTO.builder()
-                .id(a.getId())
-                .jobPostId(a.getJobPostId())
-                .jobTitle(job != null ? job.getTitle() : null)
-                .candidateUserId(a.getCandidateUserId())
-                .candidateName(
-                        profile != null ? profile.getFullName() : (user != null ? "User " + user.getId() : "Unknown"))
-                .candidateEmail(user != null ? user.getEmail() : null)
-                .candidatePhone(profile != null ? profile.getPhoneDisplay() : null)
-                .status(a.getStatus())
-                .applyMethod(a.getApplyMethod())
-                .createdAt(a.getCreatedAt())
-                .updatedAt(a.getUpdatedAt())
-                .build();
-    }
-}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Job Board - Tìm việc làm</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: #F4F5F5;
+    color: #222;
+    min-height: 100vh;
+  }
+
+  .page-wrap {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 24px 16px;
+    display: flex;
+    gap: 18px;
+    align-items: flex-start;
+  }
+
+  /* ─── SIDEBAR ─── */
+  .sidebar {
+    width: 260px;
+    min-width: 220px;
+    flex-shrink: 0;
+    background: #fff;
+    border-radius: 14px;
+    border: 0.5px solid #e0e0e0;
+    padding: 18px 16px;
+  }
+
+  .sb-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 18px;
+  }
+
+  .sb-header h3 {
+    font-size: 15px;
+    font-weight: 700;
+    color: #00b14f;
+  }
+
+  .section {
+    margin-bottom: 18px;
+    border-bottom: 1px solid #f3f3f3;
+    padding-bottom: 16px;
+  }
+
+  .section:last-of-type {
+    border-bottom: none;
+    padding-bottom: 0;
+    margin-bottom: 0;
+  }
+
+  .sec-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: #1a1a1a;
+    margin-bottom: 10px;
+  }
+
+  .grid2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 3px 10px;
+  }
+
+  .radio-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 0;
+  }
+
+  .radio-row input[type="radio"] {
+    accent-color: #00b14f;
+    width: 14px;
+    height: 14px;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  .radio-row label {
+    font-size: 12px;
+    color: #555;
+    cursor: pointer;
+    user-select: none;
+    line-height: 1.3;
+  }
+
+  .radio-row.checked label {
+    color: #00b14f;
+    font-weight: 600;
+  }
+
+  .select-btn {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    border: 0.5px solid #ddd;
+    border-radius: 8px;
+    background: #fff;
+    cursor: pointer;
+    font-size: 12px;
+    color: #555;
+    margin-top: 6px;
+    transition: border-color 0.2s;
+  }
+
+  .select-btn:hover {
+    border-color: #00b14f;
+  }
+
+  .select-btn span {
+    flex: 1;
+    text-align: left;
+  }
+
+  .ctype-row {
+    display: flex;
+    gap: 20px;
+  }
+
+  .salary-inputs {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 10px;
+    flex-wrap: wrap;
+  }
+
+  .salary-inputs label {
+    font-size: 12px;
+    color: #666;
+  }
+
+  .salary-inputs input {
+    width: 60px;
+    padding: 5px 8px;
+    border: 0.5px solid #ddd;
+    border-radius: 6px;
+    font-size: 12px;
+    font-family: 'Inter', sans-serif;
+    text-align: center;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .salary-inputs input:focus {
+    border-color: #00b14f;
+  }
+
+  .salary-inputs .unit {
+    font-size: 12px;
+    color: #666;
+  }
+
+  .apply-btn {
+    width: 100%;
+    margin-top: 8px;
+    padding: 8px;
+    background: #f0f0f0;
+    border: none;
+    border-radius: 7px;
+    font-size: 12px;
+    font-family: 'Inter', sans-serif;
+    color: #555;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+
+  .apply-btn:hover {
+    background: #e2e2e2;
+  }
+
+  .lvl-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .clear-btn {
+    display: block;
+    width: 100%;
+    margin-top: 16px;
+    padding: 8px;
+    background: none;
+    border: none;
+    color: #00b14f;
+    font-size: 13px;
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: center;
+  }
+
+  .clear-btn:hover {
+    text-decoration: underline;
+  }
+
+  /* ─── MAIN CONTENT ─── */
+  .main {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .top-controls {
+    background: #fff;
+    border-radius: 12px;
+    border: 0.5px solid #e0e0e0;
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .pills-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .pill-label {
+    font-size: 12px;
+    color: #777;
+    white-space: nowrap;
+  }
+
+  .pill {
+    padding: 5px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-family: 'Inter', sans-serif;
+    cursor: pointer;
+    border: 1px solid #ddd;
+    background: #f4f5f5;
+    color: #666;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    transition: all 0.18s;
+    user-select: none;
+  }
+
+  .pill:hover {
+    border-color: #aaa;
+  }
+
+  .pill.active {
+    background: #fff;
+    border: 1.5px solid #00b14f;
+    color: #00b14f;
+    font-weight: 600;
+  }
+
+  .sort-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .sort-select {
+    padding: 6px 10px;
+    border: 0.5px solid #ddd;
+    border-radius: 8px;
+    font-size: 12px;
+    font-family: 'Inter', sans-serif;
+    color: #444;
+    background: #fff;
+    cursor: pointer;
+    outline: none;
+  }
+
+  .sort-select:focus {
+    border-color: #00b14f;
+  }
+
+  /* ─── JOB CARD ─── */
+  .card {
+    background: #fff;
+    border-radius: 12px;
+    border: 1px solid #e8e8e8;
+    padding: 16px;
+    position: relative;
+    overflow: hidden;
+    transition: box-shadow 0.2s, border-color 0.2s;
+  }
+
+  .card:hover {
+    box-shadow: 0 4px 20px rgba(0,0,0,0.07);
+    border-color: #ccc;
+  }
+
+  .card.selected {
+    border: 1.5px solid #00b14f;
+  }
+
+  .card.selected:hover {
+    border-color: #00b14f;
+  }
+
+  .card-inner {
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+  }
+
+  .logo-box {
+    width: 56px;
+    height: 56px;
+    min-width: 56px;
+    border: 1px solid #eee;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #fafafa;
+    overflow: hidden;
+  }
+
+  .logo-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 800;
+    color: #fff;
+    letter-spacing: 0.5px;
+  }
+
+  .mid {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .job-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: #1a1a1a;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    line-height: 1.4;
+  }
+
+  .job-title a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .job-title a:hover {
+    color: #00b14f;
+  }
+
+  .verified {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 15px;
+    height: 15px;
+    background: #00b14f;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .co-name {
+    font-size: 11.5px;
+    text-transform: uppercase;
+    color: #999;
+    font-weight: 600;
+    letter-spacing: 0.4px;
+  }
+
+  .tags {
+    display: flex;
+    gap: 5px;
+    flex-wrap: wrap;
+    margin-top: 2px;
+  }
+
+  .tag {
+    padding: 3px 10px;
+    background: #f4f5f5;
+    border-radius: 20px;
+    font-size: 11px;
+    color: #666;
+    border: 0.5px solid #e8e8e8;
+  }
+
+  .bottom-info {
+    font-size: 11.5px;
+    color: #bbb;
+    margin-top: 2px;
+  }
+
+  .right-col {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 7px;
+    min-width: 115px;
+    flex-shrink: 0;
+  }
+
+  .salary {
+    font-size: 13.5px;
+    font-weight: 700;
+    color: #00b14f;
+    white-space: nowrap;
+  }
+
+  .time-txt {
+    font-size: 11px;
+    color: #bbb;
+    white-space: nowrap;
+  }
+
+  .heart-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 1px solid #e0e0e0;
+    background: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: border-color 0.2s, background 0.2s;
+    padding: 0;
+  }
+
+  .heart-btn:hover {
+    border-color: #f66;
+    background: #fff0f0;
+  }
+
+  .heart-btn.liked svg {
+    fill: #f55;
+    stroke: #f55;
+  }
+
+  /* ─── RIBBON ─── */
+  .ribbon {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 0;
+    height: 0;
+    border-style: solid;
+    border-width: 42px 42px 0 0;
+    border-color: #00b14f transparent transparent transparent;
+    pointer-events: none;
+  }
+
+  .ribbon-icon {
+    position: absolute;
+    top: 5px;
+    left: 4px;
+    pointer-events: none;
+  }
+
+  /* ─── SUGGEST BANNER ─── */
+  .suggest-banner {
+    margin: 12px -16px -16px;
+    padding: 7px 16px;
+    background: #f9fdf9;
+    border-top: 1px solid #e8f5ee;
+    font-size: 11.5px;
+    color: #888;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .suggest-banner span {
+    color: #00b14f;
+    font-weight: 600;
+  }
+
+  /* ─── SVG ICONS (inline) ─── */
+  svg { display: inline-block; vertical-align: middle; }
+
+  /* ─── RESPONSIVE ─── */
+  @media (max-width: 800px) {
+    .page-wrap { flex-direction: column; }
+    .sidebar { width: 100%; }
+    .right-col { min-width: 90px; }
+  }
+
+  @media (max-width: 520px) {
+    .card-inner { flex-wrap: wrap; }
+    .right-col { flex-direction: row; align-items: center; width: 100%; justify-content: space-between; }
+  }
+</style>
+</head>
+<body>
+
+<div class="page-wrap">
+
+  <!-- ═══ SIDEBAR ═══ -->
+  <aside class="sidebar">
+    <div class="sb-header">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00b14f" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
+      </svg>
+      <h3>Lọc nâng cao</h3>
+    </div>
+
+    <!-- Kinh nghiệm -->
+    <div class="section">
+      <div class="sec-title">Kinh nghiệm</div>
+      <div class="grid2">
+        <div class="radio-row checked"><input type="radio" name="exp" id="e0" checked><label for="e0">Tất cả</label></div>
+        <div class="radio-row"><input type="radio" name="exp" id="e1"><label for="e1">Không yêu cầu</label></div>
+        <div class="radio-row"><input type="radio" name="exp" id="e2"><label for="e2">Dưới 1 năm</label></div>
+        <div class="radio-row"><input type="radio" name="exp" id="e3"><label for="e3">1 năm</label></div>
+        <div class="radio-row"><input type="radio" name="exp" id="e4"><label for="e4">2 năm</label></div>
+        <div class="radio-row"><input type="radio" name="exp" id="e5"><label for="e5">3 năm</label></div>
+        <div class="radio-row"><input type="radio" name="exp" id="e6"><label for="e6">4 năm</label></div>
+        <div class="radio-row"><input type="radio" name="exp" id="e7"><label for="e7">5 năm</label></div>
+        <div class="radio-row"><input type="radio" name="exp" id="e8"><label for="e8">Trên 5 năm</label></div>
+      </div>
+    </div>
+
+    <!-- Lĩnh vực công ty -->
+    <div class="section">
+      <div class="sec-title">Lĩnh vực công ty</div>
+      <button class="select-btn" type="button">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#888" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+        <span>Tất cả lĩnh vực</span>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#888" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
+    </div>
+
+    <!-- Lĩnh vực công việc -->
+    <div class="section">
+      <div class="sec-title">Lĩnh vực công việc</div>
+      <button class="select-btn" type="button">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#888" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
+        <span>Tất cả lĩnh vực</span>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#888" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
+    </div>
+
+    <!-- Loại công ty -->
+    <div class="section">
+      <div class="sec-title">Loại công ty</div>
+      <div class="ctype-row">
+        <div class="radio-row checked"><input type="radio" name="ctype" id="ct0" checked><label for="ct0">Tất cả</label></div>
+        <div class="radio-row"><input type="radio" name="ctype" id="ct1"><label for="ct1">Pro Company</label></div>
+      </div>
+    </div>
+
+    <!-- Mức lương -->
+    <div class="section">
+      <div class="sec-title">Mức lương</div>
+      <div class="grid2">
+        <div class="radio-row checked"><input type="radio" name="sal" id="s0" checked><label for="s0">Tất cả</label></div>
+        <div class="radio-row"><input type="radio" name="sal" id="s1"><label for="s1">Dưới 10 triệu</label></div>
+        <div class="radio-row"><input type="radio" name="sal" id="s2"><label for="s2">10 - 15 triệu</label></div>
+        <div class="radio-row"><input type="radio" name="sal" id="s3"><label for="s3">15 - 20 triệu</label></div>
+        <div class="radio-row"><input type="radio" name="sal" id="s4"><label for="s4">20 - 25 triệu</label></div>
+        <div class="radio-row"><input type="radio" name="sal" id="s5"><label for="s5">25 - 30 triệu</label></div>
+        <div class="radio-row"><input type="radio" name="sal" id="s6"><label for="s6">30 - 50 triệu</label></div>
+        <div class="radio-row"><input type="radio" name="sal" id="s7"><label for="s7">Trên 50 triệu</label></div>
+        <div class="radio-row"><input type="radio" name="sal" id="s8"><label for="s8">Thoả thuận</label></div>
+      </div>
+      <div class="salary-inputs">
+        <label>Từ</label>
+        <input type="text" placeholder="0">
+        <span>—</span>
+        <label>Đến</label>
+        <input type="text" placeholder="100">
+        <span class="unit">triệu</span>
+      </div>
+      <button class="apply-btn" type="button">Áp dụng</button>
+    </div>
+
+    <!-- Cấp bậc -->
+    <div class="section">
+      <div class="sec-title">Cấp bậc</div>
+      <div class="lvl-list">
+        <div class="radio-row checked"><input type="radio" name="lvl" id="l0" checked><label for="l0">Tất cả</label></div>
+        <div class="radio-row"><input type="radio" name="lvl" id="l1"><label for="l1">Nhân viên</label></div>
+        <div class="radio-row"><input type="radio" name="lvl" id="l2"><label for="l2">Trưởng nhóm</label></div>
+        <div class="radio-row"><input type="radio" name="lvl" id="l3"><label for="l3">Trưởng/Phó phòng</label></div>
+        <div class="radio-row"><input type="radio" name="lvl" id="l4"><label for="l4">Quản lý / Giám sát</label></div>
+      </div>
+    </div>
+
+    <button class="clear-btn" type="button">Xóa lọc</button>
+  </aside>
+
+  <!-- ═══ MAIN CONTENT ═══ -->
+  <main class="main">
+
+    <!-- Top controls -->
+    <div class="top-controls">
+      <div class="pills-group">
+        <span class="pill-label">Tìm kiếm theo:</span>
+        <button class="pill active" type="button" data-pill>
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#00b14f" stroke-width="3.5"><polyline points="20 6 9 17 4 12"/></svg>
+          Tên việc làm
+        </button>
+        <button class="pill" type="button" data-pill>Tên công ty</button>
+        <button class="pill" type="button" data-pill>Cả hai</button>
+      </div>
+      <div class="sort-group">
+        <span class="pill-label">Sắp xếp theo:</span>
+        <select class="sort-select">
+          <option>Search by AI</option>
+          <option>Mới nhất</option>
+          <option>Mức lương cao nhất</option>
+          <option>Phù hợp nhất</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Card 1: Selected/focused -->
+    <div class="card selected">
+      <div class="card-inner">
+        <div class="logo-box">
+          <div class="logo-placeholder" style="background:#c41a1a">LG</div>
+        </div>
+        <div class="mid">
+          <div class="job-title">
+            <a href="#">Back End Developer (Java, MySQL, Spring) - Tại Hà Nội</a>
+            <span class="verified">
+              <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5"><polyline points="20 6 9 17 4 12"/></svg>
+            </span>
+          </div>
+          <div class="co-name">Công ty TNHH LG CNS Việt Nam</div>
+          <div class="tags">
+            <span class="tag">Hà Nội</span>
+            <span class="tag">3 năm</span>
+            <span class="tag">Tới $2,000</span>
+          </div>
+          <div class="bottom-info">Software Engineer | Nghỉ thứ 7 | +2</div>
+        </div>
+        <div class="right-col">
+          <div class="salary">Thoả thuận</div>
+          <div class="time-txt">Đăng 1 tuần trước</div>
+          <button class="heart-btn" type="button" aria-label="Yêu thích">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="2">
+              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 2: Ribbon + Suggest banner -->
+    <div class="card">
+      <div class="ribbon"></div>
+      <div class="ribbon-icon">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="#fff" stroke="#fff" stroke-width="1">
+          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+        </svg>
+      </div>
+      <div class="card-inner">
+        <div class="logo-box">
+          <div class="logo-placeholder" style="background:#0052cc">FPT</div>
+        </div>
+        <div class="mid">
+          <div class="job-title">
+            <a href="#">Senior Frontend Developer (ReactJS / TypeScript)</a>
+            <span class="verified">
+              <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5"><polyline points="20 6 9 17 4 12"/></svg>
+            </span>
+          </div>
+          <div class="co-name">Tập đoàn FPT - FPT Software</div>
+          <div class="tags">
+            <span class="tag">Hà Nội</span>
+            <span class="tag">2 năm</span>
+            <span class="tag">Remote</span>
+          </div>
+          <div class="bottom-info">Frontend | Nghỉ thứ 7, CN | +3</div>
+        </div>
+        <div class="right-col">
+          <div class="salary">20 - 45 triệu</div>
+          <div class="time-txt">Đã xem</div>
+          <button class="heart-btn" type="button" aria-label="Yêu thích">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="2">
+              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+      <div class="suggest-banner">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="#00b14f" stroke="#00b14f" stroke-width="1">
+          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+        </svg>
+        <span>Đề xuất cho bạn</span>
+      </div>
+    </div>
+
+    <!-- Card 3 -->
+    <div class="card">
+      <div class="card-inner">
+        <div class="logo-box">
+          <div class="logo-placeholder" style="background:#e65c00">VNG</div>
+        </div>
+        <div class="mid">
+          <div class="job-title">
+            <a href="#">iOS Developer (Swift / Objective-C) - Hà Nội</a>
+          </div>
+          <div class="co-name">Công ty Cổ phần VNG</div>
+          <div class="tags">
+            <span class="tag">Hà Nội</span>
+            <span class="tag">2 năm</span>
+            <span class="tag">Thứ 2 - Thứ 6</span>
+          </div>
+          <div class="bottom-info">Mobile Dev | Nghỉ thứ 7, CN | +1</div>
+        </div>
+        <div class="right-col">
+          <div class="salary">600 - 2,500 USD</div>
+          <div class="time-txt">Đăng 3 ngày trước</div>
+          <button class="heart-btn" type="button" aria-label="Yêu thích">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="2">
+              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 4 -->
+    <div class="card">
+      <div class="card-inner">
+        <div class="logo-box">
+          <div class="logo-placeholder" style="background:#1a73e8">MIO</div>
+        </div>
+        <div class="mid">
+          <div class="job-title">
+            <a href="#">Full Stack Developer (Node.js + Vue 3) - HCM / Hà Nội</a>
+            <span class="verified">
+              <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5"><polyline points="20 6 9 17 4 12"/></svg>
+            </span>
+          </div>
+          <div class="co-name">Công ty TNHH Mio Technology</div>
+          <div class="tags">
+            <span class="tag">Hà Nội</span>
+            <span class="tag">HCM</span>
+            <span class="tag">1 năm</span>
+          </div>
+          <div class="bottom-info">Fullstack | Hybrid | +2</div>
+        </div>
+        <div class="right-col">
+          <div class="salary">15 - 30 triệu</div>
+          <div class="time-txt">Đăng 2 tuần trước</div>
+          <button class="heart-btn liked" type="button" aria-label="Yêu thích">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="#f55" stroke="#f55" stroke-width="2">
+              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 5 -->
+    <div class="card">
+      <div class="card-inner">
+        <div class="logo-box">
+          <div class="logo-placeholder" style="background:#5a2d82">TMA</div>
+        </div>
+        <div class="mid">
+          <div class="job-title">
+            <a href="#">DevOps Engineer (AWS / Docker / Kubernetes)</a>
+          </div>
+          <div class="co-name">TMA Solutions Group</div>
+          <div class="tags">
+            <span class="tag">Hà Nội</span>
+            <span class="tag">3 năm</span>
+            <span class="tag">On-site</span>
+          </div>
+          <div class="bottom-info">DevOps | Nghỉ thứ 7 | +4</div>
+        </div>
+        <div class="right-col">
+          <div class="salary">Thoả thuận</div>
+          <div class="time-txt">Đăng 5 ngày trước</div>
+          <button class="heart-btn" type="button" aria-label="Yêu thích">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="2">
+              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+  // Pills toggle
+  document.querySelectorAll('[data-pill]').forEach(function(pill) {
+    pill.addEventListener('click', function() {
+      document.querySelectorAll('[data-pill]').forEach(function(p) {
+        p.classList.remove('active');
+        var svg = p.querySelector('svg');
+        if (svg) svg.remove();
+      });
+      this.classList.add('active');
+      var checkSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      checkSvg.setAttribute('width', '11');
+      checkSvg.setAttribute('height', '11');
+      checkSvg.setAttribute('viewBox', '0 0 24 24');
+      checkSvg.setAttribute('fill', 'none');
+      checkSvg.setAttribute('stroke', '#00b14f');
+      checkSvg.setAttribute('stroke-width', '3.5');
+      var poly = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
+      poly.setAttribute('points', '20 6 9 17 4 12');
+      checkSvg.appendChild(poly);
+      this.prepend(checkSvg);
+    });
+  });
+
+  // Radio highlight
+  document.querySelectorAll('.radio-row input[type="radio"]').forEach(function(radio) {
+    radio.addEventListener('change', function() {
+      var name = this.name;
+      document.querySelectorAll('input[name="' + name + '"]').forEach(function(r) {
+        r.closest('.radio-row').classList.toggle('checked', r.checked);
+      });
+    });
+  });
+
+  // Heart toggle
+  document.querySelectorAll('.heart-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var svg = this.querySelector('svg');
+      var isLiked = this.classList.toggle('liked');
+      svg.setAttribute('fill', isLiked ? '#f55' : 'none');
+      svg.setAttribute('stroke', isLiked ? '#f55' : '#ccc');
+    });
+  });
+</script>
+</body>
+</html>

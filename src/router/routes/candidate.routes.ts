@@ -29,6 +29,11 @@ export const candidateRoutes: RouteRecordRaw[] = [
                 meta: { requiresAuth: true, role: 'CANDIDATE' },
             },
             {
+                path: 'search',
+                name: 'JobSearch',
+                component: () => import('@/pages/candidate/SearchPage.vue'),
+            },
+            {
                 path: 'jobs/:id',
                 name: 'JobDetail',
                 component: () => import('@/pages/candidate/JobDetailPage.vue'),
