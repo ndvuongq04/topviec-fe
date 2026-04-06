@@ -157,14 +157,15 @@ async function toggleCompanyFollow() {
 </script>
 
 <template>
-  <div v-if="jobStore.loading" class="flex items-center justify-center py-20">
-    <div
-      class="animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent"
-    ></div>
-  </div>
+  <main class="flex flex-col flex-1 gap-6 min-w-0 pb-20 max-w-[1440px] mx-auto w-full px-4 md:px-10 py-6">
+    <div v-if="jobStore.loading" class="flex items-center justify-center py-20">
+      <div
+        class="animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent"
+      ></div>
+    </div>
 
-  <div
-    v-else-if="!job"
+    <div
+      v-else-if="!job"
     class="flex flex-col items-center justify-center py-20 text-text-muted"
   >
     <span class="material-symbols-outlined text-6xl mb-4">error</span>
@@ -175,22 +176,7 @@ async function toggleCompanyFollow() {
   </div>
 
   <div v-else class="flex flex-col gap-6 pb-16 lg:pb-0">
-    <!-- Breadcrumbs -->
-    <nav class="flex flex-wrap gap-1.5 items-center text-sm">
-      <RouterLink
-        to="/"
-        class="text-text-secondary hover:text-primary transition-colors"
-        >Trang chủ</RouterLink
-      >
-      <span class="text-slate-300 material-symbols-outlined text-base"
-        >chevron_right</span
-      >
-      <span class="text-text-secondary">Việc làm</span>
-      <span class="text-slate-300 material-symbols-outlined text-base"
-        >chevron_right</span
-      >
-      <span class="text-primary font-medium">{{ job.title }}</span>
-    </nav>
+
 
     <!-- Header Card -->
     <div
@@ -492,5 +478,6 @@ async function toggleCompanyFollow() {
       @close="showApplyModal = false"
       @confirm="handleApplyConfirm"
     />
-  </div>
+    </div>
+  </main>
 </template>

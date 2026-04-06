@@ -60,7 +60,7 @@ async function toggleFollow() {
 </script>
 
 <template>
-  <main class="flex-grow w-full">
+  <main class="flex flex-col flex-1 gap-6 min-w-0 pb-20 max-w-[1440px] mx-auto w-full px-4 md:px-10 py-6">
     <div v-if="loading" class="flex flex-col items-center justify-center py-20 gap-4">
       <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
       <p class="text-text-muted">Đang tải thông tin công ty...</p>
@@ -73,7 +73,7 @@ async function toggleFollow() {
     </div>
 
     <!-- Hero Section -->
-    <div v-else-if="company" class="relative mb-8 rounded-3xl overflow-hidden bg-surface-light dark:bg-surface-dark shadow-sm border border-gray-100 dark:border-gray-800">
+    <div v-else-if="company" class="relative rounded-3xl flex-shrink-0 overflow-hidden bg-surface-light dark:bg-surface-dark shadow-sm border border-gray-100 dark:border-gray-800">
       <!-- Cover Image -->
       <div 
         class="h-48 md:h-64 lg:h-80 w-full bg-cover bg-center relative group" 
@@ -126,7 +126,7 @@ async function toggleFollow() {
     </div>
 
     <!-- Navigation Tabs -->
-    <div v-if="company" class="sticky top-16 z-40 bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-sm border-b border-gray-200 dark:border-gray-800 mb-8">
+    <div v-if="company" class="sticky top-16 z-40 bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-sm border-b border-gray-200 dark:border-gray-800">
       <div class="flex gap-8 overflow-x-auto no-scrollbar">
         <a class="flex items-center gap-2 border-b-[3px] border-primary py-4 text-primary" href="#">
           <span class="text-base font-bold whitespace-nowrap">TỔNG QUAN</span>
