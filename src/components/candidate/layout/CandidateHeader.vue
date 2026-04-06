@@ -3,6 +3,10 @@ import { useAuthStore } from "@/stores/auth.store";
 import { useRouter } from "vue-router";
 import { ref, computed, onMounted, onUnmounted } from "vue";
 
+const props = defineProps<{
+  unfixed?: boolean;
+}>();
+
 const authStore = useAuthStore();
 const router = useRouter();
 
@@ -44,7 +48,8 @@ async function handleLogout() {
 
 <template>
   <header
-    class="fixed top-0 left-0 right-0 z-50 flex items-center justify-between whitespace-nowrap border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-surface-dark px-10 py-3 shadow-sm"
+    class="flex items-center justify-between whitespace-nowrap border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-surface-dark px-10 py-3 shadow-sm"
+    :class="props.unfixed ? 'relative z-50' : 'fixed top-0 left-0 right-0 z-50'"
   >
     <!-- Logo -->
     <router-link to="/" class="flex items-center gap-2 text-primary">

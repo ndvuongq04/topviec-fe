@@ -20,6 +20,8 @@ interface JobCardProps {
   isSaved?: boolean; // Trạng thái đã lưu
   selectable?: boolean; // Hiển thị checkbox để chọn
   selected?: boolean; // Trạng thái checkbox
+  isActive?: boolean; // Đang được xem nhanh
+  showQuickView?: boolean; // Cho phép hiển thị nút gọi quick view
 }
 
 const props = defineProps<JobCardProps>();
@@ -28,13 +30,17 @@ const props = defineProps<JobCardProps>();
 const emit = defineEmits<{
   bookmark: [id: number];
   select: [id: number, active: boolean];
+  quickView: [id: number];
 }>();
 </script>
 
 <template>
   <RouterLink
     :to="`/jobs/${props.id}`"
-    class="group bg-white dark:bg-surface-dark p-5 rounded-3xl border border-slate-200 dark:border-slate-800 hover:border-primary/50 hover:shadow-lg hover:shadow-blue-500/5 transition-all duration-300 relative block"
+    class="group bg-white dark:bg-surface-dark p-5 rounded-3xl border transition-all duration-300 relative block"
+    :class="props.isActive
+      ? 'border-primary/50 shadow-lg shadow-blue-500/5'
+      : 'border-slate-200 dark:border-slate-800 hover:border-primary/50 hover:shadow-lg hover:shadow-blue-500/5'"
   >
     <!-- Checkbox select (Top Left) -->
     <div v-if="props.selectable" class="absolute top-4 left-4 z-10">
@@ -49,8 +55,10 @@ const emit = defineEmits<{
       </div>
     </div>
 
-    <!-- Bookmark button (Top Right) -->
-    <div class="absolute top-4 right-4 z-10">
+    <!-- Actions (Top Right) -->
+    <div class="absolute top-4 right-4 z-10 flex items-center gap-2">
+
+      <!-- Bookmark button -->
       <button
         class="transition-colors cursor-pointer bg-white/80 dark:bg-slate-800/80 p-1.5 rounded-full border border-slate-100 dark:border-slate-800 shadow-sm"
         :class="props.isSaved ? 'text-primary' : 'text-slate-300 hover:text-primary'"
@@ -87,14 +95,26 @@ const emit = defineEmits<{
     </div>
 
     <!-- Tags: job type + level -->
-    <div class="flex flex-wrap gap-2 mb-4">
-      <span
-        v-for="tag in props.tags"
-        :key="tag"
-        class="px-2.5 py-1 rounded-md bg-slate-100 dark:bg-slate-800 text-sm font-medium text-text-muted dark:text-gray-400"
+    <div class="flex items-center justify-between gap-2 mb-4">
+      <div class="flex flex-wrap gap-2">
+        <span
+          v-for="tag in props.tags"
+          :key="tag"
+          class="px-2.5 py-1 rounded-md bg-slate-100 dark:bg-slate-800 text-sm font-medium text-text-muted dark:text-gray-400"
+        >
+          {{ tag }}
+        </span>
+      </div>
+
+      <!-- Nút xem nhanh (chỉ hiện khi hover) -->
+      <button
+        v-if="props.showQuickView"
+        class="transition-all duration-300 cursor-pointer pl-3.5 pr-2.5 py-1.5 rounded-full border border-slate-200 dark:border-slate-700 text-slate-500 hover:text-primary hover:border-primary hover:shadow-sm text-xs font-bold flex items-center gap-1 opacity-0 group-hover:opacity-100 shrink-0 bg-white dark:bg-surface-dark"
+        @click.prevent.stop="emit('quickView', props.id)"
       >
-        {{ tag }}
-      </span>
+        Xem nhanh
+        <span class="material-symbols-outlined text-[16px] -ml-0.5">keyboard_double_arrow_right</span>
+      </button>
     </div>
 
     <!-- Footer: salary + posted time -->
@@ -123,5 +143,6 @@ const emit = defineEmits<{
       <span class="material-symbols-outlined text-sm">location_on</span>
       {{ props.location }}
     </div>
+
   </RouterLink>
 </template>
