@@ -96,4 +96,17 @@ export const employerJobPostingService = {
     const res = await axiosInstance.patch<RestResponse<ResJobPostingDetail>>(`${BASE_URL}/${id}/refresh`)
     return res.data.data
   },
+  /**
+   * DELETE /employer/job-postings/{id}
+   */
+  async deleteJob(id: number | string): Promise<void> {
+    await axiosInstance.delete(`${BASE_URL}/${id}`)
+  },
+  /**
+   * PATCH /employer/job-postings/{id}/restore
+   */
+  async restoreJob(id: number | string): Promise<ResJobPostingDetail> {
+    const res = await axiosInstance.patch<RestResponse<ResJobPostingDetail>>(`${BASE_URL}/${id}/restore`)
+    return res.data.data
+  },
 }

@@ -1,282 +1,210 @@
-<script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import { useEmployerApplicationStore } from '@/stores/employerApplication.store'
-import { APPLICATION_STATUS, APPLICATION_STATUS_OPTIONS } from '@/constants/application.constants'
-import { useToast } from '@/composables/useToast'
-
-const route = useRoute()
-const router = useRouter()
-const toast = useToast()
-const applicationStore = useEmployerApplicationStore()
-
-const jobId = Number(route.params.id)
-
-// State
-const activeStatus = ref<string>('all')
-const currentPage = ref(1)
-const pageSize = ref(10)
-
-const applications = computed(() => 
-  applicationStore.applications.filter(a => a.status !== APPLICATION_STATUS.WITHDRAWN)
-)
-const meta = computed(() => applicationStore.meta)
-const loading = computed(() => applicationStore.loading)
-
-async function fetchApplications() {
-  await applicationStore.fetchApplicationsByJob(jobId, {
-    status: activeStatus.value !== 'all' ? activeStatus.value : undefined,
-    page: Math.max(0, currentPage.value - 1),
-    size: pageSize.value,
-    sort: 'createdAt,desc'
-  })
-  
-  if (applicationStore.error) {
-    toast.error('Lỗi', applicationStore.error)
-  }
-}
-
-// Watchers
-watch([activeStatus, currentPage], () => {
-  fetchApplications()
-})
-
-onMounted(() => {
-  fetchApplications()
-})
-
-const summaryCards = computed(() => [
-  { icon: 'group', label: 'Tổng hồ sơ', value: applications.value.length, bg: 'bg-primary/10 text-primary' },
-  { icon: 'new_releases', label: 'Chưa xem', value: applications.value.filter(a => a.status === APPLICATION_STATUS.PENDING).length, bg: 'bg-blue-100 text-blue-600' },
-  { icon: 'check_circle', label: 'Đang xem', value: applications.value.filter(a => a.status === APPLICATION_STATUS.SEEN).length, bg: 'bg-emerald-100 text-emerald-600' },
-  { icon: 'star', label: 'Cân nhắc', value: applications.value.filter(a => a.status === APPLICATION_STATUS.CONSIDERING).length, bg: 'bg-amber-100 text-amber-600' },
-])
-
-const statusChips = [
-  { label: 'Tất cả', value: 'all' },
-  { label: 'Chưa xem', value: APPLICATION_STATUS.PENDING },
-  { label: 'Đã xem', value: APPLICATION_STATUS.SEEN },
-  { label: 'Cân nhắc', value: APPLICATION_STATUS.CONSIDERING },
-  { label: 'Phỏng vấn', value: APPLICATION_STATUS.INTERVIEWING },
-  { label: 'Từ chối', value: APPLICATION_STATUS.REJECTED },
-]
-
-function getStatusBadgeClass(status: string) {
-  const option = APPLICATION_STATUS_OPTIONS.find(o => o.value === status)
-  switch (option?.color) {
-    case 'blue': return 'bg-blue-100 text-blue-600'
-    case 'cyan': return 'bg-cyan-100 text-cyan-600'
-    case 'purple': return 'bg-purple-100 text-purple-600'
-    case 'orange': return 'bg-orange-100 text-orange-600'
-    case 'green': return 'bg-green-100 text-green-600'
-    case 'success': return 'bg-emerald-100 text-emerald-600'
-    case 'red': return 'bg-red-100 text-red-600'
-    case 'gray': return 'bg-slate-100 text-slate-600'
-    default: return 'bg-slate-100 text-slate-600'
-  }
-}
-
-function getStatusLabel(status: string) {
-  return APPLICATION_STATUS_OPTIONS.find(o => o.value === status)?.label || status
-}
-
-function formatDate(dateStr: string) {
-  if (!dateStr) return 'N/A'
-  return new Date(dateStr).toLocaleDateString('vi-VN')
-}
-</script>
-
 <template>
-  <div class="space-y-6 pt-6">
-    <!-- Header -->
-    <div class="flex items-center justify-between">
-      <div class="flex items-center gap-4">
-        <button
-          @click="router.back()"
-          class="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 transition-colors cursor-pointer"
-        >
-          <span class="material-symbols-outlined">arrow_back</span>
-        </button>
-        <div>
-          <h1 class="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-            Quản lý CV & Sàng lọc
-          </h1>
-          <p class="text-slate-500 text-sm">
-            Vị trí tuyển dụng: {{ applications[0]?.jobTitle || 'Theo dõi và đánh giá hồ sơ ứng viên của bạn' }}
-          </p>
-        </div>
-      </div>
-      <button class="flex items-center gap-2 px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg font-semibold text-sm hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer">
-        <span class="material-symbols-outlined text-lg">download</span>
-        Xuất báo cáo
-      </button>
-    </div>
+  <div class="space-y-8">
+    <!-- Breadcrumb -->
+    <Breadcrumb :items="breadcrumbItems" :hide-home="true" />
 
-    <!-- Summary Cards -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-      <div 
-        v-for="card in summaryCards" 
-        :key="card.label"
-        class="bg-white dark:bg-slate-900 p-5 rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm flex items-center gap-4"
-      >
-        <div :class="['p-3 rounded-lg', card.bg]">
-          <span class="material-symbols-outlined">{{ card.icon }}</span>
+    <!-- Page Header -->
+    <div class="flex justify-between items-start">
+      <div class="flex flex-col gap-1">
+        <div class="flex items-center gap-3">
+          <h1 class="page-title">{{ jobTitle || '...' }}</h1>
+          <span v-if="jobStatus" :class="['job-status-badge', jobStatusBadgeClass]">
+            {{ jobStatusLabel }}
+          </span>
         </div>
-        <div>
-          <p class="text-xs font-bold text-slate-500 uppercase tracking-tight">{{ card.label }}</p>
-          <p class="text-2xl font-black text-slate-900 dark:text-white">{{ card.value }}</p>
-        </div>
+        <p class="page-subtitle">Mã tin: #{{ jobPostId }}</p>
       </div>
-    </div>
 
-    <!-- Filters -->
-    <div class="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm space-y-4">
-      <!-- Status chips -->
-      <div class="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
-        <button
-          v-for="chip in statusChips"
-          :key="chip.value"
-          @click="activeStatus = chip.value; currentPage = 1"
-          :class="[
-            'px-4 py-1.5 text-sm font-bold rounded-full whitespace-nowrap transition-colors cursor-pointer',
-            activeStatus === chip.value
-              ? 'bg-primary text-white shadow-lg shadow-primary/20'
-              : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
-          ]"
-        >
-          {{ chip.label }}
+      <div class="header-actions">
+        <button class="btn-outline">
+          <span class="material-symbols-outlined">download</span>
+          Xuất báo cáo
         </button>
       </div>
     </div>
 
-    <!-- Candidate Table -->
-    <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden min-h-[400px] relative">
-      <!-- Loading Overlay -->
-      <div v-if="loading" class="absolute inset-0 bg-white/50 dark:bg-slate-900/50 z-10 flex items-center justify-center backdrop-blur-[2px]">
-        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+    <div class="filters-table-container">
+      <!-- Filters -->
+      <CandidateFiltersBar
+        v-model:activeTab="filters.activeTab"
+        v-model:searchValue="filters.search"
+        :tabs="tabs"
+      />
+
+      <!-- Loading state -->
+      <div v-if="loading" class="loading-state">
+        <span class="material-symbols-outlined loading-spin">progress_activity</span>
+        <p>Đang tải dữ liệu...</p>
       </div>
 
-      <table class="w-full text-left border-collapse">
-        <thead>
-          <tr class="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-700">
-            <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Ứng viên</th>
-            <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Ngày ứng tuyển</th>
-            <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Đánh giá</th>
-            <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Trạng thái</th>
-            <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Thao tác</th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-slate-50 dark:divide-slate-800">
-          <tr
-            v-for="app in applications"
-            :key="app.id"
-            class="hover:bg-slate-50/80 dark:hover:bg-slate-800/30 transition-colors"
-          >
-            <!-- Candidate info -->
-            <td class="px-6 py-4">
-              <div class="flex items-center gap-3">
-                <img :src="app.candidateAvatar || 'https://ui-avatars.com/api/?name=' + app.candidateName" :alt="app.candidateName" class="w-10 h-10 rounded-full object-cover shrink-0" />
-                <div>
-                  <p class="text-sm font-bold text-slate-800 dark:text-slate-200">{{ app.candidateName }}</p>
-                  <p class="text-xs text-slate-500">{{ app.candidateEmail }}</p>
-                </div>
-              </div>
-            </td>
-            <!-- Date -->
-            <td class="px-6 py-4 text-sm text-slate-500">{{ formatDate(app.createdAt) }}</td>
-            <!-- Evaluation -->
-            <td class="px-6 py-4">
-              <div v-if="app.recruiterRating" class="flex gap-0.5 text-amber-400">
-                <span
-                  v-for="i in 5"
-                  :key="i"
-                  class="material-symbols-outlined text-lg"
-                  :style="{ fontVariationSettings: i <= app.recruiterRating ? `'FILL' 1` : `'FILL' 0` }"
-                >star</span>
-              </div>
-              <span v-else class="text-xs text-slate-400 italic">Chưa đánh giá</span>
-            </td>
-            <!-- Status -->
-            <td class="px-6 py-4">
-              <span :class="['px-3 py-1 text-xs font-bold rounded-full', getStatusBadgeClass(app.status)]">
-                {{ getStatusLabel(app.status) }}
-              </span>
-            </td>
-            <!-- Actions -->
-            <td class="px-6 py-4 text-right space-x-1">
-              <button
-                @click="router.push({ name: 'recruiter-application-detail', params: { id: jobId, applicationId: app.id } })"
-                class="p-1.5 text-slate-400 hover:text-primary transition-colors cursor-pointer"
-                title="Xem chi tiết"
-              >
-                <span class="material-symbols-outlined text-xl">visibility</span>
-              </button>
-              <a 
-                v-if="app.cvFileUrl" 
-                :href="app.cvFileUrl" 
-                target="_blank"
-                class="inline-block p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 transition-colors cursor-pointer" 
-                title="Tải CV"
-              >
-                <span class="material-symbols-outlined text-xl">download</span>
-              </a>
-            </td>
-          </tr>
-          
-          <tr v-if="applications.length === 0 && !loading">
-            <td colspan="5" class="px-6 py-20 text-center">
-              <div class="flex flex-col items-center gap-2 text-slate-400">
-                <span class="material-symbols-outlined text-4xl">inbox</span>
-                <p>Không tìm thấy hồ sơ ứng tuyển nào.</p>
-              </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-
-      <!-- Footer -->
-      <div v-if="meta.totals > 0" class="px-6 py-4 flex items-center justify-between border-t border-slate-100 dark:border-slate-800 bg-slate-50/30 dark:bg-slate-800/20">
-        <p class="text-sm text-slate-500">Hiển thị <span class="font-bold">{{ (meta.page * meta.pageSize) + 1 }}–{{ Math.min((meta.page + 1) * meta.pageSize, meta.totals) }}</span> trong <span class="font-bold">{{ meta.totals }}</span> hồ sơ</p>
-        <div class="flex gap-2">
-          <button 
-            @click="currentPage--"
-            :disabled="currentPage === 1 || loading"
-            class="p-2 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-white dark:hover:bg-slate-800 disabled:opacity-50 cursor-pointer transition-colors"
-          >
-            <span class="material-symbols-outlined">chevron_left</span>
-          </button>
-          <button 
-            v-for="p in meta.pages" 
-            :key="p"
-            @click="currentPage = p"
-            :class="[
-              'px-4 py-2 rounded-lg font-bold text-sm cursor-pointer transition-all',
-              currentPage === p 
-                ? 'bg-primary text-white shadow-md' 
-                : 'hover:bg-white dark:hover:bg-slate-800 border border-transparent hover:border-slate-200'
-            ]"
-          >
-            {{ p }}
-          </button>
-          <button 
-            @click="currentPage++"
-            :disabled="currentPage === meta.pages || loading"
-            class="p-2 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-white dark:hover:bg-slate-800 disabled:opacity-50 cursor-pointer transition-colors"
-          >
-            <span class="material-symbols-outlined">chevron_right</span>
-          </button>
-        </div>
-      </div>
+      <!-- Table -->
+      <CandidateTable
+        v-else
+        :candidates="candidates"
+        :meta="meta"
+        @page-change="onPageChange"
+      />
     </div>
   </div>
 </template>
 
-<style scoped>
-.no-scrollbar::-webkit-scrollbar {
-  display: none;
+<script setup lang="ts">
+import { ref, computed, watch, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
+import CandidateFiltersBar from '@/components/recruiter/application/Candidatefiltersbar.vue'
+import CandidateTable from '@/components/recruiter/application/Candidatetable.vue'
+import Breadcrumb from '@/components/ui/Breadcrumb.vue'
+import employerApplicationService from '@/services/employerApplication.service'
+import { publicJobPostingService } from '@/services/jobPosting.service'
+import type { ResEmployerApplicationDTO } from '@/types/employerApplication.types'
+import type { PaginationMeta } from '@/types/common.types'
+import { JOB_POSTING_STATUS_LABELS, JOB_POSTING_STATUS_BADGE, type JobPostingStatus } from '@/constants/jobPosting.constants'
+
+const route = useRoute()
+const jobPostId = computed(() => Number(route.params.id))
+
+const loading    = ref(false)
+const candidates = ref<ResEmployerApplicationDTO[]>([])
+const meta       = ref<PaginationMeta>({ page: 0, pageSize: 10, pages: 0, totals: 0 })
+const currentPage = ref(0)
+const jobTitle   = ref('')
+const jobStatus  = ref<JobPostingStatus | null>(null)
+
+const jobStatusLabel      = computed(() => jobStatus.value ? JOB_POSTING_STATUS_LABELS[jobStatus.value] : '')
+const jobStatusBadgeClass = computed(() => jobStatus.value ? JOB_POSTING_STATUS_BADGE[jobStatus.value] : '')
+
+const breadcrumbItems = [
+  { label: 'Quản lý tin tuyển dụng', to: '/recruiter/jobs' },
+  { label: 'Danh sách ứng viên' },
+]
+
+const tabs = ref([
+  { label: 'Tất cả',        value: '',                count: 0 },
+  { label: 'Chờ xem',       value: 'pending',         count: 0 },
+  { label: 'Đã xem',        value: 'seen',            count: 0 },
+  { label: 'Cân nhắc',      value: 'considering',     count: 0 },
+  { label: 'Đạt vòng CV',   value: 'cv_passed',       count: 0 },
+  { label: 'Phỏng vấn',     value: 'interviewing',    count: 0 },
+  { label: 'Từ chối',       value: 'rejected',        count: 0 },
+])
+
+const filters = ref({
+  activeTab: '',
+  search:    '',
+})
+
+async function fetchApplications() {
+  loading.value = true
+  try {
+    const params: Record<string, any> = {
+      page: currentPage.value,
+      size: 10,
+      sort: 'createdAt,desc',
+    }
+    if (filters.value.activeTab) params.status = filters.value.activeTab
+    if (filters.value.search)    params.search = filters.value.search
+
+    const data = await employerApplicationService.getApplicationsByJobPost(jobPostId.value, params)
+
+    candidates.value = data.result
+    meta.value = data.meta
+
+    // Cập nhật count cho tab đang chọn
+    const activeTabIdx = tabs.value.findIndex(t => t.value === filters.value.activeTab)
+    if (activeTabIdx !== -1) {
+      tabs.value[activeTabIdx].count = data.meta.totals
+    }
+
+
+  } catch (err) {
+    console.error('Failed to fetch applications', err)
+  } finally {
+    loading.value = false
+  }
 }
-.no-scrollbar {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
+
+// Khi đổi tab (status filter) → reset page và gọi lại API
+watch(() => filters.value.activeTab, () => {
+  currentPage.value = 0
+  fetchApplications()
+})
+
+// Khi search thay đổi (chỉ khi nhấn Enter hoặc xóa) → reset page và gọi lại API
+watch(() => filters.value.search, () => {
+  currentPage.value = 0
+  fetchApplications()
+})
+
+function onPageChange(page: number) {
+  currentPage.value = page
+  fetchApplications()
+}
+
+async function fetchJobDetail() {
+  try {
+    const job = await publicJobPostingService.getById(jobPostId.value)
+    jobTitle.value  = job.title
+    jobStatus.value = job.status
+  } catch (err) {
+    console.error('Failed to fetch job detail', err)
+  }
+}
+
+onMounted(() => {
+  fetchJobDetail()
+  fetchApplications()
+})
+</script>
+
+<style scoped>
+.page-title    { font-size: 1.875rem; font-weight: 800; color: var(--color-on-surface, #0f172a); }
+.page-subtitle { font-size: 1rem; color: #64748b; margin-top: 0.25rem; }
+
+.btn-outline {
+  display: inline-flex; align-items: center; gap: 0.5rem;
+  padding: 0.5rem 1rem; border: 1px solid #cbd5e1;
+  border-radius: 0.5rem; font-size: 1rem; font-weight: 600;
+  transition: background .15s;
+  cursor: pointer;
+}
+.btn-outline:hover { background: #f1f5f9; }
+
+.job-status-badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.filters-table-container {
+  border-radius: 0.75rem;
+  border: 1px solid #f1f5f9;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0,0,0,.06);
+  margin-top: 2rem;
+}
+.filters-table-container > * {
+  border: none !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+}
+
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  gap: 0.75rem;
+  color: #94a3b8;
+  background: #fff;
+}
+.loading-state p { font-size: 0.9375rem; }
+
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-spin {
+  font-size: 2rem !important;
+  animation: spin 0.8s linear infinite;
+  color: #4B9AF6;
 }
 </style>

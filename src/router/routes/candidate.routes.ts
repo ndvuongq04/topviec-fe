@@ -38,6 +38,18 @@ export const candidateRoutes: RouteRecordRaw[] = [
                 name: 'CompanyDetail',
                 component: () => import('@/pages/candidate/CompanyDetailPage.vue'),
             },
+            {
+                path: 'interviews',
+                name: 'CandidateInterviews',
+                component: () => import('@/pages/candidate/InterviewsPage.vue'),
+                meta: { requiresAuth: true, role: 'CANDIDATE' },
+            },
+            {
+                path: 'interviews/detail/:id',
+                name: 'CandidateInterviewDetail',
+                component: () => import('@/pages/candidate/InterviewDetailPage.vue'),
+                meta: { requiresAuth: true, role: 'CANDIDATE' },
+            },
         ],
     },
 ]

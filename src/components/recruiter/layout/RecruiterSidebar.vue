@@ -17,8 +17,10 @@
         v-for="item in navItems"
         :key="item.to"
         :to="item.to"
-        class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-        active-class="!bg-primary/10 !text-primary font-semibold"
+        class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors"
+        :class="isActive(item.to)
+          ? 'bg-primary/10 text-primary font-semibold'
+          : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'"
       >
         <span class="material-symbols-outlined">{{ item.icon }}</span>
         {{ item.label }}
@@ -40,21 +42,81 @@
           <p class="text-sm font-bold truncate">{{ user?.name || 'Recruiter' }}</p>
           <p class="text-xs text-slate-500 truncate">{{ user?.title || 'HR Manager' }}</p>
         </div>
-        <button class="text-slate-400 hover:text-primary transition-colors">
-          <span class="material-symbols-outlined text-xl">settings</span>
-        </button>
+        <GlobalDropdown align="left" direction="up" :offset="12">
+          <template #trigger="{ toggle, isOpen }">
+            <button
+              class="text-slate-400 hover:text-primary transition-colors cursor-pointer"
+              :class="{ 'text-primary': isOpen }"
+              @click.stop="toggle"
+            >
+              <span class="material-symbols-outlined text-xl">settings</span>
+            </button>
+          </template>
+
+          <template #default="{ close }">
+            <GlobalDropdownItem
+              icon="person_outline"
+              label="Cài đặt tài khoản"
+              @click="close"
+            />
+            <GlobalDropdownItem
+              icon="business"
+              label="Thông tin công ty"
+              @click="close"
+            />
+            <GlobalDropdownItem
+              icon="lock_open"
+              label="Đổi mật khẩu"
+              @click="close"
+            />
+            <div class="h-px bg-slate-100 my-1 mx-2"></div>
+            <GlobalDropdownItem
+              icon="logout"
+              label="Đăng xuất"
+              danger
+              @click="close"
+            />
+          </template>
+        </GlobalDropdown>
       </div>
     </div>
   </aside>
 </template>
 
 <script setup lang="ts">
+import { useRoute } from 'vue-router'
+import GlobalDropdown from '@/components/ui/GlobalDropdown.vue'
+import GlobalDropdownItem from '@/components/ui/GlobalDropdownItem.vue'
+
+const route = useRoute()
+
+// Routes nằm dưới /recruiter/jobs/* nhưng thuộc nhóm Phỏng vấn
+const interviewJobRouteNames = new Set(['recruiter-job-interview-setup'])
+
+function isActive(to: string): boolean {
+  if (to === '/recruiter') return route.path === '/recruiter'
+
+  if (to === '/recruiter/interviews') {
+    return route.path.startsWith('/recruiter/interviews') ||
+      interviewJobRouteNames.has(String(route.name))
+  }
+
+  if (to === '/recruiter/jobs') {
+    return route.path.startsWith('/recruiter/jobs') &&
+      !interviewJobRouteNames.has(String(route.name))
+  }
+
+  return route.path.startsWith(to)
+}
+
 const navItems = [
   { to: '/recruiter',           icon: 'dashboard',        label: 'Dashboard' },
   { to: '/recruiter/jobs',      icon: 'work',             label: 'Tin tuyển dụng' },
-  { to: '/recruiter/candidates',icon: 'group',            label: 'Ứng viên' },
-  { to: '/recruiter/search-cv', icon: 'person_search',    label: 'Tìm CV' },
-  { to: '/recruiter/reports',   icon: 'bar_chart',        label: 'Báo cáo' },
+  // { to: '/recruiter/candidates',icon: 'group',            label: 'Ứng viên' },
+  { to: '/recruiter/interviews', icon: 'event',    label: 'Phỏng vấn' },
+  // { to: '/recruiter/offers',     icon: 'handshake', label: 'Mời làm việc' },
+  // { to: '/recruiter/search-cv', icon: 'person_search',    label: 'Tìm CV' },
+  // { to: '/recruiter/reports',   icon: 'bar_chart',        label: 'Báo cáo' },
   { to: '/recruiter/team',      icon: 'manage_accounts',  label: 'Quản lý nhóm' },
   { to: '/recruiter/company-profile', icon: 'business',     label: 'Thông tin công ty' },
 ]

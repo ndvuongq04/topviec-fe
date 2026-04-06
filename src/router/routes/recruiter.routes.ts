@@ -51,7 +51,56 @@ export const recruiterRoutes: RouteRecordRaw[] = [
         name: 'recruiter-application-detail',
         component: () => import('@/pages/recruiter/CandidateApplicationDetailPage.vue'),
       },
-
+      {
+        path: 'jobs/:id/interview-setup',
+        name: 'recruiter-job-interview-setup',
+        component: () => import('@/pages/recruiter/JobInterviewSetupPage.vue'),
+      },
+      {
+        path: 'jobs/:id/interview-stages',
+        name: 'recruiter-job-interview-stages',
+        component: () => import('@/pages/recruiter/Interviewstagespage.vue'),
+      },
+      {
+        path: 'jobs/:id/interview-candidate/:applicationId',
+        name: 'recruiter-job-interview-candidate-detail',
+        component: () => import('@/pages/recruiter/Candidateinterviewdetailpage.vue'),
+      },
+      {
+        path: 'interviews',
+        name: 'recruiter-interviews',
+        component: () => import('@/pages/recruiter/InterviewManagementPage.vue'),
+      },
+      {
+        path: 'interviews/create',
+        name: 'recruiter-interview-create',
+        component: () => import('@/pages/recruiter/InterviewSchedulePage.vue'),
+      },
+      {
+        path: 'interviews/propose',
+        name: 'recruiter-interview-propose',
+        component: () => import('@/pages/recruiter/InterviewProposeSlotsPage.vue'),
+      },
+      {
+        path: 'interviews/:id/evaluate',
+        name: 'recruiter-interview-evaluate',
+        component: () => import('@/pages/recruiter/InterviewEvaluationPage.vue'),
+      },
+      {
+        path: 'interviews/:id/overdue',
+        name: 'recruiter-interview-overdue',
+        component: () => import('@/pages/recruiter/InterviewOverduePage.vue'),
+      },
+      {
+        path: 'offers',
+        name: 'recruiter-offers',
+        component: () => import('@/pages/recruiter/OfferManagementPage.vue'),
+      },
+      {
+        path: 'jobs/:id/offers',
+        name: 'recruiter-job-offers',
+        component: () => import('@/pages/recruiter/OfferManagementPage.vue'),
+      },
     ],
   },
 ]

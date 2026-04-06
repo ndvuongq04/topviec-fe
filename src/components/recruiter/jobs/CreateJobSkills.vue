@@ -1,124 +1,226 @@
 <template>
-  <section class="bg-white dark:bg-slate-800 rounded-3xl p-8 shadow-sm border border-slate-100 dark:border-slate-700">
-    <div class="flex items-center gap-3 mb-6">
-      <div class="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-900/20 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
+  <section class="section-card">
+    <div class="section-header">
+      <div class="icon-wrap icon-indigo">
         <span class="material-symbols-outlined">psychology</span>
       </div>
-      <h3 class="text-xl font-bold">Kỹ năng &amp; Kinh nghiệm</h3>
+      <h3 class="section-title">Kỹ năng &amp; Kinh nghiệm</h3>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-      <!-- Kỹ năng tags -->
+    <div class="grid-2col">
+      <!-- Skill tags -->
       <div>
-        <label class="block text-sm font-semibold text-slate-900 dark:text-slate-100 mb-2">Kỹ năng yêu cầu (Tags)</label>
-        <div class="flex flex-wrap gap-2 p-3 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 focus-within:ring-4 focus-within:ring-primary/10 transition-all">
+        <label class="field-label">Kỹ năng yêu cầu</label>
+
+        <!-- Tags hiển thị kỹ năng đã chọn -->
+        <div v-if="form.skills.length > 0" class="tags-list">
           <span
-            v-for="(skill, i) in modelValue.skills"
-            :key="i"
-            class="inline-flex items-center gap-1 px-3 py-1 bg-primary/10 text-primary text-sm font-medium rounded-full"
+            v-for="(skill, i) in form.skills"
+            :key="skill.skillId"
+            class="skill-tag"
           >
-            {{ skill.name }}
-            <span class="material-symbols-outlined text-sm cursor-pointer" @click="removeSkill(i)">close</span>
+            {{ skill.skillName }}
+            <button type="button" @click="removeSkill(i)">
+              <span class="material-symbols-outlined">close</span>
+            </button>
           </span>
-          <SearchableSelect
-            v-model="selectedSkillId"
-            :options="skillOptions"
-            placeholder="-- Chọn thêm kỹ năng --"
-            class="flex-1 min-w-[200px]"
-            @change="addSkill"
-          />
         </div>
+
+        <!-- SearchableSelect để pick kỹ năng -->
+        <SearchableSelect
+          :model-value="null"
+          :options="availableSkillOptions"
+          placeholder="Tìm và thêm kỹ năng..."
+          @change="onSkillSelected"
+        />
+        <p class="hint">Chọn từ danh sách để thêm kỹ năng yêu cầu</p>
       </div>
 
-      <!-- Số năm kinh nghiệm -->
+      <!-- Experience range -->
       <div>
-        <label class="block text-sm font-semibold text-slate-900 dark:text-slate-100 mb-2">Số năm kinh nghiệm</label>
-        <div class="flex items-center gap-3">
-          <div class="relative flex-1">
+        <label class="field-label">Số năm kinh nghiệm</label>
+        <div class="exp-range">
+          <div class="exp-field">
             <input
-              :value="modelValue.expMin"
-              class="w-full pl-4 pr-10 py-3 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-700 focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none"
+              v-model.number="form.experienceYearsMin"
+              class="field-input"
               placeholder="Tối thiểu"
+              min="0"
               type="number"
-              @input="emit('update:modelValue', { ...modelValue, expMin: Number(($event.target as HTMLInputElement).value) })"
             />
-            <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-500 font-medium">Năm</span>
+            <span class="exp-unit">Năm</span>
           </div>
-          <span class="text-slate-500">-</span>
-          <div class="relative flex-1">
+          <span class="exp-dash">—</span>
+          <div class="exp-field">
             <input
-              :value="modelValue.expMax"
-              class="w-full pl-4 pr-10 py-3 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-700 focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none"
+              v-model.number="form.experienceYearsMax"
+              class="field-input"
+              :class="{ 'field-input--error': errors.experienceYearsMax }"
               placeholder="Tối đa"
+              min="0"
               type="number"
-              @input="emit('update:modelValue', { ...modelValue, expMax: Number(($event.target as HTMLInputElement).value) })"
             />
-            <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-500 font-medium">Năm</span>
+            <span class="exp-unit">Năm</span>
           </div>
         </div>
+        <p v-if="errors.experienceYearsMax" class="field-error">{{ errors.experienceYearsMax }}</p>
       </div>
     </div>
   </section>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
-import { useSkillStore } from '@/stores/skill.store'
+import { inject, ref, computed, onMounted } from 'vue'
+import { skillService } from '@/services/skill.service'
+import { CREATE_JOB_FORM_KEY, CREATE_JOB_ERRORS_KEY } from '@/composables/useCreateJobForm'
 import SearchableSelect from '@/components/ui/SearchableSelect.vue'
+import type { SelectOption } from '@/components/ui/SearchableSelect.vue'
 
-export interface SkillItem {
-  id: number
-  name: string
-}
+const form = inject(CREATE_JOB_FORM_KEY)!
+const errors = inject(CREATE_JOB_ERRORS_KEY)!
 
-export interface SkillsData {
-  skills: SkillItem[]
-  expMin: number | null
-  expMax: number | null
-}
+const allSkills = ref<SelectOption[]>([])
 
-const props = defineProps<{
-  modelValue: SkillsData
-}>()
+// Chỉ show những skill chưa được chọn
+const availableSkillOptions = computed(() =>
+  allSkills.value.filter(s => !form.skills.some(fs => fs.skillId === Number(s.id)))
+)
 
-const emit = defineEmits<{
-  'update:modelValue': [value: SkillsData]
-}>()
-
-const skillStore = useSkillStore()
-
-const skillOptions = computed(() => {
-  return skillStore.skills.map(s => ({ id: s.id.toString(), name: s.name }))
+onMounted(async () => {
+  const res = await skillService.getSkills({ size: 200 })
+  allSkills.value = res.result.map(s => ({ id: s.id, name: s.name }))
 })
 
-onMounted(() => {
-  if (skillStore.skills.length === 0) {
-    skillStore.fetchSkills({ size: 100 })
-  }
-})
-
-const selectedSkillId = ref('')
-
-function addSkill(option?: { id: string | number, name: string }) {
-  if (!option) return
-  const id = parseInt(option.id.toString())
-  
-  if (!props.modelValue.skills.some(s => s.id === id)) {
-    emit('update:modelValue', {
-      ...props.modelValue,
-      skills: [...props.modelValue.skills, { id, name: option.name }],
-    })
-  }
-  
-  // Try to reset selection after a small tick so the SearchableSelect UI clears
-  setTimeout(() => {
-    selectedSkillId.value = ''
-  }, 10)
+function onSkillSelected(option: SelectOption) {
+  form.skills.push({
+    skillId: Number(option.id),
+    skillName: option.name,
+    isRequired: true,
+  })
 }
 
 function removeSkill(index: number) {
-  const updated = [...props.modelValue.skills]
-  updated.splice(index, 1)
-  emit('update:modelValue', { ...props.modelValue, skills: updated })
+  form.skills.splice(index, 1)
 }
 </script>
+
+<style scoped>
+.section-card {
+  background: #fff;
+  border-radius: 1.5rem;
+  padding: 2rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,.06);
+  border: 1px solid #f1f5f9;
+}
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+.icon-wrap {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.icon-indigo { background: #eef2ff; color: #4f46e5; }
+.section-title { font-size: 1.125rem; font-weight: 700; color: #0f172a; }
+
+.grid-2col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+}
+
+.field-label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 0.5rem;
+}
+.field-error {
+  font-size: 0.75rem;
+  color: #ef4444;
+  margin-top: 0.375rem;
+}
+.hint { font-size: 0.75rem; color: #94a3b8; margin-top: 0.375rem; }
+
+/* Tags */
+.tags-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+.skill-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.5rem 0.25rem 0.75rem;
+  background: rgba(75,154,246,.1);
+  color: #4B9AF6;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border-radius: 9999px;
+}
+.skill-tag button {
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: inherit;
+  display: flex;
+  padding: 0;
+  line-height: 1;
+  opacity: 0.7;
+  transition: opacity 0.15s;
+}
+.skill-tag button:hover { opacity: 1; }
+.skill-tag button .material-symbols-outlined { font-size: 0.875rem; }
+
+/* Experience range */
+.exp-range {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.exp-field { position: relative; flex: 1; }
+.field-input {
+  width: 100%;
+  padding: 0.75rem 2.5rem 0.75rem 1rem;
+  border-radius: 0.75rem;
+  border: 1px solid #e2e8f0;
+  outline: none;
+  font-size: 1rem;
+  font-family: inherit;
+  color: #0f172a;
+  box-sizing: border-box;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.field-input:focus {
+  border-color: #4B9AF6;
+  box-shadow: 0 0 0 4px rgba(75,154,246,.1);
+}
+.field-input--error {
+  border-color: #ef4444 !important;
+  box-shadow: 0 0 0 4px rgba(239,68,68,.08) !important;
+}
+.exp-unit {
+  position: absolute;
+  right: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 0.75rem;
+  color: #94a3b8;
+  font-weight: 500;
+  pointer-events: none;
+}
+.exp-dash { color: #94a3b8; font-weight: 700; }
+
+@media (max-width: 768px) {
+  .grid-2col { grid-template-columns: 1fr; }
+}
+</style>

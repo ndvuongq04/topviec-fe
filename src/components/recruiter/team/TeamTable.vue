@@ -7,13 +7,13 @@
         <span class="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-slate-400 text-xl">search</span>
         <input
           v-model="searchInput"
-          class="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary text-sm outline-none"
+          class="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary text-base outline-none"
           placeholder="Tìm kiếm theo tên hoặc email..."
           type="text"
           @keyup.enter="$emit('search', searchInput)"
         />
         <button 
-          class="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-primary transition-colors"
+          class="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-primary transition-colors cursor-pointer"
           @click="$emit('search', searchInput)"
         >
           <span class="material-symbols-outlined text-xl">subdirectory_arrow_left</span>
@@ -23,7 +23,7 @@
         <!-- Filter Role -->
         <select
           v-model="filterRole"
-          class="pl-3 pr-8 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm outline-none focus:ring-2 focus:ring-primary appearance-none cursor-pointer"
+          class="pl-3 pr-8 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-base outline-none focus:ring-2 focus:ring-primary appearance-none cursor-pointer"
           @change="handleFilterChange"
         >
           <option value="">Tất cả vai trò</option>
@@ -36,7 +36,7 @@
         <!-- Filter Status -->
         <select
           v-model="filterStatus"
-          class="pl-3 pr-8 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm outline-none focus:ring-2 focus:ring-primary appearance-none cursor-pointer"
+          class="pl-3 pr-8 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-base outline-none focus:ring-2 focus:ring-primary appearance-none cursor-pointer"
           @change="handleFilterChange"
         >
           <option value="">Tất cả trạng thái</option>
@@ -47,7 +47,7 @@
 
         <button 
           v-if="filterRole || filterStatus || searchInput"
-          class="p-2 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950 rounded-lg transition-colors"
+          class="p-2 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950 rounded-lg transition-colors cursor-pointer"
           title="Xóa lọc"
           @click="clearFilters"
         >
@@ -61,11 +61,11 @@
       <table class="w-full text-left">
         <thead>
           <tr class="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800">
-            <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500">Thành viên</th>
-            <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500">Vai trò</th>
-            <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500">Trạng thái</th>
-            <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500">Ngày tham gia</th>
-            <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500 text-center">Thao tác</th>
+            <th class="px-6 py-4 text-xs font-extrabold uppercase tracking-wider text-slate-500">Thành viên</th>
+            <th class="px-6 py-4 text-xs font-extrabold uppercase tracking-wider text-slate-500">Vai trò</th>
+            <th class="px-6 py-4 text-xs font-extrabold uppercase tracking-wider text-slate-500">Trạng thái</th>
+            <th class="px-6 py-4 text-xs font-extrabold uppercase tracking-wider text-slate-500">Ngày tham gia</th>
+            <th class="px-6 py-4 text-xs font-extrabold uppercase tracking-wider text-slate-500 text-center">Thao tác</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-slate-200 dark:divide-slate-800">
@@ -120,14 +120,14 @@
             <td class="px-6 py-4">
               <div class="flex justify-center items-center gap-2">
                 <button
-                  class="p-1.5 text-slate-400 hover:text-primary hover:bg-primary/10 rounded-lg transition-all"
+                  class="p-1.5 text-slate-400 hover:text-primary hover:bg-primary/10 rounded-lg transition-all cursor-pointer"
                   title="Chỉnh sửa"
                   @click="$emit('edit', member)"
                 >
                   <span class="material-symbols-outlined text-lg">edit</span>
                 </button>
                 <button
-                  class="p-1.5 text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950 rounded-lg transition-all"
+                  class="p-1.5 text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950 rounded-lg transition-all cursor-pointer"
                   title="Xóa"
                   @click="$emit('delete', member)"
                 >
@@ -150,12 +150,12 @@
 
     <!-- Pagination -->
     <div class="px-6 py-4 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between">
-      <p class="text-xs text-slate-500 font-medium">
+      <p class="text-sm text-slate-500 font-medium">
         Hiển thị {{ rangeStart }} - {{ rangeEnd }} của {{ total }} thành viên
       </p>
       <div class="flex items-center gap-1">
         <button
-          class="p-1 rounded border border-slate-200 dark:border-slate-700 text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          class="p-1 rounded border border-slate-200 dark:border-slate-700 text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
           :disabled="currentPage <= 1"
           @click="$emit('page-change', currentPage - 1)"
         >
@@ -163,10 +163,10 @@
         </button>
 
         <template v-for="page in visiblePages" :key="page">
-          <span v-if="page === '...'" class="px-2 text-slate-300 text-xs">...</span>
+          <span v-if="page === '...'" class="px-2 text-slate-300 text-sm">...</span>
           <button
             v-else
-            class="w-8 h-8 rounded text-xs font-bold border transition-colors"
+            class="w-8 h-8 rounded text-sm font-extrabold border transition-colors"
             :class="page === currentPage
               ? 'bg-primary text-white border-primary'
               : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'"
@@ -177,7 +177,7 @@
         </template>
 
         <button
-          class="p-1 rounded border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          class="p-1 rounded border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
           :disabled="currentPage >= totalPages"
           @click="$emit('page-change', currentPage + 1)"
         >

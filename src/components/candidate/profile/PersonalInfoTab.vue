@@ -10,41 +10,41 @@
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 
         <div class="space-y-2">
-          <label class="text-xs font-bold text-text-muted uppercase tracking-wider">Họ và tên</label>
+          <label class="text-sm font-bold text-text-muted uppercase tracking-wider">Họ và tên</label>
           <input
             v-model="form.fullName"
             type="text"
-            class="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 px-4 py-2.5 text-text-main dark:text-white placeholder:text-text-muted dark:placeholder:text-gray-500 focus:border-primary focus:ring-1 focus:ring-primary text-sm font-medium outline-none transition-all"
+            class="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 px-4 py-2.5 text-text-main dark:text-white placeholder:text-text-muted dark:placeholder:text-gray-500 focus:border-primary focus:ring-1 focus:ring-primary text-base font-medium outline-none transition-all"
             placeholder="Nhập họ và tên"
           />
         </div>
 
         <div class="space-y-2">
-          <label class="text-xs font-bold text-text-muted uppercase tracking-wider">Số điện thoại</label>
+          <label class="text-sm font-bold text-text-muted uppercase tracking-wider">Số điện thoại</label>
           <input
             :value="form.phoneDisplay"
             type="tel"
             maxlength="12"
-            class="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 px-4 py-2.5 text-text-main dark:text-white placeholder:text-text-muted dark:placeholder:text-gray-500 focus:border-primary focus:ring-1 focus:ring-primary text-sm font-medium outline-none transition-all"
+            class="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 px-4 py-2.5 text-text-main dark:text-white placeholder:text-text-muted dark:placeholder:text-gray-500 focus:border-primary focus:ring-1 focus:ring-primary text-base font-medium outline-none transition-all"
             placeholder="0909 123 456"
             @input="onPhoneInput"
           />
         </div>
 
         <div class="space-y-2">
-          <label class="text-xs font-bold text-text-muted uppercase tracking-wider">Ngày sinh</label>
+          <label class="text-sm font-bold text-text-muted uppercase tracking-wider">Ngày sinh</label>
           <input
             v-model="form.dateOfBirth"
             type="date"
-            class="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 px-4 py-2.5 text-text-main dark:text-white placeholder:text-text-muted dark:placeholder:text-gray-500 focus:border-primary focus:ring-1 focus:ring-primary text-sm font-medium outline-none transition-all"
+            class="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 px-4 py-2.5 text-text-main dark:text-white placeholder:text-text-muted dark:placeholder:text-gray-500 focus:border-primary focus:ring-1 focus:ring-primary text-base font-medium outline-none transition-all"
           />
         </div>
 
         <div class="space-y-2">
-          <label class="text-xs font-bold text-text-muted uppercase tracking-wider">Giới tính</label>
+          <label class="text-sm font-bold text-text-muted uppercase tracking-wider">Giới tính</label>
           <select
             v-model="form.gender"
-            class="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 px-4 py-2.5 text-text-main dark:text-white placeholder:text-text-muted dark:placeholder:text-gray-500 focus:border-primary focus:ring-1 focus:ring-primary text-sm font-medium outline-none transition-all"
+            class="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 px-4 py-2.5 text-text-main dark:text-white placeholder:text-text-muted dark:placeholder:text-gray-500 focus:border-primary focus:ring-1 focus:ring-primary text-base font-medium outline-none transition-all"
           >
             <option value="">-- Chọn giới tính --</option>
             <option value="male">Nam</option>
@@ -54,31 +54,31 @@
         </div>
 
         <div class="space-y-2">
-          <label class="text-xs font-bold text-text-muted uppercase tracking-wider">LinkedIn</label>
+          <label class="text-sm font-bold text-text-muted uppercase tracking-wider">LinkedIn</label>
           <input
             v-model="form.linkedinUrl"
             type="url"
-            class="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 px-4 py-2.5 text-text-main dark:text-white placeholder:text-text-muted dark:placeholder:text-gray-500 focus:border-primary focus:ring-1 focus:ring-primary text-sm font-medium outline-none transition-all"
+            class="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 px-4 py-2.5 text-text-main dark:text-white placeholder:text-text-muted dark:placeholder:text-gray-500 focus:border-primary focus:ring-1 focus:ring-primary text-base font-medium outline-none transition-all"
             placeholder="https://linkedin.com/in/..."
           />
         </div>
 
         <div class="space-y-2">
-          <label class="text-xs font-bold text-text-muted uppercase tracking-wider">GitHub</label>
+          <label class="text-sm font-bold text-text-muted uppercase tracking-wider">GitHub</label>
           <input
             v-model="form.githubUrl"
             type="url"
-            class="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 px-4 py-2.5 text-text-main dark:text-white placeholder:text-text-muted dark:placeholder:text-gray-500 focus:border-primary focus:ring-1 focus:ring-primary text-sm font-medium outline-none transition-all"
+            class="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 px-4 py-2.5 text-text-main dark:text-white placeholder:text-text-muted dark:placeholder:text-gray-500 focus:border-primary focus:ring-1 focus:ring-primary text-base font-medium outline-none transition-all"
             placeholder="https://github.com/..."
           />
         </div>
 
         <div class="space-y-2 md:col-span-2">
-          <label class="text-xs font-bold text-text-muted uppercase tracking-wider">Website cá nhân</label>
+          <label class="text-sm font-bold text-text-muted uppercase tracking-wider">Website cá nhân</label>
           <input
             v-model="form.personalWebsite"
             type="url"
-            class="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 px-4 py-2.5 text-text-main dark:text-white placeholder:text-text-muted dark:placeholder:text-gray-500 focus:border-primary focus:ring-1 focus:ring-primary text-sm font-medium outline-none transition-all"
+            class="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 px-4 py-2.5 text-text-main dark:text-white placeholder:text-text-muted dark:placeholder:text-gray-500 focus:border-primary focus:ring-1 focus:ring-primary text-base font-medium outline-none transition-all"
             placeholder="https://yourwebsite.com"
           />
         </div>
@@ -116,7 +116,7 @@
 
         <!-- Mức lương -->
         <div class="space-y-2 md:col-span-2">
-          <label class="text-xs font-bold text-text-muted uppercase tracking-wider">
+          <label class="text-sm font-bold text-text-muted uppercase tracking-wider">
             Mức lương mong muốn (VNĐ/tháng)
           </label>
           <div class="flex items-center gap-3">
@@ -126,11 +126,11 @@
                 :value="salaryMinDisplay"
                 type="text"
                 inputmode="numeric"
-                class="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 px-4 py-2.5 pr-14 text-text-main dark:text-white placeholder:text-text-muted dark:placeholder:text-gray-500 focus:border-primary focus:ring-1 focus:ring-primary text-sm font-medium outline-none transition-all"
+                class="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 px-4 py-2.5 pr-14 text-text-main dark:text-white placeholder:text-text-muted dark:placeholder:text-gray-500 focus:border-primary focus:ring-1 focus:ring-primary text-base font-medium outline-none transition-all"
                 placeholder="Tối thiểu"
                 @input="onSalaryMinInput"
               />
-              <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-text-muted font-medium pointer-events-none">VNĐ</span>
+              <span class="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-text-muted font-medium pointer-events-none">VNĐ</span>
             </div>
             <span class="text-text-muted font-medium shrink-0">—</span>
             <!-- Lương tối đa -->
@@ -139,25 +139,25 @@
                 :value="salaryMaxDisplay"
                 type="text"
                 inputmode="numeric"
-                class="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 px-4 py-2.5 pr-14 text-text-main dark:text-white placeholder:text-text-muted dark:placeholder:text-gray-500 focus:border-primary focus:ring-1 focus:ring-primary text-sm font-medium outline-none transition-all"
+                class="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 px-4 py-2.5 pr-14 text-text-main dark:text-white placeholder:text-text-muted dark:placeholder:text-gray-500 focus:border-primary focus:ring-1 focus:ring-primary text-base font-medium outline-none transition-all"
                 placeholder="Tối đa"
                 @input="onSalaryMaxInput"
               />
-              <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-text-muted font-medium pointer-events-none">VNĐ</span>
+              <span class="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-text-muted font-medium pointer-events-none">VNĐ</span>
             </div>
           </div>
           <label class="flex items-center gap-2 mt-2 cursor-pointer">
             <input v-model="form.salaryNegotiable" type="checkbox" class="rounded text-primary focus:ring-primary" />
-            <span class="text-sm text-text-muted">Mức lương có thể thương lượng</span>
+            <span class="text-base text-text-muted">Mức lương có thể thương lượng</span>
           </label>
         </div>
 
         <!-- Hình thức làm việc -->
         <div class="space-y-2">
-          <label class="text-xs font-bold text-text-muted uppercase tracking-wider">Hình thức làm việc</label>
+          <label class="text-sm font-bold text-text-muted uppercase tracking-wider">Hình thức làm việc</label>
           <select
             v-model="form.preferredWorkType"
-            class="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 px-4 py-2.5 text-text-main dark:text-white placeholder:text-text-muted dark:placeholder:text-gray-500 focus:border-primary focus:ring-1 focus:ring-primary text-sm font-medium outline-none transition-all"
+            class="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 px-4 py-2.5 text-text-main dark:text-white placeholder:text-text-muted dark:placeholder:text-gray-500 focus:border-primary focus:ring-1 focus:ring-primary text-base font-medium outline-none transition-all"
           >
             <option value="">-- Chọn hình thức --</option>
             <option :value="PreferredWorkType.FULL_TIME">Toàn thời gian</option>
@@ -169,10 +169,10 @@
 
         <!-- Địa điểm -->
         <div class="space-y-2">
-          <label class="text-xs font-bold text-text-muted uppercase tracking-wider">Địa điểm mong muốn</label>
+          <label class="text-sm font-bold text-text-muted uppercase tracking-wider">Địa điểm mong muốn</label>
           <select
             v-model="form.preferredLocationId"
-            class="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 px-4 py-2.5 text-text-main dark:text-white placeholder:text-text-muted dark:placeholder:text-gray-500 focus:border-primary focus:ring-1 focus:ring-primary text-sm font-medium outline-none transition-all"
+            class="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 px-4 py-2.5 text-text-main dark:text-white placeholder:text-text-muted dark:placeholder:text-gray-500 focus:border-primary focus:ring-1 focus:ring-primary text-base font-medium outline-none transition-all"
           >
             <option :value="null">-- Chọn địa điểm --</option>
             <option :value="1">Hồ Chí Minh</option>
@@ -183,11 +183,11 @@
 
         <!-- Trạng thái tìm việc -->
         <div class="space-y-3 md:col-span-2">
-          <label class="text-xs font-bold text-text-muted uppercase tracking-wider">Trạng thái tìm việc</label>
+          <label class="text-sm font-bold text-text-muted uppercase tracking-wider">Trạng thái tìm việc</label>
           <div class="flex flex-wrap gap-3">
             <label v-for="status in jobStatusOptions" :key="status.value" class="cursor-pointer">
               <input v-model="form.jobSeekingStatus" type="radio" :value="status.value" class="sr-only peer" />
-              <div class="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-text-muted dark:text-gray-400 text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-700 peer-checked:bg-primary/10 peer-checked:text-primary peer-checked:border-primary transition-all">
+              <div class="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-text-muted dark:text-gray-400 text-base font-medium hover:bg-slate-50 dark:hover:bg-slate-700 peer-checked:bg-primary/10 peer-checked:text-primary peer-checked:border-primary transition-all">
                 {{ status.label }}
               </div>
             </label>
@@ -215,7 +215,7 @@
     <div class="flex justify-end gap-3 pt-2">
       <button
         type="button"
-        class="px-6 py-2.5 rounded-2xl border border-slate-200 dark:border-slate-700 text-text-muted dark:text-gray-400 font-bold text-sm hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+        class="px-6 py-2.5 rounded-2xl border border-slate-200 dark:border-slate-700 text-text-muted dark:text-gray-400 font-bold text-base hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
         :disabled="store.loading"
         @click="resetForm"
       >
@@ -223,7 +223,7 @@
       </button>
       <button
         type="button"
-        class="px-6 py-2.5 rounded-2xl bg-primary hover:bg-primary-hover text-white font-bold text-sm shadow-lg shadow-blue-500/30 transition-colors disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-2"
+        class="px-6 py-2.5 rounded-2xl bg-primary hover:bg-primary-hover text-white font-bold text-base shadow-lg shadow-blue-500/30 transition-colors disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-2"
         :disabled="store.loading"
         @click="saveChanges"
       >

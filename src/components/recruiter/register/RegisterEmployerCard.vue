@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { useAuthStore } from '@/stores/auth.store'
 import { useToast } from '@/composables/useToast'
@@ -205,7 +205,7 @@ async function handleRegister() {
               <button
                 type="button"
                 @click="showPassword = !showPassword"
-                class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600"
+                class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 cursor-pointer"
               >
                 <span class="material-symbols-outlined text-[20px]">
                   {{ showPassword ? 'visibility' : 'visibility_off' }}
@@ -252,7 +252,7 @@ async function handleRegister() {
           <button
             @click="handleRegister"
             :disabled="!canSubmit"
-            class="w-full mt-6 bg-primary hover:bg-blue-600 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold py-3.5 rounded-lg shadow-lg hover:shadow-blue-500/30 transition-all text-sm flex items-center justify-center gap-2"
+            class="w-full mt-6 bg-primary hover:bg-blue-600 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold py-3.5 rounded-lg shadow-lg hover:shadow-blue-500/30 transition-all text-sm flex items-center justify-center gap-2 cursor-pointer"
           >
             <span v-if="loading" class="flex items-center gap-2">
               <svg class="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">

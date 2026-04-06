@@ -1,8 +1,8 @@
-<template>
+﻿<template>
   <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700/50 overflow-hidden">
     <div class="p-6 border-b border-slate-100 dark:border-slate-700/50 flex items-center justify-between">
       <h4 class="font-bold text-lg">Tin tuyển dụng gần đây</h4>
-      <button class="text-slate-500 hover:text-primary transition-colors">
+      <button class="text-slate-500 hover:text-primary transition-colors cursor-pointer">
         <span class="material-symbols-outlined">more_horiz</span>
       </button>
     </div>

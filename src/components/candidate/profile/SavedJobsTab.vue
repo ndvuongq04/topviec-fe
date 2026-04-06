@@ -1,37 +1,46 @@
 <template>
-  <div class="space-y-6">
-    <!-- Header -->
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-surface-dark p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm">
-      <div class="flex items-center gap-4">
-        <!-- Select All Checkbox -->
-        <div 
-          v-if="mappedJobs.length > 0"
-          @click="toggleSelectAll"
-          class="w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all cursor-pointer shrink-0"
-          :class="isAllSelected 
-            ? 'bg-primary border-primary text-white shadow-lg shadow-primary/20' 
-            : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:border-primary'"
-        >
-          <span v-if="isAllSelected" class="material-symbols-outlined text-sm font-bold">check</span>
-        </div>
-        <div>
-          <h1 class="text-2xl font-bold text-text-main dark:text-white">Việc làm đã lưu</h1>
-          <p class="text-text-muted text-sm mt-1">Xem và quản lý các công việc bạn đã lưu.</p>
+  <div class="space-y-5">
+    <!-- Header Card: Title + Actions merged -->
+    <div class="bg-white dark:bg-surface-dark rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+      <div class="p-5 sm:p-6">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h2 class="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">Việc làm đã lưu</h2>
+            <p class="text-slate-500 dark:text-gray-400 text-base mt-1">Xem và quản lý các công việc bạn đã lưu.</p>
+          </div>
+          <div v-if="savedJobStore.meta.totals > 0" class="flex items-center gap-2">
+            <span class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-base font-bold bg-primary/10 text-primary border border-primary/20">
+              <span class="material-symbols-outlined text-[18px]">bookmark</span>
+              {{ savedJobStore.meta.totals }} đã lưu
+            </span>
+          </div>
         </div>
       </div>
-      <div v-if="savedJobStore.meta.totals > 0" class="px-4 py-2 bg-slate-100 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
-        <span class="text-sm text-text-muted font-medium">Đã lưu: </span>
-        <span class="text-sm font-bold text-primary">{{ savedJobStore.meta.totals }}</span>
+      <!-- Select All (only when has items) -->
+      <div v-if="mappedJobs.length > 0" class="px-5 sm:px-6 py-3 bg-slate-50/50 dark:bg-slate-800/30 border-t border-slate-100 dark:border-slate-800 flex items-center gap-3">
+        <div 
+          @click="toggleSelectAll"
+          class="w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all cursor-pointer shrink-0"
+          :class="isAllSelected 
+            ? 'bg-primary border-primary text-white' 
+            : 'bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 hover:border-primary'"
+        >
+          <span v-if="isAllSelected" class="material-symbols-outlined text-xs font-bold">check</span>
+        </div>
+        <span class="text-sm font-medium text-slate-500 dark:text-gray-400">
+          {{ isAllSelected ? 'Bỏ chọn tất cả' : 'Chọn tất cả' }}
+        </span>
       </div>
     </div>
 
     <!-- Loading -->
-    <div v-if="savedJobStore.loading && savedJobStore.savedJobs.length === 0" class="flex justify-center py-12">
+    <div v-if="savedJobStore.loading && savedJobStore.savedJobs.length === 0" class="flex flex-col items-center justify-center py-20">
       <span class="material-symbols-outlined animate-spin text-primary text-4xl">progress_activity</span>
+      <p class="mt-4 text-sm text-slate-400 font-medium">Đang tải danh sách...</p>
     </div>
 
     <!-- List -->
-    <div v-else-if="mappedJobs.length > 0" class="flex flex-col gap-4 pb-20">
+    <div v-else-if="mappedJobs.length > 0" class="flex flex-col gap-3">
       <JobCard
         v-for="job in mappedJobs"
         :key="job.id"
@@ -45,17 +54,17 @@
     </div>
 
     <!-- Empty state -->
-    <div v-else class="bg-white dark:bg-surface-dark p-12 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col items-center justify-center text-center">
-      <div class="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center text-primary mb-4">
-        <span class="material-symbols-outlined text-3xl">bookmark_border</span>
+    <div v-else class="bg-white dark:bg-surface-dark py-16 px-8 rounded-2xl border border-slate-200 dark:border-slate-800 flex flex-col items-center justify-center text-center">
+      <div class="w-20 h-20 bg-slate-100 dark:bg-slate-800 rounded-2xl flex items-center justify-center text-slate-400 mb-5">
+        <span class="material-symbols-outlined text-4xl">bookmark_border</span>
       </div>
-      <h3 class="text-lg font-bold text-text-main dark:text-white mb-2">Chưa có việc làm nào được lưu</h3>
-      <p class="text-text-muted text-sm mb-6">Lưu lại những công việc hấp dẫn để xem lại và ứng tuyển sau.</p>
+      <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-1.5">Chưa có việc làm nào được lưu</h3>
+      <p class="text-slate-500 dark:text-gray-400 text-sm mb-6 max-w-xs">Lưu lại những công việc hấp dẫn để xem lại và ứng tuyển sau.</p>
       <router-link
         to="/"
-        class="flex items-center gap-2 bg-primary hover:bg-primary-hover text-white px-5 py-2.5 rounded-2xl font-bold text-sm shadow-lg shadow-blue-500/30 transition-colors"
+        class="inline-flex items-center gap-2 bg-primary hover:bg-primary-hover text-white px-5 py-2.5 rounded-xl font-bold text-sm shadow-lg shadow-primary/20 transition-all active:scale-95"
       >
-        <span class="material-symbols-outlined text-[20px]">search</span>
+        <span class="material-symbols-outlined text-[18px]">search</span>
         Khám phá ngay
       </router-link>
     </div>
@@ -64,28 +73,27 @@
     <Transition name="slide-up">
       <div 
         v-if="selectedIds.length > 0"
-        class="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800 shadow-2xl rounded-2xl px-6 py-4 flex items-center gap-6 min-w-[320px] md:min-w-[500px]"
+        class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-slate-900 dark:bg-white text-white dark:text-slate-900 shadow-2xl shadow-slate-900/30 rounded-2xl px-5 py-3.5 flex items-center gap-5 min-w-[300px] md:min-w-[480px]"
       >
-        <div class="flex flex-col">
-          <span class="text-sm font-bold text-text-main dark:text-white">Đã chọn {{ selectedIds.length }} việc làm</span>
-          <span v-if="selectedIds.length > 10" class="text-xs text-red-500 font-medium">Tối đa 10 việc làm mỗi lần ứng tuyển</span>
-          <span v-else class="text-xs text-text-muted">Bạn có thể ứng tuyển nhanh vào các vị trí này</span>
+        <div class="flex flex-col min-w-0">
+          <span class="text-sm font-bold">Đã chọn {{ selectedIds.length }} việc làm</span>
+          <span v-if="selectedIds.length > 10" class="text-xs text-red-400 font-medium">Tối đa 10 việc làm mỗi lần</span>
+          <span v-else class="text-xs text-slate-400 dark:text-slate-500">Ứng tuyển nhanh vào các vị trí này</span>
         </div>
-        
-        <div class="flex items-center gap-3 ml-auto">
+        <div class="flex items-center gap-2 ml-auto shrink-0">
           <button 
             @click="selectedIds = []"
-            class="text-sm font-bold text-text-muted hover:text-text-main px-4 py-2 transition-colors"
+            class="text-sm font-bold text-slate-400 dark:text-slate-500 hover:text-white dark:hover:text-slate-900 px-3 py-2 transition-colors"
           >
             Hủy
           </button>
           <button 
             @click="handleBatchApply"
             :disabled="selectedIds.length > 10"
-            class="bg-primary hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed text-white px-6 py-2.5 rounded-xl font-bold text-sm shadow-lg shadow-blue-500/20 transition-all flex items-center gap-2"
+            class="bg-primary hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed text-white px-5 py-2.5 rounded-xl font-bold text-sm transition-all flex items-center gap-2"
           >
-            <span class="material-symbols-outlined text-[20px]">send</span>
-            Ứng tuyển ngay
+            <span class="material-symbols-outlined text-[18px]">send</span>
+            <span class="hidden sm:inline">Ứng tuyển</span>
           </button>
         </div>
       </div>
@@ -94,63 +102,60 @@
     <!-- Batch Apply Selection Modal -->
     <Transition name="fade">
       <div v-if="showBatchApplyModal" class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
-        <div class="bg-white dark:bg-surface-dark w-full max-w-lg rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden animate-in fade-in zoom-in duration-300">
-          <div class="p-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
-            <h3 class="text-xl font-bold text-text-main dark:text-white">Ứng tuyển hàng loạt</h3>
-            <button @click="showBatchApplyModal = false" class="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors">
-              <span class="material-symbols-outlined">close</span>
+        <div class="bg-white dark:bg-surface-dark w-full max-w-lg rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden">
+          <div class="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+            <h3 class="text-lg font-bold text-slate-900 dark:text-white">Ứng tuyển hàng loạt</h3>
+            <button @click="showBatchApplyModal = false" class="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors">
+              <span class="material-symbols-outlined text-[20px]">close</span>
             </button>
           </div>
           
-          <div class="p-6">
-            <div class="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-2xl border border-blue-100 dark:border-blue-800 flex items-start gap-3">
-              <span class="material-symbols-outlined text-blue-600 dark:text-blue-400">info</span>
-              <p class="text-sm text-blue-700 dark:text-blue-300">
-                Bạn đang ứng tuyển vào <strong>{{ selectedIds.length }} vị trí</strong> công việc. 
-                Vui lòng chọn 1 CV chung để nộp cho tất cả.
-              </p>
+          <div class="p-5">
+            <div class="mb-5 p-3.5 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-100 dark:border-blue-800 flex items-start gap-3">
+              <span class="material-symbols-outlined text-blue-500 text-[20px] mt-0.5">info</span>
+              <p class="text-sm text-blue-700 dark:text-blue-300">Bạn đang ứng tuyển vào <strong>{{ selectedIds.length }} vị trí</strong>. Chọn 1 CV chung để nộp.</p>
             </div>
 
-            <h4 class="text-sm font-bold text-text-muted mb-3 px-1">Danh sách CV của bạn</h4>
-            <div class="space-y-3 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+            <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Chọn CV</p>
+            <div class="space-y-2.5 max-h-[280px] overflow-y-auto pr-1 custom-scrollbar">
               <div 
                 v-for="cv in cvsStore.cvs" 
                 :key="cv.id"
                 @click="selectedCvId = cv.id"
-                class="group p-4 rounded-2xl border-2 transition-all cursor-pointer flex items-center gap-4"
+                class="p-3.5 rounded-xl border-2 transition-all cursor-pointer flex items-center gap-3.5"
                 :class="selectedCvId === cv.id 
-                  ? 'border-primary bg-primary/5 shadow-md shadow-primary/5' 
-                  : 'border-slate-100 dark:border-slate-800 hover:border-slate-200 dark:hover:border-slate-700 bg-slate-50 dark:bg-slate-800/50'"
+                  ? 'border-primary bg-primary/5' 
+                  : 'border-slate-100 dark:border-slate-800 hover:border-slate-200 dark:hover:border-slate-700'"
               >
-                <div class="w-10 h-10 rounded-xl bg-white dark:bg-slate-800 flex items-center justify-center shadow-sm">
-                  <span class="material-symbols-outlined text-primary">description</span>
+                <div class="w-9 h-9 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center shrink-0">
+                  <span class="material-symbols-outlined text-primary text-[18px]">description</span>
                 </div>
-                <div class="flex-grow">
-                  <p class="font-bold text-sm text-text-main dark:text-white">{{ cv.title }}</p>
-                  <p class="text-xs text-text-muted mt-0.5">Cập nhật: {{ dayjs(cv.updatedAt).format('DD/MM/YYYY') }}</p>
+                <div class="flex-grow min-w-0">
+                  <p class="font-bold text-sm text-slate-900 dark:text-white truncate">{{ cv.title }}</p>
+                  <p class="text-xs text-slate-400 mt-0.5">{{ dayjs(cv.updatedAt).format('DD/MM/YYYY') }}</p>
                 </div>
                 <div 
-                  class="w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all"
-                  :class="selectedCvId === cv.id ? 'border-primary bg-primary text-white' : 'border-slate-300 dark:border-slate-600'"
+                  class="w-4.5 h-4.5 rounded-full border-2 flex items-center justify-center shrink-0"
+                  :class="selectedCvId === cv.id ? 'border-primary bg-primary' : 'border-slate-300 dark:border-slate-600'"
                 >
-                  <div v-if="selectedCvId === cv.id" class="w-2 h-2 rounded-full bg-white"></div>
+                  <div v-if="selectedCvId === cv.id" class="w-1.5 h-1.5 rounded-full bg-white"></div>
                 </div>
               </div>
             </div>
           </div>
 
-          <div class="p-6 bg-slate-50 dark:bg-slate-800/30 border-t border-slate-100 dark:border-slate-800 flex items-center gap-3">
+          <div class="p-5 bg-slate-50 dark:bg-slate-800/30 border-t border-slate-100 dark:border-slate-800 flex items-center gap-3">
             <button 
               @click="showBatchApplyModal = false"
-              class="flex-1 px-4 py-3 rounded-xl font-bold text-sm text-text-muted hover:bg-slate-100 dark:hover:bg-slate-700 transition-all"
+              class="flex-1 px-4 py-2.5 rounded-xl font-bold text-sm text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 transition-all"
             >
               Hủy bỏ
             </button>
             <button 
               @click="confirmBatchApply"
-              class="flex-1 bg-primary hover:bg-primary-hover text-white px-4 py-3 rounded-xl font-bold text-sm shadow-lg shadow-blue-500/20 transition-all flex items-center justify-center gap-2"
+              class="flex-1 bg-primary hover:bg-primary-hover text-white px-4 py-2.5 rounded-xl font-bold text-sm shadow-lg shadow-primary/20 transition-all flex items-center justify-center gap-2"
             >
-              <span class="material-symbols-outlined text-[18px]">send</span>
+              <span class="material-symbols-outlined text-[16px]">send</span>
               Gửi đơn ngay
             </button>
           </div>
@@ -159,35 +164,31 @@
     </Transition>
 
     <!-- Pagination -->
-    <div v-if="totalPages > 1" class="flex items-center justify-center gap-4 mt-8">
+    <div v-if="totalPages > 1" class="flex items-center justify-center gap-1.5 pt-4 pb-10">
       <button
-        class="p-2 rounded-xl border border-slate-200 dark:border-slate-800 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+        class="p-2 rounded-lg text-slate-400 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-600 transition-colors"
         :disabled="currentPage === 0"
         @click="changePage(currentPage - 1)"
       >
-        <span class="material-symbols-outlined">chevron_left</span>
+        <span class="material-symbols-outlined text-[20px]">chevron_left</span>
       </button>
-      
-      <div class="flex items-center gap-2">
-         <button 
-           v-for="p in totalPages" 
-           :key="p"
-           class="w-10 h-10 rounded-xl text-sm font-bold transition-all"
-           :class="currentPage === p-1 
-             ? 'bg-primary text-white shadow-lg shadow-primary/20' 
-             : 'text-text-muted hover:bg-slate-50 dark:hover:bg-slate-800'"
-           @click="changePage(p-1)"
-         >
-           {{ p }}
-         </button>
-      </div>
-
+      <button 
+        v-for="p in totalPages" 
+        :key="p"
+        class="w-9 h-9 rounded-lg text-sm font-bold transition-all"
+        :class="currentPage === p-1 
+          ? 'bg-primary text-white shadow-md shadow-primary/20' 
+          : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800'"
+        @click="changePage(p-1)"
+      >
+        {{ p }}
+      </button>
       <button
-        class="p-2 rounded-xl border border-slate-200 dark:border-slate-800 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+        class="p-2 rounded-lg text-slate-400 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-600 transition-colors"
         :disabled="currentPage === totalPages - 1"
         @click="changePage(currentPage + 1)"
       >
-        <span class="material-symbols-outlined">chevron_right</span>
+        <span class="material-symbols-outlined text-[20px]">chevron_right</span>
       </button>
     </div>
   </div>

@@ -1,60 +1,57 @@
 <template>
-  <section class="bg-white dark:bg-slate-800 rounded-3xl p-8 shadow-sm border border-slate-100 dark:border-slate-700">
-    <div class="flex items-center gap-3 mb-6">
-      <div class="w-10 h-10 rounded-xl bg-green-50 dark:bg-green-900/20 flex items-center justify-center text-green-600 dark:text-green-400">
+  <section class="section-card">
+    <div class="section-header">
+      <div class="icon-wrap icon-green">
         <span class="material-symbols-outlined">payments</span>
       </div>
-      <h3 class="text-xl font-bold">Lương &amp; Hình thức</h3>
+      <h3 class="section-title">Lương &amp; Hình thức</h3>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-      <!-- Mức lương -->
+    <div class="grid-2col">
+      <!-- Salary -->
       <div>
-        <label class="block text-sm font-semibold text-slate-900 dark:text-slate-100 mb-2">Mức lương (VNĐ)</label>
-        <div class="space-y-3">
-          <div class="flex gap-3">
+        <label class="field-label">Mức lương (VNĐ)</label>
+        <div class="salary-fields">
+          <div class="salary-row">
             <input
-              :value="modelValue.salaryMin"
-              class="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-700 focus:ring-primary/10 outline-none"
+              v-model="form.salaryMin"
+              class="field-input"
+              :class="{ 'field-input--error': errors.salaryMin }"
               placeholder="Tối thiểu"
               type="text"
-              @input="emit('update:modelValue', { ...modelValue, salaryMin: ($event.target as HTMLInputElement).value })"
+              :disabled="form.salaryNegotiable"
             />
             <input
-              :value="modelValue.salaryMax"
-              class="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-700 focus:ring-primary/10 outline-none"
+              v-model="form.salaryMax"
+              class="field-input"
+              :class="{ 'field-input--error': errors.salaryMax }"
               placeholder="Tối đa"
               type="text"
-              @input="emit('update:modelValue', { ...modelValue, salaryMax: ($event.target as HTMLInputElement).value })"
+              :disabled="form.salaryNegotiable"
             />
           </div>
-          <label class="flex items-center gap-3 cursor-pointer group mt-2">
+          <p v-if="errors.salaryMax" class="field-error">{{ errors.salaryMax }}</p>
+          <label class="checkbox-label">
             <input
-              :checked="modelValue.negotiable"
-              class="w-5 h-5 rounded border-slate-300 text-primary focus:ring-primary/20"
+              v-model="form.salaryNegotiable"
+              class="checkbox"
               type="checkbox"
-              @change="emit('update:modelValue', { ...modelValue, negotiable: ($event.target as HTMLInputElement).checked })"
             />
-            <span class="text-sm font-medium text-slate-500 group-hover:text-slate-900 dark:group-hover:text-slate-100 transition-colors">
-              Thỏa thuận trực tiếp
-            </span>
+            <span>Thỏa thuận trực tiếp</span>
           </label>
         </div>
       </div>
 
-      <!-- Hình thức làm việc -->
+      <!-- Work type -->
       <div>
-        <label class="block text-sm font-semibold text-slate-900 dark:text-slate-100 mb-2">Hình thức làm việc</label>
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+        <label class="field-label">Hình thức làm việc</label>
+        <div class="work-type-grid">
           <button
-            v-for="opt in workTypes"
+            v-for="opt in workTypeOptions"
             :key="opt.value"
             type="button"
-            class="px-4 py-3 text-sm font-medium rounded-xl border transition-all cursor-pointer"
-            :class="modelValue.workType === opt.value
-              ? 'border-primary bg-primary/5 text-primary'
-              : 'border-slate-300 dark:border-slate-600 text-slate-500 hover:border-primary/40'"
-            @click="emit('update:modelValue', { ...modelValue, workType: opt.value })"
+            :class="['work-type-btn', form.workType === opt.value ? 'active' : '']"
+            @click="form.workType = opt.value"
           >
             {{ opt.label }}
           </button>
@@ -65,25 +62,140 @@
 </template>
 
 <script setup lang="ts">
-export interface SalaryData {
-  salaryMin: string
-  salaryMax: string
-  negotiable: boolean
-  workType: string
+import { inject } from 'vue'
+import { WORK_TYPE_OPTIONS } from '@/constants/jobPosting.constants'
+import { CREATE_JOB_FORM_KEY, CREATE_JOB_ERRORS_KEY } from '@/composables/useCreateJobForm'
+
+const form = inject(CREATE_JOB_FORM_KEY)!
+const errors = inject(CREATE_JOB_ERRORS_KEY)!
+
+const workTypeOptions = WORK_TYPE_OPTIONS
+</script>
+
+<style scoped>
+.section-card {
+  background: #fff;
+  border-radius: 1.5rem;
+  padding: 2rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,.06);
+  border: 1px solid #f1f5f9;
+}
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+.icon-wrap {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.icon-green { background: #f0fdf4; color: #16a34a; }
+.section-title { font-size: 1.125rem; font-weight: 700; color: #0f172a; }
+
+.grid-2col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
 }
 
-defineProps<{
-  modelValue: SalaryData
-}>()
+.field-label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 0.5rem;
+}
+.field-error {
+  font-size: 0.75rem;
+  color: #ef4444;
+  margin-top: 0.375rem;
+}
 
-const emit = defineEmits<{
-  'update:modelValue': [value: SalaryData]
-}>()
+/* Salary */
+.salary-fields { display: flex; flex-direction: column; gap: 0.75rem; }
+.salary-row { display: flex; gap: 0.75rem; }
 
-const workTypes = [
-  { label: 'Toàn thời gian', value: 'FULL_TIME' },
-  { label: 'Bán thời gian', value: 'PART_TIME' },
-  { label: 'Thực tập', value: 'INTERN' },
-  { label: 'Remote', value: 'REMOTE' },
-]
-</script>
+.field-input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
+  border: 1px solid #e2e8f0;
+  outline: none;
+  font-size: 1rem;
+  font-family: inherit;
+  color: #0f172a;
+  box-sizing: border-box;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.field-input:focus {
+  border-color: #4B9AF6;
+  box-shadow: 0 0 0 4px rgba(75,154,246,.1);
+}
+.field-input--error {
+  border-color: #ef4444 !important;
+  box-shadow: 0 0 0 4px rgba(239,68,68,.08) !important;
+}
+.field-input:disabled {
+  background: #f8fafc;
+  color: #94a3b8;
+  cursor: not-allowed;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 500;
+  color: #64748b;
+  transition: color 0.15s;
+}
+.checkbox-label:hover { color: #0f172a; }
+.checkbox {
+  width: 1rem;
+  height: 1rem;
+  border-radius: 0.25rem;
+  border: 1px solid #cbd5e1;
+  accent-color: #4B9AF6;
+  cursor: pointer;
+}
+
+/* Work type */
+.work-type-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+}
+.work-type-btn {
+  padding: 0.75rem 1rem;
+  font-size: 1rem;
+  font-weight: 500;
+  border-radius: 0.75rem;
+  border: 1px solid #e2e8f0;
+  color: #64748b;
+  background: #fff;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+  font-family: inherit;
+}
+.work-type-btn:hover {
+  border-color: rgba(75,154,246,.4);
+  color: #4B9AF6;
+}
+.work-type-btn.active {
+  border: 2px solid #4B9AF6;
+  background: rgba(75,154,246,.05);
+  color: #4B9AF6;
+  font-weight: 600;
+}
+
+@media (max-width: 768px) {
+  .grid-2col { grid-template-columns: 1fr; }
+}
+</style>

@@ -217,14 +217,14 @@ async function toggleCompanyFollow() {
           </div>
           <div>
             <h1
-              class="text-text-main text-2xl md:text-3xl font-bold leading-tight mb-2"
+              class="text-text-main text-3xl md:text-4xl font-extrabold leading-tight mb-2 tracking-tight"
             >
               {{ job.title }}
             </h1>
             <div
-              class="flex flex-wrap items-center gap-y-1.5 gap-x-4 text-text-secondary text-sm md:text-base"
+              class="flex flex-wrap items-center gap-y-1.5 gap-x-4 text-text-secondary text-base"
             >
-              <span class="font-semibold text-text-main">{{
+              <span class="font-bold text-text-main text-lg">{{
                 job.company.name
               }}</span>
               <span class="w-1 h-1 bg-slate-300 rounded-full hidden sm:block" />
@@ -246,7 +246,7 @@ async function toggleCompanyFollow() {
         <!-- Action buttons -->
         <div class="flex gap-3 w-full md:w-auto shrink-0">
           <button
-            class="flex-1 md:flex-none h-12 px-5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-text-main font-bold flex items-center justify-center gap-2 transition-all cursor-pointer"
+            class="flex-1 md:flex-none h-12 px-5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-text-main font-bold text-base flex items-center justify-center gap-2 transition-all cursor-pointer"
             :class="{ 'border-primary text-primary bg-primary/5': isSaved }"
             @click="toggleSave"
           >
@@ -259,7 +259,7 @@ async function toggleCompanyFollow() {
           </button>
           <button
             @click="handleQuickApply(props.id, job.title)"
-            class="hidden md:flex flex-1 md:flex-none h-12 px-6 rounded-xl border border-orange-200 bg-orange-50 hover:bg-orange-100 text-orange-600 font-bold items-center justify-center gap-2 transition-all cursor-pointer"
+            class="hidden md:flex flex-1 md:flex-none h-12 px-6 rounded-xl border border-orange-200 bg-orange-50 hover:bg-orange-100 text-orange-600 font-bold text-base items-center justify-center gap-2 transition-all cursor-pointer"
             title="Ứng tuyển nhanh bằng CV mặc định"
           >
             <span class="material-symbols-outlined text-[20px]">bolt</span>
@@ -267,7 +267,7 @@ async function toggleCompanyFollow() {
           </button>
           <button
             @click="showApplyModal = true"
-            class="flex-1 md:flex-none h-12 px-8 rounded-xl bg-primary hover:bg-primary-dark text-white font-bold shadow-lg shadow-primary/25 flex items-center justify-center gap-2 transition-all hover:-translate-y-0.5 cursor-pointer"
+            class="flex-1 md:flex-none h-12 px-8 rounded-xl bg-primary hover:bg-primary-dark text-white font-bold text-base shadow-lg shadow-primary/25 flex items-center justify-center gap-2 transition-all hover:-translate-y-0.5 cursor-pointer"
           >
             <span>Ứng tuyển</span>
             <span class="material-symbols-outlined text-[20px]"
@@ -280,7 +280,7 @@ async function toggleCompanyFollow() {
       <!-- Tags row -->
       <div class="mt-8 pt-6 border-t border-slate-100 flex flex-wrap gap-3">
         <div
-          class="px-4 py-2 bg-slate-50 rounded-lg text-sm font-medium text-text-secondary flex items-center gap-2"
+          class="px-4 py-2 bg-slate-50 rounded-lg text-base font-medium text-text-secondary flex items-center gap-2"
         >
           <span class="material-symbols-outlined text-primary text-[20px]"
             >work</span
@@ -288,7 +288,7 @@ async function toggleCompanyFollow() {
           {{ job.workType }}
         </div>
         <div
-          class="px-4 py-2 bg-slate-50 rounded-lg text-sm font-medium text-text-secondary flex items-center gap-2"
+          class="px-4 py-2 bg-slate-50 rounded-lg text-base font-medium text-text-secondary flex items-center gap-2"
         >
           <span class="material-symbols-outlined text-green-500 text-[20px]"
             >payments</span
@@ -296,7 +296,7 @@ async function toggleCompanyFollow() {
           {{ formattedSalary }}
         </div>
         <div
-          class="px-4 py-2 bg-slate-50 rounded-lg text-sm font-medium text-text-secondary flex items-center gap-2"
+          class="px-4 py-2 bg-slate-50 rounded-lg text-base font-medium text-text-secondary flex items-center gap-2"
         >
           <span class="material-symbols-outlined text-orange-500 text-[20px]"
             >stars</span
@@ -304,7 +304,7 @@ async function toggleCompanyFollow() {
           {{ job.level.name }}
         </div>
         <div
-          class="px-4 py-2 bg-slate-50 rounded-lg text-sm font-medium text-text-secondary flex items-center gap-2"
+          class="px-4 py-2 bg-slate-50 rounded-lg text-base font-medium text-text-secondary flex items-center gap-2"
         >
           <span class="material-symbols-outlined text-blue-500 text-[20px]"
             >group</span
@@ -323,7 +323,7 @@ async function toggleCompanyFollow() {
           class="bg-white rounded-2xl p-6 md:p-8 shadow-sm border border-slate-100"
         >
           <h2
-            class="text-xl font-bold text-text-main mb-6 flex items-center gap-3"
+            class="text-lg font-extrabold text-text-main mb-6 flex items-center gap-3"
           >
             <span
               class="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0"
@@ -351,7 +351,7 @@ async function toggleCompanyFollow() {
           <template v-if="job.benefits">
             <h3 class="text-lg font-bold text-text-main mt-8 mb-4">Phúc lợi</h3>
             <div
-              class="text-text-secondary leading-relaxed prose prose-slate max-w-none text-sm md:text-base"
+              class="text-text-secondary leading-relaxed prose prose-slate max-w-none text-base"
               v-html="job.benefits"
             ></div>
           </template>
@@ -389,19 +389,19 @@ async function toggleCompanyFollow() {
                 class="w-12 h-12 rounded-lg object-contain border border-slate-100 p-1"
               />
               <div>
-                <h4 class="font-bold text-text-main">{{ job.company.name }}</h4>
+                <h4 class="text-lg font-bold text-text-main">{{ job.company.name }}</h4>
                 <RouterLink
                   v-if="job.company.slug"
                   :to="`/companies/${job.company.slug}`"
-                  class="text-primary text-sm font-medium hover:underline"
+                  class="text-primary text-base font-medium hover:underline"
                   >Xem hồ sơ</RouterLink
                 >
-                <span v-else class="text-text-muted text-sm">Chưa có hồ sơ</span>
+                <span v-else class="text-text-muted text-base">Chưa có hồ sơ</span>
               </div>
             </div>
             <button
               @click="toggleCompanyFollow"
-              class="h-8 px-3 rounded-md text-xs font-bold transition-colors shrink-0 cursor-pointer"
+              class="h-8 px-3 rounded-md text-sm font-bold transition-colors shrink-0 cursor-pointer"
               :class="
                 isCompanyFollowing
                   ? 'bg-slate-100 text-slate-600 hover:bg-slate-200'
@@ -415,16 +415,16 @@ async function toggleCompanyFollow() {
             <div
               class="flex justify-between items-center py-2 border-b border-slate-50"
             >
-              <span class="text-text-secondary">Lĩnh vực</span>
-              <span class="font-medium text-text-main">{{
+              <span class="text-text-secondary text-sm">Lĩnh vực</span>
+              <span class="font-medium text-text-main text-sm">{{
                 job.industry.name
               }}</span>
             </div>
             <div
               class="flex justify-between items-center py-2 border-b border-slate-50"
             >
-              <span class="text-text-secondary">Trụ sở</span>
-              <span class="font-medium text-text-main truncate ml-4">{{
+              <span class="text-text-secondary text-sm">Trụ sở</span>
+              <span class="font-medium text-text-main text-sm truncate ml-4">{{
                 job.company.address || "Vietnam"
               }}</span>
             </div>
@@ -440,8 +440,8 @@ async function toggleCompanyFollow() {
                 >calendar_today</span
               >
               <div>
-                <p class="text-text-secondary text-xs">Hạn ứng tuyển</p>
-                <p class="font-medium text-text-main">
+                <p class="text-text-secondary text-sm">Hạn ứng tuyển</p>
+                <p class="font-bold text-text-main text-base">
                   {{ new Date(job.deadline).toLocaleDateString("vi-VN") }}
                 </p>
               </div>
@@ -451,8 +451,8 @@ async function toggleCompanyFollow() {
                 >visibility</span
               >
               <div>
-                <p class="text-text-secondary text-xs">Lượt xem</p>
-                <p class="font-medium text-text-main">{{ job.viewCount }}</p>
+                <p class="text-text-secondary text-sm">Lượt xem</p>
+                <p class="font-bold text-text-main text-base">{{ job.viewCount }}</p>
               </div>
             </div>
           </div>

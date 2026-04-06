@@ -114,18 +114,21 @@ export interface ResJobPostingDetail {
     salaryNegotiable: boolean
     workType: string
     headcount: number
+    hiredCount: number
     deadline: string
     status: JobPostingStatus
     isFeatured: boolean
     isUrgent: boolean
     viewCount: number
-    applicationCount?: number
+    applicationCount: number
     editCount: number
     publishedAt?: string
     createdAt: string
     updatedAt: string
+    deletedAt?: string | null
     locations: ResJobPostLocationDTO[]
     skills: ResJobPostSkillDTO[]
+    interviewRoundsCount: number
 }
 
 export interface ResJobPostingSummary {
@@ -143,9 +146,14 @@ export interface ResJobPostingSummary {
     isFeatured: boolean
     isUrgent: boolean
     viewCount: number
+    applicationCount: number
+    headcount: number
+    hiredCount: number
     deadline: string
     publishedAt?: string
     createdAt: string
+    deletedAt?: string | null
+    interviewRoundsCount: number
 }
 
 

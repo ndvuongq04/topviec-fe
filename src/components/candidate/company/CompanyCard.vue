@@ -42,10 +42,10 @@ const emit = defineEmits<{
 
     <!-- Tên + số job -->
     <div class="text-center">
-      <h4 class="font-bold text-sm text-text-main dark:text-white">
+      <h4 class="font-bold text-base text-text-main dark:text-white">
         {{ props.name }}
       </h4>
-      <p class="text-xs text-primary mt-1">
+      <p class="text-sm text-primary mt-1">
         {{ props.openJobs }} việc làm đang tuyển
       </p>
     </div>
@@ -53,7 +53,7 @@ const emit = defineEmits<{
     <!-- Nút Follow -->
     <button
       :class="[
-        'w-full py-1.5 text-xs font-semibold rounded-full transition-colors cursor-pointer',
+        'w-full py-1.5 text-sm font-semibold rounded-full transition-colors cursor-pointer',
         props.isFollowing
           ? 'bg-primary text-white hover:bg-blue-700'
           : 'text-primary bg-primary/10 hover:bg-primary hover:text-white',

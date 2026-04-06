@@ -43,7 +43,7 @@ async function handleFollow(id: number) {
 <template>
   <div class="flex flex-col gap-4 mt-4">
     <!-- Header -->
-    <h2 class="text-xl font-bold text-text-main dark:text-white">
+    <h2 class="text-3xl font-extrabold text-text-main dark:text-white tracking-tight">
       Công ty đang tuyển dụng
     </h2>
 
@@ -61,7 +61,7 @@ async function handleFollow(id: number) {
 
     <div
       v-else-if="companyStore.error"
-      class="p-4 rounded-xl bg-red-50 text-red-500 text-sm"
+      class="p-4 rounded-xl bg-red-50 text-red-500 text-base"
     >
       {{ companyStore.error }}
     </div>
@@ -80,7 +80,7 @@ async function handleFollow(id: number) {
       />
       <div
         v-if="companyStore.companies.length === 0"
-        class="text-slate-400 text-sm py-8"
+        class="text-slate-400 text-base py-8"
       >
         Chưa có công ty nào nổi bật.
       </div>

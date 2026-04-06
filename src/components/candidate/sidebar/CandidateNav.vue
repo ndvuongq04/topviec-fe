@@ -7,7 +7,7 @@ const navItems = [
   { name: "Tìm việc",     icon: "work",         path: "/" },
   { name: "Việc đã lưu",  icon: "bookmark",     path: "/saved-jobs" },
   { name: "Đã ứng tuyển", icon: "send",         path: "/applied-jobs" },
-  { name: "Phỏng vấn",    icon: "chat_bubble",   path: "/profile?tab=interviews" }, // Giả định
+  { name: "Phỏng vấn",    icon: "chat_bubble",   path: "/interviews" },
 ];
 </script>
 

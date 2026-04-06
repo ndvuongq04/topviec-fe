@@ -9,6 +9,9 @@ export const APPLICATION_STATUS = {
   WITHDRAWN: 'withdrawn',
   EXPIRED: 'expired',
   CONSIDERING: 'considering',
+  CV_PASSED: 'cv_passed',
+  SCHEDULE_PENDING: 'schedule_pending',
+  OVERDUE: 'overdue',
 } as const;
 
 export type ApplicationStatus = (typeof APPLICATION_STATUS)[keyof typeof APPLICATION_STATUS];
@@ -30,6 +33,9 @@ export const APPLICATION_STATUS_OPTIONS = [
   { value: APPLICATION_STATUS.INVITED, label: 'Được mời', color: 'cyan' },
   { value: APPLICATION_STATUS.SEEN, label: 'NTD Đã xem', color: 'purple' },
   { value: APPLICATION_STATUS.CONSIDERING, label: 'Đang cân nhắc', color: 'purple' },
+  { value: APPLICATION_STATUS.CV_PASSED, label: 'Đạt vòng CV', color: 'success' },
+  { value: APPLICATION_STATUS.SCHEDULE_PENDING, label: 'Chờ chọn lịch', color: 'orange' },
+  { value: APPLICATION_STATUS.OVERDUE, label: 'Quá hạn chọn lịch', color: 'red' },
   { value: APPLICATION_STATUS.INTERVIEWING, label: 'Đang phỏng vấn', color: 'orange' },
   { value: APPLICATION_STATUS.OFFERED, label: 'Gửi đề nghị', color: 'green' },
   { value: APPLICATION_STATUS.HIRED, label: 'Đã tuyển', color: 'success' },

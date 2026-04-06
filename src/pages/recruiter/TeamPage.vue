@@ -1,14 +1,14 @@
 <template>
-  <div class="space-y-8 pt-6">
+  <div class="space-y-8 pt-6" style="font-family: 'Manrope', sans-serif;">
 
     <!-- Title -->
-    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
       <div>
-        <h2 class="text-2xl font-extrabold tracking-tight">Quản lý Thành viên</h2>
-        <p class="text-slate-500 mt-1">Quản lý và phân quyền cho đội ngũ tuyển dụng của bạn.</p>
+        <h2 class="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">Quản lý Thành viên</h2>
+        <p class="text-slate-500 mt-1 text-base">Quản lý và phân quyền cho đội ngũ tuyển dụng của bạn.</p>
       </div>
       <button
-        class="inline-flex items-center gap-2 bg-primary hover:bg-primary/90 text-white px-5 py-2.5 rounded-lg font-bold text-sm transition-all shadow-lg shadow-primary/20"
+        class="inline-flex items-center gap-2 bg-primary hover:bg-primary/90 text-white px-5 py-2.5 rounded-xl font-extrabold text-base transition-all shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-95 cursor-pointer"
         @click="openInviteModal"
       >
         <span class="material-symbols-outlined text-sm">person_add</span>

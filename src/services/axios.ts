@@ -59,6 +59,12 @@ axiosInstance.interceptors.response.use(
       return Promise.reject(error)
     }
 
+    // Nếu không có accessToken thì user chưa đăng nhập → không cần refresh, bỏ qua
+    const token = localStorage.getItem('accessToken')
+    if (!token || token === 'undefined' || token === 'null') {
+      return Promise.reject(error)
+    }
+
     // Đang refresh → đưa vào hàng đợi chờ token mới
     if (isRefreshing) {
       return new Promise((resolve, reject) => {
@@ -85,7 +91,8 @@ axiosInstance.interceptors.response.use(
       processQueue(refreshError, null)
       const authStore = useAuthStore()
       await authStore.logout()
-      router.push({ name: 'login' })
+      // Sau khi refresh thất bại, về trang chủ (không force về login)
+      router.push({ name: 'home' })
       return Promise.reject(refreshError)
     } finally {
       isRefreshing = false

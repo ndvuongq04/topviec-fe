@@ -1,7 +1,8 @@
 <template>
   <div class="relative" ref="containerRef">
     <div
-      class="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-700 focus-within:border-primary focus-within:ring-4 focus-within:ring-primary/10 transition-all flex items-center justify-between cursor-pointer"
+      class="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-700 focus-within:border-primary focus-within:ring-4 focus-within:ring-primary/10 transition-all flex items-center justify-between"
+      :class="disabled ? 'cursor-not-allowed bg-slate-50 opacity-60' : 'cursor-pointer'"
       @click="toggleDropdown"
     >
       <span v-if="selectedItem" class="text-slate-900 dark:text-slate-100 truncate flex-1 pr-2">{{ selectedItem.name }}</span>
@@ -60,8 +61,10 @@ const props = withDefaults(defineProps<{
   modelValue: string | number | null
   options: SelectOption[]
   placeholder?: string
+  disabled?: boolean
 }>(), {
-  placeholder: '-- Chọn --'
+  placeholder: '-- Chọn --',
+  disabled: false,
 })
 
 const emit = defineEmits<{
@@ -86,6 +89,7 @@ const filteredOptions = computed(() => {
 })
 
 function toggleDropdown() {
+  if (props.disabled) return
   isOpen.value = !isOpen.value
   if (isOpen.value) {
     searchQuery.value = ''
