@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
+import JobSearchBar from '@/components/candidate/job/JobSearchBar.vue'
 import AdvancedFilter from '@/components/candidate/job/AdvancedFilter.vue'
 import type { SearchFilters } from '@/components/candidate/job/AdvancedFilter.vue'
 import JobCard from '@/components/candidate/job/JobCard.vue'
@@ -150,32 +151,18 @@ onMounted(fetchJobs)
 <template>
   <div class="flex flex-col flex-1 min-w-0">
 
-    <!-- Page header -->
-    <div class="bg-white dark:bg-surface-dark border-b border-slate-200 dark:border-slate-700 px-4 md:px-10 py-4">
-      <div class="max-w-[1440px] mx-auto flex items-center justify-between gap-4 flex-wrap">
-        <div>
-          <h1 class="text-3xl font-extrabold text-text-main dark:text-white tracking-tight">
-            <template v-if="keyword">
-              Kết quả tìm kiếm: <span class="text-primary">"{{ keyword }}"</span>
-            </template>
-            <template v-else>Tìm kiếm việc làm</template>
-          </h1>
-          <p v-if="!loading" class="text-base text-text-muted mt-1">
-            Tìm thấy <span class="font-bold text-text-main dark:text-white">{{ meta.totals }}</span> việc làm phù hợp
-          </p>
-        </div>
-
-        <!-- Mobile: nút mở filter -->
-        <button
-          type="button"
-          class="lg:hidden flex items-center gap-2 px-5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-surface-dark text-base font-bold text-text-main dark:text-white hover:border-primary transition-colors cursor-pointer shadow-sm"
-          @click="showMobileFilter = !showMobileFilter"
-        >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
-          </svg>
-          Lọc nâng cao
-        </button>
+    <!-- Search bar -->
+    <div class="relative bg-linear-to-r from-blue-400 via-blue-500 to-blue-600 px-4 md:px-10 py-6 shadow-lg shadow-blue-500/20">
+      <!-- Dot pattern -->
+      <div class="absolute inset-0 overflow-hidden pointer-events-none">
+        <div
+          class="absolute inset-0 opacity-10"
+          style="background-image: radial-gradient(#ffffff 1px, transparent 1px); background-size: 24px 24px;"
+        />
+        <div class="absolute right-0 top-0 h-full w-1/3 opacity-20 bg-linear-to-l from-white to-transparent transform skew-x-12 translate-x-12" />
+      </div>
+      <div class="relative z-10 max-w-360 mx-auto">
+        <JobSearchBar />
       </div>
     </div>
 
@@ -227,12 +214,30 @@ onMounted(fetchJobs)
       <!-- Main content -->
       <main class="flex-1 min-w-0 flex flex-col gap-3">
 
-        <!-- Top controls: Search type pills + Sort -->
+        <!-- Top controls: kết quả + pills + sort -->
         <div class="bg-background-light dark:bg-background-dark rounded-2xl px-4 py-3 flex items-center justify-between flex-wrap gap-3">
 
-          <!-- Search type pills -->
+          <!-- Trái: đếm kết quả + mobile filter btn + pills -->
           <div class="flex items-center gap-2.5 flex-wrap">
-            <span class="text-xs font-bold text-text-muted whitespace-nowrap uppercase tracking-wider">Tìm kiếm theo:</span>
+
+            <!-- Số kết quả -->
+            <p v-if="!loading" class="text-sm text-text-muted whitespace-nowrap">
+              Tìm thấy <span class="font-bold text-text-main dark:text-white">{{ meta.totals }}</span> việc làm
+            </p>
+
+            <!-- Mobile: nút mở filter -->
+            <button
+              type="button"
+              class="lg:hidden flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-surface-dark text-sm font-bold text-text-main dark:text-white hover:border-primary transition-colors cursor-pointer"
+              @click="showMobileFilter = !showMobileFilter"
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+              </svg>
+              Lọc
+            </button>
+
+            <span class="text-xs font-bold text-text-muted whitespace-nowrap uppercase tracking-wider hidden sm:block">|</span>
             <button
               v-for="opt in SEARCH_TYPE_OPTIONS"
               :key="opt.value"

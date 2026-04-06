@@ -1,15 +1,17 @@
 <script setup lang="ts">
 import { ref } from "vue";
+import { useRouter, useRoute } from "vue-router";
 import BannerSelect from "./BannerSelect.vue";
 
-const keyword = ref("");
+const router = useRouter();
+const route = useRoute();
+
+const keyword = ref((route.query.keyword as string) || "");
 const location = ref<string | null>(null);
 const industry = ref<string | null>(null);
 
 // Filter States
-const timeFilter = ref<string | null>(null);
 const typeFilter = ref<string | null>(null);
-const salaryFilter = ref<string | null>(null);
 const levelFilter = ref<string | null>(null);
 const experienceFilter = ref<string | null>(null);
 
@@ -33,30 +35,12 @@ const industries = [
   { id: "healthcare", name: "Y tế / Sức khỏe" },
 ];
 
-const times = [
-  { id: "24h", name: "24 giờ qua" },
-  { id: "3d", name: "3 ngày qua" },
-  { id: "1w", name: "1 tuần qua" },
-  { id: "2w", name: "2 tuần qua" },
-  { id: "1m", name: "1 tháng qua" },
-];
-
 const types = [
   { id: "fulltime", name: "Toàn thời gian" },
   { id: "parttime", name: "Bán thời gian" },
   { id: "internship", name: "Thực tập" },
   { id: "remote", name: "Làm việc từ xa" },
   { id: "freelance", name: "Freelance" },
-];
-
-const salaries = [
-  { id: "1", name: "Dưới 5 triệu" },
-  { id: "2", name: "5 - 10 triệu" },
-  { id: "3", name: "10 - 20 triệu" },
-  { id: "4", name: "20 - 30 triệu" },
-  { id: "5", name: "30 - 50 triệu" },
-  { id: "6", name: "Trên 50 triệu" },
-  { id: "7", name: "Thỏa thuận" },
 ];
 
 const levels = [
@@ -78,13 +62,10 @@ const experiences = [
 
 // Computed: has any active filter?
 const hasActiveFilters = () =>
-  timeFilter.value || typeFilter.value || salaryFilter.value ||
-  levelFilter.value || experienceFilter.value;
+  typeFilter.value || levelFilter.value || experienceFilter.value;
 
 function clearFilters() {
-  timeFilter.value = null;
   typeFilter.value = null;
-  salaryFilter.value = null;
   levelFilter.value = null;
   experienceFilter.value = null;
 }
@@ -131,6 +112,7 @@ function clearFilters() {
       <!-- Search Button -->
       <button
         class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-8 py-3 rounded-lg transition-all transform active:scale-95 shadow-md uppercase text-base tracking-wide"
+        @click="router.push({ name: 'JobSearch', query: { keyword: keyword || undefined } })"
       >
         Tìm việc
       </button>
@@ -139,19 +121,9 @@ function clearFilters() {
     <!-- Advanced Filter Pills (BannerSelect with search) -->
     <div class="flex flex-wrap items-center gap-2">
       <BannerSelect
-        v-model="timeFilter"
-        :options="times"
-        placeholder="Thời gian"
-      />
-      <BannerSelect
         v-model="typeFilter"
         :options="types"
         placeholder="Loại hình"
-      />
-      <BannerSelect
-        v-model="salaryFilter"
-        :options="salaries"
-        placeholder="Mức lương"
       />
       <BannerSelect
         v-model="levelFilter"

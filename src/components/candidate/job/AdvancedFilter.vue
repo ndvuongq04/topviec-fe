@@ -1,41 +1,20 @@
 <script setup lang="ts">
-import { ref, watch, onMounted } from 'vue'
-import { useLevelStore } from '@/stores/level.store'
+import { ref, watch, onMounted, computed } from 'vue'
 import { useIndustryStore } from '@/stores/industry.store'
-import { WorkType, WORK_TYPE_LABELS } from '@/constants/jobPosting.constants'
 
 export interface SearchFilters {
-  experienceYearsMin?: number
-  experienceYearsMax?: number
   industryId?: number
-  workType?: string
   salaryMin?: number
   salaryMax?: number
-  levelId?: number
+  isFeatured?: boolean
+  isUrgent?: boolean
 }
 
 const emit = defineEmits<{ change: [filters: SearchFilters] }>()
 
-const levelStore = useLevelStore()
 const industryStore = useIndustryStore()
 
-// ─── Options tĩnh ───────────────────────────────────────────────────────────
-
-interface ExpOption { label: string; min?: number; max?: number }
-const EXP_OPTIONS: ExpOption[] = [
-  { label: 'Tất cả' },
-  { label: 'Không yêu cầu', min: 0, max: 0 },
-  { label: 'Dưới 1 năm', max: 1 },
-  { label: '1 năm', min: 1, max: 1 },
-  { label: '2 năm', min: 2, max: 2 },
-  { label: '3 năm', min: 3, max: 3 },
-  { label: '4 năm', min: 4, max: 4 },
-  { label: '5 năm', min: 5, max: 5 },
-  { label: 'Trên 5 năm', min: 5 },
-]
-
-interface SalaryPreset { label: string; min?: number; max?: number }
-const SALARY_PRESETS: SalaryPreset[] = [
+const SALARY_PRESETS = [
   { label: 'Tất cả' },
   { label: 'Dưới 10 triệu', max: 10_000_000 },
   { label: '10 - 15 triệu', min: 10_000_000, max: 15_000_000 },
@@ -44,81 +23,70 @@ const SALARY_PRESETS: SalaryPreset[] = [
   { label: '25 - 30 triệu', min: 25_000_000, max: 30_000_000 },
   { label: '30 - 50 triệu', min: 30_000_000, max: 50_000_000 },
   { label: 'Trên 50 triệu', min: 50_000_000 },
-  { label: 'Thoả thuận' },
 ]
 
-const WORK_TYPE_FILTER_OPTIONS = [
-  { label: 'Tất cả', value: undefined as string | undefined },
-  ...Object.values(WorkType).map(v => ({ label: WORK_TYPE_LABELS[v], value: v as string })),
-]
-
-// ─── State ──────────────────────────────────────────────────────────────────
-
-const selectedExpIdx = ref(0)
 const selectedIndustryId = ref<number | undefined>(undefined)
-const selectedWorkType = ref<string | undefined>(undefined)
+const showIndustryDropdown = ref(false)
 const selectedSalaryIdx = ref(0)
 const customSalaryMinStr = ref('')
 const customSalaryMaxStr = ref('')
-const selectedLevelId = ref<number | undefined>(undefined)
-const showIndustryDropdown = ref(false)
+const isFeatured = ref(false)
+const isUrgent = ref(false)
 
-onMounted(async () => {
-  await Promise.all([
-    levelStore.fetchLevels({ size: 50 }),
-    industryStore.fetchIndustries({ size: 50 }),
-  ])
+// v-model trên type="number" trả về number ở runtime → dùng Number() trực tiếp
+const customSalaryMin = computed(() => Number(customSalaryMinStr.value))
+const customSalaryMax = computed(() => Number(customSalaryMaxStr.value))
+
+const hasBothValues = computed(() =>
+  customSalaryMinStr.value !== '' && customSalaryMaxStr.value !== ''
+)
+
+// Hiển thị lỗi ngay khi cả 2 ô đã có giá trị và "Từ" >= "Đến"
+const salaryError = computed(() => {
+  if (!hasBothValues.value) return ''
+  if (isNaN(customSalaryMin.value) || isNaN(customSalaryMax.value)) return ''
+  if (customSalaryMin.value >= customSalaryMax.value) return '"Từ" phải nhỏ hơn "Đến"'
+  return ''
 })
 
-// ─── Logic ──────────────────────────────────────────────────────────────────
+// Chỉ cho phép bấm Áp dụng khi cả 2 ô hợp lệ và Từ < Đến
+const canApplyCustom = computed(() =>
+  hasBothValues.value &&
+  !isNaN(customSalaryMin.value) &&
+  !isNaN(customSalaryMax.value) &&
+  customSalaryMin.value > 0 &&
+  customSalaryMax.value > 0 &&
+  customSalaryMin.value < customSalaryMax.value
+)
+
+onMounted(async () => {
+  await industryStore.fetchIndustries({ size: 50 })
+})
 
 function buildFilters(): SearchFilters {
-  const exp = EXP_OPTIONS[selectedExpIdx.value]
-  const sal = SALARY_PRESETS[selectedSalaryIdx.value]
+  let salaryMin: number | undefined
+  let salaryMax: number | undefined
 
-  let salaryMin: number | undefined = sal.min
-  let salaryMax: number | undefined = sal.max
-
-  const cMin = parseFloat(customSalaryMinStr.value)
-  const cMax = parseFloat(customSalaryMaxStr.value)
-  if (!isNaN(cMin) && customSalaryMinStr.value) salaryMin = cMin * 1_000_000
-  if (!isNaN(cMax) && customSalaryMaxStr.value) salaryMax = cMax * 1_000_000
+  if (selectedSalaryIdx.value !== -1) {
+    const preset = SALARY_PRESETS[selectedSalaryIdx.value]
+    salaryMin = preset.min
+    salaryMax = preset.max
+  } else if (canApplyCustom.value) {
+    salaryMin = customSalaryMin.value * 1_000_000
+    salaryMax = customSalaryMax.value * 1_000_000
+  }
 
   return {
-    experienceYearsMin: exp.min,
-    experienceYearsMax: exp.max,
     industryId: selectedIndustryId.value,
-    workType: selectedWorkType.value,
     salaryMin,
     salaryMax,
-    levelId: selectedLevelId.value,
+    isFeatured: isFeatured.value || undefined,
+    isUrgent: isUrgent.value || undefined,
   }
 }
 
 function emitFilters() {
   emit('change', buildFilters())
-}
-
-function applyCustomSalary() {
-  selectedSalaryIdx.value = -1
-  emitFilters()
-}
-
-function clearAll() {
-  selectedExpIdx.value = 0
-  selectedIndustryId.value = undefined
-  selectedWorkType.value = undefined
-  selectedSalaryIdx.value = 0
-  customSalaryMinStr.value = ''
-  customSalaryMaxStr.value = ''
-  selectedLevelId.value = undefined
-  emitFilters()
-}
-
-function selectSalaryPreset(idx: number) {
-  selectedSalaryIdx.value = idx
-  customSalaryMinStr.value = ''
-  customSalaryMaxStr.value = ''
 }
 
 function selectIndustry(id: number | undefined) {
@@ -127,7 +95,39 @@ function selectIndustry(id: number | undefined) {
   emitFilters()
 }
 
-watch([selectedExpIdx, selectedWorkType, selectedSalaryIdx, selectedLevelId], emitFilters)
+function selectSalaryPreset(idx: number) {
+  selectedSalaryIdx.value = idx
+  customSalaryMinStr.value = ''
+  customSalaryMaxStr.value = ''
+  emitFilters()
+}
+
+function handleCustomInput() {
+  selectedSalaryIdx.value = -1
+}
+
+function preventNonDigits(e: KeyboardEvent) {
+  if (['e', 'E', '+', '-', '.', ','].includes(e.key)) {
+    e.preventDefault()
+  }
+}
+
+function applyCustomSalary() {
+  if (salaryError.value) return
+  emitFilters()
+}
+
+function clearAll() {
+  selectedIndustryId.value = undefined
+  selectedSalaryIdx.value = 0
+  customSalaryMinStr.value = ''
+  customSalaryMaxStr.value = ''
+  isFeatured.value = false
+  isUrgent.value = false
+  emitFilters()
+}
+
+watch([isFeatured, isUrgent], emitFilters)
 </script>
 
 <template>
@@ -135,57 +135,35 @@ watch([selectedExpIdx, selectedWorkType, selectedSalaryIdx, selectedLevelId], em
 
     <!-- Header -->
     <div class="flex items-center gap-2 mb-5">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
         stroke-linecap="round" stroke-linejoin="round" class="text-primary shrink-0">
         <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
       </svg>
-      <h3 class="text-lg font-bold text-primary">Lọc nâng cao</h3>
+      <h3 class="text-sm font-bold text-primary">Lọc nâng cao</h3>
     </div>
 
-    <!-- Kinh nghiệm -->
-    <div class="mb-4 pb-4 border-b border-slate-100 dark:border-slate-700">
-      <p class="text-base font-bold text-text-main dark:text-white mb-2.5">Kinh nghiệm</p>
-      <div class="grid grid-cols-2 gap-x-3 gap-y-1.5">
-        <label
-          v-for="(opt, idx) in EXP_OPTIONS"
-          :key="idx"
-          class="flex items-center gap-2 py-0.5 cursor-pointer"
-        >
-          <input
-            type="radio"
-            name="exp"
-            :value="idx"
-            v-model="selectedExpIdx"
-            class="accent-primary w-4 h-4 shrink-0 cursor-pointer"
-          />
-          <span
-            class="text-sm leading-tight"
-            :class="selectedExpIdx === idx ? 'text-primary font-semibold' : 'text-text-muted dark:text-slate-400'"
-          >{{ opt.label }}</span>
-        </label>
-      </div>
-    </div>
-
-    <!-- Lĩnh vực (Ngành nghề) -->
-    <div class="mb-4 pb-4 border-b border-slate-100 dark:border-slate-700">
-      <p class="text-base font-bold text-text-main dark:text-white mb-2.5">Lĩnh vực công việc</p>
+    <!-- Lĩnh vực công việc -->
+    <div class="mb-4 pb-4 border-b border-slate-200 dark:border-slate-700">
+      <p class="text-sm font-bold text-text-main dark:text-white mb-2.5">Lĩnh vực công việc</p>
       <div class="relative">
         <button
           type="button"
-          class="w-full flex items-center gap-2 px-3 py-2.5 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-surface-dark text-sm text-text-muted hover:border-primary transition-colors cursor-pointer"
+          class="w-full flex items-center gap-2 px-3 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-surface-dark text-sm text-text-muted hover:border-primary transition-colors cursor-pointer"
           @click="showIndustryDropdown = !showIndustryDropdown"
         >
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="shrink-0 text-slate-400">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="shrink-0 text-slate-400">
             <rect x="2" y="7" width="20" height="14" rx="2" /><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2" />
           </svg>
-          <span class="flex-1 text-left truncate" :class="selectedIndustryId ? 'text-text-main dark:text-white font-medium' : ''">
+          <span class="flex-1 text-left truncate text-sm"
+            :class="selectedIndustryId ? 'text-text-main dark:text-white font-medium' : 'text-text-muted'">
             {{
               selectedIndustryId
                 ? industryStore.industries.find(i => i.id === selectedIndustryId)?.name ?? 'Tất cả lĩnh vực'
                 : 'Tất cả lĩnh vực'
             }}
           </span>
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="shrink-0 text-slate-400" :class="showIndustryDropdown ? 'rotate-180' : ''">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+            class="shrink-0 text-slate-400 transition-transform" :class="showIndustryDropdown ? 'rotate-180' : ''">
             <polyline points="6 9 12 15 18 9" />
           </svg>
         </button>
@@ -205,41 +183,21 @@ watch([selectedExpIdx, selectedWorkType, selectedSalaryIdx, selectedLevelId], em
             :key="ind.id"
             type="button"
             class="w-full text-left px-3 py-2 text-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors cursor-pointer"
-            :class="selectedIndustryId === ind.id ? 'text-primary font-semibold bg-blue-50 dark:bg-blue-900/20' : 'text-text-muted dark:text-slate-300'"
+            :class="selectedIndustryId === ind.id
+              ? 'text-primary font-semibold bg-blue-50 dark:bg-blue-900/20'
+              : 'text-text-muted dark:text-slate-300'"
             @click="selectIndustry(ind.id)"
           >{{ ind.name }}</button>
         </div>
       </div>
     </div>
 
-    <!-- Hình thức làm việc -->
-    <div class="mb-4 pb-4 border-b border-slate-100 dark:border-slate-700">
-      <p class="text-base font-bold text-text-main dark:text-white mb-2.5">Hình thức làm việc</p>
-      <div class="flex flex-col gap-1.5">
-        <label
-          v-for="opt in WORK_TYPE_FILTER_OPTIONS"
-          :key="opt.label"
-          class="flex items-center gap-2 py-0.5 cursor-pointer"
-        >
-          <input
-            type="radio"
-            name="worktype"
-            :value="opt.value"
-            v-model="selectedWorkType"
-            class="accent-primary w-4 h-4 shrink-0 cursor-pointer"
-          />
-          <span
-            class="text-sm"
-            :class="selectedWorkType === opt.value ? 'text-primary font-semibold' : 'text-text-muted dark:text-slate-400'"
-          >{{ opt.label }}</span>
-        </label>
-      </div>
-    </div>
-
     <!-- Mức lương -->
-    <div class="mb-4 pb-4 border-b border-slate-100 dark:border-slate-700">
-      <p class="text-base font-bold text-text-main dark:text-white mb-2.5">Mức lương</p>
-      <div class="grid grid-cols-2 gap-x-3 gap-y-1.5">
+    <div class="mb-4 pb-4 border-b border-slate-200 dark:border-slate-700">
+      <p class="text-sm font-bold text-text-main dark:text-white mb-2.5">Mức lương</p>
+      
+      <!-- List preset -->
+      <div class="grid grid-cols-2 gap-x-3 gap-y-1.5 mb-3">
         <label
           v-for="(preset, idx) in SALARY_PRESETS"
           :key="idx"
@@ -260,67 +218,68 @@ watch([selectedExpIdx, selectedWorkType, selectedSalaryIdx, selectedLevelId], em
         </label>
       </div>
 
-      <!-- Custom range -->
-      <div class="flex items-center gap-2 mt-4 flex-wrap">
-        <span class="text-sm text-text-muted">Từ</span>
+      <!-- Khoảng lương tùy chỉnh -->
+      <p class="text-xs font-bold text-text-muted mb-2">Hoặc nhập mức lương (triệu):</p>
+      <div class="flex items-center gap-2 mb-1">
         <input
           v-model="customSalaryMinStr"
           type="number"
           min="0"
-          placeholder="0"
-          class="w-16 px-2 py-1.5 border border-slate-200 dark:border-slate-600 rounded-md text-sm text-center bg-white dark:bg-surface-dark focus:border-primary focus:outline-none focus:ring-0"
+          step="1"
+          placeholder="Từ"
+          class="flex-1 min-w-0 px-2 py-2 border rounded-lg text-sm text-center bg-white dark:bg-surface-dark focus:outline-none focus:ring-0"
+          :class="salaryError && selectedSalaryIdx === -1 ? 'border-red-500 focus:border-red-500' : 'border-slate-200 dark:border-slate-600 focus:border-primary'"
+          @input="handleCustomInput"
+          @keydown="preventNonDigits"
         />
-        <span class="text-sm text-text-muted">—</span>
-        <span class="text-sm text-text-muted">Đến</span>
+        <span class="text-text-muted text-sm shrink-0">—</span>
         <input
           v-model="customSalaryMaxStr"
           type="number"
           min="0"
-          placeholder="100"
-          class="w-16 px-2 py-1.5 border border-slate-200 dark:border-slate-600 rounded-md text-sm text-center bg-white dark:bg-surface-dark focus:border-primary focus:outline-none focus:ring-0"
+          step="1"
+          placeholder="Đến"
+          class="flex-1 min-w-0 px-2 py-2 border rounded-lg text-sm text-center bg-white dark:bg-surface-dark focus:outline-none focus:ring-0"
+          :class="salaryError && selectedSalaryIdx === -1 ? 'border-red-500 focus:border-red-500' : 'border-slate-200 dark:border-slate-600 focus:border-primary'"
+          @input="handleCustomInput"
+          @keydown="preventNonDigits"
         />
-        <span class="text-sm text-text-muted">triệu</span>
       </div>
+
       <button
         type="button"
-        class="mt-3 w-full py-2 rounded-lg bg-slate-100 dark:bg-slate-700 text-sm font-bold text-text-muted dark:text-slate-300 hover:bg-primary/10 hover:text-primary transition-colors cursor-pointer"
+        class="mt-1 w-full py-2 rounded-lg text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        :class="canApplyCustom ? 'bg-primary/10 text-primary cursor-pointer' : 'bg-slate-100 dark:bg-slate-700 text-text-muted dark:text-slate-300'"
+        :disabled="!canApplyCustom"
         @click="applyCustomSalary"
-      >Áp dụng</button>
+      >Áp dụng mức nhập</button>
     </div>
 
-    <!-- Cấp bậc -->
-    <div class="mb-4">
-      <p class="text-base font-bold text-text-main dark:text-white mb-2.5">Cấp bậc</p>
-      <div v-if="levelStore.loading" class="space-y-2">
-        <div v-for="i in 4" :key="i" class="h-5 bg-slate-100 dark:bg-slate-700 rounded animate-pulse" />
-      </div>
-      <div v-else class="flex flex-col gap-1.5">
-        <label class="flex items-center gap-2 py-0.5 cursor-pointer">
+    <!-- Nổi bật / Khẩn cấp -->
+    <div class="mb-5">
+      <p class="text-sm font-bold text-text-main dark:text-white mb-2.5">Ưu tiên hiển thị</p>
+      <div class="flex flex-col gap-2">
+        <label class="flex items-center gap-2.5 cursor-pointer group">
           <input
-            type="radio"
-            name="level"
-            :value="undefined"
-            v-model="selectedLevelId"
-            class="accent-primary w-4 h-4 shrink-0 cursor-pointer"
+            type="checkbox"
+            v-model="isFeatured"
+            class="accent-primary w-4 h-4 rounded cursor-pointer"
           />
-          <span class="text-sm" :class="!selectedLevelId ? 'text-primary font-semibold' : 'text-text-muted dark:text-slate-400'">Tất cả</span>
+          <span class="text-sm" :class="isFeatured ? 'text-primary font-semibold' : 'text-text-muted dark:text-slate-400'">
+            Tin nổi bật
+          </span>
+          <span class="ml-auto text-[10px] px-1.5 py-0.5 rounded-full bg-yellow-100 text-yellow-700 font-semibold">HOT</span>
         </label>
-        <label
-          v-for="lvl in levelStore.levels"
-          :key="lvl.id"
-          class="flex items-center gap-2 py-0.5 cursor-pointer"
-        >
+        <label class="flex items-center gap-2.5 cursor-pointer group">
           <input
-            type="radio"
-            name="level"
-            :value="lvl.id"
-            v-model="selectedLevelId"
-            class="accent-primary w-4 h-4 shrink-0 cursor-pointer"
+            type="checkbox"
+            v-model="isUrgent"
+            class="accent-primary w-4 h-4 rounded cursor-pointer"
           />
-          <span
-            class="text-sm"
-            :class="selectedLevelId === lvl.id ? 'text-primary font-semibold' : 'text-text-muted dark:text-slate-400'"
-          >{{ lvl.name }}</span>
+          <span class="text-sm" :class="isUrgent ? 'text-primary font-semibold' : 'text-text-muted dark:text-slate-400'">
+            Tuyển gấp
+          </span>
+          <span class="ml-auto text-[10px] px-1.5 py-0.5 rounded-full bg-red-100 text-red-600 font-semibold">GẤP</span>
         </label>
       </div>
     </div>
@@ -328,8 +287,9 @@ watch([selectedExpIdx, selectedWorkType, selectedSalaryIdx, selectedLevelId], em
     <!-- Xóa lọc -->
     <button
       type="button"
-      class="w-full text-center text-sm text-primary font-bold py-2 hover:underline transition-all cursor-pointer"
+      class="w-full text-center text-sm text-primary font-semibold py-2 hover:underline transition-all cursor-pointer"
       @click="clearAll"
     >Xóa lọc</button>
+
   </div>
 </template>
