@@ -8,59 +8,40 @@
     </div>
 
     <div class="content-fields">
-      <!-- Description with mini toolbar -->
+      <!-- Mô tả công việc -->
       <div>
         <label class="field-label">
           Mô tả công việc <span class="required">*</span>
         </label>
-        <div class="rich-editor" :class="{ 'rich-editor--error': errors.description }">
-          <div class="editor-toolbar">
-            <button class="toolbar-btn" type="button" title="Bold">
-              <span class="material-symbols-outlined">format_bold</span>
-            </button>
-            <button class="toolbar-btn" type="button" title="Italic">
-              <span class="material-symbols-outlined">format_italic</span>
-            </button>
-            <button class="toolbar-btn" type="button" title="List">
-              <span class="material-symbols-outlined">format_list_bulleted</span>
-            </button>
-            <div class="toolbar-divider"></div>
-            <button class="toolbar-btn" type="button" title="Link">
-              <span class="material-symbols-outlined">link</span>
-            </button>
-          </div>
-          <textarea
-            v-model="form.description"
-            class="editor-textarea"
-            placeholder="Mô tả chi tiết các đầu công việc cần thực hiện..."
-            rows="5"
-          ></textarea>
-        </div>
+        <TipTapEditor
+          v-model="form.description"
+          placeholder="Mô tả chi tiết các đầu công việc cần thực hiện..."
+          :has-error="!!errors.description"
+        />
         <p v-if="errors.description" class="field-error">{{ errors.description }}</p>
       </div>
 
       <div class="grid-2col">
+        <!-- Yêu cầu công việc -->
         <div>
           <label class="field-label">
             Yêu cầu công việc <span class="required">*</span>
           </label>
-          <textarea
+          <TipTapEditor
             v-model="form.requirements"
-            class="field-textarea"
-            :class="{ 'field-textarea--error': errors.requirements }"
-            placeholder="- Có ít nhất 2 năm kinh nghiệm&#10;- Thành thạo ReactJS..."
-            rows="6"
-          ></textarea>
+            placeholder="Ví dụ: Có ít nhất 2 năm kinh nghiệm, thành thạo ReactJS..."
+            :has-error="!!errors.requirements"
+          />
           <p v-if="errors.requirements" class="field-error">{{ errors.requirements }}</p>
         </div>
+
+        <!-- Quyền lợi -->
         <div>
           <label class="field-label">Quyền lợi ứng viên</label>
-          <textarea
+          <TipTapEditor
             v-model="form.benefits"
-            class="field-textarea"
-            placeholder="- Mức lương cạnh tranh&#10;- Thưởng KPI hàng quý..."
-            rows="6"
-          ></textarea>
+            placeholder="Ví dụ: Mức lương cạnh tranh, thưởng KPI hàng quý..."
+          />
         </div>
       </div>
     </div>
@@ -70,6 +51,7 @@
 <script setup lang="ts">
 import { inject } from 'vue'
 import { CREATE_JOB_FORM_KEY, CREATE_JOB_ERRORS_KEY } from '@/composables/useCreateJobForm'
+import TipTapEditor from '@/components/common/TipTapEditor.vue'
 
 const form = inject(CREATE_JOB_FORM_KEY)!
 const errors = inject(CREATE_JOB_ERRORS_KEY)!
@@ -116,81 +98,10 @@ const errors = inject(CREATE_JOB_ERRORS_KEY)!
   margin-top: 0.375rem;
 }
 
-/* Rich editor */
-.rich-editor {
-  border: 1px solid #e2e8f0;
-  border-radius: 0.75rem;
-  overflow: hidden;
-  transition: border-color 0.15s, box-shadow 0.15s;
-}
-.rich-editor:focus-within {
-  border-color: #4B9AF6;
-  box-shadow: 0 0 0 4px rgba(75,154,246,.1);
-}
-.rich-editor--error {
-  border-color: #ef4444 !important;
-  box-shadow: 0 0 0 4px rgba(239,68,68,.08) !important;
-}
-.editor-toolbar {
-  background: #f8fafc;
-  padding: 0.5rem 1rem;
-  border-bottom: 1px solid #e2e8f0;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-.toolbar-btn {
-  padding: 0.25rem;
-  border: none;
-  background: none;
-  cursor: pointer;
-  color: #94a3b8;
-  border-radius: 0.25rem;
-  display: flex;
-  align-items: center;
-  transition: color 0.15s;
-}
-.toolbar-btn:hover { color: #4B9AF6; }
-.toolbar-btn .material-symbols-outlined { font-size: 1.125rem; }
-.toolbar-divider { width: 1px; height: 1rem; background: #e2e8f0; }
-.editor-textarea {
-  width: 100%;
-  padding: 1rem;
-  border: none;
-  outline: none;
-  resize: none;
-  font-size: 1rem;
-  font-family: inherit;
-  color: #374151;
-  box-sizing: border-box;
-}
-
-/* Two-col textareas */
 .grid-2col {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 1.5rem;
-}
-.field-textarea {
-  width: 100%;
-  padding: 1rem;
-  border-radius: 0.75rem;
-  border: 1px solid #e2e8f0;
-  outline: none;
-  resize: none;
-  font-size: 1rem;
-  font-family: inherit;
-  color: #374151;
-  transition: border-color 0.15s, box-shadow 0.15s;
-  box-sizing: border-box;
-}
-.field-textarea:focus {
-  border-color: #4B9AF6;
-  box-shadow: 0 0 0 4px rgba(75,154,246,.1);
-}
-.field-textarea--error {
-  border-color: #ef4444 !important;
-  box-shadow: 0 0 0 4px rgba(239,68,68,.08) !important;
 }
 
 @media (max-width: 768px) {

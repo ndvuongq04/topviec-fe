@@ -66,6 +66,10 @@ export function createInitialForm(): CreateJobFormState {
   }
 }
 
+function stripHtml(html: string): string {
+  return html.replace(/<[^>]*>/g, '').trim()
+}
+
 export function validateCreateJobForm(form: CreateJobFormState): Record<string, string> {
   const errors: Record<string, string> = {}
 
@@ -98,15 +102,17 @@ export function validateCreateJobForm(form: CreateJobFormState): Record<string, 
     }
   }
 
-  if (!form.description.trim()) {
+  const descriptionText = stripHtml(form.description)
+  if (!descriptionText) {
     errors.description = 'Mô tả công việc là bắt buộc.'
-  } else if (form.description.trim().length < 20) {
+  } else if (descriptionText.length < 20) {
     errors.description = 'Mô tả công việc phải có ít nhất 20 ký tự.'
   }
 
-  if (!form.requirements.trim()) {
+  const requirementsText = stripHtml(form.requirements)
+  if (!requirementsText) {
     errors.requirements = 'Yêu cầu công việc là bắt buộc.'
-  } else if (form.requirements.trim().length < 20) {
+  } else if (requirementsText.length < 20) {
     errors.requirements = 'Yêu cầu công việc phải có ít nhất 20 ký tự.'
   }
 

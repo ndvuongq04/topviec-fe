@@ -125,6 +125,10 @@ function toSalaryString(val?: number): string {
   return val != null ? String(val) : ''
 }
 
+function stripHtml(html: string): string {
+  return html.replace(/<[^>]*>/g, '').trim()
+}
+
 // ── Load existing job ───────────────────────────────────────────────────────
 onMounted(async () => {
   try {
@@ -185,9 +189,9 @@ onMounted(async () => {
 function buildPayload(): ReqUpdateJobPostingDTO {
   return {
     title:               form.title.trim(),
-    description:         form.description.trim(),
-    requirements:        form.requirements.trim(),
-    benefits:            form.benefits.trim() || undefined,
+    description:         form.description,
+    requirements:        form.requirements,
+    benefits:            stripHtml(form.benefits) ? form.benefits : undefined,
     industryId:          form.industryId!,
     levelId:             form.levelId!,
     experienceYearsMin:  form.experienceYearsMin ?? 0,

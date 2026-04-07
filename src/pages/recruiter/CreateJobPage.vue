@@ -80,12 +80,16 @@ const submitting = ref(false)
 provide(CREATE_JOB_FORM_KEY, form)
 provide(CREATE_JOB_ERRORS_KEY, errors)
 
+function stripHtml(html: string): string {
+  return html.replace(/<[^>]*>/g, '').trim()
+}
+
 function buildPayload(): ReqCreateJobPostingDTO {
   return {
     title: form.title.trim(),
-    description: form.description.trim(),
-    requirements: form.requirements.trim(),
-    benefits: form.benefits.trim() || undefined,
+    description: form.description,
+    requirements: form.requirements,
+    benefits: stripHtml(form.benefits) ? form.benefits : undefined,
     industryId: form.industryId!,
     levelId: form.levelId!,
     experienceYearsMin: form.experienceYearsMin ?? 0,

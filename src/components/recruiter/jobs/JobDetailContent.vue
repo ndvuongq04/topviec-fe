@@ -103,11 +103,16 @@ withDefaults(defineProps<{
   margin-bottom: 1rem;
 }
 .prose ul {
-  list-style: disc;
+  list-style-type: disc;
   padding-left: 1.25rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
+}
+.prose ol {
+  list-style-type: decimal;
+  padding-left: 1.25rem;
+}
+.prose li {
+  display: list-item;
+  margin-bottom: 0.3rem;
 }
 
 /* Benefits */
