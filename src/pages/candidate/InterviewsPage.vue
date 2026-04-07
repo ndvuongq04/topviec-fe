@@ -87,12 +87,16 @@ function mapToRound(interview: ResInterviewScheduleDTO) {
 
   return {
     id: interview.id,
+    roundId: interview.roundId,
     roundNumber: interview.roundNumber,
     title: interview.roundName,
     status: statusMap[interview.status] ?? interview.status.toUpperCase(),
     scheduledDate,
     scheduledTime,
     mode: interview.interviewType ? (modeMap[interview.interviewType] ?? interview.interviewType.toUpperCase()) : undefined,
+    location: interview.location,
+    meetingLink: interview.meetingLink,
+    interviewerNote: interview.interviewerNote,
   }
 }
 

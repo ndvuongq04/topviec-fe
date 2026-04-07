@@ -44,25 +44,25 @@
                 </div>
               </div>
 
-              <!-- Item Link (Giả lập nếu Online) -->
-              <div class="detail-item" v-if="round.mode === 'ONLINE'">
+              <!-- Meeting link (Online) -->
+              <div class="detail-item" v-if="round.mode === 'ONLINE' && round.meetingLink">
                 <div class="detail-icon bg-green-50 text-green-600">
                   <span class="material-symbols-outlined">link</span>
                 </div>
                 <div class="detail-info">
-                  <label>Tham gia qua Google Meet</label>
-                  <a href="#" class="meeting-link">meet.google.com/xyz-abc-cvb</a>
+                  <label>Link phỏng vấn</label>
+                  <a :href="round.meetingLink" target="_blank" class="meeting-link">{{ round.meetingLink }}</a>
                 </div>
               </div>
-              
-              <!-- Item Offline Location (Giả lập) -->
-              <div class="detail-item" v-if="round.mode !== 'ONLINE'">
+
+              <!-- Địa điểm (Onsite) -->
+              <div class="detail-item" v-if="round.mode !== 'ONLINE' && round.location">
                 <div class="detail-icon bg-purple-50 text-purple-600">
                   <span class="material-symbols-outlined">location_on</span>
                 </div>
                 <div class="detail-info">
                   <label>Địa điểm</label>
-                  <p>Tầng 12, Tòa nhà Bitexco, Q.1, TP.HCM</p>
+                  <p>{{ round.location }}</p>
                 </div>
               </div>
 
@@ -73,17 +73,17 @@
                 </div>
                 <div class="detail-info">
                   <label>Người phụ trách</label>
-                  <p>{{ round.interviewer || 'Phòng Nhân sự' }}</p>
+                  <p>{{ interviewers }}</p>
                 </div>
               </div>
             </div>
 
-            <div class="note-box" v-if="round.note">
+            <div class="note-box" v-if="round.interviewerNote">
               <label>
                 <span class="material-symbols-outlined">info</span>
                 Lời nhắn từ Nhà tuyển dụng
               </label>
-              <p>{{ round.note }}</p>
+              <p>{{ round.interviewerNote }}</p>
             </div>
 
             <!-- Footer actions -->
@@ -106,16 +106,31 @@
 </template>
 
 <script setup lang="ts">
+import { computed, watch } from 'vue'
 import InterviewStatusBadge from '@/components/candidate/interviews/Interviewstatusbadge.vue'
+import { usePublicInterviewStore } from '@/stores/publicInterview.store'
 
-defineProps<{
+const props = defineProps<{
   visible: boolean
   round: any
 }>()
 
-defineEmits<{
-  close: []
-}>()
+defineEmits<{ close: [] }>()
+
+const store = usePublicInterviewStore()
+
+watch(
+  () => props.visible,
+  (val) => {
+    if (val && props.round?.roundId) {
+      store.fetchRoundDetail(props.round.roundId)
+    }
+  }
+)
+
+const interviewers = computed(() =>
+  store.roundDetail?.interviewers?.map((i) => i.name).join(', ') || 'Phòng Nhân sự'
+)
 </script>
 
 <style scoped>
