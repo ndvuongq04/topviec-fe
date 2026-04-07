@@ -6,8 +6,9 @@
           <button class="modal-close" @click="$emit('close')">
             <span class="material-symbols-outlined">close</span>
           </button>
-          
-          <InterviewTimeline :items="timelineItems" />
+
+          <div v-if="store.loading" class="modal-loading">Đang tải...</div>
+          <InterviewTimeline v-else :items="timelineItems" />
         </div>
       </div>
     </transition>
@@ -15,52 +16,54 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, watch } from 'vue'
 import InterviewTimeline from '@/components/recruiter/interviews/candidate-detail/InterviewTimeline.vue'
+import { usePublicInterviewStore } from '@/stores/publicInterview.store'
+import type { RoundHistory } from '@/types/interview.types'
 
 const props = defineProps<{
   visible: boolean
   process: any
 }>()
 
-defineEmits<{
-  close: []
-}>()
+defineEmits<{ close: [] }>()
 
-// Hardcoded timeline items
-import type { ComponentPropsOptions } from 'vue'
+const store = usePublicInterviewStore()
 
-type TimelineStatus = 'passed' | 'upcoming' | 'pending';
-
-const timelineItems: Array<{
-  roundLabel: string;
-  status: TimelineStatus;
-  rating?: number;
-  interviewer?: string;
-  scheduledAt?: string;
-  note?: string;
-  countdown?: string;
-}> = [
-  {
-    roundLabel: 'Vòng 1: Sàng lọc CV & Gọi sơ vấn HR',
-    status: 'passed',
-    rating: 4,
-    interviewer: 'Ms. Mai Anh (HR Manager)',
-    scheduledAt: '09:00 · 14/07/2025',
-    note: 'Ứng viên giao tiếp rành mạch, có định hướng công việc rõ ràng. Nắm chắc cơ bản.',
-  },
-  {
-    roundLabel: 'Vòng 2: Phỏng vấn Kỹ thuật (Chuyên sâu)',
-    status: 'upcoming',
-    interviewer: 'Mr. Trần Văn B (Tech Lead)',
-    scheduledAt: '14:30 · 21/07/2025',
-    countdown: 'Sắp diễn ra'
-  },
-  {
-    roundLabel: 'Vòng 3: Offer & Thương lượng',
-    status: 'pending',
+watch(
+  () => props.visible,
+  (val) => {
+    if (val && props.process?.id) {
+      store.fetchMyInterviewHistory(props.process.id)
+    }
   }
-]
+)
+
+function formatScheduledAt(raw: string | undefined): string | undefined {
+  if (!raw) return undefined
+  const d = new Date(raw)
+  const time = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+  const date = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`
+  return `${time} · ${date}`
+}
+
+function mapRoundStatus(round: RoundHistory): 'passed' | 'upcoming' | 'pending' {
+  if (round.result) return 'passed'
+  if (round.scheduleStatus && ['scheduled', 'confirmed'].includes(round.scheduleStatus)) return 'upcoming'
+  return 'pending'
+}
+
+const timelineItems = computed(() => {
+  if (!store.interviewHistory) return []
+  return store.interviewHistory.rounds.map((r) => ({
+    roundLabel: `Vòng ${r.roundNumber}: ${r.roundName}`,
+    status: mapRoundStatus(r),
+    rating: r.rating,
+    scheduledAt: formatScheduledAt(r.scheduledAt),
+    note: r.note,
+    countdown: mapRoundStatus(r) === 'upcoming' ? 'Sắp diễn ra' : undefined,
+  }))
+})
 </script>
 
 <style scoped>
@@ -87,7 +90,6 @@ const timelineItems: Array<{
   font-family: 'Manrope', sans-serif;
 }
 
-/* Custom scrollbar for modal content */
 .modal-content::-webkit-scrollbar {
   width: 6px;
 }
@@ -124,7 +126,14 @@ const timelineItems: Array<{
   transform: rotate(90deg);
 }
 
-/* Modal transition */
+.modal-loading {
+  background: #fff;
+  border-radius: 0.75rem;
+  padding: 2rem;
+  color: #707783;
+  font-size: 0.875rem;
+}
+
 .modal-enter-active,
 .modal-leave-active {
   transition: opacity 0.2s ease;
