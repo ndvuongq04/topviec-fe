@@ -91,6 +91,15 @@ const cvsService = {
         const res = await axiosInstance.get<RestResponse<ResCv>>(`${BASE_URL}/public/${shareToken}`)
         return res.data.data
     },
+
+    /**
+     * Lấy chi tiết CV theo ID của user đang đăng nhập
+     * GET /cvs/:id
+     */
+    async getCvById(id: number): Promise<ResCv> {
+        const res = await axiosInstance.get<RestResponse<ResCv>>(`${BASE_URL}/${id}`)
+        return res.data.data
+    },
 }
 
 export default cvsService

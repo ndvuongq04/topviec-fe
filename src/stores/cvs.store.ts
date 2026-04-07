@@ -7,6 +7,7 @@ import type { ResCv, ReqRenameCv, ReqShareCv, ReqUploadCv } from '@/types/cvs.ty
 export const useCvsStore = defineStore('cvs', () => {
     // ─── State ──────────────────────────────────────────────────────────────────
     const cvs = ref<ResCv[]>([])
+    const currentCv = ref<ResCv | null>(null)
     const loading = ref(false)
     const error = ref<string | null>(null)
 
@@ -133,9 +134,25 @@ export const useCvsStore = defineStore('cvs', () => {
         }
     }
 
+    /** Lấy chi tiết CV theo ID của user đang đăng nhập */
+    async function fetchCvById(id: number) {
+        loading.value = true
+        error.value = null
+        try {
+            currentCv.value = await cvsService.getCvById(id)
+            return currentCv.value
+        } catch (err) {
+            setError(err)
+            throw err
+        } finally {
+            loading.value = false
+        }
+    }
+
     /** Reset store (dùng khi logout) */
     function reset() {
         cvs.value = []
+        currentCv.value = null
         loading.value = false
         error.value = null
     }
@@ -151,6 +168,7 @@ export const useCvsStore = defineStore('cvs', () => {
     return {
         // state
         cvs,
+        currentCv,
         loading,
         error,
         // actions
@@ -162,6 +180,7 @@ export const useCvsStore = defineStore('cvs', () => {
         deleteCv,
         shareCv,
         getPublicCv,
+        fetchCvById,
         reset,
     }
 })
