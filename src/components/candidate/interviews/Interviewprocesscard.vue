@@ -17,13 +17,6 @@
           <h2 class="process-card__job-title">{{ process.jobTitle }}</h2>
           <div class="process-card__details">
             <span class="process-card__company">{{ process.companyName }}</span>
-            <span class="process-card__dot" />
-            <span class="process-card__location">
-              <span class="material-symbols-outlined icon-sm">location_on</span>
-              {{ process.location }}
-            </span>
-            <span class="process-card__dot" />
-            <span class="process-card__rounds-count">{{ process.totalRounds }} Rounds</span>
           </div>
         </div>
       </div>

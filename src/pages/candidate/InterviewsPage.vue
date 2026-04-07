@@ -7,25 +7,25 @@
       </p>
     </header>
 
-      <div class="interviews-page__list">
-        <!-- Job 1: Expanded -->
-        <InterviewProcessCard
-          :process="job1"
-          :is-expanded="expandedId === job1.id"
-          @toggle="toggleExpand(job1.id)"
-          @showHistory="openHistory(job1)"
-          @showDetail="openDetail"
-        />
+    <div v-if="applicationStore.loading" class="interviews-page__loading">
+      Đang tải...
+    </div>
 
-        <!-- Job 2: Collapsed -->
-        <InterviewProcessCard
-          :process="job2"
-          :is-expanded="expandedId === job2.id"
-          @toggle="toggleExpand(job2.id)"
-          @showHistory="openHistory(job2)"
-          @showDetail="openDetail"
-        />
-      </div>
+    <div v-else-if="processes.length === 0" class="interviews-page__empty">
+      Không có đơn ứng tuyển nào đang trong giai đoạn phỏng vấn.
+    </div>
+
+    <div v-else class="interviews-page__list">
+      <InterviewProcessCard
+        v-for="process in processes"
+        :key="process.id"
+        :process="process"
+        :is-expanded="expandedId === process.id"
+        @toggle="toggleExpand(process.id)"
+        @showHistory="openHistory(process)"
+        @showDetail="openDetail"
+      />
+    </div>
 
     <InterviewFab />
 
@@ -37,7 +37,7 @@
     />
 
     <!-- History Modal -->
-    <InterviewHistoryModal 
+    <InterviewHistoryModal
       :visible="isHistoryModalOpen"
       :process="selectedProcess"
       @close="isHistoryModalOpen = false"
@@ -46,38 +46,32 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import InterviewProcessCard from '@/components/candidate/interviews/Interviewprocesscard.vue'
 import InterviewFab from '@/components/candidate/interviews/Interviewfab.vue'
 import InterviewHistoryModal from '@/components/candidate/interviews/InterviewHistoryModal.vue'
 import InterviewDetailModal from '@/components/candidate/interviews/InterviewDetailModal.vue'
+import { useApplicationStore } from '@/stores/application.store'
 
-const job1 = {
-  id: 1,
-  jobTitle: 'Senior Frontend Developer (ReactJS)',
-  companyName: 'FPT Software',
-  companyLogo: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBJyBMuLDTK9iwHfAss4eIGQVfR9cG3QP9J5BADea8_gaVeWzUyzpELigUH08arG7JfaZ8UVe21m9jzevzyCmgApi_MI-ZYbOy8J6HnjB1eh_tsjSXYngp41FZH3ta_E8WAq--Enjqz2DVhT0nNLbKeksOWmrXbTXOOD8bW9WELtZzaAl2O70D8n84saO0vZZMWU8ast75gNsSQUAjL74qXqDhfVVj69pdSYKhSitmraJLOQB6oSZAEDvFEESAH7pUqjTnd6MJoF9k',
-  location: 'Ho Chi Minh City',
-  totalRounds: 3,
-  rounds: [
-    { id: 1, roundNumber: 1, title: 'Sàng lọc HR', status: 'COMPLETED', scheduledDate: '14/07', scheduledTime: '09:00', mode: 'ONLINE', note: 'Ứng viên giao tiếp rành mạch, có định hướng công việc rõ ràng. Nắm chắc cơ bản.', interviewer: 'Ms. Mai Anh (HR Manager)' },
-    { id: 2, roundNumber: 2, title: 'Phỏng vấn kỹ thuật', status: 'PENDING_CONFIRMATION', scheduledDate: '21/07', scheduledTime: '14:30', mode: 'ONLINE', interviewer: 'Mr. Trần Văn B (Tech Lead)' },
-    { id: 3, roundNumber: 3, title: 'Offer & Thương lượng', status: 'LOCKED' }
-  ]
-}
+const applicationStore = useApplicationStore()
 
-const job2 = {
-  id: 2,
-  jobTitle: 'UI/UX Designer',
-  companyName: 'TechSolutions',
-  companyLogo: 'https://lh3.googleusercontent.com/aida-public/AB6AXuArJNiFWHKvonXwZFVn_gQEB2HbOVC0brFJuf3BhtZGztK2-3-y7LhZ3UQQ71GVf1TLsDdxk5xLK4JJyG2kYUFxmp5Sd_bejz9LyypXBshGRy3Jil77EsG88sxQmvUJkhY-q-2BPKwdfLSxkO5RFNp758uBdGS19EY4VTBpVnhYFR0z4HsXLXDjYkTgp-fA3xcwFgVFTZfTMSCbJf-33jenFgQ5Wt-NQ_eIwkqr5MZBe27V6VLD79a4ppaPjxncAkaJxt-z-hncXVM',
-  location: 'Remote',
-  totalRounds: 2,
-  nextStep: 'Pending HR Review',
-  rounds: []
-}
+const processes = computed(() =>
+  applicationStore.applications.map((app) => ({
+    id: app.id,
+    jobTitle: app.jobPosting?.title ?? 'Không rõ vị trí',
+    companyName: app.jobPosting?.company.name ?? 'Không rõ công ty',
+    companyLogo: app.jobPosting?.company.logoUrl,
+    location: '',
+    totalRounds: 0,
+    rounds: [] as any[],
+  }))
+)
 
-const expandedId = ref<number | null>(1)
+onMounted(() => {
+  applicationStore.fetchMyApplications({ status: 'interviewing' })
+})
+
+const expandedId = ref<number | null>(null)
 
 const isHistoryModalOpen = ref(false)
 const selectedProcess = ref<any>(null)
@@ -122,5 +116,12 @@ const openDetail = (round: any) => {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
+}
+
+.interviews-page__loading,
+.interviews-page__empty {
+  color: #707783;
+  font-size: 0.875rem;
+  padding: 2rem 0;
 }
 </style>
