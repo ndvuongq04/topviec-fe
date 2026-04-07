@@ -186,9 +186,6 @@ const filterOptions = [
 
 onMounted(() => {
   fetchData()
-  if (cvsStore.cvs.length === 0) {
-    cvsStore.fetchMyCvs()
-  }
 })
 
 const fetchData = async (page = 0) => {
@@ -196,18 +193,19 @@ const fetchData = async (page = 0) => {
   await applicationStore.fetchMyApplications({ status, page })
 }
 
-function handleViewCv(app: ResApplication) {
-  const cvUrl = app.cv?.fileUrl || app.cv?.pdfUrl
-  if (cvUrl) {
-    window.open(cvUrl, '_blank')
-  } else {
-    // Fallback search in store
-    const cv = cvsStore.cvs.find(c => c.id === app.cvId)
-    if (cv?.fileUrl || cv?.pdfUrl) {
-      window.open(cv.fileUrl || cv.pdfUrl, '_blank')
+async function handleViewCv(app: ResApplication) {
+  if (!app.cvId) return
+  try {
+    await cvsStore.fetchCvById(app.cvId)
+    const cv = cvsStore.currentCv
+    const url = cv?.fileUrl || cv?.pdfUrl
+    if (url) {
+      window.open(url, '_blank')
     } else {
       toast.error('Lỗi', 'Không tìm thấy liên kết CV')
     }
+  } catch {
+    toast.error('Lỗi', 'Không thể tải CV. Vui lòng thử lại.')
   }
 }
 
