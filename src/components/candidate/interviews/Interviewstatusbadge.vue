@@ -12,6 +12,7 @@ const props = defineProps<{ status: string }>()
 const statusText = computed(() => {
   const map: Record<string, string> = {
     COMPLETED: 'ĐÃ HOÀN THÀNH',
+    PENDING: 'CHỜ LÊN LỊCH',
     PENDING_CONFIRMATION: 'CHỜ XÁC NHẬN',
     LOCKED: 'CHƯA MỞ',
     CANCELLED: 'ĐÃ HỦY',
@@ -32,6 +33,11 @@ const statusText = computed(() => {
 .badge--completed {
   background: rgba(0, 109, 50, 0.1);
   color: #006d32;
+}
+
+.badge--pending {
+  background: rgba(180, 120, 0, 0.1);
+  color: #b47800;
 }
 
 .badge--pending_confirmation {

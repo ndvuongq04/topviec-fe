@@ -65,8 +65,6 @@ defineProps<{
     jobTitle: string
     companyName: string
     companyLogo?: string
-    location: string
-    totalRounds: number
     nextStep?: string
     rounds: any[]
   }

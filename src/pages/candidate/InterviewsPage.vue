@@ -49,11 +49,52 @@
 import { ref, computed, onMounted } from 'vue'
 import InterviewProcessCard from '@/components/candidate/interviews/Interviewprocesscard.vue'
 import InterviewFab from '@/components/candidate/interviews/Interviewfab.vue'
-import InterviewHistoryModal from '@/components/candidate/interviews/InterviewHistoryModal.vue'
-import InterviewDetailModal from '@/components/candidate/interviews/InterviewDetailModal.vue'
+import InterviewHistoryModal from '@/components/candidate/interviews/Interviewhistorymodal.vue'
+import InterviewDetailModal from '@/components/candidate/interviews/Interviewdetailmodal.vue'
 import { useApplicationStore } from '@/stores/application.store'
+import { usePublicInterviewStore } from '@/stores/publicInterview.store'
+import type { ResInterviewScheduleDTO } from '@/types/interview.types'
 
 const applicationStore = useApplicationStore()
+const publicInterviewStore = usePublicInterviewStore()
+
+// Cache rounds đã load, key là applicationId
+const interviewsMap = ref<Record<number, any[]>>({})
+
+function mapToRound(interview: ResInterviewScheduleDTO) {
+  const statusMap: Record<string, string> = {
+    pending: 'PENDING',
+    scheduled: 'PENDING_CONFIRMATION',
+    confirmed: 'PENDING_CONFIRMATION',
+    completed: 'COMPLETED',
+    cancelled: 'CANCELLED',
+    no_show: 'CANCELLED',
+  }
+
+  const modeMap: Record<string, string> = {
+    online: 'ONLINE',
+    onsite: 'ONSITE',
+    phone: 'PHONE',
+  }
+
+  let scheduledDate: string | undefined
+  let scheduledTime: string | undefined
+  if (interview.scheduledAt) {
+    const d = new Date(interview.scheduledAt)
+    scheduledDate = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`
+    scheduledTime = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+  }
+
+  return {
+    id: interview.id,
+    roundNumber: interview.roundNumber,
+    title: interview.roundName,
+    status: statusMap[interview.status] ?? interview.status.toUpperCase(),
+    scheduledDate,
+    scheduledTime,
+    mode: interview.interviewType ? (modeMap[interview.interviewType] ?? interview.interviewType.toUpperCase()) : undefined,
+  }
+}
 
 const processes = computed(() =>
   applicationStore.applications.map((app) => ({
@@ -61,9 +102,7 @@ const processes = computed(() =>
     jobTitle: app.jobPosting?.title ?? 'Không rõ vị trí',
     companyName: app.jobPosting?.company.name ?? 'Không rõ công ty',
     companyLogo: app.jobPosting?.company.logoUrl,
-    location: '',
-    totalRounds: 0,
-    rounds: [] as any[],
+    rounds: interviewsMap.value[app.id] ?? [],
   }))
 )
 
@@ -79,8 +118,22 @@ const selectedProcess = ref<any>(null)
 const isDetailModalOpen = ref(false)
 const selectedRound = ref<any>(null)
 
-const toggleExpand = (id: number) => {
-  expandedId.value = expandedId.value === id ? null : id
+const toggleExpand = async (id: number) => {
+  if (expandedId.value === id) {
+    expandedId.value = null
+    return
+  }
+  expandedId.value = id
+
+  // Chỉ fetch nếu chưa có cache
+  if (!interviewsMap.value[id]) {
+    try {
+      await publicInterviewStore.fetchMyInterviews(id)
+      interviewsMap.value[id] = publicInterviewStore.myInterviews.map(mapToRound)
+    } catch {
+      interviewsMap.value[id] = []
+    }
+  }
 }
 
 const openHistory = (process: any) => {

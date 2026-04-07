@@ -112,6 +112,13 @@ defineEmits<{
   box-shadow: 0 4px 6px rgba(0, 109, 50, 0.2);
 }
 
+.round-item__indicator--pending {
+  background: #b47800;
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(180, 120, 0, 0.15);
+  outline: 4px solid rgba(180, 120, 0, 0.1);
+}
+
 .round-item__indicator--pending_confirmation {
   background: #0077ce;
   color: #fdfcff;
@@ -143,6 +150,10 @@ defineEmits<{
   background: rgba(0, 109, 50, 0.3);
 }
 
+.round-item__line--pending {
+  background: rgba(180, 120, 0, 0.2);
+}
+
 .round-item__line--pending_confirmation,
 .round-item__line--locked {
   background: rgba(192, 199, 212, 0.3);
@@ -164,6 +175,16 @@ defineEmits<{
 
 .round-item__content--completed:hover {
   background: #f8fafc;
+}
+
+.round-item__content--pending {
+  background: #fff;
+  border: 1px solid rgba(180, 120, 0, 0.2);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+.round-item__content--pending:hover {
+  border-color: rgba(180, 120, 0, 0.4);
 }
 
 .round-item__content--pending_confirmation {
@@ -205,6 +226,7 @@ defineEmits<{
 }
 
 .round-item__label--completed { color: #006d32; }
+.round-item__label--pending { color: #b47800; }
 .round-item__label--pending_confirmation { color: #005ea4; }
 .round-item__label--locked { color: #707783; }
 
