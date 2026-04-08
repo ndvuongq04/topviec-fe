@@ -44,6 +44,10 @@ onMounted(async () => {
 
     if (existingSlots.length > 0) {
       alreadySent.value = true
+      // Khôi phục deadline từ slot đầu tiên (tất cả cùng deadline)
+      if (existingSlots[0].slotDeadline) {
+        deadline.value = existingSlots[0].slotDeadline.slice(0, 16)
+      }
       slots.value = existingSlots.map((s: ResInterviewSlotDTO) => ({
         date:            s.startTime.slice(0, 10),
         interviewerName: s.interviewerName ?? '',
@@ -257,7 +261,7 @@ const breadcrumbItems = computed(() => [
             </div>
             <div class="field field--full">
               <label class="field__label">Hạn chót ứng viên chọn lịch</label>
-              <input v-model="deadline" type="datetime-local" :class="['field__input', errors.deadline && 'field__input--error']" @change="clearError('deadline')" />
+              <input v-model="deadline" type="datetime-local" :disabled="alreadySent" :class="['field__input', alreadySent && 'field__input--disabled', errors.deadline && 'field__input--error']" @change="clearError('deadline')" />
             </div>
           </div>
         </div>
@@ -278,6 +282,7 @@ const breadcrumbItems = computed(() => [
           <div class="mode-toggle">
             <button
               :class="['mode-toggle__btn', recipientMode === 'all' && 'mode-toggle__btn--active']"
+              :disabled="alreadySent"
               @click="recipientMode = 'all'"
             >
               <span class="material-symbols-outlined">groups</span>
@@ -285,6 +290,7 @@ const breadcrumbItems = computed(() => [
             </button>
             <button
               :class="['mode-toggle__btn', recipientMode === 'exclude' && 'mode-toggle__btn--active']"
+              :disabled="alreadySent"
               @click="recipientMode = 'exclude'"
             >
               <span class="material-symbols-outlined">person_remove</span>
@@ -302,11 +308,12 @@ const breadcrumbItems = computed(() => [
                     :model-value="excludedIds[idx]"
                     :options="exclusionOptionsFor(idx)"
                     placeholder="Tìm và chọn ứng viên..."
+                    :disabled="alreadySent"
                     @update:model-value="excludedIds[idx] = $event as number"
                   />
                 </div>
                 <button
-                  v-if="excludedIds.length > 1"
+                  v-if="excludedIds.length > 1 && !alreadySent"
                   class="exclusion-row__remove"
                   @click="removeExclusion(idx)"
                 >
@@ -314,7 +321,7 @@ const breadcrumbItems = computed(() => [
                 </button>
               </div>
             </div>
-            <button class="btn-add-row" @click="addExclusion">
+            <button v-if="!alreadySent" class="btn-add-row" @click="addExclusion">
               <span class="material-symbols-outlined">add</span>
               Thêm ứng viên cần loại trừ
             </button>
@@ -333,7 +340,7 @@ const breadcrumbItems = computed(() => [
               <div class="step-badge">3</div>
               <h3 class="card__title">Các lịch hẹn đề xuất</h3>
             </div>
-            <button class="btn-add-slot" @click="addSlot">
+            <button v-if="!alreadySent" class="btn-add-slot" @click="addSlot">
               <span class="material-symbols-outlined">add_circle</span>
               Thêm lịch hẹn
             </button>
@@ -345,7 +352,7 @@ const breadcrumbItems = computed(() => [
               <div class="slot-card__head">
                 <span class="slot-card__num">Lịch hẹn #{{ idx + 1 }}</span>
                 <button
-                  v-if="slots.length > 1"
+                  v-if="slots.length > 1 && !alreadySent"
                   class="slot-card__remove"
                   @click="removeSlot(idx)"
                 >
@@ -359,11 +366,11 @@ const breadcrumbItems = computed(() => [
                 <div class="slot-row">
                   <div class="field slot-row__date">
                     <label class="field__label">Ngày phỏng vấn</label>
-                    <input v-model="slot.date" type="date" :class="['field__input', errors.slots[idx]?.date && 'field__input--error']" @change="clearSlotError(idx, 'date')" />
+                    <input v-model="slot.date" type="date" :disabled="alreadySent" :class="['field__input', alreadySent && 'field__input--disabled', errors.slots[idx]?.date && 'field__input--error']" @change="clearSlotError(idx, 'date')" />
                   </div>
                   <div class="field slot-row__interviewer">
                     <label class="field__label">Người phỏng vấn</label>
-                    <input v-model="slot.interviewerName" type="text" placeholder="Nhập tên người phỏng vấn..." :class="['field__input', errors.slots[idx]?.interviewerName && 'field__input--error']" @input="clearSlotError(idx, 'interviewerName')" />
+                    <input v-model="slot.interviewerName" type="text" placeholder="Nhập tên người phỏng vấn..." :disabled="alreadySent" :class="['field__input', alreadySent && 'field__input--disabled', errors.slots[idx]?.interviewerName && 'field__input--error']" @input="clearSlotError(idx, 'interviewerName')" />
                   </div>
                 </div>
 
@@ -371,15 +378,15 @@ const breadcrumbItems = computed(() => [
                 <div class="slot-row">
                   <div class="field slot-row__time">
                     <label class="field__label">Giờ bắt đầu</label>
-                    <input v-model="slot.startTime" type="time" :class="['field__input', errors.slots[idx]?.startTime && 'field__input--error']" @change="clearSlotError(idx, 'startTime')" />
+                    <input v-model="slot.startTime" type="time" :disabled="alreadySent" :class="['field__input', alreadySent && 'field__input--disabled', errors.slots[idx]?.startTime && 'field__input--error']" @change="clearSlotError(idx, 'startTime')" />
                   </div>
                   <div class="field slot-row__time">
                     <label class="field__label">Giờ kết thúc</label>
-                    <input v-model="slot.endTime" type="time" :class="['field__input', errors.slots[idx]?.endTime && 'field__input--error']" @change="clearSlotError(idx, 'endTime')" />
+                    <input v-model="slot.endTime" type="time" :disabled="alreadySent" :class="['field__input', alreadySent && 'field__input--disabled', errors.slots[idx]?.endTime && 'field__input--error']" @change="clearSlotError(idx, 'endTime')" />
                   </div>
                   <div class="field slot-row__capacity">
                     <label class="field__label">Số UV tối đa</label>
-                    <input v-model.number="slot.capacity" type="number" min="1" max="20" class="field__input" />
+                    <input v-model.number="slot.capacity" type="number" min="1" max="20" :disabled="alreadySent" :class="['field__input', alreadySent && 'field__input--disabled']" />
                   </div>
                 </div>
 
@@ -390,10 +397,12 @@ const breadcrumbItems = computed(() => [
                     <div class="type-toggle">
                       <button
                         :class="['type-toggle__btn', slot.type === INTERVIEW_TYPE.ONLINE && 'type-toggle__btn--active']"
+                        :disabled="alreadySent"
                         @click="slot.type = INTERVIEW_TYPE.ONLINE"
                       >Online</button>
                       <button
                         :class="['type-toggle__btn', slot.type === INTERVIEW_TYPE.ONSITE && 'type-toggle__btn--active']"
+                        :disabled="alreadySent"
                         @click="slot.type = INTERVIEW_TYPE.ONSITE"
                       >Trực tiếp</button>
                     </div>
@@ -406,7 +415,8 @@ const breadcrumbItems = computed(() => [
                       v-model="slot.link"
                       type="text"
                       :placeholder="slot.type === INTERVIEW_TYPE.ONLINE ? 'meet.google.com/...' : 'Tầng 5, 123 Nguyễn Huệ...'"
-                      class="field__input"
+                      :disabled="alreadySent"
+                      :class="['field__input', alreadySent && 'field__input--disabled']"
                     />
                   </div>
                 </div>

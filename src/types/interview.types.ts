@@ -101,6 +101,7 @@ export interface ResInterviewRoundDTO {
   description?: string;
   expectedDuration?: number;
   isFinal: boolean;
+  slotDeadline?: string;  // ISO LocalDateTime — hạn chót UV chọn slot
   interviewers: InterviewerInfo[];
   candidateCount: number;
   createdAt: string;
@@ -192,6 +193,7 @@ export interface ResOverdueApplicationDTO {
 export interface ResInterviewSlotDTO {
   id:               number;
   roundId:          number;
+  slotDeadline?:    string;  // ISO LocalDateTime — hạn chót UV chọn slot
   startTime:        string;  // ISO LocalDateTime
   endTime:          string;
   interviewType:    string;
