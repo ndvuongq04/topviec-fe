@@ -42,9 +42,9 @@
             <span class="material-symbols-outlined">close</span>
           </button>
         </div>
-        <button class="btn-outline" @click="$emit('export')">
-          <span class="material-symbols-outlined btn-icon">download</span>
-          Xuất dữ liệu
+        <button class="btn-smart-schedule" @click="$emit('export')">
+          <span class="material-symbols-outlined btn-icon">auto_schedule</span>
+          Đặt lịch thông minh
         </button>
       </div>
     </div>
@@ -354,8 +354,38 @@ const emit = defineEmits<{
   background: #f8fafc;
 }
 
+.btn-smart-schedule {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.4rem 1rem;
+  background: linear-gradient(135deg, #4b9af6 0%, #3b82f6 100%);
+  border: none;
+  border-radius: 0.625rem;
+  font-size: 0.875rem;
+  font-weight: 700;
+  font-family: inherit;
+  color: #fff;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(75, 154, 246, 0.35);
+  transition: opacity 0.15s, box-shadow 0.15s, transform 0.1s;
+  white-space: nowrap;
+}
+
+.btn-smart-schedule:hover {
+  opacity: 0.92;
+  box-shadow: 0 4px 10px rgba(75, 154, 246, 0.45);
+  transform: translateY(-1px);
+}
+
+.btn-smart-schedule:active {
+  opacity: 1;
+  transform: translateY(0);
+  box-shadow: 0 1px 4px rgba(75, 154, 246, 0.3);
+}
+
 .btn-icon {
-  font-size: 0.875rem;            /* 14px – icon trong nút */
+  font-size: 1rem !important;
 }
 
 /* --- Table --- */

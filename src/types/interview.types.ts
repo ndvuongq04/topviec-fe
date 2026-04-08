@@ -43,16 +43,19 @@ export interface ReqUpdateInterviewScheduleDTO {
 }
 
 export interface SlotDTO {
-  proposedAt: string;
-  interviewType: InterviewType;
-  location?: string;
-  meetingLink?: string;
+  startTime:      string;       // ISO LocalDateTime, e.g. "2024-04-10T09:00:00"
+  endTime:        string;       // ISO LocalDateTime
+  maxCandidates:  number;       // @Min(1)
+  interviewType:  string;       // "online" | "onsite"
+  location?:      string;
+  meetingLink?:   string;
+  interviewerName?: string;
 }
 
 export interface ReqCreateInterviewSlotsDTO {
-  applicationIds: number[];
-  deadline: string;
-  slots: SlotDTO[];
+  applicationIds: number[];     // @NotEmpty
+  deadline:       string;       // ISO LocalDateTime
+  slots:          SlotDTO[];    // @Size(min = 3, max = 5)
 }
 
 export interface ReqInterviewResultDTO {
@@ -186,3 +189,16 @@ export interface ResOverdueApplicationDTO {
   currentRoundNumber: number;
 }
 
+export interface ResInterviewSlotDTO {
+  id:               number;
+  roundId:          number;
+  startTime:        string;  // ISO LocalDateTime
+  endTime:          string;
+  interviewType:    string;
+  location?:        string;
+  meetingLink?:     string;
+  interviewerName?: string;
+  maxCandidates:    number;
+  registeredCount:  number;
+  createdAt:        string;
+}

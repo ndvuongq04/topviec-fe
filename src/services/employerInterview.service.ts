@@ -7,6 +7,7 @@ import type {
   ReqCreateInterviewScheduleDTO,
   ResInterviewScheduleDTO,
   ReqCreateInterviewSlotsDTO,
+  ResInterviewSlotDTO,
   ReqUpdateInterviewScheduleDTO,
   ReqInterviewResultDTO,
   ResInterviewResultDTO,
@@ -63,6 +64,13 @@ const employerInterviewService = {
 
   async createSlots(roundId: number, data: ReqCreateInterviewSlotsDTO): Promise<void> {
     await axiosInstance.post(`${BASE_URL}/interview-rounds/${roundId}/schedule-slots`, data);
+  },
+
+  async getSlots(roundId: number): Promise<ResInterviewSlotDTO[]> {
+    const res = await axiosInstance.get<RestResponse<ResInterviewSlotDTO[]>>(
+      `${BASE_URL}/interview-rounds/${roundId}/schedule-slots`
+    );
+    return res.data.data;
   },
 
   async getSchedules(jobPostId: number, params?: { roundId?: number; status?: string; search?: string }): Promise<ResInterviewScheduleDTO[]> {

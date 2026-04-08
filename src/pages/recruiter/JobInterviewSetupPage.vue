@@ -473,7 +473,15 @@ function handleSearch() {
 }
 
 function handleExport() {
-  console.log('Export data')
+  const round = rounds.value.find(r => r.id === activeStageId.value)
+  router.push({
+    name: 'recruiter-interview-propose',
+    query: {
+      jobId: jobId.value,
+      roundId: activeStageId.value ?? undefined,
+      roundName: round ? `Vòng ${round.roundNumber} – ${round.roundName}` : undefined,
+    },
+  })
 }
 
 function handleOpenLink(candidateId: number) {
