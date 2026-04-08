@@ -4,6 +4,7 @@ import type {
   ResInterviewScheduleDTO,
   ResInterviewHistoryDTO,
   ResInterviewRoundDTO,
+  ResConfirmUpdateInfoDTO,
 } from '@/types/interview.types';
 
 const BASE_URL = '/interview-schedules';
@@ -38,6 +39,31 @@ const publicInterviewService = {
   async getMyInterviewHistory(applicationId: number): Promise<ResInterviewHistoryDTO> {
     const res = await axiosInstance.get<RestResponse<ResInterviewHistoryDTO>>(
       `${BASE_URL}/applications/${applicationId}/history`
+    );
+    return res.data.data;
+  },
+
+  /**
+   * Lấy thông tin lịch PV để hiển thị trước khi UV xác nhận (Public, không cần Auth).
+   * GET /interview-schedules/confirm-update/info?token=xxx
+   */
+  async getConfirmUpdateInfo(token: string): Promise<ResConfirmUpdateInfoDTO> {
+    const res = await axiosInstance.get<RestResponse<ResConfirmUpdateInfoDTO>>(
+      `${BASE_URL}/confirm-update/info`,
+      { params: { token } }
+    );
+    return res.data.data;
+  },
+
+  /**
+   * UV xác nhận lịch PV NĐT vừa cập nhật (Public, không cần Auth).
+   * PATCH /interview-schedules/confirm-update?token=xxx
+   */
+  async confirmUpdatedSchedule(token: string): Promise<{ message: string }> {
+    const res = await axiosInstance.patch<RestResponse<{ message: string }>>(
+      `${BASE_URL}/confirm-update`,
+      null,
+      { params: { token } }
     );
     return res.data.data;
   },

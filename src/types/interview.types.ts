@@ -158,6 +158,21 @@ export interface ResInterviewHistoryDTO {
   rounds: RoundHistory[];
 }
 
+export interface ResConfirmUpdateInfoDTO {
+  scheduleId: number;
+  companyName: string;
+  jobTitle: string;
+  roundNumber: number;
+  roundName: string;
+  scheduledAt: string;
+  durationMinutes: number;
+  interviewType: string;
+  location?: string;
+  meetingLink?: string;
+  status: string;
+  confirmedByCandidate: boolean;
+}
+
 export interface ResOverdueApplicationDTO {
   applicationId: number;
   candidateUserId: number;

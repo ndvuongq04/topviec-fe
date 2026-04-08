@@ -14,6 +14,7 @@ const statusText = computed(() => {
     COMPLETED: 'ĐÃ HOÀN THÀNH',
     PENDING: 'CHỜ LÊN LỊCH',
     PENDING_CONFIRMATION: 'CHỜ XÁC NHẬN',
+    CONFIRMED: 'ĐÃ XÁC NHẬN',
     LOCKED: 'CHƯA MỞ',
     CANCELLED: 'ĐÃ HỦY',
   }
@@ -48,6 +49,11 @@ const statusText = computed(() => {
 .badge--locked {
   background: rgba(192, 199, 212, 0.2);
   color: #707783;
+}
+
+.badge--confirmed {
+  background: rgba(22, 163, 74, 0.1);
+  color: #16a34a;
 }
 
 .badge--cancelled {

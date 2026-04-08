@@ -6,6 +6,7 @@ import type {
     ResInterviewScheduleDTO,
     ResInterviewHistoryDTO,
     ResInterviewRoundDTO,
+    ResConfirmUpdateInfoDTO,
 } from '@/types/interview.types'
 
 export const usePublicInterviewStore = defineStore('publicInterview', () => {
@@ -13,6 +14,7 @@ export const usePublicInterviewStore = defineStore('publicInterview', () => {
     const myInterviews = ref<ResInterviewScheduleDTO[]>([])
     const interviewHistory = ref<ResInterviewHistoryDTO | null>(null)
     const roundDetail = ref<ResInterviewRoundDTO | null>(null)
+    const confirmUpdateInfo = ref<ResConfirmUpdateInfoDTO | null>(null)
     const loading = ref(false)
     const error = ref<string | null>(null)
 
@@ -66,6 +68,34 @@ export const usePublicInterviewStore = defineStore('publicInterview', () => {
         }
     }
 
+    /** Lấy thông tin lịch PV trước khi UV xác nhận (không cần đăng nhập) */
+    async function fetchConfirmUpdateInfo(token: string) {
+        loading.value = true
+        error.value = null
+        try {
+            confirmUpdateInfo.value = await publicInterviewService.getConfirmUpdateInfo(token)
+        } catch (err) {
+            setError(err)
+            throw err
+        } finally {
+            loading.value = false
+        }
+    }
+
+    /** UV xác nhận lịch phỏng vấn đã cập nhật qua link email (không cần đăng nhập) */
+    async function confirmUpdatedSchedule(token: string) {
+        loading.value = true
+        error.value = null
+        try {
+            return await publicInterviewService.confirmUpdatedSchedule(token)
+        } catch (err) {
+            setError(err)
+            throw err
+        } finally {
+            loading.value = false
+        }
+    }
+
     /** Reset store (dùng khi logout) */
     function reset() {
         myInterviews.value = []
@@ -80,12 +110,15 @@ export const usePublicInterviewStore = defineStore('publicInterview', () => {
         myInterviews,
         interviewHistory,
         roundDetail,
+        confirmUpdateInfo,
         loading,
         error,
         // actions
         fetchMyInterviews,
         fetchMyInterviewHistory,
         fetchRoundDetail,
+        fetchConfirmUpdateInfo,
+        confirmUpdatedSchedule,
         reset,
     }
 })

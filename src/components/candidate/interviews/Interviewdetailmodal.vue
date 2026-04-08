@@ -94,7 +94,12 @@
                 <button class="btn-confirm" @click="$emit('close')">Xác nhận lịch hẹn</button>
               </div>
             </div>
-            
+
+            <div class="action-footer action-footer--confirmed" v-if="round.status === 'CONFIRMED'">
+              <span class="material-symbols-outlined confirmed-icon">check_circle</span>
+              <p class="action-hint">Bạn đã xác nhận tham dự buổi phỏng vấn này. Hẹn gặp bạn!</p>
+            </div>
+
             <div class="action-footer action-footer--locked" v-if="round.status === 'LOCKED'">
               <p class="action-hint">Vòng này sẽ được mở ra sau khi bạn hoàn tất các vòng trước đó.</p>
             </div>
@@ -340,6 +345,28 @@ const interviewers = computed(() =>
   display: flex;
   flex-direction: column;
   gap: 1rem;
+}
+
+.action-footer--confirmed {
+  align-items: center;
+  flex-direction: row;
+  gap: 0.5rem;
+  background: #f0fdf4;
+  border-radius: 0.625rem;
+  padding: 1rem;
+  border-top: none;
+  margin-top: 0.5rem;
+}
+
+.confirmed-icon {
+  font-size: 1.4rem;
+  color: #16a34a;
+  flex-shrink: 0;
+}
+
+.action-footer--confirmed .action-hint {
+  color: #15803d;
+  font-weight: 600;
 }
 
 .action-footer--locked {

@@ -65,7 +65,7 @@ function mapToRound(interview: ResInterviewScheduleDTO) {
   const statusMap: Record<string, string> = {
     pending: 'PENDING',
     scheduled: 'PENDING_CONFIRMATION',
-    confirmed: 'PENDING_CONFIRMATION',
+    confirmed: 'CONFIRMED',
     completed: 'COMPLETED',
     cancelled: 'CANCELLED',
     no_show: 'CANCELLED',

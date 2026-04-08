@@ -39,5 +39,10 @@ export const authRoutes: RouteRecordRaw[] = [
         name: 'ResetPassword',
         component: () => import('@/pages/auth/ResetPasswordPage.vue'),
 
-    }
+    },
+    {
+        path: '/interview-confirm-update',
+        name: 'ConfirmInterviewUpdate',
+        component: () => import('@/pages/candidate/ConfirmInterviewUpdatePage.vue'),
+    },
 ]
