@@ -82,6 +82,20 @@ export const usePublicInterviewStore = defineStore('publicInterview', () => {
         }
     }
 
+    /** UV đã đăng nhập xác nhận lịch PV trực tiếp trên hệ thống */
+    async function confirmScheduleByCandidate(scheduleId: number) {
+        loading.value = true
+        error.value = null
+        try {
+            return await publicInterviewService.confirmScheduleByCandidate(scheduleId)
+        } catch (err) {
+            setError(err)
+            throw err
+        } finally {
+            loading.value = false
+        }
+    }
+
     /** UV xác nhận lịch phỏng vấn đã cập nhật qua link email (không cần đăng nhập) */
     async function confirmUpdatedSchedule(token: string) {
         loading.value = true
@@ -119,6 +133,7 @@ export const usePublicInterviewStore = defineStore('publicInterview', () => {
         fetchRoundDetail,
         fetchConfirmUpdateInfo,
         confirmUpdatedSchedule,
+        confirmScheduleByCandidate,
         reset,
     }
 })

@@ -34,6 +34,7 @@
       :visible="isDetailModalOpen"
       :round="selectedRound"
       @close="isDetailModalOpen = false"
+    @confirmed="onRoundConfirmed"
     />
 
     <!-- History Modal -->
@@ -148,6 +149,17 @@ const openHistory = (process: any) => {
 const openDetail = (round: any) => {
   selectedRound.value = round
   isDetailModalOpen.value = true
+}
+
+const onRoundConfirmed = (scheduleId: number) => {
+  for (const appId in interviewsMap.value) {
+    const rounds = interviewsMap.value[appId]
+    const round = rounds.find((r) => r.id === scheduleId)
+    if (round) {
+      round.status = 'CONFIRMED'
+      break
+    }
+  }
 }
 </script>
 

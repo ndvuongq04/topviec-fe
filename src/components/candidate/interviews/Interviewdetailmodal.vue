@@ -89,9 +89,12 @@
             <!-- Footer actions -->
             <div class="action-footer" v-if="round.status === 'PENDING_CONFIRMATION'">
               <p class="action-hint">Hãy phản hồi lời mời phỏng vấn này để xác nhận với HR.</p>
+              <p v-if="confirmError" class="confirm-error">{{ confirmError }}</p>
               <div class="action-buttons">
                 <button class="btn-cancel" @click="$emit('close')">Đề xuất đổi lịch</button>
-                <button class="btn-confirm" @click="$emit('close')">Xác nhận lịch hẹn</button>
+                <button class="btn-confirm" :disabled="confirming" @click="handleConfirm">
+                  {{ confirming ? 'Đang xác nhận...' : 'Xác nhận lịch hẹn' }}
+                </button>
               </div>
             </div>
 
@@ -111,27 +114,47 @@
 </template>
 
 <script setup lang="ts">
-import { computed, watch } from 'vue'
+import { ref, computed, watch } from 'vue'
 import InterviewStatusBadge from '@/components/candidate/interviews/Interviewstatusbadge.vue'
 import { usePublicInterviewStore } from '@/stores/publicInterview.store'
+import { useToast } from '@/composables/useToast'
 
 const props = defineProps<{
   visible: boolean
   round: any
 }>()
 
-defineEmits<{ close: [] }>()
+const emit = defineEmits<{ close: []; confirmed: [scheduleId: number] }>()
 
 const store = usePublicInterviewStore()
+const toast = useToast()
+const confirming = ref(false)
+const confirmError = ref('')
 
 watch(
   () => props.visible,
   (val) => {
     if (val && props.round?.roundId) {
       store.fetchRoundDetail(props.round.roundId)
+      confirmError.value = ''
     }
   }
 )
+
+async function handleConfirm() {
+  confirming.value = true
+  confirmError.value = ''
+  try {
+    await store.confirmScheduleByCandidate(props.round.id)
+    toast.success('Xác nhận thành công!', 'Bạn đã xác nhận tham dự buổi phỏng vấn.')
+    emit('confirmed', props.round.id)
+    emit('close')
+  } catch {
+    confirmError.value = store.error || 'Xác nhận thất bại. Vui lòng thử lại.'
+  } finally {
+    confirming.value = false
+  }
+}
 
 const interviewers = computed(() =>
   store.roundDetail?.interviewers?.map((i) => i.name).join(', ') || 'Phòng Nhân sự'
@@ -378,6 +401,13 @@ const interviewers = computed(() =>
 .action-hint {
   font-size: 0.875rem;
   color: #64748b;
+  margin: 0;
+  font-weight: 500;
+}
+
+.confirm-error {
+  font-size: 0.8125rem;
+  color: #e11d48;
   margin: 0;
   font-weight: 500;
 }

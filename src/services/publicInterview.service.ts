@@ -69,6 +69,17 @@ const publicInterviewService = {
   },
 
   /**
+   * UV đã đăng nhập xác nhận lịch PV trực tiếp trên hệ thống (yêu cầu đăng nhập).
+   * PATCH /interview-schedules/:scheduleId/confirm
+   */
+  async confirmScheduleByCandidate(scheduleId: number): Promise<{ message: string }> {
+    const res = await axiosInstance.patch<RestResponse<{ message: string }>>(
+      `${BASE_URL}/${scheduleId}/confirm`
+    );
+    return res.data.data;
+  },
+
+  /**
    * Lấy thông tin chi tiết 1 vòng phỏng vấn
    * GET /interview-schedules/interview-rounds/:roundId
    */
