@@ -204,3 +204,12 @@ export interface ResInterviewSlotDTO {
   registeredCount:  number;
   createdAt:        string;
 }
+
+export interface ResSlotSelectionPageDTO {
+  companyName:  string;
+  jobTitle:     string;
+  roundName:    string;
+  roundNumber:  number;
+  deadline:     string;  // ISO LocalDateTime — hạn chót UV chọn slot
+  slots:        ResInterviewSlotDTO[];
+}

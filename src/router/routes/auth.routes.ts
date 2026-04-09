@@ -45,4 +45,9 @@ export const authRoutes: RouteRecordRaw[] = [
         name: 'ConfirmInterviewUpdate',
         component: () => import('@/pages/candidate/ConfirmInterviewUpdatePage.vue'),
     },
+    {
+        path: '/interview-select-slot',
+        name: 'InterviewSelectSlot',
+        component: () => import('@/pages/candidate/InterviewSelectSlotPage.vue'),
+    },
 ]

@@ -5,6 +5,7 @@ import type {
   ResInterviewHistoryDTO,
   ResInterviewRoundDTO,
   ResConfirmUpdateInfoDTO,
+  ResSlotSelectionPageDTO,
 } from '@/types/interview.types';
 
 const BASE_URL = '/interview-schedules';
@@ -75,6 +76,18 @@ const publicInterviewService = {
   async confirmScheduleByCandidate(scheduleId: number): Promise<{ message: string }> {
     const res = await axiosInstance.patch<RestResponse<{ message: string }>>(
       `${BASE_URL}/${scheduleId}/confirm`
+    );
+    return res.data.data;
+  },
+
+  /**
+   * Lấy danh sách slot còn chỗ để hiển thị trang chọn lịch (Public, không cần Auth).
+   * GET /interview-schedules/slots?token=xxx
+   */
+  async getSlotsByToken(token: string): Promise<ResSlotSelectionPageDTO> {
+    const res = await axiosInstance.get<RestResponse<ResSlotSelectionPageDTO>>(
+      `${BASE_URL}/slots`,
+      { params: { token } }
     );
     return res.data.data;
   },

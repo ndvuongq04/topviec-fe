@@ -7,6 +7,7 @@ import type {
     ResInterviewHistoryDTO,
     ResInterviewRoundDTO,
     ResConfirmUpdateInfoDTO,
+    ResSlotSelectionPageDTO,
 } from '@/types/interview.types'
 
 export const usePublicInterviewStore = defineStore('publicInterview', () => {
@@ -15,6 +16,7 @@ export const usePublicInterviewStore = defineStore('publicInterview', () => {
     const interviewHistory = ref<ResInterviewHistoryDTO | null>(null)
     const roundDetail = ref<ResInterviewRoundDTO | null>(null)
     const confirmUpdateInfo = ref<ResConfirmUpdateInfoDTO | null>(null)
+    const slotSelectionPage = ref<ResSlotSelectionPageDTO | null>(null)
     const loading = ref(false)
     const error = ref<string | null>(null)
 
@@ -96,6 +98,34 @@ export const usePublicInterviewStore = defineStore('publicInterview', () => {
         }
     }
 
+    /** Ứng viên xác nhận chọn slot PV (không cần đăng nhập) */
+    async function confirmSlot(token: string, slotId: number) {
+        loading.value = true
+        error.value = null
+        try {
+            return await publicInterviewService.confirmSlot(token, slotId)
+        } catch (err) {
+            setError(err)
+            throw err
+        } finally {
+            loading.value = false
+        }
+    }
+
+    /** Lấy danh sách slot còn chỗ để hiển thị trang chọn lịch (không cần đăng nhập) */
+    async function fetchSlotsByToken(token: string) {
+        loading.value = true
+        error.value = null
+        try {
+            slotSelectionPage.value = await publicInterviewService.getSlotsByToken(token)
+        } catch (err) {
+            setError(err)
+            throw err
+        } finally {
+            loading.value = false
+        }
+    }
+
     /** UV xác nhận lịch phỏng vấn đã cập nhật qua link email (không cần đăng nhập) */
     async function confirmUpdatedSchedule(token: string) {
         loading.value = true
@@ -115,6 +145,7 @@ export const usePublicInterviewStore = defineStore('publicInterview', () => {
         myInterviews.value = []
         interviewHistory.value = null
         roundDetail.value = null
+        slotSelectionPage.value = null
         loading.value = false
         error.value = null
     }
@@ -125,6 +156,7 @@ export const usePublicInterviewStore = defineStore('publicInterview', () => {
         interviewHistory,
         roundDetail,
         confirmUpdateInfo,
+        slotSelectionPage,
         loading,
         error,
         // actions
@@ -132,6 +164,8 @@ export const usePublicInterviewStore = defineStore('publicInterview', () => {
         fetchMyInterviewHistory,
         fetchRoundDetail,
         fetchConfirmUpdateInfo,
+        fetchSlotsByToken,
+        confirmSlot,
         confirmUpdatedSchedule,
         confirmScheduleByCandidate,
         reset,
