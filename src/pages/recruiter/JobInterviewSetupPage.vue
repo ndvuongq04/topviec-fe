@@ -475,7 +475,7 @@ function handleSearch() {
 function handleExport() {
   const round = rounds.value.find(r => r.id === activeStageId.value)
   router.push({
-    name: 'recruiter-interview-propose',
+    name: 'recruiter-interview-sent-proposals',
     query: {
       jobId: jobId.value,
       roundId: activeStageId.value ?? undefined,
