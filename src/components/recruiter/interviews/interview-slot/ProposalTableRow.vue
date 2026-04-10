@@ -65,6 +65,40 @@
       </span>
     </td>
 
+    <!-- Actions -->
+    <td class="row__cell row__cell--right">
+      <GlobalDropdown>
+        <template #trigger="{ toggle, isOpen }">
+          <button
+            class="btn-dots-v"
+            :class="{ 'btn-dots-v--active': isOpen }"
+            @click.stop="toggle"
+            aria-label="Hành động"
+          >
+            <span class="dots-v-icon">
+              <span></span><span></span><span></span>
+            </span>
+          </button>
+        </template>
+        <template #default="{ close }">
+          <GlobalDropdownItem
+            icon="schedule_send"
+            label="Gia hạn thêm"
+            :disabled="!isOverdue"
+            :tooltip="!isOverdue ? 'Chỉ khả dụng khi ứng viên quá hạn phản hồi' : ''"
+            @click="emit('extendDeadline'); close()"
+          />
+          <GlobalDropdownItem
+            icon="edit_calendar"
+            label="Đặt lịch hộ"
+            :disabled="!isOverdue"
+            :tooltip="!isOverdue ? 'Chỉ khả dụng khi ứng viên quá hạn phản hồi' : ''"
+            @click="emit('forceSchedule'); close()"
+          />
+        </template>
+      </GlobalDropdown>
+    </td>
+
   </tr>
 </template>
 
@@ -72,13 +106,18 @@
 import { computed, ref } from 'vue'
 import { INTERVIEW_STATUS_OPTIONS } from '@/constants/interview.constants'
 import SlotDetailModal from './SlotDetailModal.vue'
+import GlobalDropdown from '@/components/ui/GlobalDropdown.vue'
+import GlobalDropdownItem from '@/components/ui/GlobalDropdownItem.vue'
 import type { SentSlotDTO } from '@/types/interview.types'
 
 const props = defineProps<{
   proposal: any
 }>()
 
-defineEmits([])
+const emit = defineEmits<{
+  extendDeadline: []
+  forceSchedule:  []
+}>()
 
 const COLOR_CLASS: Record<string, string> = {
   default: 'status-badge--warning',
@@ -98,13 +137,21 @@ const DOT_COLOR_CLASS: Record<string, string> = {
   orange:  'status-badge__dot--orange',
 }
 
+const isOverdue = computed(() => props.proposal.applicationStatus === 'overdue')
+
 const activeStatusOption = computed(() =>
   INTERVIEW_STATUS_OPTIONS.find(o => o.value === props.proposal.scheduleStatus)
 )
 
-const statusClass    = computed(() => COLOR_CLASS[activeStatusOption.value?.color ?? 'default'] ?? '')
-const statusDotClass = computed(() => DOT_COLOR_CLASS[activeStatusOption.value?.color ?? 'default'] ?? '')
-const statusLabel    = computed(() => activeStatusOption.value?.label ?? props.proposal.scheduleStatus ?? '')
+const statusClass    = computed(() =>
+  isOverdue.value ? 'status-badge--error' : (COLOR_CLASS[activeStatusOption.value?.color ?? 'default'] ?? '')
+)
+const statusDotClass = computed(() =>
+  isOverdue.value ? 'status-badge__dot--error' : (DOT_COLOR_CLASS[activeStatusOption.value?.color ?? 'default'] ?? '')
+)
+const statusLabel    = computed(() =>
+  isOverdue.value ? 'Quá hạn' : (activeStatusOption.value?.label ?? props.proposal.scheduleStatus ?? '')
+)
 
 const selectedSlotIndex = ref<number | null>(null)
 const selectedSlot = computed<SentSlotDTO | null>(() =>
@@ -140,6 +187,43 @@ const getInitials = (name?: string) => {
   padding: 1.25rem 1.5rem;
   vertical-align: middle;
   border-bottom: 1px solid #f8fafc;
+}
+
+.row__cell--right {
+  text-align: right;
+}
+
+/* ── 3-dot vertical button ── */
+.btn-dots-v {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 0.5rem;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: #94a3b8;
+  transition: all 0.15s;
+}
+.btn-dots-v:hover,
+.btn-dots-v--active {
+  background: #f1f5f9;
+  color: #4b9af6;
+}
+.dots-v-icon {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  align-items: center;
+}
+.dots-v-icon span {
+  display: block;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: currentColor;
 }
 
 /* ── Candidate ── */

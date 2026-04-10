@@ -45,6 +45,8 @@
       :total="store.schedules.length"
       v-model:search-value="searchValue"
       @search="handleSearch"
+      @extend-deadline="onExtendDeadline"
+      @force-schedule="onForceSchedule"
     />
 
     <!-- Create Slots Modal -->
@@ -56,6 +58,24 @@
       @close="showCreateModal = false"
       @created="onSlotsCreated"
     />
+
+    <!-- Extend Deadline Modal -->
+    <ExtendDeadlineModal
+      :visible="showExtendModal"
+      :candidate-name="selectedItem?.candidate?.name"
+      :loading="isExtending"
+      @close="showExtendModal = false"
+      @confirm="confirmExtend"
+    />
+
+    <!-- Force Schedule Modal -->
+    <ForceScheduleModal
+      :visible="showForceScheduleModal"
+      :candidate-name="selectedItem?.candidate?.name"
+      :loading="isForceScheduling"
+      @close="showForceScheduleModal = false"
+      @confirm="confirmForceSchedule"
+    />
   </main>
 </template>
 
@@ -64,15 +84,25 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import ProposalTable from '@/components/recruiter/interviews/interview-slot/ProposalTable.vue'
 import CreateSlotsModal from '@/components/recruiter/interviews/interview-slot/CreateSlotsModal.vue'
+import ExtendDeadlineModal from '@/components/recruiter/interviews/interview-overdue/ExtendDeadlineModal.vue'
+import ForceScheduleModal from '@/components/recruiter/interviews/interview-overdue/ForceScheduleModal.vue'
 import { useEmployerInterviewStore } from '@/stores/employerInterview.store'
 import { publicJobPostingService } from '@/services/jobPosting.service'
+import { useToast } from '@/composables/useToast'
+import type { ReqForceScheduleDTO } from '@/types/interview.types'
 
 const store = useEmployerInterviewStore()
 const route = useRoute()
+const toast = useToast()
 
-const showCreateModal = ref(false)
-const searchValue     = ref('')
-const jobTitle        = ref('')
+const showCreateModal        = ref(false)
+const searchValue            = ref('')
+const jobTitle               = ref('')
+const selectedItem           = ref<any>(null)
+const showExtendModal        = ref(false)
+const showForceScheduleModal = ref(false)
+const isExtending            = ref(false)
+const isForceScheduling      = ref(false)
 
 const jobId     = computed(() => Number(route.query.jobId))
 const roundId   = computed(() => route.query.roundId ? Number(route.query.roundId) : undefined)
@@ -110,6 +140,52 @@ async function onSlotsCreated() {
   await fetchData()
 }
 
+function onExtendDeadline(item: any) {
+  selectedItem.value = item
+  showExtendModal.value = true
+}
+
+function onForceSchedule(item: any) {
+  selectedItem.value = item
+  showForceScheduleModal.value = true
+}
+
+async function confirmExtend(days: number) {
+  if (!selectedItem.value) return
+  isExtending.value = true
+  try {
+    await store.extendDeadline(Number(selectedItem.value.candidateId), { extendDays: days })
+    toast.success('Thành công', `Đã gia hạn thêm ${days} ngày cho ứng viên.`)
+    showExtendModal.value = false
+    await fetchData()
+  } catch (e: any) {
+    toast.error('Lỗi', e?.response?.data?.message ?? 'Không thể gia hạn thời gian.')
+  } finally {
+    isExtending.value = false
+  }
+}
+
+async function confirmForceSchedule(form: { date: string; time: string; interviewType: 'online' | 'onsite'; meetingLink: string; location: string }) {
+  if (!selectedItem.value) return
+  const payload: ReqForceScheduleDTO = {
+    scheduledAt:   new Date(`${form.date}T${form.time}:00`).toISOString(),
+    interviewType: form.interviewType,
+    meetingLink:   form.interviewType === 'online' ? form.meetingLink : undefined,
+    location:      form.interviewType === 'onsite' ? form.location   : undefined,
+  }
+  isForceScheduling.value = true
+  try {
+    await store.forceSchedule(Number(selectedItem.value.candidateId), payload)
+    toast.success('Thành công', `Đã đặt lịch phỏng vấn hộ cho ${selectedItem.value.candidate?.name}.`)
+    showForceScheduleModal.value = false
+    await fetchData()
+  } catch (e: any) {
+    toast.error('Lỗi', e?.response?.data?.message ?? 'Không thể đặt lịch phỏng vấn.')
+  } finally {
+    isForceScheduling.value = false
+  }
+}
+
 // ── Helpers ───────────────────────────────────────────────
 function formatSlotTime(start?: string, end?: string): string {
   if (!start) return ''
@@ -141,8 +217,9 @@ const mappedProposals = computed(() =>
     status:         mapStatus(s.status),
     scheduleStatus: s.status,
     sentSlots:      (s.sentSlots ?? []).map(slot => formatSlotTime(slot.startTime, slot.endTime)),
-    rawSentSlots:   s.sentSlots ?? [],
-    confirmedSlot:  s.slotStartTime ? formatSlotTime(s.slotStartTime, s.slotEndTime ?? undefined) : null,
+    rawSentSlots:      s.sentSlots ?? [],
+    confirmedSlot:     s.slotStartTime ? formatSlotTime(s.slotStartTime, s.slotEndTime ?? undefined) : null,
+    applicationStatus: s.applicationStatus ?? '',
   }))
 )
 

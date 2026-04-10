@@ -32,6 +32,7 @@
           <th>Slots đã gửi cho UV</th>
           <th>Slot UV đã xác nhận</th>
           <th>Trạng thái</th>
+          <th></th>
         </tr>
       </thead>
       <tbody>
@@ -39,6 +40,8 @@
           v-for="item in proposals"
           :key="item.id"
           :proposal="item"
+          @extend-deadline="$emit('extendDeadline', item)"
+          @force-schedule="$emit('forceSchedule', item)"
         />
 
         <!-- Empty state -->
@@ -70,8 +73,10 @@ defineProps<{
 }>()
 
 defineEmits<{
-  'update:searchValue':  [value: string]
-  'search':              []
+  'update:searchValue': [value: string]
+  'search':             []
+  'extendDeadline':     [item: any]
+  'forceSchedule':      [item: any]
 }>()
 </script>
 

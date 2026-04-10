@@ -221,13 +221,21 @@ const DOT_COLOR_CLASS: Record<string, string> = {
   orange:  'status-badge__dot--orange',
 }
 
+const isOverdue = computed(() => props.candidate.applicationStatus === 'overdue')
+
 const activeStatusOption = computed(() =>
   INTERVIEW_STATUS_OPTIONS.find(o => o.value === props.candidate.scheduleStatus)
 )
 
-const statusClass    = computed(() => COLOR_CLASS[activeStatusOption.value?.color ?? 'default'] ?? '')
-const statusDotClass = computed(() => DOT_COLOR_CLASS[activeStatusOption.value?.color ?? 'default'] ?? '')
-const statusLabel    = computed(() => activeStatusOption.value?.label ?? props.candidate.scheduleStatus ?? '')
+const statusClass    = computed(() =>
+  isOverdue.value ? 'status-badge--error' : (COLOR_CLASS[activeStatusOption.value?.color ?? 'default'] ?? '')
+)
+const statusDotClass = computed(() =>
+  isOverdue.value ? 'status-badge__dot--error' : (DOT_COLOR_CLASS[activeStatusOption.value?.color ?? 'default'] ?? '')
+)
+const statusLabel    = computed(() =>
+  isOverdue.value ? 'Quá hạn' : (activeStatusOption.value?.label ?? props.candidate.scheduleStatus ?? '')
+)
 </script>
 
 <style scoped>
