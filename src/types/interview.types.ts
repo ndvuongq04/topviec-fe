@@ -101,7 +101,6 @@ export interface ResInterviewRoundDTO {
   description?: string;
   expectedDuration?: number;
   isFinal: boolean;
-  slotDeadline?: string;  // ISO LocalDateTime — hạn chót UV chọn slot
   interviewers: InterviewerInfo[];
   candidateCount: number;
   createdAt: string;
@@ -123,10 +122,32 @@ export interface ResInterviewScheduleDTO {
   meetingLink?: string;
   status: InterviewStatus;
   confirmedByCandidate: boolean;
+  isDefault?: boolean;
   interviewerNote?: string;
+  // Slot UV đã chọn (null nếu NTT đặt thủ công hoặc chưa chọn)
+  slotId?: number;
+  slotStartTime?: string;
+  slotEndTime?: string;
+  slotInterviewerName?: string;
+  // Danh sách slot đã gửi cho UV này (theo từng batch)
+  sentSlots?: SentSlotDTO[];
   applicationStatus?: string;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface SentSlotDTO {
+  id: number;
+  batchNumber: number;
+  deadline: string;
+  startTime: string;
+  endTime: string;
+  interviewType: string;
+  location?: string;
+  meetingLink?: string;
+  interviewerName?: string;
+  maxCandidates: number;
+  registeredCount: number;
 }
 
 export interface ResInterviewResultDTO {

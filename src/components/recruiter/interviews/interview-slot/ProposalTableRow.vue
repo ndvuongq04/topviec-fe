@@ -25,80 +25,96 @@
       <span class="round-label">{{ proposal.roundLabel }}</span>
     </td>
 
-    <!-- Time Slots -->
+    <!-- Slots đã gửi cho UV -->
     <td class="row__cell">
-      <!-- Confirmed slot (single, green) -->
-      <div v-if="proposal.status === 'confirmed' && proposal.confirmedSlot" class="slots">
-        <span class="slot slot--confirmed">{{ proposal.confirmedSlot }}</span>
-      </div>
-
-      <!-- Pending slots -->
-      <div v-else-if="proposal.status === 'pending' && proposal.proposedSlots?.length" class="slots">
+      <div v-if="proposal.sentSlots?.length" class="slots">
         <span
-          v-for="(slot, i) in proposal.proposedSlots"
+          v-for="(slot, i) in proposal.sentSlots"
           :key="i"
-          class="slot"
+          class="slot slot--clickable"
+          @click="openSlotDetail(Number(i))"
         >
+          <span class="material-symbols-outlined slot__icon">calendar_month</span>
           {{ slot }}
         </span>
       </div>
+      <span v-else class="empty-text">—</span>
+    </td>
 
-      <!-- Expired -->
-      <span v-else class="expired-text">Hết hạn chọn lịch</span>
+    <!-- Slot detail modal -->
+    <SlotDetailModal
+      v-if="proposal.rawSentSlots?.length"
+      :open="selectedSlotIndex !== null"
+      :slot="selectedSlot!"
+      @close="selectedSlotIndex = null"
+    />
+
+    <!-- Slot UV đã xác nhận -->
+    <td class="row__cell">
+      <div v-if="proposal.status === 'confirmed' && proposal.confirmedSlot" class="slots">
+        <span class="slot slot--confirmed">{{ proposal.confirmedSlot }}</span>
+      </div>
+      <span v-else class="empty-text">Chưa xác nhận</span>
     </td>
 
     <!-- Status -->
     <td class="row__cell">
-      <span :class="['status-badge', `status-badge--${proposal.status}`]">
-        {{ statusLabelMap[proposal.status] ?? proposal.status }}
+      <span class="status-badge" :class="statusClass">
+        <span class="status-badge__dot" :class="statusDotClass"></span>
+        {{ statusLabel }}
       </span>
     </td>
 
-    <!-- Actions -->
-    <td class="row__cell row__cell--actions">
-      <!-- Pending actions -->
-      <template v-if="proposal.status === 'pending'">
-        <button class="action-link action-link--primary" @click="$emit('resend')">
-          Gửi lại mail
-        </button>
-        <button class="action-link action-link--danger" @click="$emit('cancel')">
-          Hủy
-        </button>
-      </template>
-
-      <!-- Confirmed action -->
-      <template v-else-if="proposal.status === 'confirmed'">
-        <button class="action-btn" @click="$emit('view-schedule')">
-          Xem lịch
-        </button>
-      </template>
-
-      <!-- Expired action -->
-      <template v-else-if="proposal.status === 'expired'">
-        <button class="action-btn action-btn--muted" @click="$emit('new-proposal')">
-          Gửi đề xuất mới
-        </button>
-      </template>
-    </td>
   </tr>
 </template>
 
 <script setup lang="ts">
-defineProps<{
+import { computed, ref } from 'vue'
+import { INTERVIEW_STATUS_OPTIONS } from '@/constants/interview.constants'
+import SlotDetailModal from './SlotDetailModal.vue'
+import type { SentSlotDTO } from '@/types/interview.types'
+
+const props = defineProps<{
   proposal: any
 }>()
 
-defineEmits<{
-  resend: []
-  cancel: []
-  'view-schedule': []
-  'new-proposal': []
-}>()
+defineEmits([])
 
-const statusLabelMap: Record<string, string> = {
-  pending: 'Đang chờ phản hồi',
-  confirmed: 'Đã chốt lịch',
-  expired: 'Hết hạn',
+const COLOR_CLASS: Record<string, string> = {
+  default: 'status-badge--warning',
+  blue:    'status-badge--info',
+  green:   'status-badge--success',
+  gray:    'status-badge--neutral',
+  red:     'status-badge--error',
+  orange:  'status-badge--orange',
+}
+
+const DOT_COLOR_CLASS: Record<string, string> = {
+  default: 'status-badge__dot--warning',
+  blue:    'status-badge__dot--info',
+  green:   'status-badge__dot--success',
+  gray:    'status-badge__dot--neutral',
+  red:     'status-badge__dot--error',
+  orange:  'status-badge__dot--orange',
+}
+
+const activeStatusOption = computed(() =>
+  INTERVIEW_STATUS_OPTIONS.find(o => o.value === props.proposal.scheduleStatus)
+)
+
+const statusClass    = computed(() => COLOR_CLASS[activeStatusOption.value?.color ?? 'default'] ?? '')
+const statusDotClass = computed(() => DOT_COLOR_CLASS[activeStatusOption.value?.color ?? 'default'] ?? '')
+const statusLabel    = computed(() => activeStatusOption.value?.label ?? props.proposal.scheduleStatus ?? '')
+
+const selectedSlotIndex = ref<number | null>(null)
+const selectedSlot = computed<SentSlotDTO | null>(() =>
+  selectedSlotIndex.value !== null
+    ? (props.proposal.rawSentSlots?.[selectedSlotIndex.value] ?? null)
+    : null
+)
+
+function openSlotDetail(index: number) {
+  selectedSlotIndex.value = index
 }
 
 const getInitials = (name?: string) => {
@@ -124,10 +140,6 @@ const getInitials = (name?: string) => {
   padding: 1.25rem 1.5rem;
   vertical-align: middle;
   border-bottom: 1px solid #f8fafc;
-}
-
-.row__cell--actions {
-  text-align: right;
 }
 
 /* ── Candidate ── */
@@ -195,6 +207,23 @@ const getInitials = (name?: string) => {
   color: #0f172a;
 }
 
+.slot--clickable {
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+}
+.slot--clickable:hover {
+  background: #e0eaff;
+  border-color: rgb(75 154 246 / 0.35);
+  box-shadow: 0 1px 4px rgb(75 154 246 / 0.12);
+}
+
+.slot__icon {
+  font-size: 0.75rem;
+  vertical-align: middle;
+  margin-right: 0.2rem;
+  color: #64748b;
+}
+
 .slot--confirmed {
   background: #ecfdf5;
   color: #047857;
@@ -202,7 +231,7 @@ const getInitials = (name?: string) => {
   border-color: #d1fae5;
 }
 
-.expired-text {
+.empty-text {
   font-size: 0.75rem;
   color: #94a3b8;
   font-style: italic;
@@ -218,62 +247,19 @@ const getInitials = (name?: string) => {
   font-weight: 700;
 }
 
-.status-badge--pending {
-  background: #fef3c7;
-  color: #b45309;
-}
+.status-badge--success { background: #d1fae5; color: #059669; }
+.status-badge--warning { background: #fef3c7; color: #d97706; }
+.status-badge--error   { background: #fee2e2; color: #ef4444; }
+.status-badge--info    { background: #dbeafe; color: #2563eb; }
+.status-badge--neutral { background: #f1f5f9; color: #64748b; }
+.status-badge--orange  { background: #ffedd5; color: #ea580c; }
 
-.status-badge--confirmed {
-  background: #d1fae5;
-  color: #047857;
-}
+.status-badge__dot { width: 0.375rem; height: 0.375rem; border-radius: 9999px; margin-right: 0.5rem; }
+.status-badge__dot--success { background: #10b981; }
+.status-badge__dot--warning { background: #f59e0b; }
+.status-badge__dot--error   { background: #ef4444; }
+.status-badge__dot--info    { background: #3b82f6; }
+.status-badge__dot--neutral { background: #94a3b8; }
+.status-badge__dot--orange  { background: #f97316; }
 
-.status-badge--expired {
-  background: #f1f5f9;
-  color: #64748b;
-}
-
-/* ── Action buttons ── */
-.action-link {
-  border: none;
-  background: none;
-  font-size: 0.75rem;
-  font-weight: 700;
-  cursor: pointer;
-  padding: 0.25rem 0.5rem;
-  transition: text-decoration 0.1s;
-}
-.action-link:hover {
-  text-decoration: underline;
-}
-.action-link--primary {
-  color: #4b9af6;
-}
-.action-link--danger {
-  color: #ef4444;
-}
-
-.action-btn {
-  font-size: 0.75rem;
-  font-weight: 700;
-  padding: 0.375rem 0.75rem;
-  border-radius: 0.5rem;
-  cursor: pointer;
-  transition: all 0.15s;
-  border: 1px solid rgb(75 154 246 / 0.2);
-  background: transparent;
-  color: #4b9af6;
-}
-.action-btn:hover {
-  background: rgb(75 154 246 / 0.05);
-}
-
-.action-btn--muted {
-  border: none;
-  background: #f1f5f9;
-  color: #0f172a;
-}
-.action-btn--muted:hover {
-  background: #e2e8f0;
-}
 </style>

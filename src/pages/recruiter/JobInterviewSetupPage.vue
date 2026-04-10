@@ -257,7 +257,7 @@
         <!-- Thông báo ứng viên -->
         <div class="reschedule-form__field">
           <label class="reschedule-form__checkbox-label">
-            <input v-model="evaluateForm.notifyCandidate" type="checkbox" />
+            <input v-model="evaluateForm.notifyCandidate" type="checkbox" disabled />
             Gửi email thông báo kết quả cho ứng viên
           </label>
         </div>
@@ -312,7 +312,7 @@ const evaluateForm = ref({
   result:          '' as 'PASS' | 'FAIL' | '',
   rating:          null as number | null,
   note:            '',
-  notifyCandidate: false,
+  notifyCandidate: true,
 })
 const evaluateErrors = ref<Record<string, string>>({})
 
@@ -611,7 +611,7 @@ function handleEvaluate(applicationId: number) {
 
   evaluateScheduleId.value = schedule.id
   evaluateCandidate.value  = { name: schedule.candidateName }
-  evaluateForm.value = { result: '', rating: null, note: '', notifyCandidate: false }
+  evaluateForm.value = { result: '', rating: null, note: '', notifyCandidate: true }
   evaluateErrors.value = {}
   isEvaluateVisible.value = true
 }

@@ -149,7 +149,7 @@
 
         <!-- Vòng cuối -->
         <label class="add-form__checkbox-row">
-          <input v-model="addForm.isFinal" type="checkbox" class="add-form__checkbox" />
+          <input v-model="addForm.isFinal" type="checkbox" class="add-form__checkbox" disabled />
           <span class="add-form__checkbox-label">Đây là vòng phỏng vấn cuối cùng</span>
         </label>
       </div>
@@ -218,10 +218,10 @@ function submitRename() {
 // --- Add Stage Logic ---
 const isAddingStage = ref(false)
 const addInputRef = ref<HTMLInputElement | null>(null)
-const addForm = ref({ roundName: '', description: '', expectedDuration: undefined as number | undefined, isFinal: false })
+const addForm = ref({ roundName: '', description: '', expectedDuration: undefined as number | undefined, isFinal: true })
 
 function openAddModal() {
-  addForm.value = { roundName: '', description: '', expectedDuration: undefined, isFinal: false }
+  addForm.value = { roundName: '', description: '', expectedDuration: undefined, isFinal: true }
   isAddingStage.value = true
   nextTick(() => addInputRef.value?.focus())
 }

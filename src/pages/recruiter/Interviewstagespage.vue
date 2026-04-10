@@ -90,14 +90,13 @@
               v-model="form.isFinal"
               type="checkbox"
               class="form-checkbox"
+              disabled
             />
             <label for="is-final" class="form-label mb-0 cursor-pointer">
               Đây là vòng phỏng vấn cuối cùng
             </label>
           </div>
-          <p class="text-xs text-slate-500 mt-1 ml-6">
-            Nếu được đánh dấu là vòng cuối, ứng viên vượt qua sẽ được chuyển sang trạng thái Offer.
-          </p>
+
         </div>
 
         <!-- Interviewers Section -->
@@ -191,7 +190,7 @@ const form = ref({
   roundName: '',
   description: '',
   expectedDuration: 30,
-  isFinal: false,
+  isFinal: true,
   interviewers: [{ name: '', email: '', phone: '' }] as InterviewerDTO[]
 })
 
@@ -285,7 +284,7 @@ function openAddModal() {
     roundName: '',
     description: '',
     expectedDuration: 30,
-    isFinal: false,
+    isFinal: true,
     interviewers: [{ name: '', email: '', phone: '' }]
   }
   isModalVisible.value = true

@@ -1,172 +1,243 @@
 <template>
   <main class="proposal-page">
+    <!-- Breadcrumb -->
+    <nav class="breadcrumb">
+      <router-link :to="{ name: 'recruiter-interviews' }" class="breadcrumb__link">
+        Quản lý phỏng vấn
+      </router-link>
+      <span class="material-symbols-outlined breadcrumb__sep">chevron_right</span>
+      <router-link
+        :to="{ name: 'recruiter-job-interview-setup', params: { id: jobId } }"
+        class="breadcrumb__link"
+      >
+        Thiết lập phỏng vấn
+      </router-link>
+      <span class="material-symbols-outlined breadcrumb__sep">chevron_right</span>
+      <span class="breadcrumb__current">{{ roundName }}</span>
+    </nav>
+
     <!-- Page Header -->
     <div class="proposal-page__header">
-      <div>
-        <h2 class="proposal-page__title">Quản lý Đề xuất Lịch hẹn</h2>
+      <div class="proposal-page__title-group">
+        <div class="proposal-page__meta">
+          <span class="material-symbols-outlined proposal-page__meta-icon">work</span>
+          <span class="proposal-page__job-name">{{ jobTitle || '...' }}</span>
+          <span class="proposal-page__meta-divider">·</span>
+          <span class="material-symbols-outlined proposal-page__meta-icon">layers</span>
+          <span class="proposal-page__round-badge">{{ roundName }}</span>
+        </div>
+        <h2 class="proposal-page__title">Quản lý slot phỏng vấn</h2>
         <p class="proposal-page__subtitle">
           Theo dõi trạng thái các lời mời phỏng vấn đã gửi qua hệ thống.
         </p>
       </div>
       <div class="proposal-page__actions">
-        <button class="btn btn--outline" @click="openFilter">
-          <span class="material-symbols-outlined">filter_list</span>
-          Lọc kết quả
-        </button>
-        <button class="btn btn--primary" @click="openCreateModal">
+        <button class="btn btn--primary" @click="showCreateModal = true">
           <span class="material-symbols-outlined">add</span>
-          Tạo đề xuất mới
+          Tạo slots mới
         </button>
       </div>
     </div>
 
-    <!-- Summary Stats -->
-    <ProposalStatsCards
-      :pending-count="stats.pending"
-      :confirmed-count="stats.confirmed"
-      :cancelled-count="stats.cancelled"
-    />
-
     <!-- Table -->
     <ProposalTable
-      :proposals="proposals"
-      :total="totalProposals"
-      :current-page="currentPage"
-      @resend="handleResend"
-      @cancel="handleCancel"
-      @view-schedule="handleViewSchedule"
-      @new-proposal="handleNewProposal"
-      @page-change="handlePageChange"
+      :proposals="mappedProposals"
+      :total="store.schedules.length"
+      v-model:search-value="searchValue"
+      @search="handleSearch"
     />
 
-    <!-- CTA Banner -->
-    <ProposalCtaBanner @connect="handleCalendarConnect" />
+    <!-- Create Slots Modal -->
+    <CreateSlotsModal
+      :open="showCreateModal"
+      :job-id="jobId"
+      :round-id="roundId ?? null"
+      :round-name="String(route.query.roundName ?? '')"
+      @close="showCreateModal = false"
+      @created="onSlotsCreated"
+    />
   </main>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { ref, computed, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
 import ProposalTable from '@/components/recruiter/interviews/interview-slot/ProposalTable.vue'
+import CreateSlotsModal from '@/components/recruiter/interviews/interview-slot/CreateSlotsModal.vue'
 import { useEmployerInterviewStore } from '@/stores/employerInterview.store'
+import { publicJobPostingService } from '@/services/jobPosting.service'
 
 const store = useEmployerInterviewStore()
 const route = useRoute()
-const router = useRouter()
 
-const stats = ref({ pending: 3, confirmed: 2, cancelled: 1 })
-const totalProposals = ref(6)
-const currentPage = ref(1)
+const showCreateModal = ref(false)
+const searchValue     = ref('')
+const jobTitle        = ref('')
 
-const proposals = ref<any[]>([
-  {
-    id: '1',
-    candidateId: 'c1',
-    candidate: { name: 'Nguyễn Văn An', position: 'Frontend Developer' },
-    roundLabel: 'Vòng 1 – Phỏng vấn kỹ thuật',
-    status: 'pending',
-    proposedSlots: ['T2, 14/04 – 09:00–10:00', 'T3, 15/04 – 14:00–15:00', 'T5, 17/04 – 10:00–11:00'],
-    confirmedSlot: null,
-  },
-  {
-    id: '2',
-    candidateId: 'c2',
-    candidate: { name: 'Trần Thị Bích', position: 'Backend Developer' },
-    roundLabel: 'Vòng 1 – Phỏng vấn kỹ thuật',
-    status: 'confirmed',
-    proposedSlots: [],
-    confirmedSlot: 'T4, 16/04 – 10:00–11:00',
-  },
-  {
-    id: '3',
-    candidateId: 'c3',
-    candidate: { name: 'Lê Minh Tuấn', position: 'Fullstack Developer' },
-    roundLabel: 'Vòng 2 – Phỏng vấn văn hoá',
-    status: 'pending',
-    proposedSlots: ['T2, 14/04 – 14:00–15:00', 'T6, 18/04 – 09:00–10:00'],
-    confirmedSlot: null,
-  },
-  {
-    id: '4',
-    candidateId: 'c4',
-    candidate: { name: 'Phạm Hồng Nhung', position: 'UX Designer' },
-    roundLabel: 'Vòng 1 – Phỏng vấn kỹ thuật',
-    status: 'expired',
-    proposedSlots: [],
-    confirmedSlot: null,
-  },
-  {
-    id: '5',
-    candidateId: 'c5',
-    candidate: { name: 'Hoàng Đức Mạnh', position: 'DevOps Engineer' },
-    roundLabel: 'Vòng 2 – Phỏng vấn văn hoá',
-    status: 'confirmed',
-    proposedSlots: [],
-    confirmedSlot: 'T3, 15/04 – 15:00–16:00',
-  },
-  {
-    id: '6',
-    candidateId: 'c6',
-    candidate: { name: 'Vũ Thanh Hà', position: 'Mobile Developer' },
-    roundLabel: 'Vòng 1 – Phỏng vấn kỹ thuật',
-    status: 'pending',
-    proposedSlots: ['T5, 17/04 – 14:00–15:00', 'T6, 18/04 – 14:00–15:00'],
-    confirmedSlot: null,
-  },
-])
+const jobId     = computed(() => Number(route.query.jobId))
+const roundId   = computed(() => route.query.roundId ? Number(route.query.roundId) : undefined)
+const roundName = computed(() => String(route.query.roundName ?? ''))
 
-const openFilter = () => {
-  // TODO: mở bộ lọc
+async function fetchData() {
+  if (jobId.value) {
+    await store.fetchSchedules(jobId.value, {
+      roundId: roundId.value,
+    })
+  }
 }
 
-const openCreateModal = () => {
-  router.push({
-    name: 'recruiter-interview-propose',
-    query: {
-      jobId:     route.query.jobId,
-      roundId:   route.query.roundId,
-      roundName: route.query.roundName,
-    },
-  })
+async function fetchJobTitle() {
+  if (jobId.value) {
+    try {
+      const job = await publicJobPostingService.getById(jobId.value)
+      jobTitle.value = job.title
+    } catch {
+      // ignore, breadcrumb sẽ hiển thị id fallback
+    }
+  }
 }
 
-const handleResend = (proposalId: string) => {
-  // await store.resendProposal(proposalId)
+function handleSearch() {
+  fetchData()
 }
 
-const handleCancel = (proposalId: string) => {
-  // await store.cancelProposal(proposalId)
+onMounted(() => {
+  fetchData()
+  fetchJobTitle()
+})
+
+async function onSlotsCreated() {
+  await fetchData()
 }
 
-const handleViewSchedule = (proposalId: string) => {
-  // router.push({ name: 'interview-schedule', params: { id: proposalId } })
+// ── Helpers ───────────────────────────────────────────────
+function formatSlotTime(start?: string, end?: string): string {
+  if (!start) return ''
+  const d    = new Date(start)
+  const days = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7']
+  const day  = days[d.getDay()]
+  const date = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`
+  const s    = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+  const e    = end ? (() => {
+    const ed = new Date(end)
+    return `${String(ed.getHours()).padStart(2, '0')}:${String(ed.getMinutes()).padStart(2, '0')}`
+  })() : ''
+  return `${day}, ${date} – ${s}–${e}`
 }
 
-const handleNewProposal = (candidateId: string) => {
-  // await store.createNewProposal(candidateId)
+function mapStatus(status: string): 'pending' | 'confirmed' | 'expired' {
+  if (status === 'scheduled') return 'pending'
+  if (status === 'confirmed') return 'confirmed'
+  return 'expired'
 }
 
-const handlePageChange = (page: number) => {
-  currentPage.value = page
-}
+// ── Table data ────────────────────────────────────────────
+const mappedProposals = computed(() =>
+  store.schedules.map(s => ({
+    id:             String(s.id),
+    candidateId:    String(s.applicationId),
+    candidate:      { name: s.candidateName, position: s.candidateEmail },
+    roundLabel:     `Vòng ${s.roundNumber} – ${s.roundName}`,
+    status:         mapStatus(s.status),
+    scheduleStatus: s.status,
+    sentSlots:      (s.sentSlots ?? []).map(slot => formatSlotTime(slot.startTime, slot.endTime)),
+    rawSentSlots:   s.sentSlots ?? [],
+    confirmedSlot:  s.slotStartTime ? formatSlotTime(s.slotStartTime, s.slotEndTime ?? undefined) : null,
+  }))
+)
 
-const handleCalendarConnect = () => {
-  // TODO: kết nối Google Calendar / Outlook
-}
+
 </script>
 
 <style scoped>
 .proposal-page {
-  padding: 2rem;
   display: flex;
   flex-direction: column;
   gap: 2rem;
 }
 
+/* ── Breadcrumb ──────────────────────────────────────────── */
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  font-family: Manrope, sans-serif;
+}
+
+.breadcrumb__link {
+  color: #6b7280;
+  text-decoration: none;
+  cursor: pointer;
+  transition: color 0.15s;
+}
+
+.breadcrumb__link:hover {
+  color: #4b9af6;
+  text-decoration: underline;
+}
+
+.breadcrumb__sep {
+  font-size: 1.125rem;
+  color: #9ca3af;
+  user-select: none;
+}
+
+.breadcrumb__current {
+  color: #0f172a;
+  font-weight: 600;
+}
+
+/* ── Header ──────────────────────────────────────────────── */
 .proposal-page__header {
   display: flex;
   justify-content: space-between;
   align-items: flex-end;
+}
+
+.proposal-page__title-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.proposal-page__meta {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  margin-bottom: 0.25rem;
+}
+
+.proposal-page__meta-icon {
+  font-size: 1rem;
+  color: #4b9af6;
+}
+
+.proposal-page__job-name {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #374151;
+  font-family: Manrope, sans-serif;
+}
+
+.proposal-page__meta-divider {
+  color: #cbd5e1;
+  font-size: 1rem;
+  margin: 0 0.125rem;
+}
+
+.proposal-page__round-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.125rem 0.625rem;
+  background: #eff6ff;
+  color: #2563eb;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  font-family: Manrope, sans-serif;
+  letter-spacing: 0.01em;
 }
 
 .proposal-page__title {
@@ -189,7 +260,6 @@ const handleCalendarConnect = () => {
   gap: 0.75rem;
 }
 
-/* ── Shared button base ── */
 .btn {
   display: flex;
   align-items: center;
@@ -203,20 +273,7 @@ const handleCalendarConnect = () => {
   transition: all 0.2s;
 }
 
-.btn .material-symbols-outlined {
-  font-size: 1.125rem;
-}
-
-.btn--outline {
-  border: 1px solid #e2e8f0;
-  background: transparent;
-  color: #0f172a;
-}
-
-.btn--outline:hover {
-  background: #fff;
-  box-shadow: 0 1px 3px rgb(0 0 0 / 0.06);
-}
+.btn .material-symbols-outlined { font-size: 1.125rem; }
 
 .btn--primary {
   border: none;

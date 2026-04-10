@@ -13,7 +13,7 @@ const icons: Record<string, string> = {
 
 <template>
   <Teleport to="body">
-    <div class="fixed top-5 right-5 z-[9999] flex flex-col gap-3 pointer-events-none" style="min-width:320px; max-width:400px;">
+    <div class="fixed top-5 right-5 z-99999 flex flex-col gap-3 pointer-events-none" style="min-width:320px; max-width:400px;">
       <TransitionGroup name="toast" tag="div" class="flex flex-col gap-3">
         <div
           v-for="toast in toasts"

@@ -159,6 +159,15 @@ const employerInterviewService = {
   async completeRecruitment(jobPostId: number, data: ReqCompleteRecruitmentDTO): Promise<void> {
     await axiosInstance.patch(`${BASE_URL}/job-postings/${jobPostId}/complete`, data);
   },
+
+  // ─── Lọc UV theo trạng thái lịch ─────────────────────────────────────────
+
+  async getPendingCandidates(roundId: number): Promise<ResInterviewScheduleDTO[]> {
+    const res = await axiosInstance.get<RestResponse<ResInterviewScheduleDTO[]>>(
+      `${BASE_URL}/interview-rounds/${roundId}/pending-candidates`
+    );
+    return res.data.data;
+  },
 };
 
 export default employerInterviewService;
