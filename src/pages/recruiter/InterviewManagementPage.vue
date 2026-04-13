@@ -80,10 +80,9 @@ import InterviewStatsCards from '@/components/recruiter/interviews/InterviewStat
 import InterviewJobList    from '@/components/recruiter/interviews/InterviewJobList.vue'
 import InterviewPageFooter from '@/components/recruiter/interviews/InterviewPageFooter.vue'
 
-type FilterTab = 'all' | 'interviewing' | 'completed'
+type FilterTab = 'interviewing' | 'completed'
 
 const tabs: { label: string; value: FilterTab }[] = [
-  { label: 'Tất cả',         value: 'all' },
   { label: 'Đang phỏng vấn', value: 'interviewing' },
   { label: 'Đã hoàn thành',  value: 'completed' },
 ]
@@ -91,7 +90,7 @@ const tabs: { label: string; value: FilterTab }[] = [
 const router = useRouter()
 
 // ── Filter & Search ──────────────────────────────────────
-const activeFilter   = ref<FilterTab>('all')
+const activeFilter   = ref<FilterTab>('interviewing')
 const searchInput    = ref('')
 const appliedKeyword = ref('')
 

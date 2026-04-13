@@ -19,12 +19,6 @@
         {{ job.candidateCount }} ứng viên
       </div>
 
-      <!-- Interviews per week -->
-      <div class="job-meta">
-        <span class="material-symbols-outlined">event_available</span>
-        {{ job.interviewsPerWeek }} phỏng vấn/tuần
-      </div>
-
       <!-- Status badge -->
       <div>
         <span class="status-badge" :class="statusBadgeClass">{{ statusLabel }}</span>
@@ -84,7 +78,6 @@ interface JobPostingRow {
   department: string
   level: string
   candidateCount: number
-  interviewsPerWeek: number
   icon: string
   iconVariant: 'blue-light' | 'blue-solid' | 'orange' | 'purple' | 'green' | 'rose'
   status: JobPostingStatus
@@ -163,7 +156,7 @@ function handleAction(event: 'view-detail' | 'setup-rounds' | 'finish-interview'
   flex: 1;
   min-width: 0;
   display: grid;
-  grid-template-columns: 3fr 1.5fr 1.5fr 1.5fr 1fr;
+  grid-template-columns: 3fr 1.5fr 1.5fr 1fr;
   align-items: center;
   gap: 1rem;
 }

@@ -93,13 +93,12 @@ import type { ResEmployerApplicationDTO } from '@/types/employerApplication.type
 import GlobalModal from '@/components/ui/GlobalModal.vue'
 import { useToast } from '@/composables/useToast'
 
-type FilterTab = 'all' | 'interviewing' | 'completed'
+type FilterTab = 'interviewing' | 'completed'
 
 type IconVariant = 'blue-light' | 'blue-solid' | 'orange' | 'purple' | 'green' | 'rose'
 const ICON_VARIANTS: IconVariant[] = ['blue-light', 'blue-solid', 'orange', 'purple', 'green', 'rose']
 
-const STATUS_MAP: Record<FilterTab, JobPostingStatus | undefined> = {
-  all: undefined,
+const STATUS_MAP: Record<FilterTab, JobPostingStatus> = {
   interviewing: JobPostingStatus.INTERVIEWING,
   completed: JobPostingStatus.COMPLETED,
 }
@@ -119,7 +118,6 @@ const router = useRouter()
 const rawJobs = ref<ResJobPostingDetail[]>([])
 const isLoading = ref(false)
 const activeId = ref<number | null>(null)
-const weeklyCountMap = ref<Record<number, number>>({})
 const toast = useToast()
 
 // ── Complete Recruitment State ─────────────────────────────
@@ -136,44 +134,12 @@ const jobPostings = computed(() =>
     department: job.industry?.name ?? '',
     level: job.level?.name ?? '',
     candidateCount: job.applicationCount,
-    interviewsPerWeek: weeklyCountMap.value[job.id] ?? 0,
     icon: 'work',
     iconVariant: ICON_VARIANTS[index % ICON_VARIANTS.length],
     status: job.status,
     interviewRoundsCount: job.interviewRoundsCount ?? 0,
   }))
 )
-
-function getCurrentWeekRange(): { start: Date; end: Date } {
-  const now = new Date()
-  const diffToMonday = (now.getDay() + 6) % 7
-  const start = new Date(now)
-  start.setHours(0, 0, 0, 0)
-  start.setDate(now.getDate() - diffToMonday)
-  const end = new Date(start)
-  end.setDate(start.getDate() + 6)
-  end.setHours(23, 59, 59, 999)
-  return { start, end }
-}
-
-async function fetchWeeklyCounts(jobIds: number[]) {
-  const { start, end } = getCurrentWeekRange()
-  const results = await Promise.allSettled(
-    jobIds.map(id => employerInterviewService.getSchedules(id))
-  )
-  const map: Record<number, number> = {}
-  results.forEach((result, idx) => {
-    if (result.status === 'fulfilled') {
-      map[jobIds[idx]] = result.value.filter(s => {
-        const d = new Date(s.scheduledAt)
-        return d >= start && d <= end
-      }).length
-    } else {
-      map[jobIds[idx]] = 0
-    }
-  })
-  weeklyCountMap.value = map
-}
 
 async function fetchJobs() {
   isLoading.value = true
@@ -188,8 +154,6 @@ async function fetchJobs() {
     emit('update:total', res.meta.totals)
     if (res.result.length > 0) activeId.value = res.result[0].id
     else activeId.value = null
-    // Fetch weekly counts in background (non-blocking)
-    if (res.result.length > 0) fetchWeeklyCounts(res.result.map(j => j.id))
   } catch (err) {
     console.error('Failed to fetch jobs:', err)
   } finally {
