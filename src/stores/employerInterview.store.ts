@@ -289,6 +289,19 @@ export const useEmployerInterviewStore = defineStore('employerInterview', () => 
     }
   }
 
+  async function remindConfirmSchedule(scheduleId: number) {
+    loading.value = true;
+    error.value = null;
+    try {
+      await employerInterviewService.remindConfirmSchedule(scheduleId);
+    } catch (err) {
+      setError(err);
+      throw err;
+    } finally {
+      loading.value = false;
+    }
+  }
+
   function reset() {
     rounds.value = [];
     schedules.value = [];
@@ -327,6 +340,7 @@ export const useEmployerInterviewStore = defineStore('employerInterview', () => 
     updateOffer,
     startInterviewing,
     completeRecruitment,
+    remindConfirmSchedule,
     reset
   };
 });

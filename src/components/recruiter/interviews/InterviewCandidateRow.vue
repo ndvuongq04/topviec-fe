@@ -97,8 +97,8 @@
           <GlobalDropdownItem
             icon="notifications"
             label="Nhắc nhở chọn lịch"
-            :disabled="candidate.status !== 'pending'"
-            :tooltip="candidate.status !== 'pending' ? (candidate.status === 'confirmed' ? 'Ứng viên đã xác nhận lịch' : 'Lịch đã quá hạn, không thể nhắc') : ''"
+            :disabled="candidate.scheduleStatus !== 'scheduled'"
+            :tooltip="candidate.scheduleStatus !== 'scheduled' ? (candidate.scheduleStatus === 'confirmed' ? 'Ứng viên đã xác nhận lịch' : 'Lịch chưa được xếp hoặc đã kết thúc') : ''"
             @click="handleAction('remind', close)"
           />
 

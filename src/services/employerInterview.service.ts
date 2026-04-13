@@ -168,6 +168,12 @@ const employerInterviewService = {
     );
     return res.data.data;
   },
+
+  // ─── Nhắc nhở xác nhận lịch ──────────────────────────────────────────────
+
+  async remindConfirmSchedule(scheduleId: number): Promise<void> {
+    await axiosInstance.post(`${BASE_URL}/interview-schedules/${scheduleId}/remind`);
+  },
 };
 
 export default employerInterviewService;

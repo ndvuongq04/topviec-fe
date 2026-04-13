@@ -572,8 +572,16 @@ async function confirmReschedule() {
   }
 }
 
-function handleRemind(candidateId: number) {
-  console.log('Send reminder to candidate:', candidateId)
+async function handleRemind(applicationId: number) {
+  const schedule = roundSchedules.value.find(s => s.applicationId === applicationId)
+  if (!schedule) return
+
+  try {
+    await employerInterviewService.remindConfirmSchedule(schedule.id)
+    toast.success('Đã gửi nhắc nhở', `Email nhắc nhở xác nhận lịch phỏng vấn đã được gửi đến ${schedule.candidateName}.`)
+  } catch (err: any) {
+    toast.error('Lỗi', err?.response?.data?.message ?? 'Không thể gửi nhắc nhở. Vui lòng thử lại.')
+  }
 }
 
 async function handleCancel(applicationId: number) {
