@@ -56,6 +56,11 @@ export const adminRoutes: RouteRecordRaw[] = [
                 name: 'admin-individual-services',
                 component: () => import('@/pages/admin/RetailServicesPage.vue'),
             },
+            {
+                path: 'orders',
+                name: 'admin-orders',
+                component: () => import('@/pages/admin/OrdersPage.vue'),
+            },
         ],
     },
 ]
