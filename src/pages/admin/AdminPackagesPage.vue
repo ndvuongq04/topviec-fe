@@ -7,43 +7,163 @@
         <h2 class="text-3xl font-black text-slate-900 dark:text-slate-100 tracking-tight">Gói dịch vụ</h2>
         <p class="text-slate-500 text-sm mt-1">Quản lý các gói subscription và cấu hình đặc quyền cho từng cấp độ người dùng</p>
       </div>
+      <button
+        class="bg-[#963131] hover:bg-[#963131]/90 text-white px-5 py-2.5 rounded-lg font-bold text-sm flex items-center gap-2 shadow-lg shadow-[#963131]/20 transition-all"
+        @click="showCreateModal = true"
+      >
+        <span class="material-symbols-outlined text-lg">add</span>
+        Thêm gói dịch vụ
+      </button>
     </div>
 
     <!-- KPI Cards -->
     <PackageKpiCards />
 
     <!-- Filter -->
-    <PackageFilters :packages="packages" @filter="onFilter" />
+    <PackageFilters :packages="store.servicePackages" @filter="onFilter" />
 
     <!-- Table Card -->
     <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden">
-      <PackageTable :packages="filtered" @edit="onEdit" />
+
+      <!-- Loading -->
+      <div v-if="store.loading" class="flex items-center justify-center py-20">
+        <div class="text-slate-400 text-sm flex items-center gap-2">
+          <span class="material-symbols-outlined animate-spin">progress_activity</span>
+          Đang tải dữ liệu...
+        </div>
+      </div>
+
+      <!-- Error -->
+      <div v-else-if="fetchError" class="flex flex-col items-center justify-center py-20 text-red-500 gap-2">
+        <span class="material-symbols-outlined text-4xl">error</span>
+        <p class="text-sm font-semibold">{{ fetchError }}</p>
+        <button
+          class="mt-2 text-xs text-slate-500 hover:text-slate-700 underline"
+          @click="loadPackages"
+        >
+          Thử lại
+        </button>
+      </div>
+
+      <!-- Table -->
+      <PackageTable v-else :packages="filtered" :toggling-id="togglingId" @edit="onEdit" @toggle="onToggle" />
+
     </div>
+
+    <!-- Create Modal -->
+    <ServicePackageCreateModal
+      :visible="showCreateModal"
+      :submitting="creating"
+      @close="showCreateModal = false"
+      @submit="onCreateSubmit"
+    />
+
+    <!-- Edit Modal -->
+    <ServicePackageEditModal
+      :visible="showEditModal"
+      :submitting="editing"
+      :package="selectedPackage"
+      @close="showEditModal = false"
+      @submit="onEditSubmit"
+    />
 
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import PackageFilters from '@/components/admin/packages/PackageFilters.vue'
-import PackageTable, { type Package } from '@/components/admin/packages/PackageTable.vue'
+import PackageTable from '@/components/admin/packages/PackageTable.vue'
 import PackageKpiCards from '@/components/admin/packages/PackageKpiCards.vue'
+import ServicePackageCreateModal from '@/components/admin/packages/ServicePackageCreateModal.vue'
+import ServicePackageEditModal from '@/components/admin/packages/ServicePackageEditModal.vue'
+import { useServicePackageStore } from '@/stores/servicePackage.store'
+import { useToast } from '@/composables/useToast'
+import type { ReqServicePackageDTO, ResServicePackageDTO } from '@/types/servicePackage.types'
 
-const packages = ref<Package[]>([
-  { id:1, name:'VIP Package',   priceMonth:'1.299.000 đ', priceYear:'12.990.000 đ', feature:'Hỗ trợ tuyển dụng 1:1, Tiếp cận 100% CV', active:true,  badgeBg:'#FAECE7', badgeColor:'#712B13' },
-  { id:2, name:'Premium Tier',  priceMonth:'599.000 đ',   priceYear:'5.990.000 đ',  feature:'Đẩy tin tự động, Lọc ứng viên AI',          active:true,  badgeBg:'#FAEEDA', badgeColor:'#633806' },
-  { id:3, name:'Professional',  priceMonth:'299.000 đ',   priceYear:'2.990.000 đ',  feature:'Đăng tin không giới hạn, Top-up Credit',     active:false, badgeBg:'#EEEDFE', badgeColor:'#3C3489' },
-  { id:4, name:'Basic Plan',    priceMonth:'149.000 đ',   priceYear:'1.490.000 đ',  feature:'Đăng 10 tin/tháng, Xem 20 CV tiềm năng',    active:true,  badgeBg:'#E1F5EE', badgeColor:'#085041' },
-  { id:5, name:'Free Tier',     priceMonth:'Miễn phí',    priceYear:'Miễn phí',     feature:'Đăng 3 tin/tháng, Tính năng cơ bản',        active:true,  badgeBg:'#F1EFE8', badgeColor:'#444441' },
-])
+const store = useServicePackageStore()
+const toast = useToast()
 
-const filterState = ref({ search: '', status: '' })
-const filtered = computed(() => packages.value.filter(p => {
-  const s = filterState.value
-  return p.name.toLowerCase().includes(s.search.toLowerCase())
-    && (!s.status || (s.status === 'active' ? p.active : !p.active))
-}))
+const showCreateModal = ref(false)
+const creating        = ref(false)
+const showEditModal   = ref(false)
+const editing         = ref(false)
+const selectedPackage = ref<ResServicePackageDTO | null>(null)
+const filterState     = ref({ search: '', status: '' })
+const fetchError      = ref<string | null>(null)
+const togglingId      = ref<number | null>(null)
+
+const filtered = computed(() => {
+  const { search, status } = filterState.value
+  return store.servicePackages.filter(p => {
+    const matchSearch = !search
+      || p.name.toLowerCase().includes(search.toLowerCase())
+      || p.code.toLowerCase().includes(search.toLowerCase())
+    const matchStatus = !status
+      || (status === 'active' ? p.isActive : !p.isActive)
+    return matchSearch && matchStatus
+  })
+})
+
+async function loadPackages() {
+  fetchError.value = null
+  await store.fetchServicePackages({ size: 100, sort: 'sortOrder,asc' })
+  if (store.error) fetchError.value = store.error
+}
+
+onMounted(loadPackages)
 
 const onFilter = (f: typeof filterState.value) => { filterState.value = f }
-const onEdit = (pkg: Package) => console.log('edit', pkg)
+
+function onEdit(pkg: ResServicePackageDTO) {
+  selectedPackage.value = pkg
+  showEditModal.value   = true
+}
+
+async function onCreateSubmit(payload: ReqServicePackageDTO) {
+  creating.value = true
+  try {
+    await store.createServicePackage(payload)
+    showCreateModal.value = false
+    toast.success('Thành công!', `Đã tạo gói dịch vụ "${payload.name}"`)
+  } catch {
+    toast.error('Lỗi!', store.error || 'Không thể tạo gói dịch vụ')
+  } finally {
+    creating.value = false
+  }
+}
+
+async function onToggle(pkg: ResServicePackageDTO) {
+  togglingId.value = pkg.id
+  try {
+    await store.updateServicePackage(pkg.id, {
+      name:         pkg.name,
+      code:         pkg.code,
+      billingCycle: pkg.billingCycle,
+      price:        pkg.price,
+      features:     pkg.features,
+      description:  pkg.description,
+      isActive:     !pkg.isActive,
+      sortOrder:    pkg.sortOrder,
+    })
+    toast.success('Thành công!', `Đã ${!pkg.isActive ? 'bật' : 'tắt'} gói "${pkg.name}"`)
+  } catch {
+    toast.error('Lỗi!', store.error || 'Không thể cập nhật trạng thái')
+  } finally {
+    togglingId.value = null
+  }
+}
+
+async function onEditSubmit(id: number, payload: ReqServicePackageDTO) {
+  editing.value = true
+  try {
+    await store.updateServicePackage(id, payload)
+    showEditModal.value = false
+    toast.success('Thành công!', `Đã cập nhật gói dịch vụ "${payload.name}"`)
+  } catch {
+    toast.error('Lỗi!', store.error || 'Không thể cập nhật gói dịch vụ')
+  } finally {
+    editing.value = false
+  }
+}
 </script>

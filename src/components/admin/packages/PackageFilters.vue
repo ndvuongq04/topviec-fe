@@ -28,7 +28,7 @@
           v-model="search"
           type="text"
           class="bg-transparent border-none focus:ring-0 text-sm w-full py-3 outline-none ml-2"
-          placeholder="Tìm theo tên gói hoặc tính năng..."
+          placeholder="Tìm theo tên gói hoặc mã gói..."
         />
       </div>
     </div>
@@ -38,18 +38,18 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
-import type { Package } from './PackageTable.vue'
+import type { ResServicePackageDTO } from '@/types/servicePackage.types'
 
-const props = defineProps<{ packages: Package[] }>()
-const emit = defineEmits<{ filter: [{ search: string; status: string }] }>()
+const props = defineProps<{ packages: ResServicePackageDTO[] }>()
+const emit  = defineEmits<{ filter: [{ search: string; status: string }] }>()
 
-const search   = ref('')
+const search    = ref('')
 const activeTab = ref('')
 
 const tabs = computed(() => [
   { value: '',         label: 'Tất cả',   count: props.packages.length },
-  { value: 'active',   label: 'Đang bật', count: props.packages.filter(p => p.active).length },
-  { value: 'inactive', label: 'Đã tắt',   count: props.packages.filter(p => !p.active).length },
+  { value: 'active',   label: 'Đang bật', count: props.packages.filter(p => p.isActive).length },
+  { value: 'inactive', label: 'Đã tắt',   count: props.packages.filter(p => !p.isActive).length },
 ])
 
 watch([search, activeTab], () => {
