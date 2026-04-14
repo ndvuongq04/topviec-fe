@@ -70,6 +70,7 @@
                 <button
                   class="p-1.5 text-slate-400 hover:text-[#963131] transition-colors"
                   title="Xem chi tiết"
+                  @click="router.push({ name: 'admin-order-detail', params: { id: order.code } })"
                 >
                   <span class="material-symbols-outlined text-lg">visibility</span>
                 </button>
@@ -125,6 +126,9 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
 
 const currentPage = ref(1)
 const totalPages  = 65
