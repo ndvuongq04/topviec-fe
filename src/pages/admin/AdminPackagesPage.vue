@@ -1,17 +1,25 @@
 <template>
-  <div class="pkg-page">
+  <div class="space-y-8">
 
-    <!-- Page Header -->
-    <div class="flex justify-between items-end">
+    <!-- Header -->
+    <div class="flex flex-wrap items-center justify-between gap-4">
       <div>
         <h2 class="text-3xl font-black text-slate-900 dark:text-slate-100 tracking-tight">Gói dịch vụ</h2>
         <p class="text-slate-500 text-sm mt-1">Quản lý các gói subscription và cấu hình đặc quyền cho từng cấp độ người dùng</p>
       </div>
     </div>
 
-    <PackageFilters @filter="onFilter" />
-    <PackageTable :packages="filtered" @edit="onEdit" />
+    <!-- KPI Cards -->
     <PackageKpiCards />
+
+    <!-- Filter -->
+    <PackageFilters :packages="packages" @filter="onFilter" />
+
+    <!-- Table Card -->
+    <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden">
+      <PackageTable :packages="filtered" @edit="onEdit" />
+    </div>
+
   </div>
 </template>
 
@@ -39,12 +47,3 @@ const filtered = computed(() => packages.value.filter(p => {
 const onFilter = (f: typeof filterState.value) => { filterState.value = f }
 const onEdit = (pkg: Package) => console.log('edit', pkg)
 </script>
-
-<style scoped>
-.pkg-page {
-
-  display: flex;
-  flex-direction: column;
-  gap: 32px;
-}
-</style>
