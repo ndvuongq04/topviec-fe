@@ -45,6 +45,14 @@ const applicationService = {
   },
 
   /**
+   * Lấy danh sách đơn của UV có ít nhất 1 lịch PV (dùng cho trang "Lịch PV của tôi")
+   */
+  async getMyApplicationsWithInterviews(): Promise<ResApplication[]> {
+    const res = await axiosInstance.get<RestResponse<ResApplication[]>>(`${BASE_URL}/me/with-interviews`);
+    return res.data.data;
+  },
+
+  /**
    * CN-UV-015: Rút đơn ứng tuyển
    */
   async withdraw(applicationId: number, data?: ReqWithdrawApplication): Promise<ResApplication> {

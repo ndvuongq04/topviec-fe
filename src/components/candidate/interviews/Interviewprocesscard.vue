@@ -17,6 +17,9 @@
           <h2 class="process-card__job-title">{{ process.jobTitle }}</h2>
           <div class="process-card__details">
             <span class="process-card__company">{{ process.companyName }}</span>
+            <span v-if="process.status" class="process-card__status-badge" :class="`process-card__status-badge--${statusColor}`">
+              {{ statusLabel }}
+            </span>
           </div>
         </div>
       </div>
@@ -57,25 +60,34 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import InterviewRoundItem from './Interviewrounditem.vue'
+import { APPLICATION_STATUS_OPTIONS } from '@/constants/application.constants'
 
-defineProps<{
+const props = defineProps<{
   process: {
     id: number
     jobTitle: string
     companyName: string
     companyLogo?: string
+    status?: string
     nextStep?: string
     rounds: any[]
   }
   isExpanded: boolean
 }>()
 
-defineEmits<{ 
+defineEmits<{
   (e: 'toggle'): void
   (e: 'showHistory'): void
   (e: 'showDetail', round: any): void
 }>()
+
+const statusOption = computed(() =>
+  APPLICATION_STATUS_OPTIONS.find(o => o.value === props.process.status)
+)
+const statusLabel = computed(() => statusOption.value?.label ?? props.process.status ?? '')
+const statusColor = computed(() => statusOption.value?.color ?? 'default')
 </script>
 
 <style scoped>
@@ -251,4 +263,23 @@ defineEmits<{
   padding: 1.5rem;
   background: rgba(249, 249, 255, 0.5);
 }
+
+/* ── Application status badge ── */
+.process-card__status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.125rem 0.5rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+.process-card__status-badge--blue    { background: #dbeafe; color: #1d4ed8; }
+.process-card__status-badge--cyan    { background: #cffafe; color: #0e7490; }
+.process-card__status-badge--purple  { background: #ede9fe; color: #7c3aed; }
+.process-card__status-badge--orange  { background: #ffedd5; color: #c2410c; }
+.process-card__status-badge--red     { background: #fee2e2; color: #dc2626; }
+.process-card__status-badge--green   { background: #dcfce7; color: #15803d; }
+.process-card__status-badge--success { background: #dcfce7; color: #15803d; }
+.process-card__status-badge--gray    { background: #f1f5f9; color: #64748b; }
+.process-card__status-badge--default { background: #f1f5f9; color: #64748b; }
 </style>

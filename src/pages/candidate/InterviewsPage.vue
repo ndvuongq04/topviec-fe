@@ -107,12 +107,13 @@ const processes = computed(() =>
     jobTitle: app.jobPosting?.title ?? 'Không rõ vị trí',
     companyName: app.jobPosting?.company.name ?? 'Không rõ công ty',
     companyLogo: app.jobPosting?.company.logoUrl,
+    status: app.status,
     rounds: interviewsMap.value[app.id] ?? [],
   }))
 )
 
 onMounted(() => {
-  applicationStore.fetchMyApplications({ status: 'interviewing' })
+  applicationStore.fetchMyApplicationsWithInterviews()
 })
 
 const expandedId = ref<number | null>(null)

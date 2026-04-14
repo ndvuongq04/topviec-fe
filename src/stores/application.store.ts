@@ -45,6 +45,19 @@ export const useApplicationStore = defineStore('application', () => {
     }
   }
 
+  /** Fetch applications có ít nhất 1 lịch PV (trang Lịch PV của tôi) */
+  async function fetchMyApplicationsWithInterviews() {
+    loading.value = true;
+    error.value = null;
+    try {
+      applications.value = await applicationService.getMyApplicationsWithInterviews();
+    } catch (err) {
+      setError(err);
+    } finally {
+      loading.value = false;
+    }
+  }
+
   /** Apply for a job */
   async function apply(jobPostId: number, reqData: ReqApplyJob) {
     loading.value = true;
@@ -146,6 +159,7 @@ export const useApplicationStore = defineStore('application', () => {
     error,
     // actions
     fetchMyApplications,
+    fetchMyApplicationsWithInterviews,
     apply,
     quickApply,
     bulkApply,

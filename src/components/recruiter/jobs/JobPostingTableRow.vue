@@ -99,13 +99,13 @@
               :tooltip="!canEdit ? editDisabledReason : undefined"
               @click="handleAction('edit', job.id, close)"
             />
-            <!-- Gửi duyệt: chỉ khi DRAFT -->
+            <!-- Gửi duyệt: DRAFT hoặc REJECTED -->
             <GlobalDropdownItem
               v-if="job.status !== 'deleted'"
               icon="send"
               label="Gửi tin cho duyệt"
               :disabled="!canSubmit"
-              :tooltip="!canSubmit ? 'Chỉ có thể gửi duyệt khi tin đang ở trạng thái Nháp' : undefined"
+              :tooltip="!canSubmit ? 'Chỉ có thể gửi duyệt khi tin đang ở trạng thái Nháp hoặc Bị từ chối' : undefined"
               @click="handleAction('submit', job.id, close)"
             />
             <GlobalDropdownItem
@@ -134,13 +134,13 @@
               :tooltip="!canExtend ? 'Chỉ có thể gia hạn khi tin đã ở trạng thái Hết hạn' : undefined"
               @click="handleAction('extend', job.id, close)"
             />
-            <!-- Làm mới: chỉ khi PUBLISHED -->
+            <!-- Làm mới: PUBLISHED hoặc RENEWED -->
             <GlobalDropdownItem
               v-if="job.status !== 'deleted'"
               icon="refresh"
               label="Làm mới tin tuyển dụng"
               :disabled="!canRefresh"
-              :tooltip="!canRefresh ? 'Chỉ có thể làm mới khi tin đang ở trạng thái Đang tuyển' : undefined"
+              :tooltip="!canRefresh ? 'Chỉ có thể làm mới khi tin đang ở trạng thái Đang tuyển hoặc Đã gia hạn' : undefined"
               @click="handleAction('refresh', job.id, close)"
             />
             <!-- Bắt đầu phỏng vấn: chỉ khi CLOSED -->
@@ -148,26 +148,27 @@
               v-if="job.status !== 'deleted'"
               icon="groups"
               label="Bắt đầu phỏng vấn"
-
+              :disabled="!canInterview"
+              :tooltip="!canInterview ? 'Chỉ có thể bắt đầu phỏng vấn khi tin đang ở trạng thái Đã đóng' : undefined"
               @click="handleAction('interview', job.id, close)"
             />
             <div class="dropdown-divider-v2" v-if="job.status !== 'deleted'" />
-            <!-- Đóng tin: PUBLISHED hoặc PAUSED -->
+            <!-- Đóng tin: PUBLISHED, PAUSED hoặc INTERVIEWING -->
             <GlobalDropdownItem
               v-if="job.status !== 'deleted'"
               icon="block"
               label="Đóng tin tuyển dụng"
               :disabled="!canClose"
-              :tooltip="!canClose ? 'Chỉ có thể đóng tin khi đang ở trạng thái Đang tuyển hoặc Tạm dừng' : undefined"
+              :tooltip="!canClose ? 'Chỉ có thể đóng tin khi đang ở trạng thái Đang tuyển, Tạm dừng hoặc Đang phỏng vấn' : undefined"
               @click="handleAction('close', job.id, close)"
             />
-            <!-- Xóa tin: DRAFT / REJECTED / CLOSED / EXPIRED / COMPLETED -->
+            <!-- Xóa tin: tất cả trừ PUBLISHED -->
             <GlobalDropdownItem
               v-if="job.status !== 'deleted'"
               icon="delete"
               label="Xóa tin"
               :disabled="!canDelete"
-              :tooltip="!canDelete ? 'Không thể xóa tin đang hoạt động, hãy đóng tin trước' : undefined"
+              :tooltip="!canDelete ? 'Không thể xóa tin đang ở trạng thái Đang tuyển, hãy đóng tin trước' : undefined"
               danger
               @click="handleAction('delete', job.id, close)"
             />
@@ -233,8 +234,8 @@ const editDisabledReason = computed(() => {
   return 'Không thể chỉnh sửa tin ở trạng thái này'
 })
 
-// Gửi duyệt: chỉ khi DRAFT
-const canSubmit = computed(() => props.job.status === 'draft')
+// Gửi duyệt: DRAFT hoặc REJECTED
+const canSubmit = computed(() => ['draft', 'rejected'].includes(props.job.status))
 
 // Tạm dừng: chỉ khi PUBLISHED (active/expiring)
 const canPause = computed(() => ['active', 'expiring'].includes(props.job.status))
@@ -245,17 +246,17 @@ const canResume = computed(() => props.job.status === 'paused')
 // Gia hạn: chỉ khi EXPIRED
 const canExtend = computed(() => props.job.status === 'expired')
 
-// Làm mới: chỉ khi PUBLISHED (active/expiring)
-const canRefresh = computed(() => ['active', 'expiring'].includes(props.job.status))
+// Làm mới: PUBLISHED (active/expiring) hoặc RENEWED
+const canRefresh = computed(() => ['active', 'expiring', 'renewed'].includes(props.job.status))
 
 // Bắt đầu phỏng vấn: chỉ khi CLOSED
 const canInterview = computed(() => props.job.status === 'closed')
 
-// Đóng tin: PUBLISHED hoặc PAUSED
-const canClose = computed(() => ['active', 'expiring', 'paused'].includes(props.job.status))
+// Đóng tin: PUBLISHED, PAUSED hoặc INTERVIEWING
+const canClose = computed(() => ['active', 'expiring', 'paused', 'interviewing'].includes(props.job.status))
 
-// Xóa tin: DRAFT / REJECTED / CLOSED / EXPIRED / COMPLETED
-const canDelete = computed(() => ['draft', 'rejected', 'closed', 'expired', 'completed'].includes(props.job.status))
+// Xóa tin: tất cả trừ PUBLISHED (active/expiring) và DELETED
+const canDelete = computed(() => !['active', 'expiring', 'deleted'].includes(props.job.status))
 
 // Khôi phục: chỉ khi DELETED
 const canRestore = computed(() => props.job.status === 'deleted')
