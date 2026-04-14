@@ -22,7 +22,7 @@
       </div>
     </div>
     <div class="scp-actions">
-      <button class="scp-btn-outline">Đổi gói</button>
+      <button class="scp-btn-outline" @click="router.push('/recruiter/pricing')">Đổi gói</button>
       <button class="scp-btn-primary">Gia hạn</button>
     </div>
   </section>
@@ -30,11 +30,13 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useRouter } from 'vue-router'
 
 defineProps<{
   plan: { tier: string; daysLeft: number; expireDate: string }
 }>()
 
+const router = useRouter()
 const billingCycle = ref<'yearly' | 'monthly'>('yearly')
 </script>
 

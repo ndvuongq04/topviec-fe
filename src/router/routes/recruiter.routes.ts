@@ -102,6 +102,11 @@ export const recruiterRoutes: RouteRecordRaw[] = [
         component: () => import('@/pages/recruiter/ServicesPage.vue'),
       },
       {
+        path: 'pricing',
+        name: 'recruiter-pricing',
+        component: () => import('@/pages/recruiter/PricingPage.vue'),
+      },
+      {
         path: 'offers',
         name: 'recruiter-offers',
         component: () => import('@/pages/recruiter/OfferManagementPage.vue'),
