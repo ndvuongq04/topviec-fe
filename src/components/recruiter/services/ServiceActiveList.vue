@@ -34,10 +34,10 @@
         </div>
       </div>
 
-      <button class="sal-cta">
+      <router-link :to="{ name: 'recruiter-service-shop' }" class="sal-cta">
         <span class="material-symbols-outlined">add_circle</span>
         Mua thêm dịch vụ lẻ
-      </button>
+      </router-link>
     </div>
   </section>
 </template>
