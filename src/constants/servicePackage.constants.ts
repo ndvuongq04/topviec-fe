@@ -2,6 +2,54 @@
 // ─── Enums ──────────────────────────────────────────────────────────────────
 // ⚠️  Đồng bộ với BE enum: com.topviec.topviec_be.enums.services
 
+export enum OrderItemType {
+    SUBSCRIPTION = 'subscription',
+    ADDON        = 'addon',
+}
+
+export enum OrderStatus {
+    PENDING   = 'pending',
+    PAID      = 'paid',
+    FAILED    = 'failed',
+    CANCELLED = 'cancelled',
+    REFUNDED  = 'refunded',
+}
+
+export enum OrderType {
+    SUBSCRIPTION = 'subscription',
+    ADDON        = 'addon',
+}
+
+export enum PaymentMethod {
+    VNPAY = 'vnpay',
+    MOMO  = 'momo',
+}
+
+// ─── Labels cho UI (Order) ──────────────────────────────────────────────────
+
+export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
+    [OrderStatus.PENDING]:   'Chờ thanh toán',
+    [OrderStatus.PAID]:      'Đã thanh toán',
+    [OrderStatus.FAILED]:    'Thất bại',
+    [OrderStatus.CANCELLED]: 'Đã huỷ',
+    [OrderStatus.REFUNDED]:  'Đã hoàn tiền',
+}
+
+export const ORDER_TYPE_LABELS: Record<OrderType, string> = {
+    [OrderType.SUBSCRIPTION]: 'Gói đăng ký',
+    [OrderType.ADDON]:        'Dịch vụ lẻ',
+}
+
+export const ORDER_ITEM_TYPE_LABELS: Record<OrderItemType, string> = {
+    [OrderItemType.SUBSCRIPTION]: 'Gói đăng ký',
+    [OrderItemType.ADDON]:        'Dịch vụ lẻ',
+}
+
+export const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {
+    [PaymentMethod.VNPAY]: 'VNPay',
+    [PaymentMethod.MOMO]:  'MoMo',
+}
+
 export enum AddonPackageGroup {
     JOB_POSTING          = 'JOB_POSTING',          // Nhóm tin tuyển dụng
     CANDIDATE            = 'CANDIDATE',            // Nhóm hồ sơ
