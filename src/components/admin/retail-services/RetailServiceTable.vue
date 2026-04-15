@@ -44,9 +44,12 @@
             <div class="flex items-center justify-center gap-2">
               <button
                 type="button"
-                class="relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200"
+                role="switch"
+                :aria-checked="svc.active"
+                :disabled="togglingId === svc.id"
+                class="relative inline-flex h-5 w-9 shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
                 :class="svc.active ? 'bg-green-500' : 'bg-slate-200 dark:bg-slate-700'"
-                @click="svc.active = !svc.active"
+                @click="$emit('toggle', svc)"
               >
                 <span
                   class="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200"
@@ -89,6 +92,6 @@ export interface RetailService {
   active: boolean
 }
 
-defineProps<{ services: RetailService[] }>()
-defineEmits<{ edit: [RetailService] }>()
+defineProps<{ services: RetailService[]; togglingId?: number | null }>()
+defineEmits<{ edit: [RetailService]; toggle: [RetailService] }>()
 </script>

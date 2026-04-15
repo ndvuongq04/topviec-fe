@@ -12,7 +12,12 @@
         Thêm vào nhóm này
       </button>
     </div>
-    <RetailServiceTable :services="group.services" @edit="$emit('edit', $event)" />
+    <RetailServiceTable
+      :services="group.services"
+      :toggling-id="togglingId"
+      @edit="$emit('edit', $event)"
+      @toggle="$emit('toggle', $event)"
+    />
   </section>
 </template>
 
@@ -27,8 +32,8 @@ export interface ServiceGroup {
   services: RetailService[]
 }
 
-defineProps<{ group: ServiceGroup }>()
-defineEmits<{ add: [string]; edit: [RetailService] }>()
+defineProps<{ group: ServiceGroup; togglingId?: number | null }>()
+defineEmits<{ add: [string]; edit: [RetailService]; toggle: [RetailService] }>()
 </script>
 
 <style scoped>

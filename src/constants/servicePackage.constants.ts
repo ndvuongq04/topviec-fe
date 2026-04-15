@@ -3,11 +3,10 @@
 // ⚠️  Đồng bộ với BE enum: com.topviec.topviec_be.enums.services
 
 export enum AddonPackageGroup {
-    FEATURED_JOB  = 'FEATURED_JOB',   // Tin tuyển dụng nổi bật
-    URGENT_JOB    = 'URGENT_JOB',     // Tin tuyển dụng khẩn cấp
-    EXTEND_JOB    = 'EXTEND_JOB',     // Gia hạn tin tuyển dụng
-    CV_ACCESS     = 'CV_ACCESS',      // Truy cập hồ sơ ứng viên
-    PROFILE_BOOST = 'PROFILE_BOOST',  // Tăng độ hiển thị hồ sơ
+    JOB_POSTING          = 'JOB_POSTING',          // Nhóm tin tuyển dụng
+    CANDIDATE            = 'CANDIDATE',            // Nhóm hồ sơ
+    BRANDING             = 'BRANDING',             // Nhóm thương hiệu
+    ADDON_PACKAGE_GROUP  = 'ADDON_PACKAGE_GROUP',  // Nhóm gói dịch vụ thêm
 }
 
 export enum BillingCycle {
@@ -18,17 +17,41 @@ export enum BillingCycle {
 // ─── Labels cho UI ──────────────────────────────────────────────────────────────
 
 export const ADDON_PACKAGE_GROUP_LABELS: Record<AddonPackageGroup, string> = {
-    [AddonPackageGroup.FEATURED_JOB]:  'Tin nổi bật',
-    [AddonPackageGroup.URGENT_JOB]:    'Tin khẩn cấp',
-    [AddonPackageGroup.EXTEND_JOB]:    'Gia hạn tin',
-    [AddonPackageGroup.CV_ACCESS]:     'Truy cập hồ sơ',
-    [AddonPackageGroup.PROFILE_BOOST]: 'Tăng hiển thị',
+    [AddonPackageGroup.JOB_POSTING]:         'Nhóm tin tuyển dụng',
+    [AddonPackageGroup.CANDIDATE]:           'Nhóm hồ sơ',
+    [AddonPackageGroup.BRANDING]:            'Nhóm thương hiệu',
+    [AddonPackageGroup.ADDON_PACKAGE_GROUP]: 'Nhóm gói dịch vụ thêm',
 }
 
 export const BILLING_CYCLE_LABELS: Record<BillingCycle, string> = {
     [BillingCycle.MONTHLY]: 'Hàng tháng',
     [BillingCycle.YEARLY]:  'Hàng năm',
 }
+
+// ─── Addon Package Options (Name → Code mapping) ──────────────────────────────
+// ⚠️  Đồng bộ với danh sách dịch vụ lẻ bên BE
+
+export interface AddonPackageOption {
+    name:      string
+    code:      string
+    groupCode: AddonPackageGroup
+}
+
+export const ADDON_PACKAGE_OPTIONS: AddonPackageOption[] = [
+    // Nhóm tin tuyển dụng
+    { name: 'Tin nổi bật',          code: 'HOT_JOB_7D',      groupCode: AddonPackageGroup.JOB_POSTING },
+    { name: 'Tin khẩn cấp',         code: 'URGENT_JOB_7D',   groupCode: AddonPackageGroup.JOB_POSTING },
+    { name: 'Gia hạn tin 7 ngày',   code: 'EXTEND_JOB_7D',   groupCode: AddonPackageGroup.JOB_POSTING },
+    { name: 'Gia hạn tin 14 ngày',  code: 'EXTEND_JOB_14D',  groupCode: AddonPackageGroup.JOB_POSTING },
+    // Nhóm hồ sơ
+    { name: 'Mở khóa hồ sơ ứng viên', code: 'CV_ACCESS',       groupCode: AddonPackageGroup.CANDIDATE },
+    { name: 'Tăng hiển thị hồ sơ',    code: 'PROFILE_BOOST',   groupCode: AddonPackageGroup.CANDIDATE },
+    // Nhóm thương hiệu
+    { name: 'Top Employer Banner',     code: 'BRAND_BANNER',    groupCode: AddonPackageGroup.BRANDING },
+    { name: 'Bài viết quảng bá',       code: 'BRAND_POST',      groupCode: AddonPackageGroup.BRANDING },
+    // Nhóm gói dịch vụ thêm
+    { name: 'Gói dịch vụ thêm',        code: 'ADDON_PACKAGE',   groupCode: AddonPackageGroup.ADDON_PACKAGE_GROUP },
+]
 
 // ─── Service Package Tiers ───────────────────────────────────────────────────
 
