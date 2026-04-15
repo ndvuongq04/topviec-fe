@@ -13,52 +13,80 @@
 
     <BillingTabs v-model="activeTab" />
     <BillingFilters />
-    <BillingSummaryBar :total-amount="'12.400.000 đ'" :total-orders="23" :paid-orders="20" />
-    <BillingTable :orders="orders" />
+    <BillingSummaryBar
+      :total-amount="totalAmountFormatted"
+      :total-orders="store.meta.totals"
+      :paid-orders="paidOrdersCount"
+    />
+
+    <div v-if="store.loading" class="billing-page__loading">
+      <span class="material-symbols-outlined billing-page__spinner">progress_activity</span>
+      Đang tải dữ liệu...
+    </div>
+    <div v-else-if="store.error" class="billing-page__error">
+      <span class="material-symbols-outlined">error</span>
+      {{ store.error }}
+    </div>
+    <BillingTable
+      v-else
+      :orders="store.orders"
+      :meta="store.meta"
+      @page-change="onPageChange"
+      @view="openDetail"
+    />
+
     <BillingPromoSection />
+
+    <OrderDetailModal
+      :visible="detailVisible"
+      :order-id="selectedOrderId"
+      @close="detailVisible = false"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import BillingTabs from '@/components/recruiter/billing/BillingTabs.vue'
 import BillingFilters from '@/components/recruiter/billing/BillingFilters.vue'
 import BillingSummaryBar from '@/components/recruiter/billing/BillingSummaryBar.vue'
 import BillingTable from '@/components/recruiter/billing/BillingTable.vue'
 import BillingPromoSection from '@/components/recruiter/billing/BillingPromoSection.vue'
+import OrderDetailModal from '@/components/recruiter/billing/OrderDetailModal.vue'
+import { useEmployerOrderStore } from '@/stores/order.store'
+import { OrderStatus } from '@/constants/servicePackage.constants'
 
+const store     = useEmployerOrderStore()
 const activeTab = ref<'orders' | 'history'>('orders')
 
-const orders = ref([
-  {
-    id: '#ORD-00247', type: 'Mua gói', typeVariant: 'primary',
-    name: 'Gói Pro · Hàng tháng', note: 'Gia hạn tự động: Bật',
-    amount: '1.188.000 đ', date: '14/04/2025', time: '09:32',
-    status: 'paid',
-  },
-  {
-    id: '#ORD-00246', type: 'Mua lẻ', typeVariant: 'default',
-    name: '50 Lượt xem hồ sơ', note: 'Giao dịch lẻ',
-    amount: '500.000 đ', date: '12/04/2025', time: '14:15',
-    status: 'pending',
-  },
-  {
-    id: '#ORD-00242', type: 'Mua gói', typeVariant: 'primary',
-    name: 'Gói Pro · 12 tháng', note: 'Ưu đãi giảm 20%',
-    amount: '11.404.000 đ', date: '08/04/2025', time: '10:02',
-    status: 'failed',
-  },
-  {
-    id: '#ORD-00239', type: 'Mua lẻ', typeVariant: 'default',
-    name: 'Tin tuyển dụng tiêu điểm', note: 'Hoàn tiền dịch vụ',
-    amount: '250.000 đ', date: '02/04/2025', time: '16:44',
-    status: 'refunded',
-  },
-])
+const paidOrdersCount = computed(() =>
+  store.orders.filter(o => o.status === OrderStatus.PAID).length
+)
+
+const totalAmountFormatted = computed(() => {
+  const sum = store.orders.reduce((acc, o) => acc + o.totalAmount, 0)
+  return sum.toLocaleString('vi-VN') + ' đ'
+})
+
+const detailVisible    = ref(false)
+const selectedOrderId  = ref<number | null>(null)
+
+function openDetail(id: number) {
+  selectedOrderId.value = id
+  detailVisible.value   = true
+}
+
+function onPageChange(page: number) {
+  store.fetchMyOrders({ page }) // 0-based
+}
+
+onMounted(() => {
+  store.fetchMyOrders({ page: 0 }) // trang đầu = 0
+})
 </script>
 
 <style scoped>
-.billing-page { padding: 2rem; }
+
 
 .billing-page__header {
   display: flex; align-items: flex-end; justify-content: space-between;
@@ -80,4 +108,16 @@ const orders = ref([
 }
 .billing-page__export-btn:hover { background: #f8fafc; border-color: #cbd5e1; }
 .billing-page__export-btn .material-symbols-outlined { font-size: 20px; }
+
+.billing-page__loading,
+.billing-page__error {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  margin-top: 1.5rem; padding: 3rem;
+  background: #fff; border-radius: 1rem;
+  border: 1px solid #f8fafc;
+  font-size: 0.875rem; font-weight: 500; color: #64748b;
+}
+.billing-page__error { color: #ef4444; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.billing-page__spinner { animation: spin 1s linear infinite; }
 </style>

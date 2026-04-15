@@ -14,29 +14,31 @@
       </thead>
       <tbody>
         <tr v-for="order in orders" :key="order.id" class="table__row">
-          <td class="table__td"><span class="table__order-id">{{ order.id }}</span></td>
+          <td class="table__td"><span class="table__order-id">{{ order.orderCode }}</span></td>
           <td class="table__td">
-            <span :class="['table__type-badge', `table__type-badge--${order.typeVariant}`]">{{ order.type }}</span>
+            <span :class="['table__type-badge', order.type === OrderType.SUBSCRIPTION ? 'table__type-badge--primary' : 'table__type-badge--default']">
+              {{ ORDER_TYPE_LABELS[order.type] }}
+            </span>
           </td>
           <td class="table__td">
-            <p class="table__detail-name">{{ order.name }}</p>
-            <p class="table__detail-note">{{ order.note }}</p>
+            <p class="table__detail-name">{{ getDetailName(order) }}</p>
+            <p class="table__detail-note">{{ order.note ?? PAYMENT_METHOD_LABELS[order.paymentMethod] }}</p>
           </td>
           <td class="table__td table__td--right">
-            <span class="table__amount">{{ order.amount }}</span>
+            <span class="table__amount">{{ formatCurrency(order.totalAmount) }}</span>
           </td>
           <td class="table__td">
-            <p class="table__date">{{ order.date }}</p>
-            <p class="table__time">{{ order.time }}</p>
+            <p class="table__date">{{ formatDate(order.createdAt) }}</p>
+            <p class="table__time">{{ formatTime(order.createdAt) }}</p>
           </td>
           <td class="table__td">
-            <span :class="['table__status', `table__status--${order.status}`]">
+            <span :class="['table__status', `table__status--${order.status.toLowerCase()}`]">
               <span class="table__status-dot"></span>
-              {{ statusLabel[order.status] }}
+              {{ ORDER_STATUS_LABELS[order.status] }}
             </span>
           </td>
           <td class="table__td table__td--right">
-            <button class="table__action-btn">
+            <button class="table__action-btn" @click="$emit('view', order.id)">
               <span class="material-symbols-outlined">visibility</span>
             </button>
           </td>
@@ -46,30 +48,72 @@
 
     <!-- Pagination -->
     <div class="pagination">
-      <p class="pagination__info">Hiển thị 10 trong 23 đơn hàng</p>
+      <p class="pagination__info">
+        Hiển thị {{ rangeStart }}–{{ rangeEnd }} trong {{ meta.totals }} đơn hàng
+      </p>
       <div class="pagination__controls">
-        <button class="pagination__btn"><span class="material-symbols-outlined">chevron_left</span></button>
-        <button v-for="p in 3" :key="p" :class="['pagination__btn', p === 1 && 'pagination__btn--active']">{{ p }}</button>
-        <button class="pagination__btn"><span class="material-symbols-outlined">chevron_right</span></button>
+        <button class="pagination__btn" :disabled="meta.page === 0" @click="$emit('page-change', meta.page - 1)">
+          <span class="material-symbols-outlined">chevron_left</span>
+        </button>
+        <button
+          v-for="p in meta.pages" :key="p"
+          :class="['pagination__btn', (p - 1) === meta.page && 'pagination__btn--active']"
+          @click="$emit('page-change', p - 1)"
+        >{{ p }}</button>
+        <button class="pagination__btn" :disabled="meta.page >= meta.pages - 1" @click="$emit('page-change', meta.page + 1)">
+          <span class="material-symbols-outlined">chevron_right</span>
+        </button>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-defineProps<{
-  orders: {
-    id: string; type: string; typeVariant: string
-    name: string; note: string; amount: string
-    date: string; time: string; status: string
-  }[]
+import { computed } from 'vue'
+import type { ResOrderDTO } from '@/types/order.types'
+import type { PaginationMeta } from '@/types/common.types'
+import {
+  OrderType,
+  ORDER_TYPE_LABELS,
+  ORDER_STATUS_LABELS,
+  PAYMENT_METHOD_LABELS,
+  BILLING_CYCLE_LABELS,
+} from '@/constants/servicePackage.constants'
+
+const props = defineProps<{
+  orders: ResOrderDTO[]
+  meta:   PaginationMeta
 }>()
 
-const statusLabel: Record<string, string> = {
-  paid: 'Đã thanh toán',
-  pending: 'Chờ thanh toán',
-  failed: 'Thất bại',
-  refunded: 'Đã hoàn tiền',
+defineEmits<{ 'page-change': [page: number]; 'view': [id: number] }>()
+
+const rangeStart = computed(() =>
+  props.meta.totals === 0 ? 0 : props.meta.page * props.meta.pageSize + 1
+)
+const rangeEnd = computed(() =>
+  Math.min((props.meta.page + 1) * props.meta.pageSize, props.meta.totals)
+)
+
+function getDetailName(order: ResOrderDTO): string {
+  const first = order.items?.[0]
+  if (!first) return ORDER_TYPE_LABELS[order.type]
+  if (first.billingCycle) return `${ORDER_TYPE_LABELS[order.type]} · ${BILLING_CYCLE_LABELS[first.billingCycle]}`
+  if (first.quantity > 1)  return `${ORDER_TYPE_LABELS[order.type]} × ${first.quantity}`
+  return ORDER_TYPE_LABELS[order.type]
+}
+
+function formatCurrency(amount: number): string {
+  return amount.toLocaleString('vi-VN') + ' đ'
+}
+
+function formatDate(iso: string): string {
+  const d = new Date(iso)
+  return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`
+}
+
+function formatTime(iso: string): string {
+  const d = new Date(iso)
+  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
 }
 </script>
 
@@ -131,8 +175,10 @@ const statusLabel: Record<string, string> = {
 .table__status--pending  .table__status-dot { background: #d97706; }
 .table__status--failed   { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
 .table__status--failed   .table__status-dot { background: #dc2626; }
-.table__status--refunded { background: #f8fafc; color: #64748b; border: 1px solid #e2e8f0; }
-.table__status--refunded .table__status-dot { background: #94a3b8; }
+.table__status--refunded  { background: #f8fafc; color: #64748b; border: 1px solid #e2e8f0; }
+.table__status--refunded  .table__status-dot { background: #94a3b8; }
+.table__status--cancelled { background: #f8fafc; color: #64748b; border: 1px solid #e2e8f0; }
+.table__status--cancelled .table__status-dot { background: #94a3b8; }
 
 .table__action-btn {
   padding: 8px; border: none; background: none;
