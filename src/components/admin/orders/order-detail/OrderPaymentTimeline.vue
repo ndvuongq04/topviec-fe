@@ -1,24 +1,42 @@
 <script setup lang="ts">
-const timeline = [
-  {
-    title: 'Thanh toán thành công',
-    time: '14/04/2025 09:33',
-    desc: 'Giao dịch đã được xác thực bởi hệ thống VNPay.',
-    active: true,
-  },
-  {
-    title: 'Đang xử lý thanh toán',
-    time: '14/04/2025 09:32',
-    desc: 'Khách hàng đã được chuyển sang cổng VNPay.',
-    active: false,
-  },
-  {
-    title: 'Đơn hàng được khởi tạo',
-    time: '14/04/2025 09:32',
-    desc: '',
-    active: false,
-  },
-]
+import { computed } from 'vue'
+import type { ResOrderDTO } from '@/types/order.types'
+import { OrderStatus, PAYMENT_METHOD_LABELS, ORDER_STATUS_LABELS } from '@/constants/servicePackage.constants'
+
+const props = defineProps<{ order: ResOrderDTO }>()
+
+function fmt(iso: string | null): string {
+  if (!iso) return ''
+  const d = new Date(iso)
+  return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`
+}
+
+const timeline = computed(() => {
+  const items = []
+
+  // Bước cuối: trạng thái hiện tại (nếu đã xong)
+  if (props.order.status === OrderStatus.PAID && props.order.paidAt) {
+    items.push({
+      title: 'Thanh toán thành công',
+      time: fmt(props.order.paidAt),
+      desc: `Giao dịch đã được xác thực qua ${PAYMENT_METHOD_LABELS[props.order.paymentMethod]}.`,
+      active: true,
+    })
+  } else if (props.order.status === OrderStatus.FAILED) {
+    items.push({ title: 'Thanh toán thất bại', time: fmt(props.order.paidAt), desc: 'Giao dịch không thành công.', active: true })
+  } else if (props.order.status === OrderStatus.REFUNDED) {
+    items.push({ title: 'Đã hoàn tiền', time: fmt(props.order.paidAt), desc: '', active: true })
+  } else if (props.order.status === OrderStatus.CANCELLED) {
+    items.push({ title: 'Đã hủy đơn', time: fmt(props.order.createdAt), desc: '', active: true })
+  } else if (props.order.status === OrderStatus.PENDING) {
+    items.push({ title: 'Đang chờ thanh toán', time: fmt(props.order.createdAt), desc: `Khách hàng đang được chuyển sang cổng ${PAYMENT_METHOD_LABELS[props.order.paymentMethod]}.`, active: true })
+  }
+
+  // Bước khởi tạo luôn có
+  items.push({ title: 'Đơn hàng được khởi tạo', time: fmt(props.order.createdAt), desc: '', active: false })
+
+  return items
+})
 </script>
 
 <template>

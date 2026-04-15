@@ -1,36 +1,15 @@
 <script setup lang="ts">
-const customer = {
-  name: 'Công ty ABC Corp',
-  tier: 'Premium Member',
-  email: 'contact@abccorp.vn',
-  phone: '090 123 4567',
-  avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBMs9ExuFXVEDBjG3_Vx0wNrlv_4ecgrViaovZNzPIjjcMzZn1ok_D_fAts5OLjhNubhnOLQoe8MXMRW7ki9hM5nplqNkpS4zAZv78PW-u11-ZqyxRrZyzbb2PMlDPauHHfGKYAepVvuoU1Y0MEF4_6cWsWXf2LMgdldkUZvGTIsBuhldSMqlUjhVZZy67jL1NVTC4Uz_I7rBk5gFhDftn0xFlXR7kvnn6swgxBut9rDTJIcgGBRHP9dSOmdFZj5md8t-jSW1NERRzE',
-}
+// TODO: API chưa trả về thông tin employer trong ResOrderDTO.
+// Cần BE bổ sung: employerName, employerEmail, employerPhone vào response.
 </script>
 
 <template>
   <div class="customer-card">
     <h3 class="card-label">Thông tin khách hàng</h3>
-    <div class="customer-info">
-      <div class="customer-avatar">
-        <img :src="customer.avatar" :alt="customer.name" />
-      </div>
-      <div>
-        <p class="customer-name">{{ customer.name }}</p>
-        <p class="customer-tier">{{ customer.tier }}</p>
-      </div>
+    <div class="pending-notice">
+      <span class="material-symbols-outlined" style="font-size:20px; color:#94a3b8">info</span>
+      <p>Thông tin khách hàng chưa được cung cấp trong API.<br/>Vui lòng liên hệ BE để bổ sung.</p>
     </div>
-    <div class="contact-list">
-      <div class="contact-item">
-        <span class="material-symbols-outlined contact-icon">mail</span>
-        <span class="contact-text">{{ customer.email }}</span>
-      </div>
-      <div class="contact-item">
-        <span class="material-symbols-outlined contact-icon">call</span>
-        <span class="contact-text">{{ customer.phone }}</span>
-      </div>
-    </div>
-    <a href="#" class="btn-subscription">Xem subscription</a>
   </div>
 </template>
 
@@ -128,7 +107,15 @@ const customer = {
   transition: background 0.2s;
 }
 
-.btn-subscription:hover {
-  background: #f0eee7;
+.pending-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: #f8fafc;
+  border-radius: 8px;
+  padding: 16px;
+  font-size: 0.75rem;
+  color: #94a3b8;
+  line-height: 1.6;
 }
 </style>

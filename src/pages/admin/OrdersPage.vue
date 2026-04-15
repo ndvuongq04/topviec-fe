@@ -13,18 +13,47 @@
     <OrderSummaryCards />
 
     <!-- Filter -->
-    <OrderFilters />
+    <OrderFilters @filter="onFilter" />
 
     <!-- Table Card -->
     <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden">
-      <OrderTable />
+      <OrderTable
+        :orders="store.orders"
+        :meta="store.meta"
+        :loading="store.loading"
+        @page-change="onPageChange"
+      />
     </div>
 
   </div>
 </template>
 
 <script setup lang="ts">
+import { ref, onMounted } from 'vue'
 import OrderFilters from '@/components/admin/orders/OrderFilters.vue'
 import OrderSummaryCards from '@/components/admin/orders/OrderSummaryCards.vue'
 import OrderTable from '@/components/admin/orders/OrderTable.vue'
+import { useAdminOrderStore } from '@/stores/order.store'
+import type { OrderStatus } from '@/types/order.types'
+
+const store       = useAdminOrderStore()
+const currentPage = ref(0)            // 0-based theo skill-Pagination.md
+const filterStatus = ref<OrderStatus | undefined>(undefined)
+
+function fetch() {
+  store.fetchOrders({ page: currentPage.value, status: filterStatus.value })
+}
+
+function onPageChange(page: number) {
+  currentPage.value = page
+  fetch()
+}
+
+function onFilter(status: OrderStatus | undefined) {
+  filterStatus.value = status
+  currentPage.value  = 0   // reset về trang đầu khi đổi filter
+  fetch()
+}
+
+onMounted(() => fetch())
 </script>

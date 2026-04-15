@@ -1,15 +1,18 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import Breadcrumb from '@/components/ui/Breadcrumb.vue'
+
+const props = defineProps<{ orderCode: string }>()
 
 const emit = defineEmits<{
   exportInvoice: []
   printOrder: []
 }>()
 
-const breadcrumbs = [
+const breadcrumbs = computed(() => [
   { label: 'Đơn hàng', to: '/admin/orders' },
-  { label: '#ORD-00247' },
-]
+  { label: props.orderCode },
+])
 </script>
 
 <template>

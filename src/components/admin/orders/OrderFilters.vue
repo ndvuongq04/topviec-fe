@@ -83,10 +83,11 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import { OrderStatus } from '@/constants/servicePackage.constants'
 
 const search    = ref('')
 const orderType = ref('')
-const status    = ref('')
+const status    = ref<OrderStatus | ''>('')
 const dateFrom  = ref('')
 const dateTo    = ref('')
 const activeTab = ref('all')
@@ -101,19 +102,16 @@ const tabs = [
 ]
 
 const emit = defineEmits<{
-  filter: [payload: { search: string; orderType: string; status: string; dateFrom: string; dateTo: string; tab: string }]
+  filter: [status: OrderStatus | undefined]
 }>()
 
 const handleFilter = () => {
-  emit('filter', {
-    search: search.value, orderType: orderType.value,
-    status: status.value, dateFrom: dateFrom.value,
-    dateTo: dateTo.value, tab: activeTab.value,
-  })
+  emit('filter', status.value || undefined)
 }
 
 const clearFilters = () => {
   search.value = ''; orderType.value = ''; status.value = ''
   dateFrom.value = ''; dateTo.value = ''; activeTab.value = 'all'
+  emit('filter', undefined)
 }
 </script>

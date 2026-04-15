@@ -1,25 +1,33 @@
 <script setup lang="ts">
-// In real app, receive via props
-const statusData = {
-  status: 'Đã thanh toán',
-  total: '799.000 đ',
-  transactionId: 'VNP20250414093201',
+import type { ResOrderDTO } from '@/types/order.types'
+import { OrderStatus, ORDER_STATUS_LABELS } from '@/constants/servicePackage.constants'
+
+const props = defineProps<{ order: ResOrderDTO }>()
+
+const statusConfig: Record<OrderStatus, { icon: string; iconColor: string; badgeBg: string; badgeColor: string; borderColor: string }> = {
+  [OrderStatus.PAID]:      { icon: 'check_circle',  iconColor: '#004638', badgeBg: '#E1F5EE', badgeColor: '#085041', borderColor: '#004638' },
+  [OrderStatus.PENDING]:   { icon: 'pending',        iconColor: '#d97706', badgeBg: '#fffbeb', badgeColor: '#b45309', borderColor: '#d97706' },
+  [OrderStatus.FAILED]:    { icon: 'cancel',         iconColor: '#dc2626', badgeBg: '#fef2f2', badgeColor: '#b91c1c', borderColor: '#dc2626' },
+  [OrderStatus.REFUNDED]:  { icon: 'replay',         iconColor: '#64748b', badgeBg: '#f1f5f9', badgeColor: '#475569', borderColor: '#94a3b8' },
+  [OrderStatus.CANCELLED]: { icon: 'do_not_disturb', iconColor: '#64748b', badgeBg: '#f1f5f9', badgeColor: '#475569', borderColor: '#94a3b8' },
 }
+
+const cfg = statusConfig[props.order.status]
 </script>
 
 <template>
-  <div class="status-card">
+  <div class="status-card" :style="{ borderTopColor: cfg.borderColor }">
     <div class="status-top">
-      <span class="material-symbols-outlined status-icon" style="font-variation-settings: 'FILL' 1;">check_circle</span>
-      <span class="status-badge">{{ statusData.status }}</span>
+      <span class="material-symbols-outlined status-icon" :style="{ color: cfg.iconColor }" style="font-variation-settings: 'FILL' 1;">{{ cfg.icon }}</span>
+      <span class="status-badge" :style="{ background: cfg.badgeBg, color: cfg.badgeColor }">{{ ORDER_STATUS_LABELS[order.status] }}</span>
     </div>
     <div class="status-total">
       <p class="total-label">Tổng cộng</p>
-      <p class="total-value">{{ statusData.total }}</p>
+      <p class="total-value">{{ order.totalAmount.toLocaleString('vi-VN') }} đ</p>
     </div>
     <div class="status-txn">
       <p class="txn-label">Transaction ID</p>
-      <p class="txn-value">{{ statusData.transactionId }}</p>
+      <p class="txn-value">{{ order.paymentTransactionId ?? '—' }}</p>
     </div>
   </div>
 </template>

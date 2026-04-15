@@ -1,13 +1,16 @@
 <script setup lang="ts">
-// In real app, receive via props or store
-const orderInfo = {
-  code: '#ORD-00247',
-  type: 'Mua gói dịch vụ',
-  cycle: 'Hàng tháng',
-  createdAt: '14/04/2025 09:32',
-  paidAt: '14/04/2025 09:33',
-  method: 'VNPay',
+import type { ResOrderDTO } from '@/types/order.types'
+import { ORDER_TYPE_LABELS, PAYMENT_METHOD_LABELS, BILLING_CYCLE_LABELS } from '@/constants/servicePackage.constants'
+
+const props = defineProps<{ order: ResOrderDTO }>()
+
+function fmt(iso: string | null): string {
+  if (!iso) return '—'
+  const d = new Date(iso)
+  return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`
 }
+
+const billingCycle = props.order.items?.[0]?.billingCycle
 </script>
 
 <template>
@@ -19,29 +22,30 @@ const orderInfo = {
     <div class="info-grid">
       <div class="info-item">
         <p class="info-label">Mã đơn hàng</p>
-        <p class="info-value info-value--primary">{{ orderInfo.code }}</p>
+        <p class="info-value info-value--primary">{{ order.orderCode }}</p>
       </div>
       <div class="info-item">
         <p class="info-label">Loại đơn</p>
-        <p class="info-value">{{ orderInfo.type }}</p>
+        <p class="info-value">{{ ORDER_TYPE_LABELS[order.type] }}</p>
       </div>
       <div class="info-item">
         <p class="info-label">Chu kỳ</p>
-        <span class="badge-cycle">{{ orderInfo.cycle }}</span>
+        <span v-if="billingCycle" class="badge-cycle">{{ BILLING_CYCLE_LABELS[billingCycle] }}</span>
+        <span v-else class="info-value">—</span>
       </div>
       <div class="info-item">
         <p class="info-label">Ngày tạo</p>
-        <p class="info-value">{{ orderInfo.createdAt }}</p>
+        <p class="info-value">{{ fmt(order.createdAt) }}</p>
       </div>
       <div class="info-item">
         <p class="info-label">Ngày thanh toán</p>
-        <p class="info-value">{{ orderInfo.paidAt }}</p>
+        <p class="info-value">{{ fmt(order.paidAt) }}</p>
       </div>
       <div class="info-item">
         <p class="info-label">Phương thức</p>
         <p class="info-value method-value">
           <span class="material-symbols-outlined method-icon">account_balance</span>
-          {{ orderInfo.method }}
+          {{ PAYMENT_METHOD_LABELS[order.paymentMethod] }}
         </p>
       </div>
     </div>

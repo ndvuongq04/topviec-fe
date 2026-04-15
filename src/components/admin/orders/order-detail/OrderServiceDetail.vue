@@ -1,16 +1,12 @@
 <script setup lang="ts">
-const service = {
-  name: 'Gói Pro · Hàng tháng',
-  duration: 'Thời hạn: 1 tháng (Tới 14/05/2025)',
-  price: '799.000 đ',
-}
+import type { ResOrderDTO } from '@/types/order.types'
+import { ORDER_ITEM_TYPE_LABELS, BILLING_CYCLE_LABELS } from '@/constants/servicePackage.constants'
 
-const features = [
-  '10 tin active',
-  '3 tin nổi bật',
-  'Hỗ trợ 24/7 Priority',
-  'Analytics Dashboard',
-]
+defineProps<{ order: ResOrderDTO }>()
+
+function formatCurrency(n: number): string {
+  return n.toLocaleString('vi-VN') + ' đ'
+}
 </script>
 
 <template>
@@ -22,28 +18,26 @@ const features = [
       </h3>
     </div>
     <div class="service-body">
-      <!-- Package Summary -->
-      <div class="package-summary">
+      <!-- Items -->
+      <div v-for="item in order.items" :key="item.id" class="package-summary">
         <div class="package-left">
           <div class="package-icon">
             <span class="material-symbols-outlined" style="font-size: 28px;">stars</span>
           </div>
           <div>
-            <h4 class="package-name">{{ service.name }}</h4>
-            <p class="package-duration">{{ service.duration }}</p>
+            <h4 class="package-name">
+              {{ ORDER_ITEM_TYPE_LABELS[item.itemType] }}
+              <span v-if="item.billingCycle"> · {{ BILLING_CYCLE_LABELS[item.billingCycle] }}</span>
+            </h4>
+            <p class="package-duration">
+              <span v-if="item.durationDays">Thời hạn: {{ item.durationDays }} ngày</span>
+              <span v-else-if="item.quantity > 1">Số lượng: {{ item.quantity }}</span>
+            </p>
           </div>
         </div>
         <div class="package-price-wrap">
-          <p class="price-label">Đơn giá</p>
-          <p class="price-value">{{ service.price }}</p>
-        </div>
-      </div>
-
-      <!-- Features Grid -->
-      <div class="features-grid">
-        <div v-for="(feat, i) in features" :key="i" class="feature-item">
-          <span class="material-symbols-outlined feature-icon">check_circle</span>
-          <span class="feature-text">{{ feat }}</span>
+          <p class="price-label">Thành tiền</p>
+          <p class="price-value">{{ formatCurrency(item.totalPrice) }}</p>
         </div>
       </div>
     </div>
