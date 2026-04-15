@@ -1,6 +1,5 @@
 <template>
   <main class="page-layout">
-    <!-- Breadcrumb -->
     <Breadcrumb
       :items="[
         { label: 'Dịch vụ', to: { name: 'recruiter-services' } },
@@ -9,7 +8,13 @@
       hide-home
     />
 
-    <div class="content-grid">
+    <!-- Loading -->
+    <div v-if="store.loading" class="page-loading">
+      <span class="material-symbols-outlined animate-spin">progress_activity</span>
+      Đang tải danh sách dịch vụ...
+    </div>
+
+    <div v-else class="content-grid">
       <!-- Left: Service Groups -->
       <div class="left-col">
         <ServiceGroupSection
@@ -36,42 +41,63 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import Breadcrumb from '@/components/ui/Breadcrumb.vue'
 import ServiceGroupSection from '@/components/recruiter/retail-services/ServiceGroupSection.vue'
 import ServicePromoBanner from '@/components/recruiter/retail-services/ServicePromoBanner.vue'
 import ServiceCart from '@/components/recruiter/retail-services/ServiceCart.vue'
 import ServiceSupportCard from '@/components/recruiter/retail-services/ServiceSupportCard.vue'
+import { useEmployerOrderStore } from '@/stores/order.store'
 
-const serviceGroups = ref([
-  {
-    id: 'job_posting',
-    label: 'Nhóm tin tuyển dụng',
-    services: [
-      { id: 1, icon: 'star', iconBg: '#fffbeb', iconColor: '#f59e0b', name: 'Tin nổi bật', desc: 'Đưa tin tuyển dụng lên vị trí ưu tiên tại trang chủ và kết quả tìm kiếm, tăng 3x lượt ứng tuyển.', price: 99000, unit: '/7 ngày' },
-    ],
-  },
-  {
-    id: 'candidate',
-    label: 'Nhóm hồ sơ và ứng viên',
-    services: [
-      { id: 2, icon: 'search', iconBg: '#eff6ff', iconColor: '#3b82f6', name: 'Tìm kiếm ứng viên', desc: 'Truy cập kho dữ liệu 2M+ hồ sơ ứng viên chất lượng cao, lọc theo kỹ năng và kinh nghiệm.', price: 399000, unit: '/tháng' },
-      { id: 3, icon: 'analytics', iconBg: '#eef2ff', iconColor: '#6366f1', name: 'Đánh giá CV-JD', desc: 'Sử dụng AI để so khớp mức độ phù hợp giữa CV và mô tả công việc (JD), tiết kiệm thời gian lọc.', price: 299000, unit: '/tháng' },
-    ],
-  },
-  {
-    id: 'branding',
-    label: 'Nhóm thương hiệu',
-    services: [
-      { id: 4, icon: 'business', iconBg: '#ecfdf5', iconColor: '#10b981', name: 'Hiển thị trang chủ', desc: 'Logo công ty được hiển thị nổi bật tại khu vực "Nhà tuyển dụng hàng đầu" trên trang chủ.', price: 399000, unit: '/tháng' },
-      { id: 5, icon: 'verified', iconBg: '#f0f9ff', iconColor: '#0ea5e9', name: 'Huy hiệu uy tín', desc: 'Gắn nhãn "Verified Employer" cho thương hiệu, tăng 40% sự tin tưởng từ ứng viên.', price: 199000, unit: '/tháng' },
-    ],
-  },
-])
+const store = useEmployerOrderStore()
 
-const cartItems = ref<Array<{ id: number; name: string; icon: string; iconBg: string; iconColor: string; price: number; qty: number; unit: string }>>([])
+// ─── Icon / màu sắc theo groupCode ───────────────────────────────────────────
+const GROUP_VISUAL: Record<string, { icon: string; iconBg: string; iconColor: string }> = {
+  JOB_POSTING: { icon: 'campaign',      iconBg: '#fffbeb', iconColor: '#f59e0b' },
+  CANDIDATE:   { icon: 'person_search', iconBg: '#eff6ff', iconColor: '#3b82f6' },
+  BRANDING:    { icon: 'business',      iconBg: '#ecfdf5', iconColor: '#10b981' },
+}
+const DEFAULT_VISUAL = { icon: 'extension', iconBg: '#f1f5f9', iconColor: '#94a3b8' }
 
-function handleAddToCart(service: typeof serviceGroups.value[0]['services'][0], qty: number) {
+// ─── Map ResAddonPackageDTO[] → serviceGroups[] ───────────────────────────────
+const serviceGroups = computed(() => {
+  const map = new Map<string, {
+    id: string; label: string
+    services: {
+      id: number; icon: string; iconBg: string; iconColor: string
+      name: string; desc: string; price: number; unit: string
+    }[]
+  }>()
+
+  for (const pkg of store.activeAddonPackages) {
+    if (!map.has(pkg.groupCode)) {
+      map.set(pkg.groupCode, { id: pkg.groupCode, label: pkg.groupName, services: [] })
+    }
+    const visual = GROUP_VISUAL[pkg.groupCode] ?? DEFAULT_VISUAL
+    map.get(pkg.groupCode)!.services.push({
+      id:        pkg.id,
+      icon:      visual.icon,
+      iconBg:    visual.iconBg,
+      iconColor: visual.iconColor,
+      name:      pkg.name,
+      desc:      pkg.description ?? pkg.name,
+      price:     pkg.price,
+      unit:      pkg.durationDays !== null ? `/${pkg.durationDays} ngày` : '/lượt',
+    })
+  }
+
+  return Array.from(map.values())
+})
+
+// ─── Cart state ───────────────────────────────────────────────────────────────
+interface CartItem {
+  id: number; name: string; icon: string; iconBg: string; iconColor: string
+  price: number; qty: number
+}
+
+const cartItems = ref<CartItem[]>([])
+
+function handleAddToCart(service: { id: number; icon: string; iconBg: string; iconColor: string; name: string; price: number }, qty: number) {
   const existing = cartItems.value.find(i => i.id === service.id)
   if (existing) {
     existing.qty += qty
@@ -85,8 +111,10 @@ function handleRemoveFromCart(id: number) {
 }
 
 function handleCheckout() {
-  // navigate hoặc mở modal thanh toán
+  // TODO: xử lý thanh toán
 }
+
+onMounted(() => store.fetchActiveAddonPackages())
 </script>
 
 <style scoped>
@@ -94,7 +122,15 @@ function handleCheckout() {
   min-height: 100vh;
   background: #f6f6f8;
 }
-
+.page-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 120px 0;
+  font-size: 0.875rem;
+  color: #94a3b8;
+}
 .content-grid {
   display: grid;
   grid-template-columns: 1fr 360px;
@@ -102,7 +138,6 @@ function handleCheckout() {
   align-items: start;
   margin-top: 24px;
 }
-
 .left-col { display: flex; flex-direction: column; gap: 40px; }
 .right-col { position: sticky; top: 88px; display: flex; flex-direction: column; gap: 16px; }
 
