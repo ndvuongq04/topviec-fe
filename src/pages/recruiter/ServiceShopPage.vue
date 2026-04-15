@@ -42,6 +42,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import Breadcrumb from '@/components/ui/Breadcrumb.vue'
 import ServiceGroupSection from '@/components/recruiter/retail-services/ServiceGroupSection.vue'
 import ServicePromoBanner from '@/components/recruiter/retail-services/ServicePromoBanner.vue'
@@ -49,7 +50,8 @@ import ServiceCart from '@/components/recruiter/retail-services/ServiceCart.vue'
 import ServiceSupportCard from '@/components/recruiter/retail-services/ServiceSupportCard.vue'
 import { useEmployerOrderStore } from '@/stores/order.store'
 
-const store = useEmployerOrderStore()
+const store  = useEmployerOrderStore()
+const router = useRouter()
 
 // ─── Icon / màu sắc theo groupCode ───────────────────────────────────────────
 const GROUP_VISUAL: Record<string, { icon: string; iconBg: string; iconColor: string }> = {
@@ -111,7 +113,7 @@ function handleRemoveFromCart(id: number) {
 }
 
 function handleCheckout() {
-  // TODO: xử lý thanh toán
+  router.push({ name: 'recruiter-checkout' })
 }
 
 onMounted(() => store.fetchActiveAddonPackages())

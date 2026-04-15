@@ -2,6 +2,12 @@ import type { RouteRecordRaw } from 'vue-router'
 
 export const recruiterRoutes: RouteRecordRaw[] = [
   {
+    path: '/recruiter/checkout',
+    name: 'recruiter-checkout',
+    component: () => import('@/pages/recruiter/CheckoutPage.vue'),
+    meta: { requiresAuth: true, role: 'EMPLOYER' },
+  },
+  {
     path: '/recruiter',
     component: () => import('@/layouts/recruiter/RecruiterLayout.vue'),
     meta: { requiresAuth: true, role: 'EMPLOYER' },

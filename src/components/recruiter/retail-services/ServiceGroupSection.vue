@@ -36,7 +36,7 @@ defineProps<{
 }>()
 
 defineEmits<{
-  'add-to-cart': [service: object, qty: number]
+  'add-to-cart': [service: { id: number; icon: string; iconBg: string; iconColor: string; name: string; desc: string; price: number; unit: string }, qty: number]
 }>()
 </script>
 
