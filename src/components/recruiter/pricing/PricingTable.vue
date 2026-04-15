@@ -10,23 +10,29 @@
         <thead>
           <tr>
             <th class="compare-table__th compare-table__th--feature">Tính năng</th>
-            <th v-for="p in planNames" :key="p.id" :class="['compare-table__th', p.id === 'pro' && 'compare-table__th--pro']">
-              {{ p.name }}
+            <th
+              v-for="col in planColumns"
+              :key="col.id"
+              class="compare-table__th"
+            >
+              {{ col.name }}
             </th>
           </tr>
         </thead>
         <tbody>
           <tr v-for="row in rows" :key="row.label" class="compare-table__row">
             <td class="compare-table__td compare-table__td--label">{{ row.label }}</td>
-            <td v-for="p in planNames" :key="p.id" :class="['compare-table__td', p.id === 'pro' && 'compare-table__td--pro']">
-              <template v-if="typeof row[p.id] === 'boolean'">
-                <span :class="['material-symbols-outlined', row[p.id] ? 'icon--check' : 'icon--remove']">
-                  {{ row[p.id] ? 'check' : 'remove' }}
+            <td
+              v-for="col in planColumns"
+              :key="col.id"
+              class="compare-table__td"
+            >
+              <template v-if="typeof row.values[col.id] === 'boolean'">
+                <span :class="['material-symbols-outlined', row.values[col.id] ? 'icon--check' : 'icon--remove']">
+                  {{ row.values[col.id] ? 'check' : 'remove' }}
                 </span>
               </template>
-              <span v-else :class="['compare-table__value', p.id === 'pro' && 'compare-table__value--pro']">
-                {{ row[p.id] }}
-              </span>
+              <span v-else class="compare-table__value">{{ row.values[col.id] }}</span>
             </td>
           </tr>
         </tbody>
@@ -36,25 +42,70 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
+import type { ResServicePackageDTO } from '@/types/servicePackage.types'
+
+const props = defineProps<{
+  packages: ResServicePackageDTO[]
+}>()
 
 const open = ref(true)
 
-const planNames = [
-  { id: 'free', name: 'Free' },
-  { id: 'basic', name: 'Basic' },
-  { id: 'pro', name: 'Pro' },
-  { id: 'premium', name: 'Premium' },
-  { id: 'vip', name: 'VIP' },
+// ─── Cấu hình các tính năng cần so sánh ─────────────────────────────────────
+interface FeatureConfig {
+  key:    string
+  label:  string
+  format: (value: unknown) => string | boolean
+}
+
+const FEATURE_CONFIG: FeatureConfig[] = [
+  {
+    key:   'hot_job_quota',
+    label: 'Tin nổi bật',
+    format: (v) => {
+      const n = Number(v)
+      if (n === 0)    return false
+      if (n >= 999)   return 'Không giới hạn'
+      return `${n} tin`
+    },
+  },
+  {
+    key:   'cv_search_quota',
+    label: 'Tìm kiếm ứng viên',
+    format: (v) => {
+      const n = Number(v)
+      if (n === 0)    return false
+      if (n >= 999)   return 'Không giới hạn'
+      return `${n} lượt`
+    },
+  },
+  {
+    key:    'top_brand_badge',
+    label:  'Huy hiệu thương hiệu',
+    format: (v) => Boolean(v),
+  },
+  {
+    key:    'unlimited_post',
+    label:  'Đăng tin không giới hạn',
+    format: (v) => Boolean(v),
+  },
 ]
 
-const rows = [
-  { label: 'Tin nổi bật',        free: false, basic: '2 tin',    pro: '10 tin',     premium: '25 tin',    vip: 'Không giới hạn' },
-  { label: 'Tìm kiếm ứng viên',  free: false, basic: true,       pro: true,         premium: true,        vip: true },
-  { label: 'Đánh giá CV-JD AI',  free: false, basic: false,      pro: '50 lượt',    premium: '200 lượt',  vip: 'Không giới hạn' },
-  { label: 'Hiển thị trang chủ', free: false, basic: false,      pro: false,        premium: true,        vip: true },
-  { label: 'Huy hiệu uy tín',    free: false, basic: false,      pro: false,        premium: true,        vip: true },
-]
+// ─── Cột (tên gói) ───────────────────────────────────────────────────────────
+const planColumns = computed(() =>
+  props.packages.map(pkg => ({ id: String(pkg.id), name: pkg.name }))
+)
+
+// ─── Hàng (tính năng × giá trị theo từng gói) ───────────────────────────────
+const rows = computed(() =>
+  FEATURE_CONFIG.map(config => {
+    const values: Record<string, string | boolean> = {}
+    for (const pkg of props.packages) {
+      values[String(pkg.id)] = config.format(pkg.features?.[config.key])
+    }
+    return { label: config.label, values }
+  })
+)
 </script>
 
 <style scoped>
@@ -93,10 +144,8 @@ const rows = [
   text-align: center;
 }
 .compare-table__th--feature { text-align: left; padding-left: 1.5rem; }
-.compare-table__th--pro { background: rgba(239,246,255,0.3); }
 
 .compare-table__row:hover td { background: #f8fafc; }
-.compare-table__row:hover td.compare-table__td--pro { background: #eff6ff; }
 
 .compare-table__td {
   padding: 1rem;
@@ -105,9 +154,8 @@ const rows = [
   color: #64748b;
 }
 .compare-table__td--label { font-weight: 600; color: #334155; text-align: left; padding-left: 1.5rem; }
-.compare-table__td--pro { background: rgba(239,246,255,0.3); }
 
-.compare-table__value--pro { color: #4B9AF6; font-weight: 700; }
+.compare-table__value { color: #64748b; }
 
 .icon--check { color: #10b981; font-size: 1.125rem; vertical-align: middle; }
 .icon--remove { color: #e2e8f0; font-size: 1.125rem; vertical-align: middle; }

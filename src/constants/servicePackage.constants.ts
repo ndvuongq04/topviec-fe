@@ -58,8 +58,8 @@ export enum AddonPackageGroup {
 }
 
 export enum BillingCycle {
-    MONTHLY = 'MONTHLY',  // Hàng tháng
-    YEARLY  = 'YEARLY',   // Hàng năm
+    MONTHLY = 'monthly',  // Hàng tháng
+    YEARLY  = 'yearly',   // Hàng năm
 }
 
 // ─── Labels cho UI ──────────────────────────────────────────────────────────────
