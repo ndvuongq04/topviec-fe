@@ -3,7 +3,7 @@
     <header class="checkout-header">
       <span class="checkout-header__logo">TopViec</span>
       <CheckoutStepper :current="1" />
-      <a href="#" class="checkout-header__cancel">Huỷ</a>
+      <a href="#" class="checkout-header__cancel" @click.prevent="handleCancel">Huỷ</a>
     </header>
 
     <main class="checkout-main">
@@ -12,7 +12,16 @@
           <OrderDetail />
         </div>
         <div class="checkout-grid__right">
-          <PaymentMethod />
+          <PaymentMethod 
+            v-model="selectedPaymentMethod"
+            :subtotal="subtotal" 
+            :total="total" 
+          />
+          <OrderSummary 
+            :subtotal="subtotal" 
+            :total="total"
+            :payment-method="selectedPaymentMethod"
+          />
         </div>
       </div>
     </main>
@@ -31,9 +40,34 @@
 </template>
 
 <script setup lang="ts">
+import { computed, ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { useEmployerOrderStore } from '@/stores/order.store'
+
 import CheckoutStepper from '@/components/recruiter/checkout/CheckoutStepper.vue'
 import OrderDetail from '@/components/recruiter/checkout/OrderDetail.vue'
 import PaymentMethod from '@/components/recruiter/checkout/PaymentMethod.vue'
+import OrderSummary from '@/components/recruiter/checkout/OrderSummary.vue'
+
+const store = useEmployerOrderStore()
+const router = useRouter()
+const context = store.checkoutContext
+const selectedPaymentMethod = ref('vnpay')
+
+const subtotal = computed(() => {
+  if (context?.type === 'subscription' && context.packageId) {
+    const pkg = store.activeServicePackages.find(p => p.id === context.packageId)
+    return pkg ? pkg.price : 0
+  } else {
+    return store.cartItems.reduce((sum, item) => sum + (item.price * item.qty), 0)
+  }
+})
+
+const total = computed(() => subtotal.value)
+
+function handleCancel() {
+  router.back()
+}
 </script>
 
 <style scoped>

@@ -10,7 +10,11 @@
       </div>
     </div>
 
-    <button :class="['card__btn', `card__btn--${plan.status}`]" :disabled="plan.status === 'active' || plan.status === 'current-disabled'">
+    <button 
+      :class="['card__btn', `card__btn--${plan.status}`]" 
+      :disabled="plan.status === 'active' || plan.status === 'current-disabled'"
+      @click="$emit('select', plan.id)"
+    >
       {{ plan.btnLabel }}
     </button>
 
@@ -36,6 +40,10 @@ defineProps<{
     popular?: boolean
     features: { label: string; active: boolean }[]
   }
+}>()
+
+defineEmits<{
+  (e: 'select', id: string): void
 }>()
 </script>
 

@@ -29,9 +29,9 @@
       <!-- Right: Cart -->
       <aside class="right-col">
         <ServiceCart
-          :items="cartItems"
-          @remove="handleRemoveFromCart"
-          @clear="cartItems = []"
+          :items="store.cartItems"
+          @remove="store.removeFromCart"
+          @clear="store.clearCart"
           @checkout="handleCheckout"
         />
         <ServiceSupportCard />
@@ -91,28 +91,12 @@ const serviceGroups = computed(() => {
   return Array.from(map.values())
 })
 
-// ─── Cart state ───────────────────────────────────────────────────────────────
-interface CartItem {
-  id: number; name: string; icon: string; iconBg: string; iconColor: string
-  price: number; qty: number
-}
-
-const cartItems = ref<CartItem[]>([])
-
 function handleAddToCart(service: { id: number; icon: string; iconBg: string; iconColor: string; name: string; price: number }, qty: number) {
-  const existing = cartItems.value.find(i => i.id === service.id)
-  if (existing) {
-    existing.qty += qty
-  } else {
-    cartItems.value.push({ ...service, qty })
-  }
-}
-
-function handleRemoveFromCart(id: number) {
-  cartItems.value = cartItems.value.filter(i => i.id !== id)
+  store.addToCart({ ...service, qty })
 }
 
 function handleCheckout() {
+  store.checkoutContext = { type: 'addon' }
   router.push({ name: 'recruiter-checkout' })
 }
 

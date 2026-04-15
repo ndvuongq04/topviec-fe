@@ -2,53 +2,71 @@
   <div>
     <div class="order-detail__title-row">
       <h2 class="order-detail__title">Chi tiết đơn hàng</h2>
-      <span class="order-detail__badge">Mua gói</span>
+      <span class="order-detail__badge">{{ isSubscription ? 'Mua gói' : 'Dịch vụ lẻ' }}</span>
     </div>
 
     <div class="order-detail__card">
-      <!-- Plan Header -->
-      <div class="order-detail__plan-header">
-        <div>
-          <h3 class="order-detail__plan-name">Gói Pro</h3>
-          <p class="order-detail__plan-desc">Giải pháp tuyển dụng chuyên nghiệp cho doanh nghiệp</p>
+      <template v-if="isSubscription && basePackage">
+        <!-- Plan Header -->
+        <div class="order-detail__plan-header">
+          <div>
+            <h3 class="order-detail__plan-name">{{ basePackage.name }}</h3>
+            <p class="order-detail__plan-desc">{{ basePackage.description || 'Giải pháp tuyển dụng chuyên nghiệp' }}</p>
+          </div>
+          <div class="order-detail__plan-icon">
+            <span class="material-symbols-outlined">verified</span>
+          </div>
         </div>
-        <div class="order-detail__plan-icon">
-          <span class="material-symbols-outlined">verified</span>
+
+        <!-- Billing Options -->
+        <div class="order-detail__billing-grid">
+          <label v-if="monthlyPlan" :class="['billing-option', selectedBillingMode === 'monthly' && 'billing-option--active']">
+            <input v-model="selectedBillingMode" class="billing-option__radio" name="billing" type="radio" value="monthly" />
+            <p class="billing-option__label">Hàng tháng</p>
+            <p class="billing-option__price">{{ format(monthlyPlan.price) }}</p>
+          </label>
+
+          <label v-if="yearlyPlan" :class="['billing-option', selectedBillingMode === 'yearly' && 'billing-option--active']">
+            <input v-model="selectedBillingMode" class="billing-option__radio" name="billing" type="radio" value="yearly" />
+            <span class="billing-option__badge">TIẾT KIỆM</span>
+            <p class="billing-option__label">Hàng năm</p>
+            <p class="billing-option__price">
+              {{ format(yearlyPlan.price / 12) }}<span class="billing-option__unit">/tháng</span>
+            </p>
+            <p v-if="monthlyPlan" class="billing-option__original">{{ format(monthlyPlan.price * 12) }}</p>
+          </label>
         </div>
-      </div>
 
-      <!-- Billing Options -->
-      <div class="order-detail__billing-grid">
-        <label :class="['billing-option', selectedBilling === 'monthly' && 'billing-option--active']">
-          <input v-model="selectedBilling" class="billing-option__radio" name="billing" type="radio" value="monthly" />
-          <p class="billing-option__label">Hàng tháng</p>
-          <p class="billing-option__price">1.188.000đ</p>
-        </label>
+        <!-- Features -->
+        <ul class="order-detail__features">
+          <li v-for="(f, i) in featuresList" :key="i" class="order-detail__feature-item">
+            <span class="material-symbols-outlined order-detail__feature-icon">check_circle</span>
+            <span class="order-detail__feature-text">{{ f }}</span>
+          </li>
+        </ul>
+      </template>
 
-        <label :class="['billing-option', selectedBilling === 'yearly' && 'billing-option--active']">
-          <input v-model="selectedBilling" class="billing-option__radio" name="billing" type="radio" value="yearly" />
-          <span class="billing-option__badge">TIẾT KIỆM 20%</span>
-          <p class="billing-option__label">Hàng năm</p>
-          <p class="billing-option__price">
-            990.000đ<span class="billing-option__unit">/tháng</span>
-          </p>
-          <p class="billing-option__original">1.188.000đ</p>
-        </label>
-      </div>
-
-      <!-- Features -->
-      <ul class="order-detail__features">
-        <li v-for="f in features" :key="f" class="order-detail__feature-item">
-          <span class="material-symbols-outlined order-detail__feature-icon">check_circle</span>
-          <span class="order-detail__feature-text">{{ f }}</span>
-        </li>
-      </ul>
+      <!-- Addon -->
+      <template v-else-if="!isSubscription">
+        <div class="order-detail__cart-list">
+           <div v-for="item in store.cartItems" :key="item.id" class="cart-item">
+              <div class="cart-item__icon" :style="{ background: item.iconBg, color: item.iconColor }">
+                 <span class="material-symbols-outlined">{{ item.icon }}</span>
+              </div>
+              <div class="cart-item__info">
+                 <p class="cart-item__name">{{ item.name }}</p>
+                 <p class="cart-item__qty">Số lượng: {{ item.qty }}</p>
+              </div>
+              <p class="cart-item__price">{{ format(item.price * item.qty) }}</p>
+           </div>
+        </div>
+      </template>
 
       <!-- Info -->
-      <div class="order-detail__info">
+      <div v-if="isSubscription" class="order-detail__info">
         <span class="material-symbols-outlined order-detail__info-icon">info</span>
         <p class="order-detail__info-text">
-          Gói của bạn sẽ có hiệu lực đến ngày <strong>24 Tháng 05, 2025</strong> sau khi thanh toán thành công.
+          Gói của bạn sẽ có hiệu lực ngay sau khi thanh toán thành công.
         </p>
       </div>
     </div>
@@ -56,16 +74,61 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed } from 'vue'
+import { useEmployerOrderStore } from '@/stores/order.store'
+import { BillingCycle } from '@/constants/servicePackage.constants'
 
-const selectedBilling = ref<'monthly' | 'yearly'>('yearly')
+const store = useEmployerOrderStore()
+const context = store.checkoutContext
 
-const features = [
-  'Đăng 10 tin tuyển dụng Premium mỗi tháng',
-  'Lọc hồ sơ ứng viên nâng cao (AI Filter)',
-  'Xuất dữ liệu ứng viên không giới hạn',
-  'Hỗ trợ riêng ưu tiên 24/7',
-]
+const isSubscription = computed(() => context?.type === 'subscription')
+
+const basePackage = computed(() => {
+  if (!isSubscription.value || !context?.packageId) return null
+  return store.activeServicePackages.find(p => p.id === context.packageId)
+})
+
+const planPrefix = computed(() => {
+  if (!basePackage.value) return ''
+  return basePackage.value.code.split('_')[0]
+})
+
+const relatedPlans = computed(() => {
+  return store.activeServicePackages.filter(p => p.code.split('_')[0] === planPrefix.value)
+})
+
+const monthlyPlan = computed(() => relatedPlans.value.find(p => p.billingCycle === BillingCycle.MONTHLY))
+const yearlyPlan = computed(() => relatedPlans.value.find(p => p.billingCycle === BillingCycle.YEARLY))
+
+function mapFeatures(features: Record<string, unknown> | null) {
+  if (!features) return []
+  const result: string[] = []
+  if (features.hot_job_quota) result.push(`Đăng ${features.hot_job_quota} tin nổi bật mỗi tháng`)
+  if (features.cv_search_quota) result.push(`Lọc hồ sơ (${features.cv_search_quota} lượt)`)
+  if (features.top_brand_badge) result.push('Huy hiệu thương hiệu')
+  if (features.unlimited_post) result.push('Đăng tin không giới hạn')
+  return result
+}
+
+const featuresList = computed(() => {
+  if (!basePackage.value) return []
+  return mapFeatures(basePackage.value.features)
+})
+
+const selectedBillingMode = computed({
+  get: () => context?.billingCycle || BillingCycle.YEARLY,
+  set: (val) => {
+    if (context) {
+      context.billingCycle = val
+      const newPlan = val === BillingCycle.MONTHLY ? monthlyPlan.value : yearlyPlan.value
+      if (newPlan) context.packageId = newPlan.id
+    }
+  }
+})
+
+function format(n: number) {
+  return n.toLocaleString('vi-VN') + 'đ'
+}
 </script>
 
 <style scoped>
@@ -157,6 +220,25 @@ const features = [
   flex-shrink: 0;
 }
 .order-detail__feature-text { font-size: 0.875rem; font-weight: 500; }
+
+/* Cart List (Addon) */
+.order-detail__cart-list { display: flex; flex-direction: column; gap: 1rem; }
+.cart-item {
+  display: flex; align-items: center; gap: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px dashed #e2e8f0;
+}
+.cart-item:last-child { border-bottom: none; padding-bottom: 0; }
+.cart-item__icon {
+  width: 40px; height: 40px;
+  border-radius: 0.5rem;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.cart-item__info { flex: 1; }
+.cart-item__name { font-size: 0.875rem; font-weight: 700; }
+.cart-item__qty { font-size: 0.75rem; color: #64748b; margin-top: 2px; }
+.cart-item__price { font-size: 1rem; font-weight: 800; color: #4B9AF6; }
 
 /* Info box */
 .order-detail__info {

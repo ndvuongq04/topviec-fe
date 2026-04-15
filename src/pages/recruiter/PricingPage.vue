@@ -25,9 +25,8 @@
         Chưa có gói dịch vụ nào cho chu kỳ này
       </div>
 
-      <!-- Plans Grid -->
       <div v-else class="pricing-grid">
-        <PricingCard v-for="plan in filteredPlans" :key="plan.id" :plan="plan" />
+        <PricingCard v-for="plan in filteredPlans" :key="plan.id" :plan="plan" @select="handleSelectPlan" />
       </div>
 
       <PricingTable :packages="filteredPackages" />
@@ -45,8 +44,10 @@ import PricingTable from '@/components/recruiter/pricing/PricingTable.vue'
 import PricingFooter from '@/components/recruiter/pricing/PricingFooter.vue'
 import { useEmployerOrderStore } from '@/stores/order.store'
 import { BillingCycle } from '@/constants/servicePackage.constants'
+import { useRouter } from 'vue-router'
 
 const store   = useEmployerOrderStore()
+const router  = useRouter()
 const billing = ref<'monthly' | 'yearly'>('yearly')
 
 // ─── Map toggle value → BillingCycle enum ────────────────────────────────────
@@ -115,6 +116,15 @@ const filteredPlans = computed(() =>
     features: mapFeatures(pkg.features),
   }))
 )
+
+function handleSelectPlan(planId: string) {
+  store.checkoutContext = {
+    type: 'subscription',
+    packageId: Number(planId),
+    billingCycle: billingCycleMap[billing.value]
+  }
+  router.push({ name: 'recruiter-checkout' })
+}
 
 onMounted(() => store.fetchActiveServicePackages())
 </script>

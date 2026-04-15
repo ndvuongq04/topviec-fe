@@ -20,21 +20,25 @@
           <span v-if="selectedMethod === m.id" class="material-symbols-outlined payment__method-check">check_circle</span>
         </div>
       </div>
-
-      <OrderSummary />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
-import OrderSummary from './OrderSummary.vue'
+import { computed } from 'vue'
 
-const selectedMethod = ref('vnpay')
+defineProps<{ subtotal: number; total: number }>()
+
+const modelValue = defineModel<string>({ default: 'vnpay' })
 const methods = [
   { id: 'vnpay', logoText: 'VNPAY', name: 'Cổng thanh toán VNPay', desc: 'Thanh toán qua ứng dụng ngân hàng' },
   { id: 'momo',  logoText: 'MOMO',  name: 'Ví điện tử MoMo',       desc: 'Nhanh chóng và tiện lợi' },
 ]
+
+const selectedMethod = computed({
+  get: () => modelValue.value,
+  set: (val) => { modelValue.value = val }
+})
 </script>
 
 <style scoped>

@@ -3,25 +3,24 @@
     <div class="summary__rows">
       <div class="summary__row">
         <span class="summary__label">Tạm tính</span>
-        <span class="summary__value">11.880.000đ</span>
-      </div>
-      <div class="summary__row">
-        <span class="summary__label">Giảm giá (20%)</span>
-        <span class="summary__value summary__value--discount">-2.376.000đ</span>
+        <span class="summary__value">{{ format(subtotal) }}</span>
       </div>
     </div>
 
     <div class="summary__total">
       <span class="summary__total-label">Tổng cộng</span>
       <div class="summary__total-right">
-        <span class="summary__total-amount">9.504.000đ</span>
+        <span class="summary__total-amount">{{ format(total) }}</span>
         <p class="summary__total-vat">Đã bao gồm 10% thuế giá trị gia tăng (VAT)</p>
       </div>
     </div>
 
     <div class="summary__actions">
-      <button class="summary__btn-submit">Tiến hành thanh toán</button>
-      <a href="#" class="summary__btn-back">Quay lại</a>
+      <button class="summary__btn-submit" @click="handleCheckout" :disabled="isProcessing">
+        <span v-if="!isProcessing">Tiến hành thanh toán</span>
+        <span v-else>Đang xử lý...</span>
+      </button>
+      <a href="#" class="summary__btn-back" @click.prevent="handleCancel">Quay lại</a>
     </div>
 
     <div class="summary__security">
@@ -34,8 +33,90 @@
 </template>
 
 <script setup lang="ts">
-// Props nếu sau này muốn truyền dynamic
-// defineProps<{ subtotal: number; discount: number; total: number }>()
+import { ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { useEmployerOrderStore } from '@/stores/order.store'
+import { useToast } from '@/composables/useToast'
+import { OrderType, PaymentMethod } from '@/constants/servicePackage.constants'
+
+interface Props {
+  subtotal: number
+  total: number
+  paymentMethod: string
+}
+
+const props = defineProps<Props>()
+
+const store = useEmployerOrderStore()
+const router = useRouter()
+const toast = useToast()
+const isProcessing = ref(false)
+
+function format(n: number) {
+  return n.toLocaleString('vi-VN') + 'đ'
+}
+
+function handleCancel() {
+  router.back()
+}
+
+async function handleCheckout() {
+  isProcessing.value = true
+  try {
+    const context = store.checkoutContext
+    if (!context) {
+      toast.error('Lỗi', 'Không tìm thấy thông tin đơn hàng')
+      return
+    }
+
+    // Cast string to enum
+    const paymentMethodEnum = props.paymentMethod as PaymentMethod
+
+    if (context.type === OrderType.SUBSCRIPTION) {
+      // Tạo đơn hàng subscription
+      if (!context.packageId || !context.billingCycle) {
+        toast.error('Lỗi', 'Thông tin gói không hợp lệ')
+        return
+      }
+      
+      await store.createOrder({
+        type: OrderType.SUBSCRIPTION,
+        packageId: context.packageId,
+        quantity: 1,
+        paymentMethod: paymentMethodEnum,
+      })
+    } else {
+      // Tạo các đơn hàng addon
+      const results = await Promise.allSettled(
+        store.cartItems.map(item =>
+          store.createOrder({
+            type: OrderType.ADDON,
+            packageId: item.addonPackageId,
+            quantity: item.qty,
+            paymentMethod: paymentMethodEnum,
+          })
+        )
+      )
+
+      // Kiểm tra kết quả
+      const failed = results.filter(r => r.status === 'rejected')
+      if (failed.length > 0) {
+        toast.warning('Cảnh báo', `${failed.length} đơn hàng không thể được xử lý`)
+      }
+    }
+
+    // Clear cart và hiển thị thành công
+    store.clearCart()
+    toast.success('Thành công', 'Thanh toán đã hoàn tất')
+    
+    // Điều hướng đến trang xác nhận
+    router.push('/recruiter/checkout/confirmation')
+  } catch (err) {
+    toast.error('Lỗi', 'Không thể xử lý thanh toán. Vui lòng thử lại.')
+  } finally {
+    isProcessing.value = false
+  }
+}
 </script>
 
 <style scoped>
@@ -75,8 +156,9 @@
   box-shadow: 0 4px 12px rgba(75,154,246,0.25);
   transition: background 0.2s, transform 0.1s;
 }
-.summary__btn-submit:hover { background: #2563eb; }
-.summary__btn-submit:active { transform: scale(0.98); }
+.summary__btn-submit:hover:not(:disabled) { background: #2563eb; }
+.summary__btn-submit:active:not(:disabled) { transform: scale(0.98); }
+.summary__btn-submit:disabled { opacity: 0.6; cursor: not-allowed; }
 
 .summary__btn-back {
   display: block;

@@ -11,6 +11,24 @@ import type {
     EmployerAddonPackageQueryParams,
 } from '@/types/order.types'
 import type { ResServicePackageDTO, ResAddonPackageDTO } from '@/types/servicePackage.types'
+import { BillingCycle } from '@/constants/servicePackage.constants'
+
+export interface CartItem {
+    id: number;
+    addonPackageId: number;
+    name: string;
+    icon: string;
+    iconBg: string;
+    iconColor: string;
+    price: number;
+    qty: number;
+}
+
+export interface CheckoutContext {
+    type: 'subscription' | 'addon';
+    packageId?: number;
+    billingCycle?: BillingCycle;
+}
 
 // ─── Helper ───────────────────────────────────────────────────────────────────
 
@@ -112,6 +130,27 @@ export const useEmployerOrderStore = defineStore('employerOrder', () => {
     const activeServicePackages = ref<ResServicePackageDTO[]>([])
     const activeAddonPackages   = ref<ResAddonPackageDTO[]>([])
 
+    // ─── Cart & Checkout State ──────────────────────────────────────────────
+    const cartItems       = ref<CartItem[]>([])
+    const checkoutContext = ref<CheckoutContext | null>(null)
+
+    function addToCart(item: Omit<CartItem, 'addonPackageId'> & { addonPackageId?: number }) {
+        const existing = cartItems.value.find(i => i.id === item.id)
+        if (existing) {
+            existing.qty += item.qty
+        } else {
+            cartItems.value.push({ ...item, addonPackageId: item.addonPackageId || item.id })
+        }
+    }
+
+    function removeFromCart(id: number) {
+        cartItems.value = cartItems.value.filter(i => i.id !== id)
+    }
+
+    function clearCart() {
+        cartItems.value = []
+    }
+
     function _updateInList(updated: ResOrderDTO) {
         const idx = orders.value.findIndex(o => o.id === updated.id)
         if (idx !== -1) orders.value[idx] = updated
@@ -191,13 +230,15 @@ export const useEmployerOrderStore = defineStore('employerOrder', () => {
     }
 
     function reset() {
-        orders.value               = []
-        selectedOrder.value        = null
-        meta.value                 = { page: 0, pageSize: 10, pages: 0, totals: 0 }
-        loading.value              = false
-        error.value                = null
+        orders.value                = []
+        selectedOrder.value         = null
+        meta.value                  = { page: 0, pageSize: 10, pages: 0, totals: 0 }
+        loading.value               = false
+        error.value                 = null
         activeServicePackages.value = []
         activeAddonPackages.value   = []
+        cartItems.value             = []
+        checkoutContext.value       = null
     }
 
     return {
@@ -208,6 +249,11 @@ export const useEmployerOrderStore = defineStore('employerOrder', () => {
         error,
         activeServicePackages,
         activeAddonPackages,
+        cartItems,
+        checkoutContext,
+        addToCart,
+        removeFromCart,
+        clearCart,
         fetchMyOrders,
         fetchOrderById,
         createOrder,
