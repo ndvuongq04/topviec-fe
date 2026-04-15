@@ -120,6 +120,7 @@ const navItems = [
   { to: '/recruiter/team',      icon: 'manage_accounts',  label: 'Quản lý nhóm' },
   { to: '/recruiter/company-profile', icon: 'business',     label: 'Thông tin công ty' },
   { to: '/recruiter/services',  icon: 'diamond',          label: 'Dịch vụ' },
+  { to: '/recruiter/billing',   icon: 'receipt_long',     label: 'Lịch sử đơn hàng' },
 ]
 
 // TODO: lấy từ auth store khi có employer profile
