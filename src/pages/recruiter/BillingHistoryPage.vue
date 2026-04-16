@@ -12,7 +12,7 @@
     </div>
 
     <BillingTabs v-model="activeTab" />
-    <BillingFilters />
+    <BillingFilters @filter="onFilter" />
     <BillingSummaryBar
       :total-amount="totalAmountFormatted"
       :total-orders="store.meta.totals"
@@ -55,9 +55,11 @@ import BillingPromoSection from '@/components/recruiter/billing/BillingPromoSect
 import OrderDetailModal from '@/components/recruiter/billing/OrderDetailModal.vue'
 import { useEmployerOrderStore } from '@/stores/order.store'
 import { OrderStatus } from '@/constants/servicePackage.constants'
+import type { EmployerOrderQueryParams } from '@/types/order.types'
 
-const store     = useEmployerOrderStore()
-const activeTab = ref<'orders' | 'history'>('orders')
+const store        = useEmployerOrderStore()
+const activeTab    = ref<'orders' | 'history'>('orders')
+const filterParams = ref<EmployerOrderQueryParams>({})
 
 const paidOrdersCount = computed(() =>
   store.orders.filter(o => o.status === OrderStatus.PAID).length
@@ -68,8 +70,8 @@ const totalAmountFormatted = computed(() => {
   return sum.toLocaleString('vi-VN') + ' đ'
 })
 
-const detailVisible    = ref(false)
-const selectedOrderId  = ref<number | null>(null)
+const detailVisible   = ref(false)
+const selectedOrderId = ref<number | null>(null)
 
 function openDetail(id: number) {
   selectedOrderId.value = id
@@ -77,11 +79,16 @@ function openDetail(id: number) {
 }
 
 function onPageChange(page: number) {
-  store.fetchMyOrders({ page }) // 0-based
+  store.fetchMyOrders({ ...filterParams.value, page })
+}
+
+function onFilter(params: EmployerOrderQueryParams) {
+  filterParams.value = params
+  store.fetchMyOrders({ ...params, page: 0 })
 }
 
 onMounted(() => {
-  store.fetchMyOrders({ page: 0 }) // trang đầu = 0
+  store.fetchMyOrders({ page: 0 })
 })
 </script>
 

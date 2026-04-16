@@ -1,59 +1,103 @@
 <template>
   <div class="filters">
     <div class="filters__grid">
+
+      <!-- Search (Enter mới gọi API) -->
       <div class="filters__field">
         <label class="filters__label">Tìm kiếm mã đơn</label>
         <div class="filters__input-wrap">
           <span class="material-symbols-outlined filters__input-icon">search</span>
-          <input class="filters__input" placeholder="VD: ORD-00247" type="text" />
+          <input
+            v-model="search"
+            class="filters__input"
+            placeholder="VD: ORD-00247 (Enter để tìm)"
+            type="text"
+            @keyup.enter="emitFilter"
+          />
         </div>
       </div>
 
+      <!-- Loại giao dịch -->
       <div class="filters__field">
         <label class="filters__label">Loại giao dịch</label>
-        <select class="filters__select">
-          <option>Tất cả</option>
-          <option>Mua gói</option>
-          <option>Mua lẻ</option>
+        <select v-model="orderType" class="filters__select">
+          <option value="">Tất cả</option>
+          <option :value="OrderType.SUBSCRIPTION">Gói đăng ký</option>
+          <option :value="OrderType.ADDON">Dịch vụ lẻ</option>
         </select>
       </div>
 
+      <!-- Trạng thái -->
       <div class="filters__field">
         <label class="filters__label">Trạng thái</label>
-        <select class="filters__select">
-          <option>Tất cả trạng thái</option>
-          <option>Đã thanh toán</option>
-          <option>Chờ thanh toán</option>
+        <select v-model="status" class="filters__select">
+          <option value="">Tất cả trạng thái</option>
+          <option :value="OrderStatus.PAID">Đã thanh toán</option>
+          <option :value="OrderStatus.PENDING">Chờ thanh toán</option>
+          <option :value="OrderStatus.FAILED">Thất bại</option>
+          <option :value="OrderStatus.CANCELLED">Đã huỷ</option>
         </select>
       </div>
 
+      <!-- Khoảng thời gian -->
       <div class="filters__field">
         <label class="filters__label">Khoảng thời gian</label>
         <div class="filters__daterange">
           <div class="filters__daterange-group">
             <span class="filters__daterange-label">Từ</span>
-            <input v-model="dateFrom" type="date" class="filters__date-input" />
+            <input v-model="startDate" type="date" class="filters__date-input" />
           </div>
           <span class="filters__daterange-sep">—</span>
           <div class="filters__daterange-group">
             <span class="filters__daterange-label">Đến</span>
-            <input v-model="dateTo" type="date" class="filters__date-input" />
+            <input v-model="endDate" type="date" class="filters__date-input" />
           </div>
         </div>
       </div>
 
+      <!-- Actions -->
       <div class="filters__actions">
-        <button class="filters__btn-submit">Lọc</button>
+        <button class="filters__btn-submit" @click="emitFilter">Lọc</button>
+        <button class="filters__btn-clear" @click="clearFilters">Xoá</button>
       </div>
+
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import { OrderType, OrderStatus } from '@/constants/servicePackage.constants'
+import type { EmployerOrderQueryParams } from '@/types/order.types'
 
-const dateFrom = ref('')
-const dateTo   = ref('')
+const search    = ref('')
+const orderType = ref<OrderType | ''>('')
+const status    = ref<OrderStatus | ''>('')
+const startDate = ref('')
+const endDate   = ref('')
+
+const emit = defineEmits<{
+  filter: [params: EmployerOrderQueryParams]
+}>()
+
+function emitFilter() {
+  const params: EmployerOrderQueryParams = {}
+  if (search.value)    params.search    = search.value
+  if (orderType.value) params.type      = orderType.value.toUpperCase()
+  if (status.value)    params.status    = status.value.toUpperCase()
+  if (startDate.value) params.startDate = startDate.value
+  if (endDate.value)   params.endDate   = endDate.value
+  emit('filter', params)
+}
+
+function clearFilters() {
+  search.value    = ''
+  orderType.value = ''
+  status.value    = ''
+  startDate.value = ''
+  endDate.value   = ''
+  emit('filter', {})
+}
 </script>
 
 <style scoped>
@@ -102,7 +146,7 @@ const dateTo   = ref('')
 .filters__select:focus { box-shadow: 0 0 0 2px rgba(75,154,246,0.2); }
 
 .filters__actions {
-  display: flex; align-items: center; gap: 1rem;
+  display: flex; align-items: center; gap: 0.5rem;
   height: 45px;
 }
 .filters__btn-submit {
@@ -113,6 +157,15 @@ const dateTo   = ref('')
   transition: background 0.2s;
 }
 .filters__btn-submit:hover { background: #1e293b; }
+.filters__btn-clear {
+  flex: 0 0 auto; background: transparent; color: #94a3b8;
+  font-weight: 700; font-size: 0.75rem;
+  padding: 10px 12px; border: 1px solid #e2e8f0; border-radius: 0.75rem;
+  cursor: pointer; transition: color 0.2s, border-color 0.2s;
+  white-space: nowrap;
+}
+.filters__btn-clear:hover { color: #ef4444; border-color: #fecaca; }
+
 .filters__daterange {
   display: flex; align-items: center; gap: 8px;
   background: #f8fafc; border-radius: 0.75rem;
@@ -120,7 +173,6 @@ const dateTo   = ref('')
   transition: box-shadow 0.2s;
 }
 .filters__daterange:focus-within { box-shadow: 0 0 0 2px rgba(75,154,246,0.2); }
-
 .filters__daterange-group {
   display: flex; align-items: center; gap: 6px; flex: 1;
 }

@@ -77,9 +77,15 @@ export interface AdminOrderQueryParams {
 }
 
 export interface EmployerOrderQueryParams {
-    page?: number
-    size?: number
-    sort?: string
+    search?:     string
+    type?:       string   // BE nhận uppercase: SUBSCRIPTION | ADDON
+    status?:     string   // BE nhận uppercase: PAID | PENDING | FAILED | CANCELLED | REFUNDED
+    dateFilter?: string
+    startDate?:  string
+    endDate?:    string
+    page?:       number
+    size?:       number
+    sort?:       string
 }
 
 export interface EmployerAddonPackageQueryParams {
