@@ -111,6 +111,8 @@ export interface ResCompanyAddonDTO {
     addonPackageId:    number
     addonName:         string | null
     addonCode:         string | null
+    // TODO: BE chưa trả về — sẽ bổ sung vào ResCompanyAddonDTO sau
+    addonDescription:  string | null
     groupCode:         AddonPackageGroup | null
     status:            SubscriptionStatus
     quantityTotal:     number

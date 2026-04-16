@@ -4,7 +4,8 @@
       <h3 class="sqg-title">Hạn mức tính năng</h3>
       <p class="sqg-hint">
         <span class="material-symbols-outlined">info</span>
-        Reset vào ngày gia hạn
+        <span v-if="nextResetAt">Reset {{ nextResetAt }}</span>
+        <span v-else>Reset vào ngày gia hạn</span>
       </p>
     </div>
     <div class="sqg-grid">
@@ -14,14 +15,19 @@
             <span class="material-symbols-outlined">{{ q.icon }}</span>
           </div>
           <span v-if="q.unlimited" class="sqg-badge-unlimited">Không giới hạn</span>
-          <span v-else class="sqg-badge-count">Còn {{ q.used }}/{{ q.total }}</span>
+          <span v-else class="sqg-badge-count">Còn {{ q.remaining }}/{{ q.total }}</span>
         </div>
         <h4 class="sqg-label">{{ q.label }}</h4>
         <div v-if="q.unlimited" class="sqg-infinite">
           <span class="material-symbols-outlined">all_inclusive</span>
         </div>
         <div v-else class="sqg-bar-wrap">
-          <div class="sqg-bar" :style="{ width: `${(1 - q.used / q.total) * 100}%` }" />
+          <!-- bar thể hiện % đã dùng: càng dùng nhiều bar càng dài -->
+          <div
+            class="sqg-bar"
+            :class="{ 'sqg-bar--depleted': q.remaining === 0 }"
+            :style="{ width: `${usedPercent(q.remaining!, q.total!)}%` }"
+          />
         </div>
       </div>
     </div>
@@ -29,11 +35,36 @@
 </template>
 
 <script setup lang="ts">
-interface Quota {
-  label: string; icon: string; iconBg: string; iconColor: string
-  unlimited?: boolean; used?: number; total?: number
+import { computed } from 'vue'
+import dayjs from 'dayjs'
+
+export interface QuotaItem {
+  label:      string
+  icon:       string
+  iconBg:     string
+  iconColor:  string
+  unlimited?: boolean
+  remaining?: number
+  total?:     number
+  resetAt?:   string | null
 }
-defineProps<{ quotas: Quota[] }>()
+
+const props = defineProps<{ quotas: QuotaItem[] }>()
+
+// Lấy resetAt sớm nhất trong các usages để hiển thị hint
+const nextResetAt = computed(() => {
+  const dates = props.quotas
+    .map(q => q.resetAt)
+    .filter((d): d is string => !!d)
+  if (!dates.length) return null
+  const earliest = dates.sort()[0]
+  return dayjs(earliest).format('DD/MM/YYYY')
+})
+
+function usedPercent(remaining: number, total: number): number {
+  if (total <= 0) return 0
+  return Math.round(((total - remaining) / total) * 100)
+}
 </script>
 
 <style scoped>
@@ -71,5 +102,6 @@ defineProps<{ quotas: Quota[] }>()
 .sqg-label { font-size: 14px; font-weight: 700; color: #0f172a; margin-bottom: 12px; }
 .sqg-infinite { color: #059669; font-weight: 800; font-size: 20px; display: flex; align-items: center; }
 .sqg-bar-wrap { width: 100%; height: 8px; background: #f1f5f9; border-radius: 9999px; overflow: hidden; }
-.sqg-bar { height: 100%; background: #4B9AF6; border-radius: 9999px; }
+.sqg-bar { height: 100%; background: #4B9AF6; border-radius: 9999px; transition: width 0.4s ease; }
+.sqg-bar--depleted { background: #ef4444; }
 </style>

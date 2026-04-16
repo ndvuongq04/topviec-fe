@@ -96,6 +96,12 @@ export const ADDON_PACKAGE_GROUP_LABELS: Record<AddonPackageGroup, string> = {
     [AddonPackageGroup.ADDON_PACKAGE_GROUP]: 'Nhóm gói dịch vụ thêm',
 }
 
+// ⚠️  Workaround: BE đang serialize groupCode thành label tiếng Việt thay vì enum code
+// TODO: Xoá sau khi BE fix @JsonValue trên enum AddonPackageGroup
+export const ADDON_GROUP_LABEL_TO_CODE: Record<string, AddonPackageGroup> = Object.fromEntries(
+    Object.entries(ADDON_PACKAGE_GROUP_LABELS).map(([code, label]) => [label, code as AddonPackageGroup]),
+) as Record<string, AddonPackageGroup>
+
 export const BILLING_CYCLE_LABELS: Record<BillingCycle, string> = {
     [BillingCycle.MONTHLY]: 'Hàng tháng',
     [BillingCycle.YEARLY]:  'Hàng năm',
@@ -125,6 +131,40 @@ export const ADDON_PACKAGE_OPTIONS: AddonPackageOption[] = [
     // Nhóm gói dịch vụ thêm
     { name: 'Gói dịch vụ thêm',        code: 'ADDON_PACKAGE',   groupCode: AddonPackageGroup.ADDON_PACKAGE_GROUP },
 ]
+
+// ─── AddonPackageGroup → Icon mapping ────────────────────────────────────────
+
+export interface AddonGroupIconMeta {
+    icon:      string
+    iconBg:    string
+    iconColor: string
+}
+
+export const ADDON_GROUP_ICON_MAP: Record<AddonPackageGroup, AddonGroupIconMeta> = {
+    [AddonPackageGroup.JOB_POSTING]:         { icon: 'campaign',      iconBg: '#eff6ff', iconColor: '#2563eb' },
+    [AddonPackageGroup.CANDIDATE]:           { icon: 'person_search', iconBg: '#ecfdf5', iconColor: '#059669' },
+    [AddonPackageGroup.BRANDING]:            { icon: 'verified',      iconBg: '#fdf4ff', iconColor: '#9333ea' },
+    [AddonPackageGroup.ADDON_PACKAGE_GROUP]: { icon: 'star',          iconBg: '#fff7ed', iconColor: '#ea580c' },
+}
+
+// ─── Feature Code → UI mapping ───────────────────────────────────────────────
+// ⚠️  Đồng bộ với featureCode trong bảng subscription_usages bên BE
+
+export interface FeatureCodeMeta {
+    label:     string
+    icon:      string
+    iconBg:    string
+    iconColor: string
+}
+
+export const FEATURE_CODE_MAP: Record<string, FeatureCodeMeta> = {
+    hot_job_quota:   { label: 'Tin nổi bật',          icon: 'campaign',      iconBg: '#eff6ff', iconColor: '#2563eb' },
+    cv_search_quota: { label: 'Tìm kiếm ứng viên',    icon: 'person_search', iconBg: '#ecfdf5', iconColor: '#059669' },
+    top_brand_badge: { label: 'Top Brand Badge',       icon: 'verified',      iconBg: '#fdf4ff', iconColor: '#9333ea' },
+    unlimited_post:  { label: 'Đăng tin không giới hạn', icon: 'work',       iconBg: '#fff7ed', iconColor: '#ea580c' },
+    cv_access_quota: { label: 'Mở khoá hồ sơ ứng viên', icon: 'lock_open',  iconBg: '#ecfdf5', iconColor: '#059669' },
+    extend_job:      { label: 'Gia hạn tin tuyển dụng', icon: 'event_repeat', iconBg: '#eff6ff', iconColor: '#2563eb' },
+}
 
 // ─── Service Package Tiers ───────────────────────────────────────────────────
 

@@ -21,6 +21,9 @@
             />
           </div>
         </div>
+
+        <!-- Footer: Dịch vụ áp dụng cho tin -->
+        <JobServicePanel :job-posting-id="Number(route.params.id)" />
       </template>
 
       <!-- Loading skeleton -->
@@ -43,6 +46,7 @@ import JobDetailHeader   from '@/components/recruiter/jobs/JobDetailHeader.vue'
 import JobDetailStats    from '@/components/recruiter/jobs/JobDetailStats.vue'
 import JobDetailContent  from '@/components/recruiter/jobs/JobDetailContent.vue'
 import JobDetailSideInfo from '@/components/recruiter/jobs/JobDetailSideInfo.vue'
+import JobServicePanel   from '@/components/recruiter/jobs/JobServicePanel.vue'
 
 const route     = useRoute()
 const job       = ref<ResJobPostingDetail | null>(null)
