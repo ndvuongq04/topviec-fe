@@ -37,6 +37,13 @@ export interface ResOrderItemDTO {
     durationDays:     number | null
 }
 
+export interface ResOrderCompanyInfo {
+    name:    string
+    logoUrl: string | null
+    email:   string | null
+    phone:   string | null
+}
+
 export interface ResOrderDTO {
     id:                   number
     orderCode:            string
@@ -49,6 +56,7 @@ export interface ResOrderDTO {
     note:                 string | null
     createdAt:            string
     items:                ResOrderItemDTO[]
+    company:              ResOrderCompanyInfo | null
 }
 
 export type ResOrderPagination = ResultPaginationDTO<ResOrderDTO>
@@ -56,10 +64,16 @@ export type ResOrderPagination = ResultPaginationDTO<ResOrderDTO>
 // ─── Query Params ─────────────────────────────────────────────────────────────
 
 export interface AdminOrderQueryParams {
-    status?: OrderStatus
-    page?:   number
-    size?:   number
-    sort?:   string
+    search?:          string
+    type?:            string   // BE nhận uppercase: SUBSCRIPTION | ADDON
+    status?:          string   // BE nhận uppercase: PAID | PENDING | FAILED | CANCELLED | REFUNDED
+    dateFilter?:      string
+    startDate?:       string
+    endDate?:         string
+    failedOrPending?: boolean
+    page?:            number
+    size?:            number
+    sort?:            string
 }
 
 export interface EmployerOrderQueryParams {

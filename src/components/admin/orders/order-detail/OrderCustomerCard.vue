@@ -1,15 +1,48 @@
 <script setup lang="ts">
-// TODO: API chưa trả về thông tin employer trong ResOrderDTO.
-// Cần BE bổ sung: employerName, employerEmail, employerPhone vào response.
+import type { ResOrderDTO } from '@/types/order.types'
+
+const props = defineProps<{ order: ResOrderDTO }>()
+
+const company = props.order.company
 </script>
 
 <template>
   <div class="customer-card">
     <h3 class="card-label">Thông tin khách hàng</h3>
-    <div class="pending-notice">
+
+    <!-- No data -->
+    <div v-if="!company" class="pending-notice">
       <span class="material-symbols-outlined" style="font-size:20px; color:#94a3b8">info</span>
-      <p>Thông tin khách hàng chưa được cung cấp trong API.<br/>Vui lòng liên hệ BE để bổ sung.</p>
+      <p>Không có thông tin công ty cho đơn hàng này.</p>
     </div>
+
+    <template v-else>
+      <!-- Logo + tên -->
+      <div class="customer-info">
+        <div class="customer-avatar">
+          <img v-if="company.logoUrl" :src="company.logoUrl" :alt="company.name" />
+          <div v-else class="avatar-placeholder">
+            <span class="material-symbols-outlined" style="font-size:22px; color:#94a3b8">business</span>
+          </div>
+        </div>
+        <div>
+          <p class="customer-name">{{ company.name }}</p>
+          <p class="customer-tier">Nhà tuyển dụng</p>
+        </div>
+      </div>
+
+      <!-- Liên hệ -->
+      <div class="contact-list">
+        <div v-if="company.email" class="contact-item">
+          <span class="material-symbols-outlined contact-icon">mail</span>
+          <span class="contact-text">{{ company.email }}</span>
+        </div>
+        <div v-if="company.phone" class="contact-item">
+          <span class="material-symbols-outlined contact-icon">call</span>
+          <span class="contact-text">{{ company.phone }}</span>
+        </div>
+      </div>
+    </template>
   </div>
 </template>
 
@@ -40,16 +73,25 @@
 .customer-avatar {
   width: 48px;
   height: 48px;
-  border-radius: 50%;
+  border-radius: 10px;
   overflow: hidden;
   border: 1px solid #e2e8f0;
   flex-shrink: 0;
+  background: #f8fafc;
 }
 
 .customer-avatar img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
+}
+
+.avatar-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .customer-name {
@@ -69,8 +111,7 @@
 .contact-list {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  margin-bottom: 24px;
+  gap: 14px;
 }
 
 .contact-item {
@@ -88,23 +129,6 @@
   font-size: 0.75rem;
   font-weight: 500;
   color: #0f172a;
-}
-
-.btn-subscription {
-  display: block;
-  width: 100%;
-  text-align: center;
-  padding: 12px;
-  font-size: 0.75rem;
-  font-weight: 900;
-  color: #963131;
-  background: #f8fafc;
-  border-radius: 8px;
-  text-decoration: none;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  border: 1px solid rgba(150,49,49,0.1);
-  transition: background 0.2s;
 }
 
 .pending-notice {

@@ -18,6 +18,7 @@
           <thead>
             <tr class="bg-slate-50/50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800">
               <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">Mã đơn</th>
+              <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">Công ty</th>
               <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">Loại</th>
               <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Chi tiết</th>
               <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">Thanh toán</th>
@@ -36,6 +37,27 @@
               <!-- Mã đơn -->
               <td class="px-6 py-4 text-sm font-bold text-[#963131] whitespace-nowrap">
                 {{ order.orderCode }}
+              </td>
+
+              <!-- Công ty -->
+              <td class="px-6 py-4 whitespace-nowrap">
+                <div class="flex items-center gap-2.5">
+                  <img
+                    v-if="order.company?.logoUrl"
+                    :src="order.company.logoUrl"
+                    :alt="order.company.name"
+                    class="size-7 rounded-md object-contain border border-slate-100 bg-white shrink-0"
+                  />
+                  <div
+                    v-else
+                    class="size-7 rounded-md bg-slate-100 flex items-center justify-center shrink-0"
+                  >
+                    <span class="material-symbols-outlined text-slate-400" style="font-size:16px">business</span>
+                  </div>
+                  <span class="text-sm font-medium text-slate-700 dark:text-slate-300 max-w-40 truncate">
+                    {{ order.company?.name ?? '—' }}
+                  </span>
+                </div>
               </td>
 
               <!-- Loại -->

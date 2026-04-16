@@ -49,7 +49,7 @@ onMounted(() => {
         <!-- Right Column -->
         <div class="detail-right">
           <OrderStatusCard :order="store.selectedOrder" />
-          <OrderCustomerCard />
+          <OrderCustomerCard :order="store.selectedOrder" />
           <OrderActionCard />
           <p class="meta-note">
             * Hóa đơn được tạo tự động bởi hệ thống thanh toán tích hợp. Mọi thay đổi trạng thái sẽ được ghi lại trong nhật ký hệ thống.

@@ -34,14 +34,14 @@ import OrderFilters from '@/components/admin/orders/OrderFilters.vue'
 import OrderSummaryCards from '@/components/admin/orders/OrderSummaryCards.vue'
 import OrderTable from '@/components/admin/orders/OrderTable.vue'
 import { useAdminOrderStore } from '@/stores/order.store'
-import type { OrderStatus } from '@/types/order.types'
+import type { AdminOrderQueryParams } from '@/types/order.types'
 
-const store       = useAdminOrderStore()
-const currentPage = ref(0)            // 0-based theo skill-Pagination.md
-const filterStatus = ref<OrderStatus | undefined>(undefined)
+const store        = useAdminOrderStore()
+const currentPage  = ref(0)   // 0-based theo skill-Pagination.md
+const filterParams = ref<AdminOrderQueryParams>({})
 
 function fetch() {
-  store.fetchOrders({ page: currentPage.value, status: filterStatus.value })
+  store.fetchOrders({ ...filterParams.value, page: currentPage.value })
 }
 
 function onPageChange(page: number) {
@@ -49,8 +49,8 @@ function onPageChange(page: number) {
   fetch()
 }
 
-function onFilter(status: OrderStatus | undefined) {
-  filterStatus.value = status
+function onFilter(params: AdminOrderQueryParams) {
+  filterParams.value = params
   currentPage.value  = 0   // reset về trang đầu khi đổi filter
   fetch()
 }
