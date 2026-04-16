@@ -2,6 +2,31 @@
 // ─── Enums ──────────────────────────────────────────────────────────────────
 // ⚠️  Đồng bộ với BE enum: com.topviec.topviec_be.enums.services
 
+export enum SubscriptionStatus {
+    ACTIVE    = 'active',
+    EXPIRED   = 'expired',
+    CANCELLED = 'cancelled',
+}
+
+export enum JobPostAddonStatus {
+    ACTIVE  = 'active',
+    EXPIRED = 'expired',
+}
+
+// ─── Labels cho UI (SubscriptionStatus / JobPostAddonStatus) ────────────────
+
+export const SUBSCRIPTION_STATUS_LABELS: Record<SubscriptionStatus, string> = {
+    [SubscriptionStatus.ACTIVE]:    'Đang hoạt động',
+    [SubscriptionStatus.EXPIRED]:   'Hết hạn',
+    [SubscriptionStatus.CANCELLED]: 'Đã huỷ',
+}
+
+export const JOB_POST_ADDON_STATUS_LABELS: Record<JobPostAddonStatus, string> = {
+    [JobPostAddonStatus.ACTIVE]:  'Đang hoạt động',
+    [JobPostAddonStatus.EXPIRED]: 'Hết hạn',
+}
+
+
 export enum OrderItemType {
     SUBSCRIPTION = 'subscription',
     ADDON        = 'addon',

@@ -1,7 +1,12 @@
-import { AddonPackageGroup, BillingCycle } from '@/constants/servicePackage.constants'
+import {
+    AddonPackageGroup,
+    BillingCycle,
+    SubscriptionStatus,
+    JobPostAddonStatus,
+} from '@/constants/servicePackage.constants'
 import type { PaginationMeta, ResultPaginationDTO } from '@/types/common.types'
 
-export { AddonPackageGroup, BillingCycle }
+export { AddonPackageGroup, BillingCycle, SubscriptionStatus, JobPostAddonStatus }
 export type { PaginationMeta, ResultPaginationDTO }
 
 // ─── Addon Package ───────────────────────────────────────────────────────────
@@ -72,4 +77,57 @@ export interface AdminServicePackageQueryParams {
     page?: number
     size?: number
     sort?: string
+}
+
+// ─── Employer Service Management ─────────────────────────────────────────────
+
+export interface ReqApplyAddonDTO {
+    companyAddonId: number
+}
+
+export interface ResSubscriptionUsageDTO {
+    id:                number
+    featureCode:       string
+    quantityTotal:     number
+    quantityRemaining: number
+    resetAt:           string | null
+}
+
+export interface ResCompanySubscriptionDTO {
+    id:               number
+    servicePackageId: number
+    packageName:      string | null
+    packageCode:      string | null
+    billingCycle:     BillingCycle
+    status:           SubscriptionStatus
+    startedAt:        string
+    expiredAt:        string | null
+    createdAt:        string
+    usages:           ResSubscriptionUsageDTO[]
+}
+
+export interface ResCompanyAddonDTO {
+    id:                number
+    addonPackageId:    number
+    addonName:         string | null
+    addonCode:         string | null
+    groupCode:         AddonPackageGroup | null
+    status:            SubscriptionStatus
+    quantityTotal:     number
+    quantityRemaining: number
+    startedAt:         string | null
+    expiredAt:         string | null
+    createdAt:         string
+}
+
+export interface ResJobPostAddonDTO {
+    id:             number
+    jobPostingId:   number
+    companyAddonId: number
+    addonPackageId: number
+    addonName:      string | null
+    status:         JobPostAddonStatus
+    startedAt:      string | null
+    expiredAt:      string | null
+    createdAt:      string
 }

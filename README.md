@@ -1,514 +1,395 @@
-package com.topviec.topviec_be.service.impl;
+các API : 
 
-import com.topviec.topviec_be.dto.request.ReqServicePackageDTO;
-import com.topviec.topviec_be.dto.response.ResServicePackageDTO;
-import com.topviec.topviec_be.dto.response.ResultPaginationDTO;
-import com.topviec.topviec_be.entity.ServicePackage;
-import com.topviec.topviec_be.exception.AppException;
-import com.topviec.topviec_be.repository.ServicePackageRepository;
-import com.topviec.topviec_be.service.ServicePackageService;
+EmployerServiceManagementController
+
+package com.topviec.topviec_be.controller;
+
+import com.topviec.topviec_be.dto.request.ReqApplyAddonDTO;
+import com.topviec.topviec_be.dto.response.ResCompanyAddonDTO;
+import com.topviec.topviec_be.dto.response.ResCompanySubscriptionDTO;
+import com.topviec.topviec_be.dto.response.ResJobPostAddonDTO;
+import com.topviec.topviec_be.service.EmployerServiceManagementService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
-@Service
+@RestController
+@RequestMapping("/employer/services")
 @RequiredArgsConstructor
-public class ServicePackageServiceImpl implements ServicePackageService {
+@PreAuthorize("hasRole('EMPLOYER')")
+public class EmployerServiceManagementController {
 
-    private final ServicePackageRepository servicePackageRepository;
+    private final EmployerServiceManagementService employerServiceManagementService;
 
-    @Override
-    @Transactional(readOnly = true)
-    public List<ResServicePackageDTO> getPublicActivePackages() {
-        return servicePackageRepository.findByIsActiveTrueOrderBySortOrderAsc().stream()
-                .map(this::mapToDTO).collect(Collectors.toList());
+    /**
+     * Lấy thông tin gói dịch vụ hiện tại NTD đang dùng và hạn mức còn lại
+     */
+    @GetMapping("/subscription")
+    public ResponseEntity<ResCompanySubscriptionDTO> getMySubscription(
+            @AuthenticationPrincipal Jwt jwt) {
+        return ResponseEntity.ok(employerServiceManagementService.getMySubscription(extractUserId(jwt)));
     }
 
-    @Override
-    @Transactional(readOnly = true)
-    public ResultPaginationDTO getAllServicePackages(Pageable pageable) {
-        Page<ServicePackage> page = servicePackageRepository.findAll(pageable);
-
-        ResultPaginationDTO.Meta meta = new ResultPaginationDTO.Meta();
-        meta.setPage(pageable.getPageNumber() + 1);
-        meta.setPageSize(pageable.getPageSize());
-        meta.setPages(page.getTotalPages());
-        meta.setTotals(page.getTotalElements());
-
-        List<ResServicePackageDTO> results = page.getContent().stream()
-                .map(this::mapToDTO)
-                .collect(Collectors.toList());
-
-        ResultPaginationDTO response = new ResultPaginationDTO();
-        response.setMeta(meta);
-        response.setResult(results);
-
-        return response;
+    /**
+     * Lấy danh sách các dịch vụ lẻ mà NTD đã mua và số lượng còn lại
+     */
+    @GetMapping("/addons")
+    public ResponseEntity<List<ResCompanyAddonDTO>> getMyAddons(
+            @AuthenticationPrincipal Jwt jwt) {
+        return ResponseEntity.ok(employerServiceManagementService.getMyAddons(extractUserId(jwt)));
     }
 
-    @Override
-    @Transactional(readOnly = true)
-    public ResServicePackageDTO getServicePackageById(Long id) {
-        ServicePackage servicePackage = servicePackageRepository.findById(id)
-                .orElseThrow(() -> AppException.notFound("Không tìm thấy gói dịch vụ với ID: " + id));
-        return mapToDTO(servicePackage);
+    /**
+     * Áp dụng dịch vụ lẻ cho một tin tuyển dụng
+     */
+    @PostMapping("/job-posts/{jobPostingId}/apply-addon")
+    public ResponseEntity<ResJobPostAddonDTO> applyAddonToJobPost(
+            @AuthenticationPrincipal Jwt jwt,
+            @PathVariable Long jobPostingId,
+            @Valid @RequestBody ReqApplyAddonDTO request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(employerServiceManagementService.applyAddonToJobPost(
+                        extractUserId(jwt), jobPostingId, request));
     }
 
-    @Override
-    @Transactional
-    public ResServicePackageDTO createServicePackage(ReqServicePackageDTO reqDTO) {
-        if (servicePackageRepository.existsByCode(reqDTO.getCode())) {
-            throw AppException.badRequest("Mã gói dịch vụ đã tồn tại, vui lòng chọn mã khác.");
+    private Long extractUserId(Jwt jwt) {
+        return Long.parseLong(jwt.getSubject());
+    }
+}
+các res , req  , enum:
+
+package com.topviec.topviec_be.enums.services;
+
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonValue;
+
+public enum JobPostAddonStatus {
+    ACTIVE("active"),
+    EXPIRED("expired");
+
+    private final String value;
+
+    JobPostAddonStatus(String value) {
+        this.value = value;
+    }
+
+    @JsonValue
+    public String getValue() {
+        return value;
+    }
+
+    @JsonCreator
+    public static JobPostAddonStatus fromValue(String value) {
+        for (JobPostAddonStatus status : JobPostAddonStatus.values()) {
+            if (status.value.equalsIgnoreCase(value) || status.name().equalsIgnoreCase(value)) {
+                return status;
+            }
         }
-
-        ServicePackage servicePackage = ServicePackage.builder()
-                .name(reqDTO.getName())
-                .code(reqDTO.getCode())
-                .billingCycle(reqDTO.getBillingCycle())
-                .price(reqDTO.getPrice())
-                .features(reqDTO.getFeatures())
-                .description(reqDTO.getDescription())
-                .isActive(reqDTO.getIsActive() != null ? reqDTO.getIsActive() : true)
-                .sortOrder(reqDTO.getSortOrder())
-                .build();
-
-        return mapToDTO(servicePackageRepository.save(servicePackage));
-    }
-
-    @Override
-    @Transactional
-    public ResServicePackageDTO updateServicePackage(Long id, ReqServicePackageDTO reqDTO) {
-        ServicePackage servicePackage = servicePackageRepository.findById(id)
-                .orElseThrow(() -> AppException.notFound("Không tìm thấy gói dịch vụ với ID: " + id));
-
-        if (servicePackageRepository.existsByCodeAndIdNot(reqDTO.getCode(), id)) {
-            throw AppException.badRequest("Mã gói dịch vụ đã tồn tại, vui lòng chọn mã khác.");
-        }
-
-        servicePackage.setName(reqDTO.getName());
-        servicePackage.setCode(reqDTO.getCode());
-        servicePackage.setBillingCycle(reqDTO.getBillingCycle());
-        servicePackage.setPrice(reqDTO.getPrice());
-        servicePackage.setFeatures(reqDTO.getFeatures());
-        servicePackage.setDescription(reqDTO.getDescription());
-        
-        if (reqDTO.getIsActive() != null) {
-            servicePackage.setIsActive(reqDTO.getIsActive());
-        }
-        if (reqDTO.getSortOrder() != null) {
-            servicePackage.setSortOrder(reqDTO.getSortOrder());
-        }
-
-        return mapToDTO(servicePackageRepository.save(servicePackage));
-    }
-
-    private ResServicePackageDTO mapToDTO(ServicePackage entity) {
-        return ResServicePackageDTO.builder()
-                .id(entity.getId())
-                .name(entity.getName())
-                .code(entity.getCode())
-                .billingCycle(entity.getBillingCycle())
-                .price(entity.getPrice())
-                .features(entity.getFeatures())
-                .description(entity.getDescription())
-                .isActive(entity.getIsActive())
-                .sortOrder(entity.getSortOrder())
-                .createdAt(entity.getCreatedAt())
-                .updatedAt(entity.getUpdatedAt())
-                .build();
+        throw new IllegalArgumentException("Unknown JobPostAddonStatus: " + value);
     }
 }
 
-package com.topviec.topviec_be.service.impl;
 
-import com.topviec.topviec_be.dto.request.ReqCreateOrderDTO;
-import com.topviec.topviec_be.dto.request.ReqUpdateOrderStatusDTO;
-import com.topviec.topviec_be.dto.response.ResOrderDTO;
-import com.topviec.topviec_be.dto.response.ResOrderItemDTO;
-import com.topviec.topviec_be.dto.response.ResultPaginationDTO;
-import com.topviec.topviec_be.entity.AddonPackage;
-import com.topviec.topviec_be.entity.Order;
-import com.topviec.topviec_be.entity.OrderItem;
-import com.topviec.topviec_be.entity.ServicePackage;
-import com.topviec.topviec_be.enums.services.OrderItemType;
-import com.topviec.topviec_be.enums.services.OrderStatus;
-import com.topviec.topviec_be.enums.services.OrderType;
-import com.topviec.topviec_be.exception.AppException;
-import com.topviec.topviec_be.repository.AddonPackageRepository;
-import com.topviec.topviec_be.repository.OrderRepository;
-import com.topviec.topviec_be.repository.ServicePackageRepository;
-import com.topviec.topviec_be.service.CompanyService;
-import com.topviec.topviec_be.service.OrderService;
-import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+package com.topviec.topviec_be.dto.request;
 
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Collectors;
+import jakarta.validation.constraints.NotNull;
+import lombok.Data;
 
-@Service
-@RequiredArgsConstructor
-public class OrderServiceImpl implements OrderService {
+@Data
+public class ReqApplyAddonDTO {
 
-    private final OrderRepository orderRepository;
-    private final ServicePackageRepository servicePackageRepository;
-    private final AddonPackageRepository addonPackageRepository;
-    private final CompanyService companyService;
-
-    @Override
-    @Transactional
-    public ResOrderDTO createOrder(Long userId, ReqCreateOrderDTO request) {
-        Long companyId = companyService.getCompanyIdByUserId(userId);
-        if (companyId == null) {
-            throw AppException.badRequest("Chưa có hồ sơ công ty. Không thể thực hiện mua hàng.");
-        }
-
-        BigDecimal unitPrice = BigDecimal.ZERO;
-        ServicePackage servicePackage = null;
-        AddonPackage addonPackage = null;
-        OrderItemType itemType;
-
-        if (request.getType() == OrderType.SUBSCRIPTION) {
-            itemType = OrderItemType.SUBSCRIPTION;
-            servicePackage = servicePackageRepository.findById(request.getPackageId())
-                    .orElseThrow(() -> AppException.notFound("Không tìm thấy gói dịch vụ (Subscription)."));
-            if (servicePackage.getIsActive() == null || !servicePackage.getIsActive()) {
-                 throw AppException.badRequest("Gói dịch vụ này không còn hoạt động.");
-            }
-            unitPrice = servicePackage.getPrice();
-        } else {
-            itemType = OrderItemType.ADDON;
-            addonPackage = addonPackageRepository.findById(request.getPackageId())
-                    .orElseThrow(() -> AppException.notFound("Không tìm thấy gói dịch vụ phụ (Addon)."));
-            if (addonPackage.getIsActive() == null || !addonPackage.getIsActive()) {
-                throw AppException.badRequest("Gói dịch vụ phụ này không còn hoạt động.");
-            }
-            unitPrice = addonPackage.getPrice();
-        }
-
-        BigDecimal totalAmount = unitPrice.multiply(BigDecimal.valueOf(request.getQuantity()));
-
-        Order order = Order.builder()
-                .companyId(companyId)
-                .orderCode("ORD-" + System.currentTimeMillis())
-                .type(request.getType())
-                .totalAmount(totalAmount)
-                .status(OrderStatus.PAID)
-                .paymentMethod(request.getPaymentMethod())
-                .paidAt(LocalDateTime.now())
-                .createdBy(userId)
-                .build();
-
-        OrderItem item = OrderItem.builder()
-                .order(order)
-                .itemType(itemType)
-                .servicePackageId(servicePackage != null ? servicePackage.getId() : null)
-                .addonPackageId(addonPackage != null ? addonPackage.getId() : null)
-                .quantity(request.getQuantity())
-                .unitPrice(unitPrice)
-                .totalPrice(totalAmount)
-                .billingCycle(servicePackage != null ? servicePackage.getBillingCycle() : null)
-                .durationDays(addonPackage != null ? addonPackage.getDurationDays() : null)
-                .build();
-
-        List<OrderItem> items = new ArrayList<>();
-        items.add(item);
-        order.setOrderItems(items);
-
-        Order savedOrder = orderRepository.save(order);
-        return mapToDTO(savedOrder);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public ResultPaginationDTO getMyOrders(Long userId, Pageable pageable) {
-        Long companyId = companyService.getCompanyIdByUserId(userId);
-        if (companyId == null) {
-            throw AppException.badRequest("Chưa có hồ sơ công ty.");
-        }
-
-        Page<Order> page = orderRepository.findByCompanyIdOrderByCreatedAtDesc(companyId, pageable);
-
-        ResultPaginationDTO.Meta meta = new ResultPaginationDTO.Meta();
-        meta.setPage(pageable.getPageNumber() + 1);
-        meta.setPageSize(pageable.getPageSize());
-        meta.setPages(page.getTotalPages());
-        meta.setTotals(page.getTotalElements());
-
-        List<ResOrderDTO> results = page.getContent().stream()
-                .map(this::mapToDTO)
-                .collect(Collectors.toList());
-
-        ResultPaginationDTO response = new ResultPaginationDTO();
-        response.setMeta(meta);
-        response.setResult(results);
-
-        return response;
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public ResOrderDTO getMyOrderById(Long userId, Long orderId) {
-        Long companyId = companyService.getCompanyIdByUserId(userId);
-        if (companyId == null) {
-            throw AppException.badRequest("Chưa có hồ sơ công ty.");
-        }
-
-        Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> AppException.notFound("Không tìm thấy đơn hàng."));
-
-        if (!order.getCompanyId().equals(companyId)) {
-            throw AppException.badRequest("Bạn không có quyền truy cập đơn hàng này.");
-        }
-
-        return mapToDTO(order);
-    }
-
-    @Override
-    @Transactional
-    public ResOrderDTO cancelOrder(Long userId, Long orderId) {
-        Long companyId = companyService.getCompanyIdByUserId(userId);
-        if (companyId == null) {
-            throw AppException.badRequest("Chưa có hồ sơ công ty.");
-        }
-
-        Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> AppException.notFound("Không tìm thấy đơn hàng."));
-
-        if (!order.getCompanyId().equals(companyId)) {
-            throw AppException.badRequest("Bạn không có quyền thao tác trên đơn hàng này.");
-        }
-
-        if (order.getStatus() != OrderStatus.PENDING) {
-            throw AppException.badRequest("Chỉ có thể hủy hóa đơn đang trong trạng thái chờ thanh toán (PENDING).");
-        }
-
-        order.setStatus(OrderStatus.CANCELLED);
-        Order updatedOrder = orderRepository.save(order);
-
-        return mapToDTO(updatedOrder);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public ResultPaginationDTO getAllOrders(OrderStatus status, Pageable pageable) {
-        Page<Order> page;
-        if (status != null) {
-            page = orderRepository.findByStatusOrderByCreatedAtDesc(status, pageable);
-        } else {
-            page = orderRepository.findAllByOrderByCreatedAtDesc(pageable);
-        }
-
-        ResultPaginationDTO.Meta meta = new ResultPaginationDTO.Meta();
-        meta.setPage(pageable.getPageNumber() + 1);
-        meta.setPageSize(pageable.getPageSize());
-        meta.setPages(page.getTotalPages());
-        meta.setTotals(page.getTotalElements());
-
-        List<ResOrderDTO> results = page.getContent().stream()
-                .map(this::mapToDTO).collect(Collectors.toList());
-
-        ResultPaginationDTO response = new ResultPaginationDTO();
-        response.setMeta(meta);
-        response.setResult(results);
-
-        return response;
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public ResOrderDTO getOrderById(Long orderId) {
-        Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> AppException.notFound("Không tìm thấy đơn hàng."));
-        return mapToDTO(order);
-    }
-
-    @Override
-    @Transactional
-    public ResOrderDTO updateOrderStatus(Long adminId, Long orderId, ReqUpdateOrderStatusDTO request) {
-        Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> AppException.notFound("Không tìm thấy đơn hàng."));
-
-        if (request.getStatus() == OrderStatus.PAID && order.getStatus() != OrderStatus.PAID) {
-            order.setPaidAt(LocalDateTime.now());
-        }
-
-        order.setStatus(request.getStatus());
-        Order updatedOrder = orderRepository.save(order);
-        return mapToDTO(updatedOrder);
-    }
-
-    private ResOrderDTO mapToDTO(Order entity) {
-        List<ResOrderItemDTO> itemDTOs = new ArrayList<>();
-        if (entity.getOrderItems() != null) {
-            itemDTOs = entity.getOrderItems().stream().map(item -> ResOrderItemDTO.builder()
-                    .id(item.getId())
-                    .itemType(item.getItemType())
-                    .servicePackageId(item.getServicePackageId())
-                    .addonPackageId(item.getAddonPackageId())
-                    .quantity(item.getQuantity())
-                    .unitPrice(item.getUnitPrice())
-                    .totalPrice(item.getTotalPrice())
-                    .billingCycle(item.getBillingCycle())
-                    .durationDays(item.getDurationDays())
-                    .build()
-            ).collect(Collectors.toList());
-        }
-
-        return ResOrderDTO.builder()
-                .id(entity.getId())
-                .orderCode(entity.getOrderCode())
-                .type(entity.getType())
-                .totalAmount(entity.getTotalAmount())
-                .status(entity.getStatus())
-                .paymentMethod(entity.getPaymentMethod())
-                .paymentTransactionId(entity.getPaymentTransactionId())
-                .paidAt(entity.getPaidAt())
-                .note(entity.getNote())
-                .createdAt(entity.getCreatedAt())
-                .items(itemDTOs)
-                .build();
-    }
+    @NotNull(message = "ID dịch vụ lẻ không được để trống")
+    private Long companyAddonId;
 }
-package com.topviec.topviec_be.service.impl;
 
-import com.topviec.topviec_be.dto.request.ReqAddonPackageDTO;
-import com.topviec.topviec_be.dto.response.ResAddonPackageDTO;
-import com.topviec.topviec_be.dto.response.ResultPaginationDTO;
-import com.topviec.topviec_be.entity.AddonPackage;
+package com.topviec.topviec_be.dto.response;
+
 import com.topviec.topviec_be.enums.services.AddonPackageGroup;
+import com.topviec.topviec_be.enums.services.SubscriptionStatus;
+import lombok.Builder;
+import lombok.Data;
+
+import java.time.LocalDateTime;
+
+@Data
+@Builder
+public class ResCompanyAddonDTO {
+    private Long id;
+    private Long addonPackageId;
+    private String addonName;
+    private String addonCode;
+    private AddonPackageGroup groupCode;
+    private SubscriptionStatus status;
+    private Integer quantityTotal;
+    private Integer quantityRemaining;
+    private LocalDateTime startedAt;
+    private LocalDateTime expiredAt;
+    private LocalDateTime createdAt;
+}
+package com.topviec.topviec_be.dto.response;
+
+import com.topviec.topviec_be.enums.services.BillingCycle;
+import com.topviec.topviec_be.enums.services.SubscriptionStatus;
+import lombok.Builder;
+import lombok.Data;
+
+import java.time.LocalDateTime;
+import java.util.List;
+
+@Data
+@Builder
+public class ResCompanySubscriptionDTO {
+    private Long id;
+    private Long servicePackageId;
+    private String packageName;
+    private String packageCode;
+    private BillingCycle billingCycle;
+    private SubscriptionStatus status;
+    private LocalDateTime startedAt;
+    private LocalDateTime expiredAt;
+    private LocalDateTime createdAt;
+    private List<ResSubscriptionUsageDTO> usages;
+
+    @Data
+    @Builder
+    public static class ResSubscriptionUsageDTO {
+        private Long id;
+        private String featureCode;
+        private Integer quantityTotal;
+        private Integer quantityRemaining;
+        private LocalDateTime resetAt;
+    }
+}
+package com.topviec.topviec_be.dto.response;
+
+import com.topviec.topviec_be.enums.services.JobPostAddonStatus;
+import lombok.Builder;
+import lombok.Data;
+
+import java.time.LocalDateTime;
+
+@Data
+@Builder
+public class ResJobPostAddonDTO {
+    private Long id;
+    private Long jobPostingId;
+    private Long companyAddonId;
+    private Long addonPackageId;
+    private String addonName;
+    private JobPostAddonStatus status;
+    private LocalDateTime startedAt;
+    private LocalDateTime expiredAt;
+    private LocalDateTime createdAt;
+}
+
+
+ logic be :
+
+ package com.topviec.topviec_be.service.impl;
+
+import com.topviec.topviec_be.dto.request.ReqApplyAddonDTO;
+import com.topviec.topviec_be.dto.response.ResCompanyAddonDTO;
+import com.topviec.topviec_be.dto.response.ResCompanySubscriptionDTO;
+import com.topviec.topviec_be.dto.response.ResCompanySubscriptionDTO.ResSubscriptionUsageDTO;
+import com.topviec.topviec_be.dto.response.ResJobPostAddonDTO;
+import com.topviec.topviec_be.entity.AddonPackage;
+import com.topviec.topviec_be.entity.CompanyAddon;
+import com.topviec.topviec_be.entity.CompanySubscription;
+import com.topviec.topviec_be.entity.JobPostAddon;
+import com.topviec.topviec_be.entity.JobPosting;
+import com.topviec.topviec_be.entity.ServicePackage;
+import com.topviec.topviec_be.entity.SubscriptionUsage;
+import com.topviec.topviec_be.enums.services.JobPostAddonStatus;
+import com.topviec.topviec_be.enums.services.SubscriptionStatus;
 import com.topviec.topviec_be.exception.AppException;
 import com.topviec.topviec_be.repository.AddonPackageRepository;
-import com.topviec.topviec_be.service.AddonPackageService;
+import com.topviec.topviec_be.repository.CompanyAddonRepository;
+import com.topviec.topviec_be.repository.CompanySubscriptionRepository;
+import com.topviec.topviec_be.repository.JobPostAddonRepository;
+import com.topviec.topviec_be.repository.JobPostingRepository;
+import com.topviec.topviec_be.repository.ServicePackageRepository;
+import com.topviec.topviec_be.repository.SubscriptionUsageRepository;
+import com.topviec.topviec_be.service.CompanyService;
+import com.topviec.topviec_be.service.EmployerServiceManagementService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-public class AddonPackageServiceImpl implements AddonPackageService {
+public class EmployerServiceManagementServiceImpl implements EmployerServiceManagementService {
 
+    private final CompanyService companyService;
+    private final CompanySubscriptionRepository companySubscriptionRepository;
+    private final SubscriptionUsageRepository subscriptionUsageRepository;
+    private final CompanyAddonRepository companyAddonRepository;
     private final AddonPackageRepository addonPackageRepository;
+    private final ServicePackageRepository servicePackageRepository;
+    private final JobPostingRepository jobPostingRepository;
+    private final JobPostAddonRepository jobPostAddonRepository;
 
     @Override
     @Transactional(readOnly = true)
-    public List<ResAddonPackageDTO> getPublicActiveAddonPackages(AddonPackageGroup groupCode) {
-        List<AddonPackage> packages;
-        if (groupCode != null) {
-            packages = addonPackageRepository.findByIsActiveTrueAndGroupCode(groupCode);
-        } else {
-            packages = addonPackageRepository.findByIsActiveTrue();
-        }
-        return packages.stream().map(this::mapToDTO).collect(Collectors.toList());
-    }
+    public ResCompanySubscriptionDTO getMySubscription(Long userId) {
+        Long companyId = getCompanyId(userId);
 
-    @Override
-    @Transactional(readOnly = true)
-    public ResultPaginationDTO getAllAddonPackages(AddonPackageGroup groupCode, Pageable pageable) {
-        Page<AddonPackage> page;
-        if (groupCode != null) {
-            page = addonPackageRepository.findByGroupCode(groupCode, pageable);
-        } else {
-            page = addonPackageRepository.findAll(pageable);
-        }
+        CompanySubscription subscription = companySubscriptionRepository
+                .findFirstByCompanyIdAndStatusOrderByCreatedAtDesc(companyId, SubscriptionStatus.ACTIVE)
+                .orElseThrow(() -> AppException.notFound("Công ty chưa đăng ký gói dịch vụ nào."));
 
-        ResultPaginationDTO.Meta meta = new ResultPaginationDTO.Meta();
-        meta.setPage(pageable.getPageNumber() + 1);
-        meta.setPageSize(pageable.getPageSize());
-        meta.setPages(page.getTotalPages());
-        meta.setTotals(page.getTotalElements());
+        // Lấy thông tin gói dịch vụ
+        ServicePackage servicePackage = servicePackageRepository.findById(subscription.getServicePackageId())
+                .orElse(null);
 
-        List<ResAddonPackageDTO> results = page.getContent().stream()
-                .map(this::mapToDTO)
+        // Lấy hạn mức sử dụng
+        List<SubscriptionUsage> usages = subscriptionUsageRepository
+                .findByCompanySubscriptionId(subscription.getId());
+
+        List<ResSubscriptionUsageDTO> usageDTOs = usages.stream()
+                .map(u -> ResSubscriptionUsageDTO.builder()
+                        .id(u.getId())
+                        .featureCode(u.getFeatureCode())
+                        .quantityTotal(u.getQuantityTotal())
+                        .quantityRemaining(u.getQuantityRemaining())
+                        .resetAt(u.getResetAt())
+                        .build())
                 .collect(Collectors.toList());
 
-        ResultPaginationDTO response = new ResultPaginationDTO();
-        response.setMeta(meta);
-        response.setResult(results);
-
-        return response;
+        return ResCompanySubscriptionDTO.builder()
+                .id(subscription.getId())
+                .servicePackageId(subscription.getServicePackageId())
+                .packageName(servicePackage != null ? servicePackage.getName() : null)
+                .packageCode(servicePackage != null ? servicePackage.getCode() : null)
+                .billingCycle(subscription.getBillingCycle())
+                .status(subscription.getStatus())
+                .startedAt(subscription.getStartedAt())
+                .expiredAt(subscription.getExpiredAt())
+                .createdAt(subscription.getCreatedAt())
+                .usages(usageDTOs)
+                .build();
     }
 
     @Override
     @Transactional(readOnly = true)
-    public ResAddonPackageDTO getAddonPackageById(Long id) {
-        AddonPackage addonPackage = addonPackageRepository.findById(id)
-                .orElseThrow(() -> AppException.notFound("Không tìm thấy gói addon với ID: " + id));
-        return mapToDTO(addonPackage);
+    public List<ResCompanyAddonDTO> getMyAddons(Long userId) {
+        Long companyId = getCompanyId(userId);
+
+        List<CompanyAddon> addons = companyAddonRepository
+                .findByCompanyIdOrderByCreatedAtDesc(companyId);
+
+        return addons.stream().map(addon -> {
+            AddonPackage pkg = addonPackageRepository.findById(addon.getAddonPackageId()).orElse(null);
+
+            return ResCompanyAddonDTO.builder()
+                    .id(addon.getId())
+                    .addonPackageId(addon.getAddonPackageId())
+                    .addonName(pkg != null ? pkg.getName() : null)
+                    .addonCode(pkg != null ? pkg.getCode() : null)
+                    .groupCode(pkg != null ? pkg.getGroupCode() : null)
+                    .status(addon.getStatus())
+                    .quantityTotal(addon.getQuantityTotal())
+                    .quantityRemaining(addon.getQuantityRemaining())
+                    .startedAt(addon.getStartedAt())
+                    .expiredAt(addon.getExpiredAt())
+                    .createdAt(addon.getCreatedAt())
+                    .build();
+        }).collect(Collectors.toList());
     }
 
     @Override
     @Transactional
-    public ResAddonPackageDTO createAddonPackage(ReqAddonPackageDTO reqDTO) {
-        if (addonPackageRepository.existsByCode(reqDTO.getCode())) {
-            throw AppException.badRequest("Mã gói addon đã tồn tại, vui lòng chọn mã khác.");
+    public ResJobPostAddonDTO applyAddonToJobPost(Long userId, Long jobPostingId, ReqApplyAddonDTO request) {
+        Long companyId = getCompanyId(userId);
+
+        // Kiểm tra tin tuyển dụng tồn tại và thuộc về công ty
+        JobPosting jobPosting = jobPostingRepository.findByIdAndDeletedAtIsNull(jobPostingId)
+                .orElseThrow(() -> AppException.notFound("Không tìm thấy tin tuyển dụng."));
+
+        if (!jobPosting.getCompanyId().equals(companyId)) {
+            throw AppException.forbidden("Bạn không có quyền thao tác trên tin tuyển dụng này.");
         }
 
-        AddonPackage addonPackage = AddonPackage.builder()
-                .groupCode(reqDTO.getGroupCode())
-                .name(reqDTO.getName())
-                .code(reqDTO.getCode())
-                .price(reqDTO.getPrice())
-                .durationDays(reqDTO.getDurationDays())
-                .description(reqDTO.getDescription())
-                .isActive(reqDTO.getIsActive() != null ? reqDTO.getIsActive() : true)
+        // Kiểm tra dịch vụ lẻ tồn tại và thuộc về công ty
+        CompanyAddon companyAddon = companyAddonRepository.findById(request.getCompanyAddonId())
+                .orElseThrow(() -> AppException.notFound("Không tìm thấy dịch vụ lẻ."));
+
+        if (!companyAddon.getCompanyId().equals(companyId)) {
+            throw AppException.forbidden("Dịch vụ lẻ này không thuộc công ty của bạn.");
+        }
+
+        // Kiểm tra dịch vụ lẻ còn hiệu lực
+        if (companyAddon.getStatus() != SubscriptionStatus.ACTIVE) {
+            throw AppException.badRequest("Dịch vụ lẻ này đã hết hiệu lực.");
+        }
+
+        // Kiểm tra hạn sử dụng
+        if (companyAddon.getExpiredAt() != null && companyAddon.getExpiredAt().isBefore(LocalDateTime.now())) {
+            throw AppException.badRequest("Dịch vụ lẻ này đã hết hạn sử dụng.");
+        }
+
+        // Action 1: Kiểm tra quantity_remaining
+        if (companyAddon.getQuantityRemaining() <= 0) {
+            throw AppException.badRequest("Dịch vụ lẻ này đã hết số lượng sử dụng.");
+        }
+
+        // Lấy thông tin gói addon để tính thời hạn
+        AddonPackage addonPackage = addonPackageRepository.findById(companyAddon.getAddonPackageId())
+                .orElseThrow(() -> AppException.notFound("Không tìm thấy gói dịch vụ lẻ."));
+
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime expiredAt = addonPackage.getDurationDays() != null
+                ? now.plusDays(addonPackage.getDurationDays())
+                : null;
+
+        // Action 2: Lưu vào bảng job_post_addons
+        JobPostAddon jobPostAddon = JobPostAddon.builder()
+                .jobPostingId(jobPostingId)
+                .companyAddonId(companyAddon.getId())
+                .addonPackageId(addonPackage.getId())
+                .startedAt(now)
+                .expiredAt(expiredAt)
+                .status(JobPostAddonStatus.ACTIVE)
                 .build();
 
-        return mapToDTO(addonPackageRepository.save(addonPackage));
-    }
+        JobPostAddon saved = jobPostAddonRepository.save(jobPostAddon);
 
-    @Override
-    @Transactional
-    public ResAddonPackageDTO updateAddonPackage(Long id, ReqAddonPackageDTO reqDTO) {
-        AddonPackage addonPackage = addonPackageRepository.findById(id)
-                .orElseThrow(() -> AppException.notFound("Không tìm thấy gói addon với ID: " + id));
+        // Action 3: Trừ quantity_remaining đi 1
+        companyAddon.setQuantityRemaining(companyAddon.getQuantityRemaining() - 1);
+        companyAddonRepository.save(companyAddon);
 
-        if (addonPackageRepository.existsByCodeAndIdNot(reqDTO.getCode(), id)) {
-            throw AppException.badRequest("Mã gói addon đã tồn tại, vui lòng chọn mã khác.");
-        }
-
-        addonPackage.setGroupCode(reqDTO.getGroupCode());
-        addonPackage.setName(reqDTO.getName());
-        addonPackage.setCode(reqDTO.getCode());
-        addonPackage.setPrice(reqDTO.getPrice());
-        addonPackage.setDurationDays(reqDTO.getDurationDays());
-        addonPackage.setDescription(reqDTO.getDescription());
-        
-        if (reqDTO.getIsActive() != null) {
-            addonPackage.setIsActive(reqDTO.getIsActive());
-        }
-
-        return mapToDTO(addonPackageRepository.save(addonPackage));
-    }
-
-    private ResAddonPackageDTO mapToDTO(AddonPackage entity) {
-        return ResAddonPackageDTO.builder()
-                .id(entity.getId())
-                .groupCode(entity.getGroupCode())
-                .groupName(entity.getGroupName())
-                .name(entity.getName())
-                .code(entity.getCode())
-                .price(entity.getPrice())
-                .durationDays(entity.getDurationDays())
-                .description(entity.getDescription())
-                .isActive(entity.getIsActive())
-                .createdAt(entity.getCreatedAt())
-                .updatedAt(entity.getUpdatedAt())
+        return ResJobPostAddonDTO.builder()
+                .id(saved.getId())
+                .jobPostingId(saved.getJobPostingId())
+                .companyAddonId(saved.getCompanyAddonId())
+                .addonPackageId(saved.getAddonPackageId())
+                .addonName(addonPackage.getName())
+                .status(saved.getStatus())
+                .startedAt(saved.getStartedAt())
+                .expiredAt(saved.getExpiredAt())
+                .createdAt(saved.getCreatedAt())
                 .build();
+    }
+
+    private Long getCompanyId(Long userId) {
+        Long companyId = companyService.getCompanyIdByUserId(userId);
+        if (companyId == null) {
+            throw AppException.badRequest("Chưa có hồ sơ công ty.");
+        }
+        return companyId;
     }
 }
+
+
+
+
