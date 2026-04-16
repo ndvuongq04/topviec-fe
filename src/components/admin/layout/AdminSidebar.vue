@@ -109,6 +109,7 @@ const navItems: NavItem[] = [
         items: [
           { to: '/admin/service-packages',     icon: 'inventory_2',  label: 'Gói dịch vụ' },
           { to: '/admin/individual-services',  icon: 'add_box',      label: 'Dịch vụ lẻ' },
+          { to: '/admin/services/create',      icon: 'add_circle',   label: 'Tạo dịch vụ' },
         ],
       },
       {
