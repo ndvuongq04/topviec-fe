@@ -10,7 +10,6 @@
 
     <ServiceCreateForm
       :groups="serviceGroups"
-      @open-create-group="showGroupModal = true"
       @submit="handleSubmit"
     />
 
@@ -23,11 +22,6 @@
 
     <ServiceTipCards />
 
-    <CreateGroupModal
-      v-if="showGroupModal"
-      @close="showGroupModal = false"
-      @created="handleGroupCreated"
-    />
   </div>
 </template>
 
@@ -36,14 +30,33 @@ import { ref } from 'vue'
 import ServiceCreateForm from '@/components/admin/create-services/ServiceCreateForm.vue'
 import ServiceListTable from '@/components/admin/create-services/ServiceListTable.vue'
 import ServiceTipCards from '@/components/admin/create-services/ServiceTipCards.vue'
-import CreateGroupModal from '@/components/admin/create-services/CreateGroupModal.vue'
-
-const showGroupModal = ref(false)
+import {
+  AddonPackageGroup,
+  ADDON_PACKAGE_GROUP_LABELS,
+  ADDON_GROUP_ICON_MAP
+} from '@/constants/servicePackage.constants'
 
 const serviceGroups = ref([
-  { value: 'recruitment', icon: 'campaign', label: 'Tin tuyển dụng' },
-  { value: 'candidates', icon: 'person_search', label: 'Hồ sơ & Ứng viên' },
-  { value: 'branding', icon: 'workspace_premium', label: 'Thương hiệu' },
+  {
+    value: AddonPackageGroup.JOB_POSTING,
+    icon: ADDON_GROUP_ICON_MAP[AddonPackageGroup.JOB_POSTING].icon,
+    label: ADDON_PACKAGE_GROUP_LABELS[AddonPackageGroup.JOB_POSTING]
+  },
+  {
+    value: AddonPackageGroup.CANDIDATE,
+    icon: ADDON_GROUP_ICON_MAP[AddonPackageGroup.CANDIDATE].icon,
+    label: ADDON_PACKAGE_GROUP_LABELS[AddonPackageGroup.CANDIDATE]
+  },
+  {
+    value: AddonPackageGroup.BRANDING,
+    icon: ADDON_GROUP_ICON_MAP[AddonPackageGroup.BRANDING].icon,
+    label: ADDON_PACKAGE_GROUP_LABELS[AddonPackageGroup.BRANDING]
+  },
+  {
+    value: AddonPackageGroup.ADDON_PACKAGE_GROUP,
+    icon: ADDON_GROUP_ICON_MAP[AddonPackageGroup.ADDON_PACKAGE_GROUP].icon,
+    label: ADDON_PACKAGE_GROUP_LABELS[AddonPackageGroup.ADDON_PACKAGE_GROUP]
+  }
 ])
 
 const serviceItems = ref([
@@ -68,10 +81,5 @@ function handleEdit(id: number) {
 
 function handleDelete(id: number) {
   serviceItems.value = serviceItems.value.filter(i => i.id !== id)
-}
-
-function handleGroupCreated(group: { value: string; icon: string; label: string }) {
-  serviceGroups.value.push(group)
-  showGroupModal.value = false
 }
 </script>

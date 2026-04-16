@@ -5,15 +5,10 @@
       <div class="field-block">
         <div class="field-label-row">
           <label class="field-label">Nhóm dịch vụ</label>
-          <button class="create-group-btn" type="button" @click="$emit('open-create-group')">
-            <span class="material-symbols-outlined">add_circle</span>
-            Tạo nhóm mới
-          </button>
         </div>
         <ServiceGroupPicker
           v-model="selectedGroup"
           :groups="groups"
-          @open-create="$emit('open-create-group')"
         />
       </div>
 
@@ -46,11 +41,10 @@ defineProps<{
 }>()
 
 const emit = defineEmits<{
-  'open-create-group': []
   submit: [payload: { group: string; name: string }]
 }>()
 
-const selectedGroup = ref('recruitment')
+const selectedGroup = ref('JOB_POSTING')
 const serviceName = ref('')
 
 function handleSubmit() {
@@ -81,22 +75,6 @@ function handleSubmit() {
   letter-spacing: 0.05em;
   color: #574240;
 }
-.create-group-btn {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 14px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: #76191d;
-  background: none;
-  border: none;
-  cursor: pointer;
-  transition: color 0.15s;
-}
-.create-group-btn:hover { color: #963131; }
-.create-group-btn .material-symbols-outlined { font-size: 16px; }
 
 .text-input {
   width: 100%;
