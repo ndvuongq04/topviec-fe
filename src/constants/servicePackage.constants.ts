@@ -96,11 +96,6 @@ export const ADDON_PACKAGE_GROUP_LABELS: Record<AddonPackageGroup, string> = {
     [AddonPackageGroup.ADDON_PACKAGE_GROUP]: 'Nhóm gói dịch vụ thêm',
 }
 
-// ⚠️  Workaround: BE đang serialize groupCode thành label tiếng Việt thay vì enum code
-// TODO: Xoá sau khi BE fix @JsonValue trên enum AddonPackageGroup
-export const ADDON_GROUP_LABEL_TO_CODE: Record<string, AddonPackageGroup> = Object.fromEntries(
-    Object.entries(ADDON_PACKAGE_GROUP_LABELS).map(([code, label]) => [label, code as AddonPackageGroup]),
-) as Record<string, AddonPackageGroup>
 
 export const BILLING_CYCLE_LABELS: Record<BillingCycle, string> = {
     [BillingCycle.MONTHLY]: 'Hàng tháng',

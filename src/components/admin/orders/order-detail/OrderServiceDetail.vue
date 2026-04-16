@@ -1,11 +1,59 @@
 <script setup lang="ts">
-import type { ResOrderDTO } from '@/types/order.types'
+import type { ResOrderDTO, ResOrderItemDTO, ResOrderItemFeature } from '@/types/order.types'
 import { ORDER_ITEM_TYPE_LABELS, BILLING_CYCLE_LABELS } from '@/constants/servicePackage.constants'
 
 defineProps<{ order: ResOrderDTO }>()
 
 function formatCurrency(n: number): string {
   return n.toLocaleString('vi-VN') + ' đ'
+}
+
+// Nhãn tiếng Việt cho các feature key phổ biến
+const FEATURE_KEY_LABELS: Record<string, string> = {
+  hot_job_quota:          'Tin tuyển dụng HOT',
+  job_post_quota:         'Lượt đăng tin',
+  unlimited_post:         'Đăng tin không giới hạn',
+  cv_search_quota:        'Lượt tìm kiếm CV',
+  cv_unlock_quota:        'Lượt mở khoá CV',
+  top_brand_badge:        'Nhãn Top Brand',
+  priority_support:       'Hỗ trợ ưu tiên',
+  featured_employer:      'Nhà tuyển dụng nổi bật',
+  banner_display:         'Hiển thị banner',
+  job_refresh_quota:      'Lượt làm mới tin',
+  highlight_job_quota:    'Lượt làm nổi bật tin',
+  urgent_job_quota:       'Lượt đăng tin gấp',
+  employer_branding:      'Thương hiệu nhà tuyển dụng',
+  social_media_boost:     'Tăng cường mạng xã hội',
+}
+
+// Chuyển snake_case → Title Case nếu không có nhãn cụ thể
+function snakeToLabel(key: string): string {
+  return FEATURE_KEY_LABELS[key]
+    ?? key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+}
+
+// Chuẩn hoá features về mảng { name, icon } bất kể BE trả về dạng nào
+function normalizeFeatures(features: ResOrderItemDTO['features']): ResOrderItemFeature[] {
+  if (!features) return []
+
+  if (Array.isArray(features)) {
+    return features.map(f =>
+      typeof f === 'string'
+        ? { name: f, icon: 'check_circle' }
+        : { icon: 'check_circle', ...f }
+    )
+  }
+
+  // Object dạng { key: value } — bỏ qua những giá trị false/null/0
+  return Object.entries(features)
+    .filter(([, v]) => v !== false && v !== null && v !== undefined && v !== 0)
+    .map(([k, v]) => {
+      const label = snakeToLabel(k)
+      const name  = (v === true || v === '')
+        ? label
+        : `${label}: ${v}`
+      return { name, icon: 'check_circle' }
+    })
 }
 </script>
 
@@ -17,28 +65,64 @@ function formatCurrency(n: number): string {
         Chi tiết dịch vụ
       </h3>
     </div>
+
     <div class="service-body">
-      <!-- Items -->
-      <div v-for="item in order.items" :key="item.id" class="package-summary">
-        <div class="package-left">
-          <div class="package-icon">
-            <span class="material-symbols-outlined" style="font-size: 28px;">stars</span>
+      <div v-for="item in order.items" :key="item.id" class="item-block">
+
+        <!-- Package summary row -->
+        <div class="package-summary">
+          <div class="package-left">
+            <div class="package-icon">
+              <span class="material-symbols-outlined" style="font-size: 28px;">stars</span>
+            </div>
+            <div>
+              <!-- Tên gói từ BE, fallback về loại item -->
+              <h4 class="package-name">
+                {{ item.packageName ?? ORDER_ITEM_TYPE_LABELS[item.itemType] }}
+              </h4>
+              <p class="package-type">
+                {{ ORDER_ITEM_TYPE_LABELS[item.itemType] }}
+                <span v-if="item.billingCycle"> · {{ BILLING_CYCLE_LABELS[item.billingCycle] }}</span>
+              </p>
+              <p class="package-meta">
+                <span v-if="item.durationDays">
+                  <span class="material-symbols-outlined meta-icon">schedule</span>
+                  Thời hạn: <strong>{{ item.durationDays }} ngày</strong>
+                </span>
+                <span v-if="item.quantity > 1">
+                  <span class="material-symbols-outlined meta-icon">layers</span>
+                  Số lượng: <strong>× {{ item.quantity }}</strong>
+                </span>
+              </p>
+            </div>
           </div>
-          <div>
-            <h4 class="package-name">
-              {{ ORDER_ITEM_TYPE_LABELS[item.itemType] }}
-              <span v-if="item.billingCycle"> · {{ BILLING_CYCLE_LABELS[item.billingCycle] }}</span>
-            </h4>
-            <p class="package-duration">
-              <span v-if="item.durationDays">Thời hạn: {{ item.durationDays }} ngày</span>
-              <span v-else-if="item.quantity > 1">Số lượng: {{ item.quantity }}</span>
+          <div class="package-price-wrap">
+            <p class="price-unit">
+              {{ formatCurrency(item.unitPrice) }}
+              <span v-if="item.quantity > 1"> × {{ item.quantity }}</span>
             </p>
+            <p class="price-label">Thành tiền</p>
+            <p class="price-value">{{ formatCurrency(item.totalPrice) }}</p>
           </div>
         </div>
-        <div class="package-price-wrap">
-          <p class="price-label">Thành tiền</p>
-          <p class="price-value">{{ formatCurrency(item.totalPrice) }}</p>
-        </div>
+
+        <!-- Features -->
+        <template v-if="normalizeFeatures(item.features).length">
+          <p class="features-title">Tính năng bao gồm</p>
+          <div class="features-grid">
+            <div
+              v-for="(feat, idx) in normalizeFeatures(item.features)"
+              :key="idx"
+              class="feature-item"
+            >
+              <span class="material-symbols-outlined feature-icon">
+                {{ feat.icon ?? 'check_circle' }}
+              </span>
+              <span class="feature-text">{{ feat.name }}</span>
+            </div>
+          </div>
+        </template>
+
       </div>
     </div>
   </div>
@@ -53,9 +137,8 @@ function formatCurrency(n: number): string {
 }
 
 .service-header {
-  padding: 32px 32px 0;
+  padding: 32px 32px 24px;
   border-bottom: 1px solid #f0eee7;
-  padding-bottom: 24px;
 }
 
 .section-title {
@@ -80,21 +163,32 @@ function formatCurrency(n: number): string {
 
 .service-body {
   padding: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
 }
 
+/* ── Item block ── */
+.item-block {
+  border: 1px solid #f0eee7;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+/* ── Package summary ── */
 .package-summary {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   background: #fbf9f2;
-  border-radius: 12px;
   padding: 24px;
-  margin-bottom: 24px;
+  gap: 16px;
 }
 
 .package-left {
   display: flex;
-  gap: 24px;
+  gap: 20px;
+  flex: 1;
 }
 
 .package-icon {
@@ -113,13 +207,42 @@ function formatCurrency(n: number): string {
   font-size: 1.125rem;
   font-weight: 900;
   color: #0f172a;
-  margin: 0 0 4px;
+  margin: 0 0 2px;
 }
 
-.package-duration {
-  font-size: 0.875rem;
+.package-type {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #963131;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0 0 8px;
+}
+
+.package-meta {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  font-size: 0.8125rem;
   color: #64748b;
   margin: 0;
+}
+
+.meta-icon {
+  font-size: 14px;
+  vertical-align: middle;
+  margin-right: 3px;
+}
+
+.package-price-wrap {
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.price-unit {
+  font-size: 0.8125rem;
+  color: #94a3b8;
+  margin: 0 0 2px;
 }
 
 .price-label {
@@ -129,7 +252,6 @@ function formatCurrency(n: number): string {
   font-weight: 700;
   letter-spacing: 0.05em;
   margin: 0 0 2px;
-  text-align: right;
 }
 
 .price-value {
@@ -139,24 +261,40 @@ function formatCurrency(n: number): string {
   margin: 0;
 }
 
+/* ── Features ── */
+.features-title {
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #94a3b8;
+  margin: 0;
+  padding: 20px 24px 12px;
+  background: #fff;
+}
+
 .features-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 16px;
+  gap: 0;
+  background: #fff;
+  padding: 0 24px 24px;
 }
 
 .feature-item {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 16px;
-  background: rgba(251,249,242,0.5);
+  gap: 10px;
+  padding: 10px 14px;
+  background: #f8fafc;
   border-radius: 8px;
+  margin: 4px;
 }
 
 .feature-icon {
-  color: #004638;
-  font-size: 22px;
+  color: #16a34a;
+  font-size: 18px;
+  flex-shrink: 0;
 }
 
 .feature-text {

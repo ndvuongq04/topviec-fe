@@ -25,6 +25,12 @@ export interface ReqUpdateOrderStatusDTO {
 
 // ─── Response DTOs ────────────────────────────────────────────────────────────
 
+export interface ResOrderItemFeature {
+    name:  string
+    icon?: string
+    value?: string | number
+}
+
 export interface ResOrderItemDTO {
     id:               number
     itemType:         OrderItemType
@@ -35,6 +41,8 @@ export interface ResOrderItemDTO {
     totalPrice:       number
     billingCycle:     BillingCycle | null
     durationDays:     number | null
+    packageName:      string | null
+    features:         ResOrderItemFeature[] | Record<string, unknown> | null
 }
 
 export interface ResOrderCompanyInfo {
