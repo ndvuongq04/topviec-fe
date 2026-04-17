@@ -16,7 +16,7 @@ import { BillingCycle } from '@/constants/servicePackage.constants'
 
 export interface CartItem {
     id: number;
-    addonPackageId: number;
+    addonServiceId: number;
     name: string;
     icon: string;
     iconBg: string;
@@ -135,12 +135,12 @@ export const useEmployerOrderStore = defineStore('employerOrder', () => {
     const cartItems       = ref<CartItem[]>([])
     const checkoutContext = ref<CheckoutContext | null>(null)
 
-    function addToCart(item: Omit<CartItem, 'addonPackageId'> & { addonPackageId?: number }) {
+    function addToCart(item: Omit<CartItem, 'addonServiceId'> & { addonServiceId?: number }) {
         const existing = cartItems.value.find(i => i.id === item.id)
         if (existing) {
             existing.qty += item.qty
         } else {
-            cartItems.value.push({ ...item, addonPackageId: item.addonPackageId || item.id })
+            cartItems.value.push({ ...item, addonServiceId: item.addonServiceId || item.id })
         }
     }
 

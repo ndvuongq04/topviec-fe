@@ -22,17 +22,8 @@
         <tbody>
           <tr v-for="row in rows" :key="row.label" class="compare-table__row">
             <td class="compare-table__td compare-table__td--label">{{ row.label }}</td>
-            <td
-              v-for="col in planColumns"
-              :key="col.id"
-              class="compare-table__td"
-            >
-              <template v-if="typeof row.values[col.id] === 'boolean'">
-                <span :class="['material-symbols-outlined', row.values[col.id] ? 'icon--check' : 'icon--remove']">
-                  {{ row.values[col.id] ? 'check' : 'remove' }}
-                </span>
-              </template>
-              <span v-else class="compare-table__value">{{ row.values[col.id] }}</span>
+            <td v-for="col in planColumns" :key="col.id" class="compare-table__td">
+              <span class="compare-table__value">{{ row.values[col.id] }}</span>
             </td>
           </tr>
         </tbody>
@@ -51,59 +42,39 @@ const props = defineProps<{
 
 const open = ref(true)
 
-// ─── Cấu hình các tính năng cần so sánh ─────────────────────────────────────
-interface FeatureConfig {
-  key:    string
-  label:  string
-  format: (value: unknown) => string | boolean
-}
-
-const FEATURE_CONFIG: FeatureConfig[] = [
-  {
-    key:   'hot_job_quota',
-    label: 'Tin nổi bật',
-    format: (v) => {
-      const n = Number(v)
-      if (n === 0)    return false
-      if (n >= 999)   return 'Không giới hạn'
-      return `${n} tin`
-    },
-  },
-  {
-    key:   'cv_search_quota',
-    label: 'Tìm kiếm ứng viên',
-    format: (v) => {
-      const n = Number(v)
-      if (n === 0)    return false
-      if (n >= 999)   return 'Không giới hạn'
-      return `${n} lượt`
-    },
-  },
-  {
-    key:    'top_brand_badge',
-    label:  'Huy hiệu thương hiệu',
-    format: (v) => Boolean(v),
-  },
-  {
-    key:    'unlimited_post',
-    label:  'Đăng tin không giới hạn',
-    format: (v) => Boolean(v),
-  },
-]
-
 // ─── Cột (tên gói) ───────────────────────────────────────────────────────────
 const planColumns = computed(() =>
   props.packages.map(pkg => ({ id: String(pkg.id), name: pkg.name }))
 )
 
-// ─── Hàng (tính năng × giá trị theo từng gói) ───────────────────────────────
-const rows = computed(() =>
-  FEATURE_CONFIG.map(config => {
-    const values: Record<string, string | boolean> = {}
-    for (const pkg of props.packages) {
-      values[String(pkg.id)] = config.format(pkg.features?.[config.key])
+// ─── Thu thập tất cả service unique từ tất cả packages ───────────────────────
+const allServices = computed(() => {
+  const map = new Map<number, { id: number; name: string; unit: string | null }>()
+  for (const pkg of props.packages) {
+    for (const d of pkg.details) {
+      if (!map.has(d.serviceId)) {
+        map.set(d.serviceId, { id: d.serviceId, name: d.serviceName, unit: d.serviceUnit })
+      }
     }
-    return { label: config.label, values }
+  }
+  return Array.from(map.values())
+})
+
+// ─── Hàng (service × giá trị theo từng gói) ─────────────────────────────────
+const rows = computed(() =>
+  allServices.value.map(svc => {
+    const values: Record<string, string> = {}
+    for (const pkg of props.packages) {
+      const detail = pkg.details.find(d => d.serviceId === svc.id)
+      if (detail) {
+        const qty  = detail.quantity
+        const unit = svc.unit ?? 'lượt'
+        values[String(pkg.id)] = qty >= 999 ? 'Không giới hạn' : `${qty} ${unit}`
+      } else {
+        values[String(pkg.id)] = '–'
+      }
+    }
+    return { label: svc.name, values }
   })
 )
 </script>

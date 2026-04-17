@@ -100,19 +100,13 @@ const relatedPlans = computed(() => {
 const monthlyPlan = computed(() => relatedPlans.value.find(p => p.billingCycle === BillingCycle.MONTHLY))
 const yearlyPlan = computed(() => relatedPlans.value.find(p => p.billingCycle === BillingCycle.YEARLY))
 
-function mapFeatures(features: Record<string, unknown> | null) {
-  if (!features) return []
-  const result: string[] = []
-  if (features.hot_job_quota) result.push(`Đăng ${features.hot_job_quota} tin nổi bật mỗi tháng`)
-  if (features.cv_search_quota) result.push(`Lọc hồ sơ (${features.cv_search_quota} lượt)`)
-  if (features.top_brand_badge) result.push('Huy hiệu thương hiệu')
-  if (features.unlimited_post) result.push('Đăng tin không giới hạn')
-  return result
-}
-
 const featuresList = computed(() => {
   if (!basePackage.value) return []
-  return mapFeatures(basePackage.value.features)
+  return basePackage.value.details.map(d => {
+    const qty  = d.quantity >= 999 ? 'Không giới hạn' : String(d.quantity)
+    const unit = d.serviceUnit ? ` ${d.serviceUnit}` : ''
+    return `${qty}${unit} ${d.serviceName}`.trim()
+  })
 })
 
 const selectedBillingMode = computed({

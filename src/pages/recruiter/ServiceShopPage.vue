@@ -72,11 +72,13 @@ const serviceGroups = computed(() => {
   }>()
 
   for (const pkg of store.activeAddonPackages) {
-    if (!map.has(pkg.groupCode)) {
-      map.set(pkg.groupCode, { id: pkg.groupCode, label: pkg.groupName, services: [] })
+    const key   = pkg.serviceCategory ?? 'OTHER'
+    const label = pkg.serviceCategoryName ?? 'Khác'
+    if (!map.has(key)) {
+      map.set(key, { id: key, label, services: [] })
     }
-    const visual = GROUP_VISUAL[pkg.groupCode] ?? DEFAULT_VISUAL
-    map.get(pkg.groupCode)!.services.push({
+    const visual = GROUP_VISUAL[key] ?? DEFAULT_VISUAL
+    map.get(key)!.services.push({
       id:        pkg.id,
       icon:      visual.icon,
       iconBg:    visual.iconBg,

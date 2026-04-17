@@ -61,41 +61,12 @@ function formatPrice(price: number): string {
   return price.toLocaleString('vi-VN') + ' đ'
 }
 
-function mapFeatures(features: Record<string, unknown> | null): { label: string; active: boolean }[] {
-  if (!features) return []
-  const result: { label: string; active: boolean }[] = []
-
-  const hotJob = features.hot_job_quota as number | undefined
-  if (hotJob !== undefined) {
-    result.push({
-      label:  hotJob === 0        ? 'Tin nổi bật'
-            : hotJob >= 999       ? 'Tin nổi bật không giới hạn'
-            :                       `${hotJob} tin nổi bật`,
-      active: hotJob > 0,
-    })
-  }
-
-  const cvSearch = features.cv_search_quota as number | undefined
-  if (cvSearch !== undefined) {
-    result.push({
-      label:  cvSearch === 0  ? 'Tìm kiếm ứng viên'
-            : cvSearch >= 999 ? 'Tìm kiếm ứng viên không giới hạn'
-            :                   `${cvSearch} lượt tìm kiếm ứng viên`,
-      active: cvSearch > 0,
-    })
-  }
-
-  const topBrand = features.top_brand_badge as boolean | undefined
-  if (topBrand !== undefined) {
-    result.push({ label: 'Huy hiệu thương hiệu', active: topBrand })
-  }
-
-  const unlimitedPost = features.unlimited_post as boolean | undefined
-  if (unlimitedPost !== undefined) {
-    result.push({ label: 'Đăng tin không giới hạn', active: unlimitedPost })
-  }
-
-  return result
+function mapDetails(details: import('@/types/serviceCatalog.types').ResServicePackageDetailDTO[]): { label: string; active: boolean }[] {
+  return details.map(d => {
+    const qty   = d.quantity >= 999 ? 'Không giới hạn' : String(d.quantity)
+    const unit  = d.serviceUnit ? ` ${d.serviceUnit}` : ''
+    return { label: `${qty}${unit} ${d.serviceName}`.trim(), active: true }
+  })
 }
 
 // ─── Raw packages theo billing cycle (dùng cho PricingTable) ────────────────
@@ -113,7 +84,7 @@ const filteredPlans = computed(() =>
     status:   'upgrade' as const, // TODO: so sánh với gói NTD đang dùng (ServicesPage)
     btnLabel: 'Chọn gói này',
     popular:  false,
-    features: mapFeatures(pkg.features),
+    features: mapDetails(pkg.details),
   }))
 )
 

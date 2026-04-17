@@ -91,7 +91,7 @@ async function handleCheckout() {
         store.cartItems.map(item =>
           store.createOrder({
             type: OrderType.ADDON,
-            packageId: item.addonPackageId,
+            packageId: item.addonServiceId,
             quantity: item.qty,
             paymentMethod: paymentMethodEnum,
           })
