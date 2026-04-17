@@ -26,7 +26,7 @@
             <select
               id="addon-category"
               v-model="form.category"
-              class="w-full px-4 py-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm outline-none transition-all shadow-sm appearance-none cursor-pointer focus:ring-4 focus:ring-[#963131]/10 focus:border-[#963131]"
+              class="w-full px-4 py-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm outline-none transition-all shadow-sm appearance-none bg-none cursor-pointer focus:ring-4 focus:ring-[#963131]/10 focus:border-[#963131]"
               @change="onCategoryChange"
             >
               <option value="">-- Tất cả danh mục --</option>
@@ -47,7 +47,7 @@
             <select
               id="addon-service"
               v-model="form.serviceId"
-              class="w-full px-4 py-3 border rounded-xl text-sm outline-none transition-all shadow-sm appearance-none cursor-pointer"
+              class="w-full px-4 py-3 border rounded-xl text-sm outline-none transition-all shadow-sm appearance-none bg-none cursor-pointer"
               :class="errors.serviceId
                 ? 'bg-white dark:bg-slate-900 border-red-400 focus:ring-4 focus:ring-red-400/10'
                 : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 focus:ring-4 focus:ring-[#963131]/10 focus:border-[#963131]'"

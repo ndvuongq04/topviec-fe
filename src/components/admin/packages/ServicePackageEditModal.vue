@@ -24,7 +24,7 @@
             <select
               id="edit-pkg-tier"
               v-model="form.tier"
-              class="w-full px-4 py-3 bg-white dark:bg-slate-900 border rounded-xl text-sm outline-none transition-all shadow-sm appearance-none cursor-pointer"
+              class="w-full px-4 py-3 bg-white dark:bg-slate-900 border rounded-xl text-sm outline-none transition-all shadow-sm appearance-none bg-none cursor-pointer"
               :class="errors.tier
                 ? 'border-red-400 focus:ring-4 focus:ring-red-400/10'
                 : 'border-slate-200 dark:border-slate-700 focus:ring-4 focus:ring-[#963131]/10 focus:border-[#963131]'"
@@ -52,7 +52,7 @@
             <select
               id="edit-pkg-billing"
               v-model="form.billingCycle"
-              class="w-full px-4 py-3 bg-white dark:bg-slate-900 border rounded-xl text-sm outline-none transition-all shadow-sm appearance-none cursor-pointer"
+              class="w-full px-4 py-3 bg-white dark:bg-slate-900 border rounded-xl text-sm outline-none transition-all shadow-sm appearance-none bg-none cursor-pointer"
               :class="errors.billingCycle
                 ? 'border-red-400 focus:ring-4 focus:ring-red-400/10'
                 : 'border-slate-200 dark:border-slate-700 focus:ring-4 focus:ring-[#963131]/10 focus:border-[#963131]'"
@@ -146,7 +146,7 @@
             <div class="relative flex-1">
               <select
                 v-model="detail.serviceId"
-                class="w-full px-3 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm outline-none focus:ring-4 focus:ring-[#963131]/10 focus:border-[#963131] transition-all appearance-none cursor-pointer"
+                class="w-full px-3 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm outline-none focus:ring-4 focus:ring-[#963131]/10 focus:border-[#963131] transition-all appearance-none bg-none cursor-pointer"
               >
                 <option :value="null">-- Chọn dịch vụ --</option>
                 <option v-for="svc in services" :key="svc.id" :value="svc.id">

@@ -27,7 +27,7 @@
           <div class="relative">
             <select
               v-model="form.category"
-              class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-800 focus:outline-none focus:border-[#963131] focus:ring-2 focus:ring-[#963131]/20 transition-all appearance-none cursor-pointer focus:bg-white"
+              class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-800 focus:outline-none focus:border-[#963131] focus:ring-2 focus:ring-[#963131]/20 transition-all appearance-none bg-none cursor-pointer focus:bg-white"
             >
               <option v-for="g in groups" :key="g.value" :value="g.value">{{ g.label }}</option>
             </select>

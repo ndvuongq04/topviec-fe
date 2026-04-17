@@ -100,12 +100,12 @@ const activeTab = ref('all')
 const dateFilter      = ref<string | undefined>(undefined)
 const failedOrPending = ref<boolean | undefined>(undefined)
 
-const tabs = [
+const tabs: { key: string; label: string; badge?: number }[] = [
   { key: 'all',     label: 'Tất cả' },
   { key: 'today',   label: 'Hôm nay' },
   { key: '7days',   label: '7 ngày qua' },
   { key: 'month',   label: 'Tháng này' },
-  { key: 'pending', label: 'Chờ xử lý', badge: 12 },
+  { key: 'pending', label: 'Chờ xử lý' },
   { key: 'failed',  label: 'Thất bại' },
 ]
 

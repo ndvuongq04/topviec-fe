@@ -5,7 +5,6 @@ import OrderDetailNav from '@/components/admin/orders/order-detail/OrderDetailNa
 import OrderInfoCard from '@/components/admin/orders/order-detail/OrderInfoCard.vue'
 import OrderServiceDetail from '@/components/admin/orders/order-detail/OrderServiceDetail.vue'
 import OrderPaymentTimeline from '@/components/admin/orders/order-detail/OrderPaymentTimeline.vue'
-import OrderInternalNote from '@/components/admin/orders/order-detail/OrderInternalNote.vue'
 import OrderStatusCard from '@/components/admin/orders/order-detail/OrderStatusCard.vue'
 import OrderCustomerCard from '@/components/admin/orders/order-detail/OrderCustomerCard.vue'
 import OrderActionCard from '@/components/admin/orders/order-detail/OrderActionCard.vue'
@@ -43,7 +42,6 @@ onMounted(() => {
           <OrderInfoCard :order="store.selectedOrder" />
           <OrderServiceDetail :order="store.selectedOrder" />
           <OrderPaymentTimeline :order="store.selectedOrder" />
-          <OrderInternalNote />
         </div>
 
         <!-- Right Column -->

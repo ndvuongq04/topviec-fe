@@ -1,22 +1,11 @@
 <script setup lang="ts">
 const emit = defineEmits<{
-  addNote: []
-  resendEmail: []
   refund: []
 }>()
 </script>
 
 <template>
   <div class="action-card">
-    <button class="btn-action btn-action--primary" @click="emit('addNote')">
-      <span class="material-symbols-outlined btn-icon">history_edu</span>
-      Ghi chú nội bộ
-    </button>
-    <button class="btn-action btn-action--outline" @click="emit('resendEmail')">
-      <span class="material-symbols-outlined btn-icon">forward_to_inbox</span>
-      Gửi lại email
-    </button>
-    <div class="action-divider"></div>
     <button class="btn-action btn-action--danger" @click="emit('refund')">
       <span class="material-symbols-outlined btn-icon">replay</span>
       Hoàn tiền

@@ -17,7 +17,7 @@ const breadcrumbs = computed(() => [
 
 <template>
   <div class="detail-nav">
-    <Breadcrumb :items="breadcrumbs" :hide-home="false" />
+    <Breadcrumb :items="breadcrumbs" :hide-home="true" />
     <div class="nav-right">
       <button class="btn-outline" @click="emit('exportInvoice')">XUẤT HÓA ĐƠN</button>
       <button class="btn-primary" @click="emit('printOrder')">IN ĐƠN HÀNG</button>

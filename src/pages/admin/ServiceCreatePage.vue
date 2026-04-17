@@ -41,7 +41,7 @@
             <select 
               v-model="filters.category"
               @change="handleSearch"
-              class="w-full bg-slate-50 border border-[#963131]/10 rounded-lg text-sm px-4 py-3 focus:ring-2 focus:ring-[#963131]/20 outline-none cursor-pointer text-slate-800 transition-all appearance-none"
+              class="w-full bg-slate-50 border border-[#963131]/10 rounded-lg text-sm px-4 py-3 focus:ring-2 focus:ring-[#963131]/20 outline-none cursor-pointer text-slate-800 transition-all appearance-none bg-none"
             >
               <option value="">Tất cả nhóm dịch vụ</option>
               <option v-for="g in serviceGroups" :key="g.value" :value="g.value">
