@@ -1,59 +1,11 @@
 <script setup lang="ts">
-import type { ResOrderDTO, ResOrderItemDTO, ResOrderItemFeature } from '@/types/order.types'
-import { ORDER_ITEM_TYPE_LABELS, BILLING_CYCLE_LABELS } from '@/constants/servicePackage.constants'
+import type { ResOrderDTO } from '@/types/order.types'
+import { ORDER_ITEM_TYPE_LABELS, BILLING_CYCLE_LABELS, OrderItemType } from '@/constants/servicePackage.constants'
 
 defineProps<{ order: ResOrderDTO }>()
 
 function formatCurrency(n: number): string {
   return n.toLocaleString('vi-VN') + ' đ'
-}
-
-// Nhãn tiếng Việt cho các feature key phổ biến
-const FEATURE_KEY_LABELS: Record<string, string> = {
-  hot_job_quota:          'Tin tuyển dụng HOT',
-  job_post_quota:         'Lượt đăng tin',
-  unlimited_post:         'Đăng tin không giới hạn',
-  cv_search_quota:        'Lượt tìm kiếm CV',
-  cv_unlock_quota:        'Lượt mở khoá CV',
-  top_brand_badge:        'Nhãn Top Brand',
-  priority_support:       'Hỗ trợ ưu tiên',
-  featured_employer:      'Nhà tuyển dụng nổi bật',
-  banner_display:         'Hiển thị banner',
-  job_refresh_quota:      'Lượt làm mới tin',
-  highlight_job_quota:    'Lượt làm nổi bật tin',
-  urgent_job_quota:       'Lượt đăng tin gấp',
-  employer_branding:      'Thương hiệu nhà tuyển dụng',
-  social_media_boost:     'Tăng cường mạng xã hội',
-}
-
-// Chuyển snake_case → Title Case nếu không có nhãn cụ thể
-function snakeToLabel(key: string): string {
-  return FEATURE_KEY_LABELS[key]
-    ?? key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
-}
-
-// Chuẩn hoá features về mảng { name, icon } bất kể BE trả về dạng nào
-function normalizeFeatures(features: ResOrderItemDTO['features']): ResOrderItemFeature[] {
-  if (!features) return []
-
-  if (Array.isArray(features)) {
-    return features.map(f =>
-      typeof f === 'string'
-        ? { name: f, icon: 'check_circle' }
-        : { icon: 'check_circle', ...f }
-    )
-  }
-
-  // Object dạng { key: value } — bỏ qua những giá trị false/null/0
-  return Object.entries(features)
-    .filter(([, v]) => v !== false && v !== null && v !== undefined && v !== 0)
-    .map(([k, v]) => {
-      const label = snakeToLabel(k)
-      const name  = (v === true || v === '')
-        ? label
-        : `${label}: ${v}`
-      return { name, icon: 'check_circle' }
-    })
 }
 </script>
 
@@ -106,19 +58,28 @@ function normalizeFeatures(features: ResOrderItemDTO['features']): ResOrderItemF
           </div>
         </div>
 
-        <!-- Features -->
-        <template v-if="normalizeFeatures(item.features).length">
-          <p class="features-title">Tính năng bao gồm</p>
+        <!-- Subscription: iterate details -->
+        <template v-if="item.itemType === OrderItemType.SUBSCRIPTION && item.details?.length">
+          <p class="features-title">Dịch vụ trong gói</p>
           <div class="features-grid">
-            <div
-              v-for="(feat, idx) in normalizeFeatures(item.features)"
-              :key="idx"
-              class="feature-item"
-            >
-              <span class="material-symbols-outlined feature-icon">
-                {{ feat.icon ?? 'check_circle' }}
+            <div v-for="d in item.details" :key="d.serviceId" class="feature-item">
+              <span class="material-symbols-outlined feature-icon">check_circle</span>
+              <span class="feature-text">
+                {{ d.serviceName }}: {{ d.quantity >= 999 ? 'Không giới hạn' : d.quantity }} {{ d.quantity < 999 ? (d.serviceUnit ?? 'lượt') : '' }}
               </span>
-              <span class="feature-text">{{ feat.name }}</span>
+            </div>
+          </div>
+        </template>
+
+        <!-- Addon: hiển thị tên addon + số lượng -->
+        <template v-else-if="item.itemType === OrderItemType.ADDON">
+          <p class="features-title">Chi tiết dịch vụ lẻ</p>
+          <div class="features-grid">
+            <div class="feature-item">
+              <span class="material-symbols-outlined feature-icon">check_circle</span>
+              <span class="feature-text">
+                {{ item.packageName ?? 'Dịch vụ lẻ' }} · {{ item.quantity }} lượt
+              </span>
             </div>
           </div>
         </template>
