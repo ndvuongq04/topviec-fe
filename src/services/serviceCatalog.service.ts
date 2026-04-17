@@ -1,4 +1,5 @@
-import api from '@/services/api'
+import axiosInstance from './axios'
+import type { RestResponse } from '@/types/common.types'
 import type {
     ReqServiceDTO,
     ResServiceDTO,
@@ -6,20 +7,26 @@ import type {
     AdminServiceQueryParams
 } from '@/types/serviceCatalog.types'
 
+const BASE_URL = '/admin/services'
+
 export const serviceCatalogService = {
-    getAllServices(params?: AdminServiceQueryParams) {
-        return api.get<ResServicePagination>('/admin/services', { params })
+    async getAllServices(params?: AdminServiceQueryParams) {
+        const res = await axiosInstance.get<RestResponse<ResServicePagination>>(BASE_URL, { params })
+        return res.data.data
     },
 
-    getServiceById(id: number) {
-        return api.get<ResServiceDTO>(`/admin/services/${id}`)
+    async getServiceById(id: number) {
+        const res = await axiosInstance.get<RestResponse<ResServiceDTO>>(`${BASE_URL}/${id}`)
+        return res.data.data
     },
 
-    createService(data: ReqServiceDTO) {
-        return api.post<ResServiceDTO>('/admin/services', data)
+    async createService(data: ReqServiceDTO) {
+        const res = await axiosInstance.post<RestResponse<ResServiceDTO>>(BASE_URL, data)
+        return res.data.data
     },
 
-    updateService(id: number, data: ReqServiceDTO) {
-        return api.put<ResServiceDTO>(`/admin/services/${id}`, data)
+    async updateService(id: number, data: ReqServiceDTO) {
+        const res = await axiosInstance.put<RestResponse<ResServiceDTO>>(`${BASE_URL}/${id}`, data)
+        return res.data.data
     }
 }

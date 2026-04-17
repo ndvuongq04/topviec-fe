@@ -5,6 +5,10 @@
       <p class="table-desc">Quản lý và điều chỉnh trạng thái các dịch vụ đang hiển thị.</p>
     </div>
 
+    <div v-if="$slots.filter" class="table-filter">
+      <slot name="filter"></slot>
+    </div>
+
     <div class="table-wrap">
       <table>
         <thead>
@@ -22,7 +26,7 @@
             :item="item"
             @toggle="$emit('toggle', item.id)"
             @edit="$emit('edit', item.id)"
-            @delete="$emit('delete', item.id)"
+            @view="$emit('view', item.id)"
           />
         </tbody>
       </table>
@@ -58,7 +62,7 @@ defineProps<{
 defineEmits<{
   toggle: [id: number]
   edit: [id: number]
-  delete: [id: number]
+  view: [id: number]
 }>()
 </script>
 
@@ -71,8 +75,10 @@ defineEmits<{
 }
 
 .table-header {
-  padding: 32px 40px 20px;
-  border-bottom: 1px solid rgba(228, 226, 220, 0.4);
+  padding: 32px 40px 16px;
+}
+.table-filter {
+  padding: 0 40px 20px;
 }
 .table-title {
   font-size: 18px;

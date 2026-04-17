@@ -1,5 +1,5 @@
 <template>
-  <tr class="table-row">
+  <tr class="table-row" :class="{ 'inactive-row': !item.active }">
     <td class="td col-name">
       <span class="service-name">{{ item.name }}</span>
     </td>
@@ -10,25 +10,30 @@
       </span>
     </td>
     <td class="td">
-      <label class="toggle-wrap" :title="item.active ? 'Tắt' : 'Bật'">
-        <input
-          type="checkbox"
-          class="sr-only"
-          :checked="item.active"
-          @change="$emit('toggle')"
-        />
-        <div class="toggle-track" :class="{ active: item.active }">
-          <div class="toggle-thumb" :class="{ active: item.active }"></div>
-        </div>
-      </label>
+      <div class="flex items-center gap-2.5">
+        <label class="toggle-wrap" :title="item.active ? 'Tắt' : 'Bật'">
+          <input
+            type="checkbox"
+            class="sr-only"
+            :checked="item.active"
+            @change="$emit('toggle')"
+          />
+          <div class="toggle-track" :class="{ active: item.active }">
+            <div class="toggle-thumb" :class="{ active: item.active }"></div>
+          </div>
+        </label>
+        <span class="text-sm font-bold" :class="item.active ? 'text-[#059669]' : 'text-slate-400'">
+          {{ item.active ? 'Đang bật' : 'Đã tắt' }}
+        </span>
+      </div>
     </td>
     <td class="td col-action">
       <div class="action-group">
         <button class="action-btn edit-btn" @click="$emit('edit')" title="Sửa">
           <span class="material-symbols-outlined">edit</span>
         </button>
-        <button class="action-btn delete-btn" @click="$emit('delete')" title="Xóa">
-          <span class="material-symbols-outlined">delete</span>
+        <button class="action-btn view-btn" @click="$emit('view')" title="Xem chi tiết">
+          <span class="material-symbols-outlined">visibility</span>
         </button>
       </div>
     </td>
@@ -40,13 +45,21 @@ defineProps<{
   item: { id: number; name: string; group: string; groupIcon: string; active: boolean }
 }>()
 
-defineEmits<{ toggle: []; edit: []; delete: [] }>()
+defineEmits<{ toggle: []; edit: []; view: [] }>()
 </script>
 
 <style scoped>
-.table-row { transition: background 0.15s; }
+.table-row { transition: all 0.2s; }
 .table-row:hover { background: #f8fafc; }
-.table-row:hover .action-group { opacity: 1; }
+
+.inactive-row {
+  opacity: 0.6;
+  background-color: #f8fafc;
+  filter: grayscale(0.5);
+}
+.inactive-row:hover {
+  opacity: 0.8;
+}
 
 .td { padding: 16px 24px; vertical-align: middle; }
 .col-name { padding-left: 40px; }
@@ -79,10 +92,10 @@ defineEmits<{ toggle: []; edit: []; delete: [] }>()
   width: 36px;
   height: 20px;
   border-radius: 99px;
-  background: #ddc0be;
+  background: #cbd5e1;
   transition: background 0.2s;
 }
-.toggle-track.active { background: #76191d; }
+.toggle-track.active { background: #059669; }
 
 .toggle-thumb {
   position: absolute;
@@ -103,8 +116,6 @@ defineEmits<{ toggle: []; edit: []; delete: [] }>()
   align-items: center;
   justify-content: flex-end;
   gap: 4px;
-  opacity: 0;
-  transition: opacity 0.15s;
 }
 .action-btn {
   padding: 6px;
@@ -121,6 +132,6 @@ defineEmits<{ toggle: []; edit: []; delete: [] }>()
 .edit-btn { color: #574240; }
 .edit-btn:hover { color: #76191d; background: rgba(118, 25, 29, 0.06); }
 
-.delete-btn { color: #574240; }
-.delete-btn:hover { color: #ba1a1a; background: rgba(186, 26, 26, 0.06); }
+.view-btn { color: #574240; }
+.view-btn:hover { color: #2563eb; background: rgba(37, 99, 235, 0.06); }
 </style>

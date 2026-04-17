@@ -15,8 +15,8 @@ export const useServiceCatalogStore = defineStore('serviceCatalog', () => {
         loading.value = true
         error.value = null
         try {
-            const { data } = await serviceCatalogService.getAllServices(params)
-            services.value = data.data
+            const data = await serviceCatalogService.getAllServices(params)
+            services.value = data.result
             meta.value = data.meta
         } catch (err: any) {
             error.value = err.response?.data?.message || 'Không thể tải danh sách dịch vụ'
@@ -30,7 +30,7 @@ export const useServiceCatalogStore = defineStore('serviceCatalog', () => {
         loading.value = true
         error.value = null
         try {
-            const { data } = await serviceCatalogService.getServiceById(id)
+            const data = await serviceCatalogService.getServiceById(id)
             currentService.value = data
             return data
         } catch (err: any) {
@@ -45,7 +45,7 @@ export const useServiceCatalogStore = defineStore('serviceCatalog', () => {
         loading.value = true
         error.value = null
         try {
-            const { data } = await serviceCatalogService.createService(payload)
+            const data = await serviceCatalogService.createService(payload)
             return data
         } catch (err: any) {
             error.value = err.response?.data?.message || 'Không thể tạo dịch vụ mới'
@@ -59,7 +59,7 @@ export const useServiceCatalogStore = defineStore('serviceCatalog', () => {
         loading.value = true
         error.value = null
         try {
-            const { data } = await serviceCatalogService.updateService(id, payload)
+            const data = await serviceCatalogService.updateService(id, payload)
             const index = services.value.findIndex(s => s.id === id)
             if (index !== -1) {
                 services.value[index] = data

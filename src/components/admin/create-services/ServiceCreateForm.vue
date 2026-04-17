@@ -23,6 +23,18 @@
           placeholder="Ví dụ: Tin khẩn cấp, Gia hạn tin 14 ngày..."
         />
       </div>
+
+      <!-- Mô tả dịch vụ -->
+      <div class="field-block">
+        <label class="field-label" for="service_desc">Mô tả</label>
+        <textarea
+          id="service_desc"
+          v-model="serviceDesc"
+          class="text-input"
+          rows="3"
+          placeholder="Nhập mô tả cho dịch vụ này..."
+        ></textarea>
+      </div>
     </div>
 
     <div class="form-footer">
@@ -41,14 +53,19 @@ defineProps<{
 }>()
 
 const emit = defineEmits<{
-  submit: [payload: { group: string; name: string }]
+  submit: [payload: { group: string; name: string; description: string }]
 }>()
 
 const selectedGroup = ref('JOB_POSTING')
 const serviceName = ref('')
+const serviceDesc = ref('')
 
 function handleSubmit() {
-  emit('submit', { group: selectedGroup.value, name: serviceName.value })
+  emit('submit', { 
+    group: selectedGroup.value, 
+    name: serviceName.value, 
+    description: serviceDesc.value 
+  })
 }
 </script>
 
@@ -87,6 +104,7 @@ function handleSubmit() {
   outline: none;
   transition: background 0.15s, box-shadow 0.15s, border-color 0.15s;
   font-family: inherit;
+  resize: vertical;
 }
 .text-input:focus {
   border-color: #963131;
