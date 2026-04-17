@@ -49,7 +49,16 @@
 
           <!-- Tính năng -->
           <td class="px-6 py-4">
-            <p class="text-sm text-slate-500 max-w-52 truncate">{{ featureSummary(pkg.features) }}</p>
+            <div v-if="pkg.details && pkg.details.length" class="flex flex-col gap-1">
+              <span
+                v-for="detail in pkg.details"
+                :key="detail.id"
+                class="text-xs text-slate-600 dark:text-slate-300 whitespace-nowrap"
+              >
+                {{ detail.serviceName }}: {{ detail.quantity }}<template v-if="detail.serviceUnit"> {{ detail.serviceUnit }}</template>
+              </span>
+            </div>
+            <span v-else class="text-sm text-slate-400">—</span>
           </td>
 
           <!-- Trạng thái -->
@@ -144,13 +153,4 @@ function formatPrice(price: number) {
   return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price)
 }
 
-function featureSummary(features: Record<string, unknown> | null): string {
-  if (!features) return '—'
-  const parts: string[] = []
-  if (features.unlimited_post)                                 parts.push('Đăng tin không giới hạn')
-  if (typeof features.hot_job_quota === 'number')              parts.push(`${features.hot_job_quota} tin nổi bật`)
-  if (typeof features.cv_search_quota === 'number')            parts.push(`${features.cv_search_quota} lượt xem CV`)
-  if (features.top_brand_badge)                                parts.push('Badge thương hiệu')
-  return parts.join(' • ') || '—'
-}
 </script>

@@ -16,7 +16,6 @@
 
       <!-- Tên gói & Chu kỳ -->
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
-        <!-- Tên gói (enum) -->
         <div>
           <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5" for="pkg-tier">
             Tên gói <span class="text-red-500">*</span>
@@ -45,7 +44,6 @@
           </p>
         </div>
 
-        <!-- Chu kỳ thanh toán -->
         <div>
           <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5" for="pkg-billing">
             Chu kỳ thanh toán <span class="text-red-500">*</span>
@@ -118,87 +116,69 @@
         </div>
       </div>
 
-      <!-- Features (hiện khi đã chọn tier) -->
-      <Transition name="fade-slide">
-        <div v-if="form.tier" class="rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
-          <div class="px-4 py-3 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700 flex items-center gap-2">
-            <span class="material-symbols-outlined text-[18px] text-slate-400">tune</span>
-            <span class="text-sm font-bold text-slate-700 dark:text-slate-300">Cấu hình tính năng</span>
+      <!-- Danh sách dịch vụ (details) -->
+      <div class="rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+        <div class="px-4 py-3 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="material-symbols-outlined text-[18px] text-slate-400">list_alt</span>
+            <span class="text-sm font-bold text-slate-700 dark:text-slate-300">Dịch vụ trong gói</span>
           </div>
-          <div class="p-5 space-y-4">
+          <button
+            type="button"
+            class="flex items-center gap-1 text-xs font-semibold text-[#963131] hover:text-[#7a2828] transition-colors"
+            @click="addDetail"
+          >
+            <span class="material-symbols-outlined text-[16px]">add</span>
+            Thêm dịch vụ
+          </button>
+        </div>
 
-            <!-- Số lượng: hot_job_quota & cv_search_quota -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5">
-                  Lượt tin nổi bật / tháng
-                </label>
-                <input
-                  v-model.number="form.features.hot_job_quota"
-                  type="number"
-                  min="0"
-                  class="w-full px-3 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:ring-4 focus:ring-[#963131]/10 focus:border-[#963131] outline-none transition-all"
-                />
-              </div>
-              <div>
-                <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5">
-                  Lượt xem CV / tháng
-                </label>
-                <input
-                  v-model.number="form.features.cv_search_quota"
-                  type="number"
-                  min="0"
-                  class="w-full px-3 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:ring-4 focus:ring-[#963131]/10 focus:border-[#963131] outline-none transition-all"
-                />
-              </div>
+        <div class="p-4 space-y-3">
+          <div v-if="form.details.length === 0" class="text-center py-6 text-slate-400 text-sm">
+            Chưa có dịch vụ nào. Nhấn "Thêm dịch vụ" để bắt đầu.
+          </div>
+
+          <div
+            v-for="(detail, idx) in form.details"
+            :key="idx"
+            class="flex items-center gap-3"
+          >
+            <!-- Dropdown chọn service -->
+            <div class="relative flex-1">
+              <select
+                v-model="detail.serviceId"
+                class="w-full px-3 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm outline-none focus:ring-4 focus:ring-[#963131]/10 focus:border-[#963131] transition-all appearance-none cursor-pointer"
+              >
+                <option :value="null">-- Chọn dịch vụ --</option>
+                <option v-for="svc in services" :key="svc.id" :value="svc.id">
+                  {{ svc.name }}<template v-if="svc.unit"> ({{ svc.unit }})</template>
+                </option>
+              </select>
+              <span class="material-symbols-outlined absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none text-[18px]">
+                expand_more
+              </span>
             </div>
 
-            <!-- Toggles: top_brand_badge & unlimited_post -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <label class="flex items-center justify-between p-3 rounded-lg border border-slate-200 dark:border-slate-700 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                <div>
-                  <p class="text-sm font-semibold text-slate-700 dark:text-slate-300">Badge thương hiệu nổi bật</p>
-                  <p class="text-xs text-slate-400 mt-0.5">Hiển thị badge Premium trên tin đăng</p>
-                </div>
-                <button
-                  type="button"
-                  role="switch"
-                  :aria-checked="form.features.top_brand_badge"
-                  class="relative w-10 h-5.5 rounded-full transition-colors duration-200 shrink-0 focus:outline-none"
-                  :class="form.features.top_brand_badge ? 'bg-[#963131]' : 'bg-slate-200 dark:bg-slate-600'"
-                  @click="form.features.top_brand_badge = !form.features.top_brand_badge"
-                >
-                  <span
-                    class="absolute top-0.5 left-0.5 size-4.5 bg-white rounded-full shadow transition-transform duration-200"
-                    :class="form.features.top_brand_badge ? 'translate-x-4.5' : 'translate-x-0'"
-                  />
-                </button>
-              </label>
+            <!-- Số lượng -->
+            <input
+              v-model.number="detail.quantity"
+              type="number"
+              min="1"
+              placeholder="SL"
+              class="w-24 px-3 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm outline-none focus:ring-4 focus:ring-[#963131]/10 focus:border-[#963131] transition-all"
+            />
 
-              <label class="flex items-center justify-between p-3 rounded-lg border border-slate-200 dark:border-slate-700 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                <div>
-                  <p class="text-sm font-semibold text-slate-700 dark:text-slate-300">Đăng tin không giới hạn</p>
-                  <p class="text-xs text-slate-400 mt-0.5">Không giới hạn số lượng tin tuyển dụng</p>
-                </div>
-                <button
-                  type="button"
-                  role="switch"
-                  :aria-checked="form.features.unlimited_post"
-                  class="relative w-10 h-5.5 rounded-full transition-colors duration-200 shrink-0 focus:outline-none"
-                  :class="form.features.unlimited_post ? 'bg-[#963131]' : 'bg-slate-200 dark:bg-slate-600'"
-                  @click="form.features.unlimited_post = !form.features.unlimited_post"
-                >
-                  <span
-                    class="absolute top-0.5 left-0.5 size-4.5 bg-white rounded-full shadow transition-transform duration-200"
-                    :class="form.features.unlimited_post ? 'translate-x-4.5' : 'translate-x-0'"
-                  />
-                </button>
-              </label>
-            </div>
-
+            <!-- Xóa row -->
+            <button
+              type="button"
+              class="p-1.5 text-slate-400 hover:text-red-500 transition-colors shrink-0"
+              @click="removeDetail(idx)"
+            >
+              <span class="material-symbols-outlined text-[18px]">delete</span>
+            </button>
           </div>
         </div>
-      </Transition>
+      </div>
 
       <!-- Thứ tự & Trạng thái -->
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
@@ -265,18 +245,18 @@ import {
   BILLING_CYCLE_LABELS,
   ServicePackageTier,
   SERVICE_PACKAGE_TIER_LABELS,
-  SERVICE_PACKAGE_DEFAULT_FEATURES,
-  type ServicePackageFeatures,
 } from '@/constants/servicePackage.constants'
-import type { ReqServicePackageDTO } from '@/types/servicePackage.types'
+import type { ReqServicePackageDTO, ReqServicePackageDetailItem } from '@/types/servicePackage.types'
+import type { ResServiceDTO } from '@/types/serviceCatalog.types'
 
 const props = defineProps<{
-  visible: boolean
+  visible:     boolean
   submitting?: boolean
+  services:    ResServiceDTO[]
 }>()
 
 const emit = defineEmits<{
-  close: []
+  close:  []
   submit: [payload: ReqServicePackageDTO]
 }>()
 
@@ -290,24 +270,20 @@ const billingCycleOptions = Object.values(BillingCycle).map(v => ({
   label: BILLING_CYCLE_LABELS[v],
 }))
 
-// ─── Mã gói tự động ──────────────────────────────────────────────────────────
 const computedCode = computed(() =>
   form.tier && form.billingCycle ? `${form.tier}_${form.billingCycle}` : ''
 )
 
-// ─── Form state ──────────────────────────────────────────────────────────────
-const DEFAULT_FEATURES: ServicePackageFeatures = {
-  hot_job_quota:   0,
-  cv_search_quota: 0,
-  top_brand_badge: false,
-  unlimited_post:  false,
+interface DetailRow {
+  serviceId: number | null
+  quantity:  number
 }
 
 const form = reactive({
   tier:         '' as ServicePackageTier | '',
   billingCycle: '' as BillingCycle | '',
   price:        null as number | null,
-  features:     { ...DEFAULT_FEATURES } as ServicePackageFeatures,
+  details:      [] as DetailRow[],
   description:  '',
   isActive:     true,
   sortOrder:    null as number | null,
@@ -319,14 +295,14 @@ const errors = reactive({
   price:        '',
 })
 
-// Khi chọn tier → load default features
-watch(() => form.tier, (tier) => {
-  if (tier) {
-    Object.assign(form.features, SERVICE_PACKAGE_DEFAULT_FEATURES[tier])
-  }
-})
+function addDetail() {
+  form.details.push({ serviceId: null, quantity: 1 })
+}
 
-// ─── Reset ───────────────────────────────────────────────────────────────────
+function removeDetail(idx: number) {
+  form.details.splice(idx, 1)
+}
+
 function resetForm() {
   form.tier         = ''
   form.billingCycle = ''
@@ -334,7 +310,7 @@ function resetForm() {
   form.description  = ''
   form.isActive     = true
   form.sortOrder    = null
-  Object.assign(form.features, DEFAULT_FEATURES)
+  form.details      = []
   errors.tier         = ''
   errors.billingCycle = ''
   errors.price        = ''
@@ -344,7 +320,6 @@ watch(() => props.visible, (val) => {
   if (val) resetForm()
 })
 
-// ─── Validation ───────────────────────────────────────────────────────────────
 function validate(): boolean {
   errors.tier         = ''
   errors.billingCycle = ''
@@ -373,16 +348,19 @@ function validate(): boolean {
   return valid
 }
 
-// ─── Submit ───────────────────────────────────────────────────────────────────
 function handleSubmit() {
   if (!validate()) return
+
+  const details: ReqServicePackageDetailItem[] = form.details
+    .filter(d => d.serviceId !== null)
+    .map(d => ({ serviceId: d.serviceId as number, quantity: d.quantity }))
 
   const payload: ReqServicePackageDTO = {
     name:         SERVICE_PACKAGE_TIER_LABELS[form.tier as ServicePackageTier],
     code:         computedCode.value,
     billingCycle: form.billingCycle as BillingCycle,
     price:        form.price as number,
-    features:     { ...form.features },
+    details:      details.length ? details : null,
     description:  form.description || null,
     isActive:     form.isActive,
     sortOrder:    form.sortOrder,

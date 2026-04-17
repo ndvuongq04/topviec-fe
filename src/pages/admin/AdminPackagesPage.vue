@@ -54,6 +54,7 @@
     <ServicePackageCreateModal
       :visible="showCreateModal"
       :submitting="creating"
+      :services="services"
       @close="showCreateModal = false"
       @submit="onCreateSubmit"
     />
@@ -63,6 +64,7 @@
       :visible="showEditModal"
       :submitting="editing"
       :package="selectedPackage"
+      :services="services"
       @close="showEditModal = false"
       @submit="onEditSubmit"
     />
@@ -79,7 +81,9 @@ import ServicePackageCreateModal from '@/components/admin/packages/ServicePackag
 import ServicePackageEditModal from '@/components/admin/packages/ServicePackageEditModal.vue'
 import { useServicePackageStore } from '@/stores/servicePackage.store'
 import { useToast } from '@/composables/useToast'
+import { serviceCatalogService } from '@/services/serviceCatalog.service'
 import type { ReqServicePackageDTO, ResServicePackageDTO } from '@/types/servicePackage.types'
+import type { ResServiceDTO } from '@/types/serviceCatalog.types'
 
 const store = useServicePackageStore()
 const toast = useToast()
@@ -92,6 +96,7 @@ const selectedPackage = ref<ResServicePackageDTO | null>(null)
 const filterState     = ref({ search: '', status: '' })
 const fetchError      = ref<string | null>(null)
 const togglingId      = ref<number | null>(null)
+const services        = ref<ResServiceDTO[]>([])
 
 const filtered = computed(() => {
   const { search, status } = filterState.value
@@ -111,7 +116,19 @@ async function loadPackages() {
   if (store.error) fetchError.value = store.error
 }
 
-onMounted(loadPackages)
+async function loadServices() {
+  try {
+    const res = await serviceCatalogService.getAllServices({ size: 200 })
+    services.value = res.content ?? []
+  } catch {
+    // services list is non-critical, fail silently
+  }
+}
+
+onMounted(() => {
+  loadPackages()
+  loadServices()
+})
 
 const onFilter = (f: typeof filterState.value) => { filterState.value = f }
 
@@ -141,7 +158,7 @@ async function onToggle(pkg: ResServicePackageDTO) {
       code:         pkg.code,
       billingCycle: pkg.billingCycle,
       price:        pkg.price,
-      features:     pkg.features,
+      details:      (pkg.details ?? []).map(d => ({ serviceId: d.serviceId, quantity: d.quantity })),
       description:  pkg.description,
       isActive:     !pkg.isActive,
       sortOrder:    pkg.sortOrder,

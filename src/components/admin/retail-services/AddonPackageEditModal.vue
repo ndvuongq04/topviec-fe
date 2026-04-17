@@ -7,114 +7,137 @@
     confirm-text="Lưu thay đổi"
     loading-text="Đang lưu..."
     :loading="submitting"
-    form-id="edit-addon-package-form"
+    form-id="edit-addon-service-form"
     max-width="2xl"
     variant="danger"
     @close="$emit('close')"
   >
-    <form id="edit-addon-package-form" class="space-y-6" @submit.prevent="handleSubmit">
+    <form id="edit-addon-service-form" class="space-y-6" @submit.prevent="handleSubmit">
 
-      <!-- Nhóm dịch vụ & Tên dịch vụ -->
+      <!-- Danh mục & Dịch vụ cơ sở -->
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
 
-        <!-- Nhóm dịch vụ -->
+        <!-- Danh mục (filter, tùy chọn) -->
         <div>
-          <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5" for="edit-addon-group">
-            Nhóm dịch vụ <span class="text-red-500">*</span>
+          <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5" for="edit-addon-category">
+            Danh mục
           </label>
           <div class="relative">
             <select
-              id="edit-addon-group"
-              v-model="form.groupCode"
-              class="w-full px-4 py-3 bg-white dark:bg-slate-900 border rounded-xl text-sm outline-none transition-all shadow-sm appearance-none cursor-pointer"
-              :class="errors.groupCode
-                ? 'border-red-400 focus:ring-4 focus:ring-red-400/10'
-                : 'border-slate-200 dark:border-slate-700 focus:ring-4 focus:ring-[#963131]/10 focus:border-[#963131]'"
-              @change="onGroupChange"
+              id="edit-addon-category"
+              v-model="form.category"
+              class="w-full px-4 py-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm outline-none transition-all shadow-sm appearance-none cursor-pointer focus:ring-4 focus:ring-[#963131]/10 focus:border-[#963131]"
+              @change="onCategoryChange"
             >
-              <option value="">-- Chọn nhóm dịch vụ --</option>
-              <!-- Fallback: nếu groupCode từ API không có trong enum, vẫn hiện đúng tên nhóm -->
-              <option
-                v-if="form.groupCode && !groupOptions.find(o => o.value === form.groupCode)"
-                :value="form.groupCode"
-              >{{ form.groupName }}</option>
-              <option v-for="opt in groupOptions" :key="opt.value" :value="opt.value">
+              <option value="">-- Tất cả danh mục --</option>
+              <option v-for="opt in categoryOptions" :key="opt.value" :value="opt.value">
                 {{ opt.label }}
               </option>
             </select>
-            <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none text-[20px]">
-              expand_more
-            </span>
+            <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none text-[20px]">expand_more</span>
           </div>
-          <p v-if="errors.groupCode" class="mt-1.5 text-xs text-red-500 flex items-center gap-1">
-            <span class="material-symbols-outlined text-[14px]">error</span>
-            {{ errors.groupCode }}
-          </p>
         </div>
 
-        <!-- Tên dịch vụ (lọc theo nhóm) -->
+        <!-- Dịch vụ cơ sở (bắt buộc) -->
         <div>
-          <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5" for="edit-addon-name">
-            Tên dịch vụ <span class="text-red-500">*</span>
+          <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5" for="edit-addon-service">
+            Dịch vụ cơ sở <span class="text-red-500">*</span>
           </label>
           <div class="relative">
             <select
-              id="edit-addon-name"
-              v-model="form.selectedCode"
-              :disabled="!form.groupCode"
-              class="w-full px-4 py-3 border rounded-xl text-sm outline-none transition-all shadow-sm appearance-none"
-              :class="[
-                !form.groupCode
-                  ? 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-400 cursor-not-allowed'
-                  : errors.name
-                    ? 'bg-white dark:bg-slate-900 border-red-400 focus:ring-4 focus:ring-red-400/10 cursor-pointer'
-                    : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 focus:ring-4 focus:ring-[#963131]/10 focus:border-[#963131] cursor-pointer'
-              ]"
-              @change="onNameChange"
+              id="edit-addon-service"
+              v-model="form.serviceId"
+              class="w-full px-4 py-3 border rounded-xl text-sm outline-none transition-all shadow-sm appearance-none cursor-pointer"
+              :class="errors.serviceId
+                ? 'bg-white dark:bg-slate-900 border-red-400 focus:ring-4 focus:ring-red-400/10'
+                : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 focus:ring-4 focus:ring-[#963131]/10 focus:border-[#963131]'"
+              @change="errors.serviceId = ''"
             >
-              <option value="">{{ form.groupCode ? '-- Chọn tên dịch vụ --' : '-- Chọn nhóm trước --' }}</option>
-              <!-- Fallback: nếu code từ API không có trong ADDON_PACKAGE_OPTIONS, vẫn hiện đúng tên -->
+              <option :value="null">-- Chọn dịch vụ cơ sở --</option>
+              <!-- Fallback: nếu service của addon không nằm trong filteredServices do lọc danh mục -->
               <option
-                v-if="form.selectedCode && !filteredNameOptions.find(o => o.code === form.selectedCode)"
-                :value="form.selectedCode"
-              >{{ form.name }}</option>
-              <option v-for="opt in filteredNameOptions" :key="opt.code" :value="opt.code">
-                {{ opt.name }}
+                v-if="form.serviceId && !filteredServices.find(s => s.id === form.serviceId)"
+                :value="form.serviceId"
+              >{{ selectedService?.name ?? props.addon?.name ?? `Service #${form.serviceId}` }}</option>
+              <option v-for="svc in filteredServices" :key="svc.id" :value="svc.id">
+                {{ svc.name }}
               </option>
             </select>
-            <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none text-[20px]">
-              expand_more
-            </span>
+            <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none text-[20px]">expand_more</span>
           </div>
-          <p v-if="errors.name" class="mt-1.5 text-xs text-red-500 flex items-center gap-1">
+          <p v-if="errors.serviceId" class="mt-1.5 text-xs text-red-500 flex items-center gap-1">
             <span class="material-symbols-outlined text-[14px]">error</span>
-            {{ errors.name }}
+            {{ errors.serviceId }}
           </p>
         </div>
       </div>
 
-      <!-- Mã dịch vụ (disabled) -->
-      <div>
-        <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5" for="edit-addon-code">
-          Mã dịch vụ
-        </label>
-        <div class="relative">
-          <input
-            id="edit-addon-code"
-            :value="form.code"
-            type="text"
-            disabled
-            class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-mono text-slate-500 dark:text-slate-400 cursor-not-allowed shadow-sm"
-            placeholder="Tự động điền từ tên dịch vụ"
-          />
-          <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-slate-300 text-[18px]">
-            lock
-          </span>
+      <!-- Tên & Mã (auto-fill từ dịch vụ cơ sở, disabled) -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+
+        <!-- Tên dịch vụ lẻ -->
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5" for="edit-addon-name">
+            Tên dịch vụ lẻ
+          </label>
+          <div class="relative">
+            <input
+              id="edit-addon-name"
+              :value="selectedService?.name ?? props.addon?.name ?? ''"
+              type="text"
+              disabled
+              placeholder="Tự động điền từ dịch vụ cơ sở"
+              class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-500 dark:text-slate-400 cursor-not-allowed shadow-sm"
+            />
+            <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-slate-300 text-[18px]">lock</span>
+          </div>
+        </div>
+
+        <!-- Mã dịch vụ lẻ -->
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5" for="edit-addon-code">
+            Mã dịch vụ lẻ
+          </label>
+          <div class="relative">
+            <input
+              id="edit-addon-code"
+              :value="selectedService?.code ?? props.addon?.code ?? ''"
+              type="text"
+              disabled
+              placeholder="Tự động điền từ dịch vụ cơ sở"
+              class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-mono text-slate-500 dark:text-slate-400 cursor-not-allowed shadow-sm"
+            />
+            <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-slate-300 text-[18px]">lock</span>
+          </div>
         </div>
       </div>
 
-      <!-- Giá & Thời hạn -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+      <!-- Số lượng, Giá, Thời hạn -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-5">
+
+        <!-- Số lượng -->
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5" for="edit-addon-quantity">
+            Số lượng <span class="text-red-500">*</span>
+          </label>
+          <input
+            id="edit-addon-quantity"
+            v-model.number="form.quantity"
+            type="number"
+            min="1"
+            placeholder="VD: 1"
+            class="w-full px-4 py-3 bg-white dark:bg-slate-900 border rounded-xl text-sm outline-none transition-all shadow-sm"
+            :class="errors.quantity
+              ? 'border-red-400 focus:ring-4 focus:ring-red-400/10'
+              : 'border-slate-200 dark:border-slate-700 focus:ring-4 focus:ring-[#963131]/10 focus:border-[#963131]'"
+            @input="errors.quantity = ''"
+          />
+          <p v-if="errors.quantity" class="mt-1.5 text-xs text-red-500 flex items-center gap-1">
+            <span class="material-symbols-outlined text-[14px]">error</span>
+            {{ errors.quantity }}
+          </p>
+        </div>
+
         <!-- Giá -->
         <div>
           <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5" for="edit-addon-price">
@@ -130,6 +153,7 @@
             :class="errors.price
               ? 'border-red-400 focus:ring-4 focus:ring-red-400/10'
               : 'border-slate-200 dark:border-slate-700 focus:ring-4 focus:ring-[#963131]/10 focus:border-[#963131]'"
+            @input="errors.price = ''"
           />
           <p v-if="errors.price" class="mt-1.5 text-xs text-red-500 flex items-center gap-1">
             <span class="material-symbols-outlined text-[14px]">error</span>
@@ -137,7 +161,7 @@
           </p>
         </div>
 
-        <!-- Thời hạn (ngày) -->
+        <!-- Thời hạn -->
         <div>
           <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5" for="edit-addon-duration">
             Thời hạn (ngày)
@@ -198,41 +222,43 @@
 <script setup lang="ts">
 import { reactive, computed, watch } from 'vue'
 import GlobalModal from '@/components/ui/GlobalModal.vue'
-import {
-  AddonPackageGroup,
-  ADDON_PACKAGE_GROUP_LABELS,
-  ADDON_PACKAGE_OPTIONS,
-} from '@/constants/servicePackage.constants'
-import type { ResAddonPackageDTO, ReqAddonPackageDTO } from '@/types/servicePackage.types'
+import { ServiceCategory, SERVICE_CATEGORY_LABELS } from '@/constants/serviceCatalog.constants'
+import type { ResServiceDTO, ResAddonServiceDTO, ReqAddonServiceDTO } from '@/types/serviceCatalog.types'
 
 const props = defineProps<{
-  visible:    boolean
+  visible:     boolean
   submitting?: boolean
-  addon:      ResAddonPackageDTO | null
+  addon:       ResAddonServiceDTO | null
+  services:    ResServiceDTO[]
 }>()
 
 const emit = defineEmits<{
   close:  []
-  submit: [id: number, payload: ReqAddonPackageDTO]
+  submit: [id: number, payload: ReqAddonServiceDTO]
 }>()
 
 // ─── Options ──────────────────────────────────────────────────────────────────
-const groupOptions = Object.values(AddonPackageGroup).map(v => ({
+const categoryOptions = Object.values(ServiceCategory).map(v => ({
   value: v,
-  label: ADDON_PACKAGE_GROUP_LABELS[v],
+  label: SERVICE_CATEGORY_LABELS[v],
 }))
 
-const filteredNameOptions = computed(() =>
-  ADDON_PACKAGE_OPTIONS.filter(o => o.groupCode === form.groupCode)
+const filteredServices = computed(() =>
+  form.category
+    ? props.services.filter(s => s.category === form.category && s.isActive)
+    : props.services.filter(s => s.isActive)
+)
+
+// Dịch vụ cơ sở đang được chọn → auto-fill tên và mã
+const selectedService = computed(() =>
+  props.services.find(s => s.id === form.serviceId) ?? null
 )
 
 // ─── Form state ───────────────────────────────────────────────────────────────
 const form = reactive({
-  groupCode:    '' as AddonPackageGroup | '',
-  groupName:    '',   // label fallback khi groupCode không có trong enum
-  selectedCode: '',
-  name:         '',
-  code:         '',
+  category:     '' as ServiceCategory | '',
+  serviceId:    null as number | null,
+  quantity:     null as number | null,
   price:        null as number | null,
   durationDays: null as number | null,
   description:  '',
@@ -240,69 +266,51 @@ const form = reactive({
 })
 
 const errors = reactive({
-  groupCode: '',
-  name:      '',
+  serviceId: '',
+  quantity:  '',
   price:     '',
 })
 
-// ─── Khi đổi nhóm → reset tên ────────────────────────────────────────────────
-function onGroupChange() {
-  form.selectedCode = ''
-  form.name         = ''
-  form.code         = ''
-  errors.groupCode  = ''
-  errors.name       = ''
+// ─── Khi đổi danh mục → reset service đã chọn ────────────────────────────────
+function onCategoryChange() {
+  form.serviceId   = null
+  errors.serviceId = ''
 }
 
-// ─── Khi chọn tên → auto-fill code ───────────────────────────────────────────
-function onNameChange() {
-  const opt = ADDON_PACKAGE_OPTIONS.find(o => o.code === form.selectedCode)
-  if (opt) {
-    form.name = opt.name
-    form.code = opt.code
-  } else {
-    form.name = ''
-    form.code = ''
-  }
-  errors.name = ''
-}
-
-// ─── Populate form mỗi lần modal mở ─────────────────────────────────────────
-// Watch cả [visible, addon] để đảm bảo data luôn đúng khi mở,
-// kể cả khi visible đã true mà addon thay đổi, hoặc ngược lại.
+// ─── Populate form mỗi lần addon thay đổi hoặc modal mở ─────────────────────
 watch(
   [() => props.visible, () => props.addon],
   ([visible, addon]) => {
     if (!visible || !addon) return
-    const a           = addon as NonNullable<typeof props.addon>
-    form.groupCode    = a.groupCode as AddonPackageGroup
-    form.groupName    = a.groupName
-    form.selectedCode = a.code   // luôn set trực tiếp từ addon
-    form.name         = a.name
-    form.code         = a.code
-    form.price        = a.price
-    form.durationDays = a.durationDays ?? null
-    form.description  = a.description ?? ''
-    form.isActive     = a.isActive
-    errors.groupCode  = ''
-    errors.name       = ''
+    form.category     = addon.serviceCategory ?? ''
+    form.serviceId    = addon.serviceId
+    form.quantity     = addon.quantity
+    form.price        = addon.price
+    form.durationDays = addon.durationDays ?? null
+    form.description  = addon.description ?? ''
+    form.isActive     = addon.isActive
+    errors.serviceId  = ''
+    errors.quantity   = ''
     errors.price      = ''
   }
 )
 
 // ─── Validation ───────────────────────────────────────────────────────────────
 function validate(): boolean {
-  errors.groupCode = ''
-  errors.name      = ''
+  errors.serviceId = ''
+  errors.quantity  = ''
   errors.price     = ''
   let valid = true
 
-  if (!form.groupCode) {
-    errors.groupCode = 'Vui lòng chọn nhóm dịch vụ'
+  if (!form.serviceId || !selectedService.value) {
+    errors.serviceId = 'Vui lòng chọn dịch vụ cơ sở'
     valid = false
   }
-  if (!form.name || !form.code) {
-    errors.name = 'Vui lòng chọn tên dịch vụ'
+  if (form.quantity === null || form.quantity === undefined) {
+    errors.quantity = 'Số lượng không được để trống'
+    valid = false
+  } else if (form.quantity < 1) {
+    errors.quantity = 'Số lượng phải ít nhất là 1'
     valid = false
   }
   if (form.price === null || form.price === undefined) {
@@ -320,12 +328,14 @@ function validate(): boolean {
 function handleSubmit() {
   if (!validate() || !props.addon) return
 
-  const payload: ReqAddonPackageDTO = {
-    groupCode:    form.groupCode as AddonPackageGroup,
-    name:         form.name,
-    code:         form.code,
-    price:        form.price as number,
+  const svc = selectedService.value!
+  const payload: ReqAddonServiceDTO = {
+    serviceId:    svc.id,
+    name:         svc.name,
+    code:         svc.code,
+    quantity:     form.quantity as number,
     durationDays: form.durationDays || null,
+    price:        form.price as number,
     description:  form.description || null,
     isActive:     form.isActive,
   }
