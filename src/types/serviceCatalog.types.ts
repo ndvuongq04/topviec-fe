@@ -64,6 +64,14 @@ export interface ResAddonServiceDTO {
     updatedAt: string
 }
 
+export interface AdminAddonServiceQueryParams {
+    category?: ServiceCategory
+    keyword?:  string
+    page?:     number
+    size?:     number
+    sort?:     string
+}
+
 export interface ResServicePackageDetailDTO {
     id: number
     serviceId: number

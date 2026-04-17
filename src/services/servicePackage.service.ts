@@ -14,6 +14,11 @@ export const adminServicePackageService = {
         return res.data.data
     },
 
+    async getById(id: number): Promise<ResServicePackageDTO> {
+        const res = await axiosInstance.get<RestResponse<ResServicePackageDTO>>(`${BASE_URL}/${id}`)
+        return res.data.data
+    },
+
     async create(payload: ReqServicePackageDTO): Promise<ResServicePackageDTO> {
         const res = await axiosInstance.post<RestResponse<ResServicePackageDTO>>(BASE_URL, payload)
         return res.data.data

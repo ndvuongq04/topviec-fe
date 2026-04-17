@@ -5,6 +5,9 @@ import {
     JobPostAddonStatus,
 } from '@/constants/servicePackage.constants'
 import type { PaginationMeta, ResultPaginationDTO } from '@/types/common.types'
+import type { ResServicePackageDetailDTO, ServiceCategory } from '@/types/serviceCatalog.types'
+
+export type { ResServicePackageDetailDTO, ServiceCategory }
 
 export { AddonPackageGroup, BillingCycle, SubscriptionStatus, JobPostAddonStatus }
 export type { PaginationMeta, ResultPaginationDTO }
@@ -46,12 +49,17 @@ export interface AdminAddonPackageQueryParams {
 
 // ─── Service Package ─────────────────────────────────────────────────────────
 
+export interface ReqServicePackageDetailItem {
+    serviceId: number
+    quantity:  number
+}
+
 export interface ReqServicePackageDTO {
     name:         string
     code:         string
     billingCycle: BillingCycle
     price:        number
-    features:     Record<string, unknown> | null
+    details:      ReqServicePackageDetailItem[] | null
     description:  string | null
     isActive:     boolean | null
     sortOrder:    number | null
@@ -63,7 +71,7 @@ export interface ResServicePackageDTO {
     code:         string
     billingCycle: BillingCycle
     price:        number
-    features:     Record<string, unknown> | null
+    details:      ResServicePackageDetailDTO[]
     description:  string | null
     isActive:     boolean
     sortOrder:    number | null
@@ -74,9 +82,10 @@ export interface ResServicePackageDTO {
 export type ResServicePackagePagination = ResultPaginationDTO<ResServicePackageDTO>
 
 export interface AdminServicePackageQueryParams {
-    page?: number
-    size?: number
-    sort?: string
+    keyword?: string
+    page?:    number
+    size?:    number
+    sort?:    string
 }
 
 // ─── Employer Service Management ─────────────────────────────────────────────
@@ -88,6 +97,7 @@ export interface ReqApplyAddonDTO {
 export interface ResSubscriptionUsageDTO {
     id:                number
     featureCode:       string
+    featureName:       string | null
     quantityTotal:     number
     quantityRemaining: number
     resetAt:           string | null
@@ -107,25 +117,29 @@ export interface ResCompanySubscriptionDTO {
 }
 
 export interface ResCompanyAddonDTO {
-    id:                number
-    addonPackageId:    number
-    addonName:         string | null
-    addonCode:         string | null
-    groupCode:         AddonPackageGroup | null
-    groupName:         string | null
-    status:            SubscriptionStatus
-    quantityTotal:     number
-    quantityRemaining: number
-    startedAt:         string | null
-    expiredAt:         string | null
-    createdAt:         string
+    id:                  number
+    addonServiceId:      number
+    addonName:           string | null
+    addonCode:           string | null
+    addonQuantity:       number | null
+    serviceId:           number | null
+    serviceCode:         string | null
+    serviceName:         string | null
+    serviceCategory:     ServiceCategory | null
+    serviceCategoryName: string | null
+    status:              SubscriptionStatus
+    quantityTotal:       number
+    quantityRemaining:   number
+    startedAt:           string | null
+    expiredAt:           string | null
+    createdAt:           string
 }
 
 export interface ResJobPostAddonDTO {
     id:             number
     jobPostingId:   number
     companyAddonId: number
-    addonPackageId: number
+    addonServiceId: number
     addonName:      string | null
     status:         JobPostAddonStatus
     startedAt:      string | null

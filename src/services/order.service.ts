@@ -8,7 +8,8 @@ import type {
     EmployerOrderQueryParams,
     EmployerAddonPackageQueryParams,
 } from '@/types/order.types'
-import type { ResServicePackageDTO, ResAddonPackageDTO } from '@/types/servicePackage.types'
+import type { ResServicePackageDTO } from '@/types/servicePackage.types'
+import type { ResAddonServiceDTO } from '@/types/serviceCatalog.types'
 
 // ─── Admin Order ──────────────────────────────────────────────────────────────
 
@@ -67,8 +68,8 @@ export const employerPackageService = {
         return res.data.data
     },
 
-    async getActiveAddonPackages(params?: EmployerAddonPackageQueryParams): Promise<ResAddonPackageDTO[]> {
-        const res = await axiosInstance.get<RestResponse<ResAddonPackageDTO[]>>(`${EMPLOYER_PACKAGES_URL}/addons`, { params })
+    async getActiveAddonServices(params?: EmployerAddonPackageQueryParams): Promise<ResAddonServiceDTO[]> {
+        const res = await axiosInstance.get<RestResponse<ResAddonServiceDTO[]>>(`${EMPLOYER_PACKAGES_URL}/addons`, { params })
         return res.data.data
     },
 }

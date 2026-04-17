@@ -6,6 +6,9 @@ import {
 } from '@/constants/servicePackage.constants'
 import { BillingCycle } from '@/constants/servicePackage.constants'
 import type { PaginationMeta, ResultPaginationDTO } from '@/types/common.types'
+import type { ResServicePackageDetailDTO } from '@/types/serviceCatalog.types'
+
+export type { ResServicePackageDetailDTO }
 
 export { OrderItemType, OrderStatus, OrderType, PaymentMethod, BillingCycle }
 export type { PaginationMeta, ResultPaginationDTO }
@@ -25,24 +28,18 @@ export interface ReqUpdateOrderStatusDTO {
 
 // ─── Response DTOs ────────────────────────────────────────────────────────────
 
-export interface ResOrderItemFeature {
-    name:  string
-    icon?: string
-    value?: string | number
-}
-
 export interface ResOrderItemDTO {
     id:               number
     itemType:         OrderItemType
     servicePackageId: number | null
-    addonPackageId:   number | null
+    addonServiceId:   number | null
     quantity:         number
     unitPrice:        number
     totalPrice:       number
     billingCycle:     BillingCycle | null
     durationDays:     number | null
     packageName:      string | null
-    features:         ResOrderItemFeature[] | Record<string, unknown> | null
+    details:          ResServicePackageDetailDTO[] | null
 }
 
 export interface ResOrderCompanyInfo {
@@ -97,5 +94,5 @@ export interface EmployerOrderQueryParams {
 }
 
 export interface EmployerAddonPackageQueryParams {
-    groupCode?: string
+    category?: string
 }

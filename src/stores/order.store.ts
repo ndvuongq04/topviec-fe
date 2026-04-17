@@ -10,7 +10,8 @@ import type {
     EmployerOrderQueryParams,
     EmployerAddonPackageQueryParams,
 } from '@/types/order.types'
-import type { ResServicePackageDTO, ResAddonPackageDTO } from '@/types/servicePackage.types'
+import type { ResServicePackageDTO } from '@/types/servicePackage.types'
+import type { ResAddonServiceDTO } from '@/types/serviceCatalog.types'
 import { BillingCycle } from '@/constants/servicePackage.constants'
 
 export interface CartItem {
@@ -128,7 +129,7 @@ export const useEmployerOrderStore = defineStore('employerOrder', () => {
 
     // ─── Active packages (dùng khi tạo order) ────────────────────────────────
     const activeServicePackages = ref<ResServicePackageDTO[]>([])
-    const activeAddonPackages   = ref<ResAddonPackageDTO[]>([])
+    const activeAddonPackages   = ref<ResAddonServiceDTO[]>([])
 
     // ─── Cart & Checkout State ──────────────────────────────────────────────
     const cartItems       = ref<CartItem[]>([])
@@ -223,7 +224,7 @@ export const useEmployerOrderStore = defineStore('employerOrder', () => {
 
     async function fetchActiveAddonPackages(params?: EmployerAddonPackageQueryParams) {
         try {
-            activeAddonPackages.value = await employerPackageService.getActiveAddonPackages(params)
+            activeAddonPackages.value = await employerPackageService.getActiveAddonServices(params)
         } catch (err) {
             error.value = extractErrorMessage(err)
         }
