@@ -84,38 +84,38 @@ import ServiceTipCards from '@/components/admin/create-services/ServiceTipCards.
 import ServiceEditModal from '@/components/admin/create-services/ServiceEditModal.vue'
 import ServiceDetailModal from '@/components/admin/create-services/ServiceDetailModal.vue'
 import {
-  AddonPackageGroup,
-  ADDON_PACKAGE_GROUP_LABELS,
-  ADDON_GROUP_ICON_MAP
-} from '@/constants/servicePackage.constants'
+  ServiceCategory,
+  SERVICE_CATEGORY_LABELS,
+  SERVICE_CATEGORY_ICON_MAP,
+} from '@/constants/serviceCatalog.constants'
 import { useServiceCatalogStore } from '@/stores/serviceCatalog.store'
 import { useToast } from '@/composables/useToast'
-import type { ServiceCategory, ResServiceDTO, ReqServiceDTO } from '@/types/serviceCatalog.types'
+import type { ResServiceDTO, ReqServiceDTO } from '@/types/serviceCatalog.types'
 
 const serviceStore = useServiceCatalogStore()
 const toast = useToast()
 
 const serviceGroups = ref([
   {
-    value: AddonPackageGroup.JOB_POSTING,
-    icon: ADDON_GROUP_ICON_MAP[AddonPackageGroup.JOB_POSTING].icon,
-    label: ADDON_PACKAGE_GROUP_LABELS[AddonPackageGroup.JOB_POSTING]
+    value: ServiceCategory.JOB_POSTING,
+    icon:  SERVICE_CATEGORY_ICON_MAP[ServiceCategory.JOB_POSTING].icon,
+    label: SERVICE_CATEGORY_LABELS[ServiceCategory.JOB_POSTING],
   },
   {
-    value: AddonPackageGroup.CANDIDATE,
-    icon: ADDON_GROUP_ICON_MAP[AddonPackageGroup.CANDIDATE].icon,
-    label: ADDON_PACKAGE_GROUP_LABELS[AddonPackageGroup.CANDIDATE]
+    value: ServiceCategory.CANDIDATE,
+    icon:  SERVICE_CATEGORY_ICON_MAP[ServiceCategory.CANDIDATE].icon,
+    label: SERVICE_CATEGORY_LABELS[ServiceCategory.CANDIDATE],
   },
   {
-    value: AddonPackageGroup.BRANDING,
-    icon: ADDON_GROUP_ICON_MAP[AddonPackageGroup.BRANDING].icon,
-    label: ADDON_PACKAGE_GROUP_LABELS[AddonPackageGroup.BRANDING]
+    value: ServiceCategory.BRANDING,
+    icon:  SERVICE_CATEGORY_ICON_MAP[ServiceCategory.BRANDING].icon,
+    label: SERVICE_CATEGORY_LABELS[ServiceCategory.BRANDING],
   },
   {
-    value: AddonPackageGroup.ADDON_PACKAGE_GROUP,
-    icon: ADDON_GROUP_ICON_MAP[AddonPackageGroup.ADDON_PACKAGE_GROUP].icon,
-    label: ADDON_PACKAGE_GROUP_LABELS[AddonPackageGroup.ADDON_PACKAGE_GROUP]
-  }
+    value: ServiceCategory.OTHER,
+    icon:  SERVICE_CATEGORY_ICON_MAP[ServiceCategory.OTHER].icon,
+    label: SERVICE_CATEGORY_LABELS[ServiceCategory.OTHER],
+  },
 ])
 
 const filters = ref({

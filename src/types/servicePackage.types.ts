@@ -1,5 +1,4 @@
 import {
-    AddonPackageGroup,
     BillingCycle,
     SubscriptionStatus,
     JobPostAddonStatus,
@@ -9,13 +8,13 @@ import type { ResServicePackageDetailDTO, ServiceCategory } from '@/types/servic
 
 export type { ResServicePackageDetailDTO, ServiceCategory }
 
-export { AddonPackageGroup, BillingCycle, SubscriptionStatus, JobPostAddonStatus }
+export { BillingCycle, SubscriptionStatus, JobPostAddonStatus }
 export type { PaginationMeta, ResultPaginationDTO }
 
 // ─── Addon Package ───────────────────────────────────────────────────────────
 
 export interface ReqAddonPackageDTO {
-    groupCode:    AddonPackageGroup
+    groupCode:    string
     name:         string
     code:         string
     price:        number
@@ -26,7 +25,7 @@ export interface ReqAddonPackageDTO {
 
 export interface ResAddonPackageDTO {
     id:           number
-    groupCode:    AddonPackageGroup
+    groupCode:    string
     groupName:    string
     name:         string
     code:         string
@@ -41,7 +40,7 @@ export interface ResAddonPackageDTO {
 export type ResAddonPackagePagination = ResultPaginationDTO<ResAddonPackageDTO>
 
 export interface AdminAddonPackageQueryParams {
-    groupCode?: AddonPackageGroup
+    groupCode?: string
     page?:      number
     size?:      number
     sort?:      string

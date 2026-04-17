@@ -72,9 +72,9 @@
 import { ref, watch } from 'vue'
 import type { ResServiceDTO, ReqServiceDTO } from '@/types/serviceCatalog.types'
 import {
-  AddonPackageGroup,
-  ADDON_PACKAGE_GROUP_LABELS
-} from '@/constants/servicePackage.constants'
+  ServiceCategory,
+  SERVICE_CATEGORY_LABELS,
+} from '@/constants/serviceCatalog.constants'
 
 const props = defineProps<{
   visible: boolean
@@ -88,10 +88,10 @@ const emit = defineEmits<{
 }>()
 
 const groups = [
-  { value: AddonPackageGroup.JOB_POSTING, label: ADDON_PACKAGE_GROUP_LABELS[AddonPackageGroup.JOB_POSTING] },
-  { value: AddonPackageGroup.CANDIDATE, label: ADDON_PACKAGE_GROUP_LABELS[AddonPackageGroup.CANDIDATE] },
-  { value: AddonPackageGroup.BRANDING, label: ADDON_PACKAGE_GROUP_LABELS[AddonPackageGroup.BRANDING] },
-  { value: AddonPackageGroup.ADDON_PACKAGE_GROUP, label: ADDON_PACKAGE_GROUP_LABELS[AddonPackageGroup.ADDON_PACKAGE_GROUP] },
+  { value: ServiceCategory.JOB_POSTING, label: SERVICE_CATEGORY_LABELS[ServiceCategory.JOB_POSTING] },
+  { value: ServiceCategory.CANDIDATE,   label: SERVICE_CATEGORY_LABELS[ServiceCategory.CANDIDATE]   },
+  { value: ServiceCategory.BRANDING,    label: SERVICE_CATEGORY_LABELS[ServiceCategory.BRANDING]    },
+  { value: ServiceCategory.OTHER,       label: SERVICE_CATEGORY_LABELS[ServiceCategory.OTHER]       },
 ]
 
 const form = ref({

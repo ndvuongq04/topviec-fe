@@ -119,7 +119,7 @@ async function loadPackages() {
 async function loadServices() {
   try {
     const res = await serviceCatalogService.getAllServices({ size: 200 })
-    services.value = res.content ?? []
+    services.value = res.result ?? []
   } catch {
     // services list is non-critical, fail silently
   }

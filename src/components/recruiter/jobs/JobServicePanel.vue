@@ -91,7 +91,8 @@ import { computed, onMounted, ref } from 'vue'
 import dayjs from 'dayjs'
 import { useEmployerServiceManagementStore } from '@/stores/employerServiceManagement.store'
 import { useToast } from '@/composables/useToast'
-import { AddonPackageGroup, SubscriptionStatus } from '@/constants/servicePackage.constants'
+import { SubscriptionStatus } from '@/constants/servicePackage.constants'
+import { ServiceCategory } from '@/constants/serviceCatalog.constants'
 
 const props = defineProps<{ jobPostingId: number }>()
 
@@ -112,7 +113,7 @@ const ADDON_CODE_EMOJI: Record<string, string> = {
 
 // ─── Chỉ lấy addon thuộc nhóm JOB_POSTING ────────────────────────────────────
 const jobPostingAddons = computed(() =>
-    store.addons.filter(a => a.groupCode === AddonPackageGroup.JOB_POSTING),
+    store.addons.filter(a => a.serviceCategory === ServiceCategory.JOB_POSTING),
 )
 
 // Còn lượt: ACTIVE + quantityRemaining > 0 + chưa hết hạn

@@ -28,11 +28,17 @@ import ServiceQuotaGrid, { type QuotaItem } from '@/components/recruiter/service
 import ServiceActiveList, { type ActiveService } from '@/components/recruiter/services/ServiceActiveList.vue'
 import ServicePromoSection from '@/components/recruiter/services/ServicePromoSection.vue'
 import { useEmployerServiceManagementStore } from '@/stores/employerServiceManagement.store'
-import {
-    FEATURE_CODE_MAP,
-    ADDON_GROUP_ICON_MAP,
-    SubscriptionStatus,
-} from '@/constants/servicePackage.constants'
+import { SubscriptionStatus } from '@/constants/servicePackage.constants'
+import { SERVICE_CATEGORY_ICON_MAP } from '@/constants/serviceCatalog.constants'
+
+const FEATURE_CODE_ICON: Record<string, { icon: string; iconBg: string; iconColor: string }> = {
+    hot_job_quota:   { icon: 'campaign',      iconBg: '#eff6ff', iconColor: '#2563eb' },
+    cv_search_quota: { icon: 'person_search', iconBg: '#ecfdf5', iconColor: '#059669' },
+    top_brand_badge: { icon: 'verified',      iconBg: '#fdf4ff', iconColor: '#9333ea' },
+    unlimited_post:  { icon: 'work',          iconBg: '#fff7ed', iconColor: '#ea580c' },
+    cv_access_quota: { icon: 'lock_open',     iconBg: '#ecfdf5', iconColor: '#059669' },
+    extend_job:      { icon: 'event_repeat',  iconBg: '#eff6ff', iconColor: '#2563eb' },
+}
 
 const store = useEmployerServiceManagementStore()
 
@@ -40,10 +46,10 @@ const store = useEmployerServiceManagementStore()
 const quotaItems = computed<QuotaItem[]>(() => {
     const usages = store.subscription?.usages ?? []
     return usages.map(u => {
-        const meta      = FEATURE_CODE_MAP[u.featureCode]
+        const meta      = FEATURE_CODE_ICON[u.featureCode]
         const unlimited = u.quantityTotal === -1
         return {
-            label:     meta?.label     ?? u.featureCode,
+            label:     u.featureName   ?? u.featureCode,
             icon:      meta?.icon      ?? 'star',
             iconBg:    meta?.iconBg    ?? '#f1f5f9',
             iconColor: meta?.iconColor ?? '#64748b',
@@ -58,8 +64,8 @@ const quotaItems = computed<QuotaItem[]>(() => {
 // ─── Computed: map addons[] → ActiveService[] ─────────────────────────────────
 const activeAddonItems = computed<ActiveService[]>(() =>
     store.addons.map(addon => {
-        const iconMeta = addon.groupCode
-            ? ADDON_GROUP_ICON_MAP[addon.groupCode]
+        const iconMeta = addon.serviceCategory
+            ? SERVICE_CATEGORY_ICON_MAP[addon.serviceCategory]
             : null
 
         return {
