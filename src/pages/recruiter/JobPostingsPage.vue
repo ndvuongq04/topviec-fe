@@ -258,6 +258,7 @@ function mapToRow(job: ResJobPostingDetail): JobPostingRow {
     editCount:  job.editCount,
     isUrgent:   job.isUrgent,
     isFeatured: job.isFeatured,
+    isHot:      job.isHot,
   }
 }
 

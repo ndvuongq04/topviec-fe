@@ -3,25 +3,16 @@
     <!-- Job info -->
     <td class="td">
       <div class="job-info">
-        <span
-          v-if="job.isUrgent"
-          class="material-symbols-outlined job-info__icon"
-          style="font-variation-settings:'FILL' 1"
-        >new_releases</span>
-        <span
-          v-else-if="job.isFeatured"
-          class="material-symbols-outlined job-info__icon job-info__icon--star"
-          style="font-variation-settings:'FILL' 1"
-        >star</span>
-        <span v-else class="job-info__spacer" />
+        <span class="job-info__spacer" />
 
         <div>
           <div class="job-info__title-row">
             <h4 class="job-info__title" :class="{ 'job-info__title--draft': job.status === 'draft' }">
               {{ job.title }}
             </h4>
-            <span v-if="job.isUrgent"   class="badge badge--urgent">Gấp</span>
+            <span v-if="job.isUrgent" class="badge badge--urgent">TUYỂN GẤP</span>
             <span v-if="job.isFeatured" class="badge badge--featured">Nổi bật</span>
+            <span v-if="job.isHot" class="badge badge--hot">HOT</span>
           </div>
           <p class="job-info__meta">
             {{ job.status === 'draft' ? 'Lưu nháp' : 'Đăng ngày' }}: {{ job.postedAt }}
@@ -314,8 +305,9 @@ const statusLabel = computed(() => ({
 
 /* Badges */
 .badge { display: inline-flex; align-items: center; padding: 0.125rem 0.5rem; border-radius: 0.25rem; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; }
-.badge--urgent  { background: var(--color-error-light);   color: var(--color-error-text); }
-.badge--featured { background: var(--color-primary-light); color: var(--color-primary-text); }
+.badge--urgent  { background: #fef3c7; color: #b45309; border: 1.5px solid #f59e0b; border-radius: var(--radius-full); padding: 0.25rem 0.75rem; }
+.badge--featured { background: var(--color-primary-light); color: var(--color-primary-text); border: 1.5px solid #93c5fd; border-radius: var(--radius-full); padding: 0.25rem 0.75rem; }
+.badge--hot { background: #fee2e2; color: #b91c1c; border: 1.5px solid #fca5a5; border-radius: var(--radius-full); padding: 0.25rem 0.75rem; }
 
 /* Status chips */
 .status-chip { display: inline-flex; align-items: center; gap: 0.375rem; padding: 0.25rem 0.75rem; border-radius: var(--radius-full); font-size: 0.875rem; font-weight: 700; white-space: nowrap; }

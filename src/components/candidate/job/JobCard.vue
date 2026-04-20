@@ -17,6 +17,7 @@ interface JobCardProps {
   location: string;
   postedAt: string; // '2 days ago', 'Just now'...
   isHot?: boolean; // Badge "Hot"
+  isUrgent?: boolean; // Badge "TUYỂN GẤP"
   isSaved?: boolean; // Trạng thái đã lưu
   selectable?: boolean; // Hiển thị checkbox để chọn
   selected?: boolean; // Trạng thái checkbox
@@ -128,12 +129,18 @@ const emit = defineEmits<{
         </span>
       </div>
 
-      <!-- Hot badge hoặc posted time -->
+      <!-- Badge hoặc posted time -->
       <span
-        v-if="props.isHot"
-        class="text-sm text-primary bg-primary/10 px-2 py-0.5 rounded-full font-medium"
+        v-if="props.isUrgent"
+        class="text-xs font-extrabold uppercase tracking-wide text-amber-700 bg-amber-50 border border-amber-300 px-2.5 py-0.5 rounded-full"
       >
-        Hot
+         GẤP
+      </span>
+      <span
+        v-else-if="props.isHot"
+        class="text-xs font-extrabold uppercase tracking-wide text-red-700 bg-red-50 border border-red-300 px-2.5 py-0.5 rounded-full"
+      >
+        HOT
       </span>
       <span v-else class="text-sm text-slate-400">{{ props.postedAt }}</span>
     </div>

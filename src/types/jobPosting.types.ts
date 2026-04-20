@@ -42,6 +42,7 @@ export interface ReqCreateJobPostingDTO {
     skills?: ReqJobPostSkillDTO[]
     isFeatured?: boolean
     isUrgent?: boolean
+    isHot?: boolean
 }
 
 /** PUT /employer/job-postings/{id} — cùng cấu trúc với Create */
@@ -119,6 +120,7 @@ export interface ResJobPostingDetail {
     status: JobPostingStatus
     isFeatured: boolean
     isUrgent: boolean
+    isHot: boolean
     viewCount: number
     applicationCount: number
     editCount: number
@@ -145,6 +147,7 @@ export interface ResJobPostingSummary {
     salaryNegotiable: boolean
     isFeatured: boolean
     isUrgent: boolean
+    isHot: boolean
     viewCount: number
     applicationCount: number
     headcount: number
