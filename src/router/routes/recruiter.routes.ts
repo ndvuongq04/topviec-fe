@@ -132,6 +132,12 @@ export const recruiterRoutes: RouteRecordRaw[] = [
         name: 'recruiter-job-offers',
         component: () => import('@/pages/recruiter/OfferManagementPage.vue'),
       },
+      {
+        path: 'messages',
+        name: 'recruiter-messages',
+        component: () => import('@/pages/recruiter/MessagesPage.vue'),
+        meta: { fullPage: true },
+      },
     ],
   },
 ]
