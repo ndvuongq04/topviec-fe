@@ -112,9 +112,9 @@ const serviceGroups = ref([
     label: SERVICE_CATEGORY_LABELS[ServiceCategory.BRANDING],
   },
   {
-    value: ServiceCategory.OTHER,
-    icon:  SERVICE_CATEGORY_ICON_MAP[ServiceCategory.OTHER].icon,
-    label: SERVICE_CATEGORY_LABELS[ServiceCategory.OTHER],
+    value: ServiceCategory.ADDON_PACKAGE,
+    icon:  SERVICE_CATEGORY_ICON_MAP[ServiceCategory.ADDON_PACKAGE].icon,
+    label: SERVICE_CATEGORY_LABELS[ServiceCategory.ADDON_PACKAGE],
   },
 ])
 
@@ -163,19 +163,27 @@ function generateCode(name: string): string {
   return name.trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/Đ/g, "D").replace(/đ/g, "d").replace(/[^a-zA-Z0-9\s]/g, "").replace(/\s+/g, "_").toUpperCase()
 }
 
-async function handleSubmit(payload: { group: string; name: string; description: string }) {
+async function handleSubmit(payload: { group: string; name: string; description: string; code: string; unit: string }) {
   if (!payload.name.trim()) {
     toast.error('Lỗi', 'Vui lòng nhập tên dịch vụ')
+    return
+  }
+  if (!payload.code.trim()) {
+    toast.error('Lỗi', 'Vui lòng nhập mã code dịch vụ')
+    return
+  }
+  if (!payload.unit.trim()) {
+    toast.error('Lỗi', 'Vui lòng nhập đơn vị tính')
     return
   }
 
   isSubmitting.value = true
   try {
     const newService = await serviceStore.createService({
-      code: generateCode(payload.name),
+      code: payload.code,
       name: payload.name.trim(),
       category: payload.group as ServiceCategory,
-      unit: 'Theo lần',
+      unit: payload.unit.trim(),
       description: payload.description ? payload.description.trim() : null,
       isActive: true,
     })

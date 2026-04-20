@@ -91,7 +91,7 @@ const groups = [
   { value: ServiceCategory.JOB_POSTING, label: SERVICE_CATEGORY_LABELS[ServiceCategory.JOB_POSTING] },
   { value: ServiceCategory.CANDIDATE,   label: SERVICE_CATEGORY_LABELS[ServiceCategory.CANDIDATE]   },
   { value: ServiceCategory.BRANDING,    label: SERVICE_CATEGORY_LABELS[ServiceCategory.BRANDING]    },
-  { value: ServiceCategory.OTHER,       label: SERVICE_CATEGORY_LABELS[ServiceCategory.OTHER]       },
+  { value: ServiceCategory.ADDON_PACKAGE, label: SERVICE_CATEGORY_LABELS[ServiceCategory.ADDON_PACKAGE] },
 ]
 
 const form = ref({
