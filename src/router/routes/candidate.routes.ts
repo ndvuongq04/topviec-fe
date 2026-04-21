@@ -55,6 +55,12 @@ export const candidateRoutes: RouteRecordRaw[] = [
                 component: () => import('@/pages/candidate/InterviewDetailPage.vue'),
                 meta: { requiresAuth: true, role: 'CANDIDATE' },
             },
+            {
+                path: 'messages',
+                name: 'CandidateMessages',
+                component: () => import('@/pages/candidate/MessagingPage.vue'),
+                meta: { requiresAuth: true, role: 'CANDIDATE' },
+            },
         ],
     },
 ]

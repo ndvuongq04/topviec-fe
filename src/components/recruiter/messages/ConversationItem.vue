@@ -24,14 +24,26 @@ defineEmits(['click'])
 <style scoped>
 .conv-item {
   display: flex; align-items: flex-start; gap: 12px;
-  padding: 1rem;
+  padding: 0.875rem 1rem;
+  margin: 6px 8px;
   cursor: pointer;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 12px;
   border-left: 4px solid transparent;
-  border-bottom: 1px solid #e2e8f0;
-  transition: background 0.15s;
+  background: #fff;
+  transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
 }
-.conv-item:hover { background: #f1f4f9; }
-.conv-item--active { background: #e0f2fe; border-left-color: #4B9AF6; }
+.conv-item:hover {
+  background: #f8fafd;
+  border-color: #bfdbfe;
+  box-shadow: 0 2px 8px rgba(75,154,246,0.08);
+}
+.conv-item--active {
+  background: rgba(75,154,246,0.06);
+  border-color: #4B9AF6;
+  border-left-color: #4B9AF6;
+  box-shadow: 0 2px 12px rgba(75,154,246,0.12);
+}
 
 .conv-item__avatar-wrap { position: relative; flex-shrink: 0; }
 .conv-item__avatar { width: 48px; height: 48px; border-radius: 50%; object-fit: cover; }

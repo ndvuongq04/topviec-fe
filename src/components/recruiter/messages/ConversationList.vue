@@ -1,5 +1,8 @@
 <template>
   <div :class="['conv-list', fullWidth && 'conv-list--full']">
+    <div class="conv-list__header">
+      <h2 class="conv-list__title">Tin nhắn</h2>
+    </div>
     <div class="conv-list__search">
       <span class="material-symbols-outlined conv-list__search-icon">search</span>
       <input class="conv-list__search-input" placeholder="Tìm kiếm tin nhắn..." type="text" />
@@ -12,12 +15,18 @@
       >{{ tab.label }}</button>
     </div>
     <div class="conv-list__items">
-      <ConversationItem
-        v-for="c in filteredConversations" :key="c.id"
-        :conversation="c"
-        :active="c.id === activeId"
-        @click="$emit('select', c.id)"
-      />
+      <template v-if="filteredConversations.length > 0">
+        <ConversationItem
+          v-for="c in filteredConversations" :key="c.id"
+          :conversation="c"
+          :active="c.id === activeId"
+          @click="$emit('select', c.id)"
+        />
+      </template>
+      <div v-else class="conv-list__empty">
+        <span class="material-symbols-outlined conv-list__empty-icon">mark_chat_unread</span>
+        <p>Không có tin nhắn nào</p>
+      </div>
     </div>
   </div>
 </template>
@@ -98,6 +107,22 @@ const filteredConversations = computed(() => {
   font-weight: 600;
 }
 
+.conv-list__header {
+  padding: 1.25rem 1rem 0.5rem;
+}
+.conv-list__title {
+  font-size: 1.125rem; font-weight: 700; color: #0f172a; margin: 0;
+}
+
 .conv-list--full { width: 100%; }
 .conv-list__items { flex: 1; overflow-y: auto; }
+
+.conv-list__empty {
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; gap: 8px;
+  height: 100%; color: #94a3b8;
+  font-size: 0.875rem;
+}
+.conv-list__empty-icon { font-size: 2.5rem; opacity: 0.4; }
+.conv-list__empty p { margin: 0; }
 </style>

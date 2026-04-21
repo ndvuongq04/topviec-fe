@@ -59,13 +59,13 @@ const messages = ref([
   flex: 1;
   height: 100%;
   overflow: hidden;
-  background: #f6f6f8;
+  background: #f6f7f8;
 }
 .messages-page__chat {
   flex: 1;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  background: #f8fafd;
+  background: #f6f7f8;
 }
 </style>

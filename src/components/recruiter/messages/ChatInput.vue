@@ -4,6 +4,7 @@
       <button
         v-for="q in quickReplies" :key="q.label"
         :class="['quick-reply', q.primary && 'quick-reply--primary']"
+        @click="inputText = q.label"
       >{{ q.label }}</button>
     </div>
 
@@ -11,8 +12,14 @@
       <button class="chat-input__attach">
         <span class="material-symbols-outlined">attach_file</span>
       </button>
-      <input class="chat-input__field" placeholder="Nhập tin nhắn..." type="text" />
-      <button class="chat-input__send">
+      <input
+        v-model="inputText"
+        class="chat-input__field"
+        placeholder="Nhập tin nhắn..."
+        type="text"
+        @keydown.enter.exact.prevent="handleSend"
+      />
+      <button class="chat-input__send" @click="handleSend">
         <span class="material-symbols-outlined">send</span>
       </button>
     </div>
@@ -20,11 +27,22 @@
 </template>
 
 <script setup lang="ts">
+import { ref } from 'vue'
+
+const emit = defineEmits<{ send: [text: string] }>()
+const inputText = ref('')
+
 const quickReplies = [
   { label: 'Mời phỏng vấn', primary: true },
   { label: 'Yêu cầu thêm thông tin', primary: false },
   { label: 'Cảm ơn', primary: false },
 ]
+
+function handleSend() {
+  if (!inputText.value.trim()) return
+  emit('send', inputText.value)
+  inputText.value = ''
+}
 </script>
 
 <style scoped>

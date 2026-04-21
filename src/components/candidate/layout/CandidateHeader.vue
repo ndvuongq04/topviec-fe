@@ -217,6 +217,15 @@ async function handleLogout() {
                   <span class="material-symbols-outlined text-lg opacity-70">chat_bubble</span>
                   Lịch phỏng vấn
                 </router-link>
+
+                <router-link
+                  to="/messages"
+                  class="flex items-center gap-3 px-4 py-2 text-base text-text-main dark:text-gray-200 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer"
+                  @click="closeDropdown"
+                >
+                  <span class="material-symbols-outlined text-lg opacity-70">chat</span>
+                  Tin nhắn
+                </router-link>
               </div>
 
               <div class="h-px bg-slate-100 dark:bg-slate-800 mx-3" />
