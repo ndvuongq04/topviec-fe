@@ -52,11 +52,8 @@ async function handleLogout() {
     :class="props.unfixed ? 'relative z-50' : 'fixed top-0 left-0 right-0 z-50'"
   >
     <!-- Logo -->
-    <router-link to="/" class="flex items-center gap-2 text-primary">
-      <span class="material-symbols-outlined text-3xl">work_history</span>
-      <h2 class="text-text-main dark:text-white text-2xl font-bold leading-tight tracking-tight">
-        TopViec
-      </h2>
+    <router-link to="/" class="flex items-center">
+      <img src="@/assets/images/logo.png" alt="TopViec" class="h-14 w-auto object-contain" />
     </router-link>
 
     <!-- Right side -->
