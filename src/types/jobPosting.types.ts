@@ -97,6 +97,13 @@ export interface JobPostLevelDTO {
     name: string
 }
 
+export interface JobPostLocationDTO {
+    id: number
+    name: string
+    addressDetail?: string
+    isRemote?: boolean
+}
+
 
 // ─── Response DTOs ────────────────────────────────────────────────────────────
 
@@ -159,6 +166,7 @@ export interface ResJobPostingSummary {
     createdAt: string
     deletedAt?: string | null
     interviewRoundsCount: number
+    locations?: JobPostLocationDTO[]
 }
 
 
@@ -180,6 +188,7 @@ export interface JobPostingQueryParams {
     workType?: string
     isFeatured?: boolean
     isUrgent?: boolean
+    isHot?: boolean
     salaryMin?: number
     salaryMax?: number
     experienceYearsMin?: number

@@ -1,8 +1,9 @@
 <template>
   <div class="job-card" @click="$emit('click')">
     <!-- Logo -->
-    <div class="logo-wrap" :style="{ background: job.logoBg }">
-      <span class="logo-text" :style="{ color: job.logoTextColor }">{{ job.logoText }}</span>
+    <div class="logo-wrap" :style="{ background: job.logoUrl ? '#fff' : job.logoBg }">
+      <img v-if="job.logoUrl" :src="job.logoUrl" :alt="job.company" class="logo-img" />
+      <span v-else class="logo-text" :style="{ color: job.logoTextColor }">{{ job.logoText }}</span>
     </div>
 
     <!-- Info -->
@@ -10,15 +11,18 @@
       <h3 class="job-title">{{ job.title }}</h3>
 
       <div class="meta-row">
-        <span v-if="job.badge" class="badge-pro">{{ job.badge }}</span>
+        <span v-if="job.isUrgent" class="badge badge-urgent">GẤP</span>
+        <span v-else-if="job.isHot" class="badge badge-hot">HOT</span>
         <span class="company-name">{{ job.company }}</span>
       </div>
 
       <div class="tags-row">
         <span class="tag salary-tag">{{ job.salary }}</span>
-        <span class="tag location-tag">
-          {{ job.location }}<span v-if="job.isNew" class="new-dot"> (mới)</span>
+        <span v-if="job.location" class="tag location-tag">
+          <span class="material-symbols-outlined" style="font-size:13px;vertical-align:middle;">location_on</span>
+          {{ job.location }}
         </span>
+        <span v-if="job.isNew" class="tag new-tag">Mới</span>
       </div>
     </div>
   </div>
@@ -31,12 +35,14 @@ defineProps<{
     title: string
     company: string
     salary: string
-    location: string
-    badge: string
     logoBg: string
     logoText: string
     logoTextColor: string
+    logoUrl?: string
     isNew: boolean
+    isHot: boolean
+    isUrgent: boolean
+    location: string
   }
 }>()
 
@@ -72,6 +78,12 @@ defineEmits<{ click: [] }>()
   border: 1px solid rgba(192, 199, 212, 0.25);
   padding: 6px;
   box-sizing: border-box;
+  overflow: hidden;
+}
+.logo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 .logo-text {
   font-size: 0.75rem;
@@ -107,15 +119,24 @@ defineEmits<{ click: [] }>()
   gap: 6px;
   margin-bottom: 10px;
 }
-.badge-pro {
+.badge {
   font-size: 0.75rem;
-  font-weight: 700;
-  background: #fff7ed;
-  color: #ea580c;
-  border: 1px solid #fed7aa;
-  padding: 2px 6px;
+  font-weight: 800;
+  padding: 2px 8px;
   border-radius: 99px;
   flex-shrink: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.badge-urgent {
+  background: #fffbeb;
+  color: #b45309;
+  border: 1px solid #fcd34d;
+}
+.badge-hot {
+  background: #fff1f2;
+  color: #be123c;
+  border: 1px solid #fecdd3;
 }
 .company-name {
   font-size: 0.75rem;
@@ -147,9 +168,14 @@ defineEmits<{ click: [] }>()
 .location-tag {
   background: #e9edff;
   color: #404752;
+  border: 1px solid #c0c7d4;
+  max-width: 140px;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 140px;
 }
-.new-dot { color: #005ea4; }
+.new-tag {
+  background: #dcfce7;
+  color: #16a34a;
+  border: 1px solid #bbf7d0;
+}
 </style>

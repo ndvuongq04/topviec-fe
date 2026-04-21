@@ -10,7 +10,7 @@
       <span class="material-symbols-outlined">work</span>
       <span>{{ company.jobCount }} việc làm</span>
     </div>
-    <div class="brand-hero__pro-badge">Pro Company</div>
+    <div class="brand-hero__pro-badge">Top Company</div>
     <button class="brand-hero__follow-btn">
       <span class="material-symbols-outlined">add</span>
       Theo dõi

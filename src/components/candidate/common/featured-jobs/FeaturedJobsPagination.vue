@@ -1,16 +1,16 @@
 <template>
   <div class="pagination">
-    <button class="page-btn" :disabled="current <= 1" @click="$emit('prev')">
+    <button class="page-btn" :disabled="current === 0" @click="$emit('prev')">
       <span class="material-symbols-outlined">chevron_left</span>
     </button>
 
     <div class="page-info">
-      <span class="current-page">{{ current }}</span>
+      <span class="current-page">{{ current + 1 }}</span>
       <span class="sep">/</span>
       <span class="total-page">{{ total }} trang</span>
     </div>
 
-    <button class="page-btn" :disabled="current >= total" @click="$emit('next')">
+    <button class="page-btn" :disabled="current === total - 1" @click="$emit('next')">
       <span class="material-symbols-outlined">chevron_right</span>
     </button>
   </div>

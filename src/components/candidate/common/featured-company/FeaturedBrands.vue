@@ -4,11 +4,8 @@
     <FeaturedBrandsFilter v-model="activeCategory" :categories="categories" />
 
     <div class="featured-brands__body">
-      <div class="featured-brands__grid">
-        <FeaturedBrandHero :company="heroCompany" />
-        <div class="featured-brands__cards">
-          <FeaturedBrandCard v-for="c in companies" :key="c.id" :company="c" />
-        </div>
+      <div class="featured-brands__cards">
+        <FeaturedBrandCard v-for="c in store.companies" :key="c.id" :company="c" />
       </div>
 
       <div class="featured-brands__footer">
@@ -22,29 +19,27 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import FeaturedBrandsHeader from './FeaturedBrandsHeader.vue'
 import FeaturedBrandsFilter from './FeaturedBrandsFilter.vue'
-import FeaturedBrandHero from './FeaturedBrandHero.vue'
 import FeaturedBrandCard from './FeaturedBrandCard.vue'
+import { useCandidateCompanyStore } from '@/stores/candidateCompany.store'
+import { useIndustryStore } from '@/stores/industry.store'
+
+const store = useCandidateCompanyStore()
+const industryStore = useIndustryStore()
 
 const activeCategory = ref('Tất cả')
-const categories = ['Tất cả', 'Ngân hàng', 'Bất động sản', 'Xây dựng', 'IT - Phần mềm', 'Tài chính', 'Bán lẻ - Hàng tiêu dùng - FMCG', 'Sản xuất']
 
-const heroCompany = ref({
-  name: 'SHINHAN FINANCE',
-  industry: 'Tài chính',
-  jobCount: 19,
-})
-
-const companies = ref([
-  { id: 1, logoText: 'SOTRANS', logoSubText: 'GROUP', logoColor: '#dc2626', logoSubColor: '#1e40af', bgColor: '#fff', name: 'CÔNG TY CỔ PHẦN KHO VẬN MIỀN NAM - SOTRANS', industry: 'Logistics - Vận tải', jobCount: 20 },
-  { id: 2, logoText: 'PELIO', logoColor: '#2563eb', bgColor: '#fff', name: 'CÔNG TY CỔ PHẦN TẬP ĐOÀN PELIO', industry: 'Nhà hàng / Khách sạn', jobCount: 1 },
-  { id: 3, logoText: 'DAIKIN', logoColor: '#0891b2', bgColor: '#fff', name: 'CÔNG TY CỔ PHẦN DAIKIN AIR CONDITIONING...', industry: 'Điện tử / Điện lạnh', jobCount: 5 },
-  { id: 4, logoText: 'HC', logoColor: '#facc15', bgColor: '#1d4ed8', name: 'CÔNG TY TNHH THƯƠNG MẠI VHC', industry: 'Bán lẻ - Hàng tiêu dùng - FMCG', jobCount: 15 },
-  { id: 5, logoText: 'BEE', logoColor: '#f97316', bgColor: '#fff', name: 'CÔNG TY TNHH TRUYỀN THÔNG BEE', industry: 'Marketing / Truyền thông /...', jobCount: 7 },
-  { id: 6, logoText: 'Mondelez\nKinh Đô', logoColor: '#7c3aed', bgColor: '#fff', name: 'CÔNG TY CỔ PHẦN MONDELEZ KINH ĐÔ VIỆT...', industry: 'Sản xuất', jobCount: 3 },
+const categories = computed(() => [
+  'Tất cả',
+  ...industryStore.industries.map(i => i.name),
 ])
+
+onMounted(() => {
+  industryStore.fetchIndustries({ size: 100 })
+  store.fetchPublicCompanies({ isTopEmployer: true, size: 6, page: 0 })
+})
 </script>
 
 <style scoped>
@@ -56,19 +51,14 @@ const companies = ref([
   overflow: hidden;
 }
 .featured-brands__body { padding: 1.5rem; background: #fff; }
-.featured-brands__grid {
-  display: grid;
-  grid-template-columns: 1fr 2fr;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
-}
-@media (max-width: 1024px) { .featured-brands__grid { grid-template-columns: 1fr; } }
 
 .featured-brands__cards {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(3, 1fr);
   gap: 1rem;
+  margin-bottom: 1.5rem;
 }
+@media (max-width: 1024px) { .featured-brands__cards { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 640px) { .featured-brands__cards { grid-template-columns: 1fr; } }
 
 .featured-brands__footer { display: flex; justify-content: center; padding-bottom: 8px; margin-top: 1.5rem; }

@@ -18,136 +18,68 @@
       <FeaturedJobsPagination
         :current="currentPage"
         :total="totalPages"
-        @prev="currentPage > 1 && currentPage--"
-        @next="currentPage < totalPages && currentPage++"
+        @prev="loadPage(currentPage - 1)"
+        @next="loadPage(currentPage + 1)"
       />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { usePublicJobPostingStore } from '@/stores/publicJobPosting.store'
 import FeaturedJobsHeader from './FeaturedJobsHeader.vue'
 import FeaturedJobCard from './FeaturedJobCard.vue'
 import FeaturedJobsPagination from './FeaturedJobsPagination.vue'
 
-const currentPage = ref(11)
-const totalPages = ref(20)
+const PAGE_SIZE = 9
 
-const jobs = ref([
-  {
-    id: 1,
-    title: 'Chuyên Viên Kế Toán Công Nợ',
-    company: 'CÔNG TY TNHH THƯƠNG MẠI VHC',
-    salary: '10 - 12 triệu',
-    location: 'Hà Nội',
-    badge: 'Pro',
-    logoBg: '#1d4ed8',
-    logoText: 'HC',
-    logoTextColor: '#facc15',
-    isNew: false,
-  },
-  {
-    id: 2,
-    title: 'Chăm Sóc Khách Hàng Dự Án Sữa - Giờ Hành Chính - Làm Việc Tại Văn...',
-    company: 'CÔNG TY TNHH TRANSCOSMOS...',
-    salary: '8 - 10 triệu',
-    location: 'Hồ Chí Minh',
-    badge: 'Pro',
-    logoBg: '#fff',
-    logoText: 'transcosmos',
-    logoTextColor: '#1d4ed8',
-    isNew: true,
-  },
-  {
-    id: 3,
-    title: 'Nhân Viên Quan Hệ Khách Hàng Doanh Nghiệp (Tư Vấn Tài Chính)',
-    company: 'Chailease International Leas...',
-    salary: 'Thoả thuận',
-    location: 'Hồ Chí Minh & 2 ...',
-    badge: 'Pro',
-    logoBg: '#fff',
-    logoText: 'CHAILEASE',
-    logoTextColor: '#78716c',
-    isNew: true,
-  },
-  {
-    id: 4,
-    title: 'CVC/CVCC Phòng Kinh Doanh Giấy Tờ Có Giá Và Vốn Dài Hạn',
-    company: 'Ngân hàng TMCP Quốc Dân',
-    salary: 'Thoả thuận',
-    location: 'Hà Nội',
-    badge: 'Pro',
-    logoBg: '#1e40af',
-    logoText: 'NCB',
-    logoTextColor: '#fff',
-    isNew: false,
-  },
-  {
-    id: 5,
-    title: 'CVC/CVCC Phòng Quản Lý Thanh Khoản Và Kinh Doanh Vốn Ngắn Hạn',
-    company: 'Ngân hàng TMCP Quốc Dân',
-    salary: 'Thoả thuận',
-    location: 'Hà Nội',
-    badge: 'Pro',
-    logoBg: '#1e40af',
-    logoText: 'NCB',
-    logoTextColor: '#fff',
-    isNew: false,
-  },
-  {
-    id: 6,
-    title: 'Thực Tập Sinh Full Time Khai Báo Hải Quan - Bắc Ninh (Biết Tiếng Trung)',
-    company: 'Bee Logistics Corporation',
-    salary: 'Từ 3 triệu',
-    location: 'Bắc Ninh',
-    badge: 'Pro',
-    logoBg: '#fff',
-    logoText: 'BEE LOGISTICS',
-    logoTextColor: '#f97316',
-    isNew: true,
-  },
-  {
-    id: 7,
-    title: 'Nhân Viên Thu Hồi Nợ Qua Điện Thoại (B4 - B7+) - Thu Nhập 15 -...',
-    company: 'Công ty Tài chính tín dụng ti...',
-    salary: '15 - 40 triệu',
-    location: 'Hà Nội',
-    badge: 'Pro',
-    logoBg: '#fff',
-    logoText: 'mcredit',
-    logoTextColor: '#06b6d4',
-    isNew: false,
-  },
-  {
-    id: 8,
-    title: 'Nhân Viên Chăm Sóc Cảnh Quan',
-    company: 'CÔNG TY CỔ PHẦN DỊCH V...',
-    salary: 'Thoả thuận',
-    location: 'Đà Nẵng',
-    badge: 'Pro',
-    logoBg: '#fff',
-    logoText: 'HIGHLANDS COFFEE',
-    logoTextColor: '#b91c1c',
-    isNew: true,
-  },
-  {
-    id: 9,
-    title: 'Quản Lý Văn Phòng Thái Nguyên',
-    company: 'Bee Logistics Corporation',
-    salary: 'Thoả thuận',
-    location: 'Thái Nguyên',
-    badge: 'Pro',
-    logoBg: '#fff',
-    logoText: 'BEE LOGISTICS',
-    logoTextColor: '#f97316',
-    isNew: true,
-  },
-])
+const router = useRouter()
+const store = usePublicJobPostingStore()
+
+const currentPage = computed(() => store.meta.page)
+const totalPages = computed(() => store.meta.pages)
+
+const jobs = computed(() =>
+  store.jobs.map(job => ({
+    id: job.id,
+    title: job.title,
+    company: job.company.name,
+    salary: formatSalary(job),
+    isHot: job.isHot,
+    isUrgent: job.isUrgent,
+    location: job.locations?.map(l => l.name).join(', ') ?? '',
+    logoBg: '#f1f3ff',
+    logoText: job.company.name.slice(0, 3).toUpperCase(),
+    logoTextColor: '#005ea4',
+    logoUrl: job.company.logoUrl,
+    isNew: isNewJob(job.publishedAt),
+  }))
+)
+
+function formatSalary(job: typeof store.jobs[0]): string {
+  if (job.salaryNegotiable) return 'Thoả thuận'
+  if (job.salaryMin && job.salaryMax) return `${(job.salaryMin / 1_000_000).toFixed(0)} - ${(job.salaryMax / 1_000_000).toFixed(0)} triệu`
+  if (job.salaryMin) return `Từ ${(job.salaryMin / 1_000_000).toFixed(0)} triệu`
+  if (job.salaryMax) return `Đến ${(job.salaryMax / 1_000_000).toFixed(0)} triệu`
+  return 'Thoả thuận'
+}
+
+function isNewJob(publishedAt?: string): boolean {
+  if (!publishedAt) return false
+  return Date.now() - new Date(publishedAt).getTime() < 7 * 24 * 60 * 60 * 1000
+}
+
+async function loadPage(page: number) {
+  await store.fetchJobs({ isHot: true, page, size: PAGE_SIZE })
+}
 
 function handleJobClick(id: number) {
-  // navigate to job detail
+  router.push(`/jobs/${id}`)
 }
+
+onMounted(() => loadPage(0))
 </script>
 
 <style scoped>
