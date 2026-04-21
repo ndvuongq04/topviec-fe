@@ -17,7 +17,6 @@
             <div>
               <h5 class="sal-name">{{ svc.name }}</h5>
               <p v-if="svc.description" class="sal-desc">{{ svc.description }}</p>
-              <!-- TODO: BE chưa trả về description — sẽ hiển thị sau khi BE bổ sung -->
               <p v-else class="sal-desc sal-desc--empty">Chưa có mô tả</p>
             </div>
           </div>
@@ -31,12 +30,18 @@
             <span class="sal-meta-val">{{ svc.expireDate ?? '—' }}</span>
           </div>
         </div>
+
         <div class="sal-item-right">
           <span class="sal-status" :class="svc.status">
             {{ svc.status === 'expired' ? 'Hết hạn' : 'Đang chạy' }}
           </span>
-          <button class="sal-more">
-            <span class="material-symbols-outlined">more_vert</span>
+          <button
+            v-if="svc.status === 'active'"
+            class="sal-apply-btn"
+            @click="$emit('apply', svc)"
+          >
+            <span class="material-symbols-outlined">bolt</span>
+            {{ svc.category === 'JOB_POSTING' ? 'Áp dụng cho tin' : 'Áp dụng ngay' }}
           </button>
         </div>
       </div>
@@ -60,9 +65,11 @@ export interface ActiveService {
   remaining:   string
   expireDate:  string | null
   status:      'active' | 'expired'
+  category:    string
 }
 
 defineProps<{ services: ActiveService[] }>()
+defineEmits<{ apply: [service: ActiveService] }>()
 </script>
 
 <style scoped>
@@ -102,7 +109,8 @@ defineProps<{ services: ActiveService[] }>()
 .sal-meta { display: flex; flex-direction: column; }
 .sal-meta-label { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #64748b; }
 .sal-meta-val { font-size: 0.875rem; font-weight: 700; color: #0f172a; }
-.sal-item-right { display: flex; align-items: center; gap: 16px; }
+
+.sal-item-right { display: flex; align-items: center; gap: 12px; }
 .sal-status {
   padding: 6px 16px;
   font-size: 12px; font-weight: 700;
@@ -110,15 +118,25 @@ defineProps<{ services: ActiveService[] }>()
 }
 .sal-status.active  { background: #ecfdf5; color: #059669; }
 .sal-status.expired { background: #fee2e2; color: #dc2626; }
-.sal-more {
-  padding: 8px;
-  background: transparent; border: none;
-  color: #64748b; border-radius: 8px;
+
+.sal-apply-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 14px;
+  border: none;
+  background: #f0fdf4;
+  color: #16a34a;
+  font-size: 0.75rem;
+  font-weight: 700;
+  border-radius: 8px;
   cursor: pointer;
-  opacity: 0; transition: opacity 0.2s, background 0.15s;
+  white-space: nowrap;
+  transition: background 0.15s, color 0.15s, transform 0.1s;
 }
-.sal-item:hover .sal-more { opacity: 1; }
-.sal-more:hover { background: #f1f5f9; }
+.sal-apply-btn:hover  { background: #16a34a; color: #fff; }
+.sal-apply-btn:active { transform: scale(0.96); }
+.sal-apply-btn .material-symbols-outlined { font-size: 15px; }
 
 .sal-cta {
   width: 100%;

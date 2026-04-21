@@ -5,6 +5,7 @@ import type {
     ResCompanySubscriptionDTO,
     ResCompanyAddonDTO,
     ResJobPostAddonDTO,
+    ResCompanyBrandingDTO,
 } from '@/types/servicePackage.types'
 
 const BASE_URL = '/employer/services'
@@ -41,6 +42,18 @@ export const employerServiceManagementService = {
     ): Promise<ResJobPostAddonDTO> {
         const res = await axiosInstance.post<RestResponse<ResJobPostAddonDTO>>(
             `${BASE_URL}/job-posts/${jobPostingId}/apply-addon`,
+            payload,
+        )
+        return res.data.data
+    },
+
+    /**
+     * Áp dụng dịch vụ BRANDING cho công ty (Banner trang chủ, Top Employer, ...)
+     * Service code được tự động xác định từ companyAddonId
+     */
+    async applyBrandingToCompany(payload: ReqApplyAddonDTO): Promise<ResCompanyBrandingDTO> {
+        const res = await axiosInstance.post<RestResponse<ResCompanyBrandingDTO>>(
+            `${BASE_URL}/company/apply-branding`,
             payload,
         )
         return res.data.data

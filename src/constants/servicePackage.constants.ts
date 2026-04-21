@@ -13,6 +13,11 @@ export enum JobPostAddonStatus {
     EXPIRED = 'expired',
 }
 
+export enum BrandingAddonStatus {
+    ACTIVE  = 'ACTIVE',
+    EXPIRED = 'EXPIRED',
+}
+
 // ─── Labels cho UI (SubscriptionStatus / JobPostAddonStatus) ────────────────
 
 export const SUBSCRIPTION_STATUS_LABELS: Record<SubscriptionStatus, string> = {
@@ -24,6 +29,11 @@ export const SUBSCRIPTION_STATUS_LABELS: Record<SubscriptionStatus, string> = {
 export const JOB_POST_ADDON_STATUS_LABELS: Record<JobPostAddonStatus, string> = {
     [JobPostAddonStatus.ACTIVE]:  'Đang hoạt động',
     [JobPostAddonStatus.EXPIRED]: 'Hết hạn',
+}
+
+export const BRANDING_ADDON_STATUS_LABELS: Record<BrandingAddonStatus, string> = {
+    [BrandingAddonStatus.ACTIVE]:  'Đang hoạt động',
+    [BrandingAddonStatus.EXPIRED]: 'Hết hạn',
 }
 
 

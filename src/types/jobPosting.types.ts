@@ -83,6 +83,8 @@ export interface JobPostCompanyDTO {
     slug: string
     logoUrl?: string
     address?: string
+    isTopEmployer?: boolean
+    isBrandVerified?: boolean
 }
 
 export interface JobPostIndustryDTO {

@@ -13,23 +13,26 @@
       <ServiceQuotaGrid v-if="quotaItems.length" :quotas="quotaItems" />
 
       <!-- API 2: Dịch vụ lẻ đang có -->
-      <ServiceActiveList :services="activeAddonItems" />
+      <ServiceActiveList :services="activeAddonItems" @apply="handleApply" />
 
       <ServicePromoSection />
     </template>
+
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import dayjs from 'dayjs'
 import ServiceCurrentPlan from '@/components/recruiter/services/ServiceCurrentPlan.vue'
 import ServiceQuotaGrid, { type QuotaItem } from '@/components/recruiter/services/ServiceQuotaGrid.vue'
 import ServiceActiveList, { type ActiveService } from '@/components/recruiter/services/ServiceActiveList.vue'
 import ServicePromoSection from '@/components/recruiter/services/ServicePromoSection.vue'
+import { useToast } from '@/composables/useToast'
 import { useEmployerServiceManagementStore } from '@/stores/employerServiceManagement.store'
 import { SubscriptionStatus } from '@/constants/servicePackage.constants'
-import { SERVICE_CATEGORY_ICON_MAP } from '@/constants/serviceCatalog.constants'
+import { SERVICE_CATEGORY_ICON_MAP, ServiceCategory } from '@/constants/serviceCatalog.constants'
 
 const FEATURE_CODE_ICON: Record<string, { icon: string; iconBg: string; iconColor: string }> = {
     hot_job_quota:   { icon: 'campaign',      iconBg: '#eff6ff', iconColor: '#2563eb' },
@@ -40,7 +43,9 @@ const FEATURE_CODE_ICON: Record<string, { icon: string; iconBg: string; iconColo
     extend_job:      { icon: 'event_repeat',  iconBg: '#eff6ff', iconColor: '#2563eb' },
 }
 
-const store = useEmployerServiceManagementStore()
+const store             = useEmployerServiceManagementStore()
+const router            = useRouter()
+const toast             = useToast()
 
 // ─── Computed: map usages[] → QuotaItem[] ────────────────────────────────────
 const quotaItems = computed<QuotaItem[]>(() => {
@@ -71,8 +76,7 @@ const activeAddonItems = computed<ActiveService[]>(() =>
         return {
             id:          addon.id,
             name:        addon.addonName ?? addon.addonCode ?? 'Dịch vụ lẻ',
-            // TODO: BE chưa trả về addonDescription — hiển thị null cho đến khi BE bổ sung
-            description: addon.addonDescription ?? null,
+            description: (addon as any).addonDescription ?? null,
             icon:        iconMeta?.icon      ?? 'star',
             iconBg:      iconMeta?.iconBg    ?? '#f1f5f9',
             iconColor:   iconMeta?.iconColor ?? '#64748b',
@@ -80,10 +84,28 @@ const activeAddonItems = computed<ActiveService[]>(() =>
             expireDate:  addon.expiredAt
                 ? dayjs(addon.expiredAt).format('DD/MM/YYYY')
                 : null,
-            status: addon.status === SubscriptionStatus.ACTIVE ? 'active' : 'expired',
+            status:   addon.status === SubscriptionStatus.ACTIVE ? 'active' : 'expired',
+            category: addon.serviceCategory ?? '',
         }
     }),
 )
+
+// ─── Handlers ─────────────────────────────────────────────────────────────────
+
+async function handleApply(svc: ActiveService) {
+    if (svc.category === ServiceCategory.JOB_POSTING) {
+        router.push({ name: 'recruiter-jobs' })
+        return
+    }
+
+    try {
+        await store.applyBrandingToCompany({ companyAddonId: svc.id })
+        await store.fetchMyAddons()
+        toast.success('Áp dụng thành công', `"${svc.name}" đã được kích hoạt.`)
+    } catch {
+        toast.error('Áp dụng thất bại', store.error ?? 'Vui lòng thử lại.')
+    }
+}
 
 onMounted(() => {
     store.fetchMySubscription()

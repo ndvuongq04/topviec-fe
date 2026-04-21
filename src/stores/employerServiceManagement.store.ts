@@ -6,6 +6,7 @@ import type {
     ResCompanySubscriptionDTO,
     ResCompanyAddonDTO,
     ResJobPostAddonDTO,
+    ResCompanyBrandingDTO,
 } from '@/types/servicePackage.types'
 
 // ─── Helper ───────────────────────────────────────────────────────────────────
@@ -84,6 +85,21 @@ export const useEmployerServiceManagementStore = defineStore('employerServiceMan
         }
     }
 
+    // ─── Apply branding to company ────────────────────────────────────────────
+
+    async function applyBrandingToCompany(payload: ReqApplyAddonDTO): Promise<ResCompanyBrandingDTO> {
+        loading.value = true
+        error.value   = null
+        try {
+            return await employerServiceManagementService.applyBrandingToCompany(payload)
+        } catch (err) {
+            error.value = extractErrorMessage(err)
+            throw err
+        } finally {
+            loading.value = false
+        }
+    }
+
     // ─── Reset ────────────────────────────────────────────────────────────────
 
     function reset() {
@@ -101,6 +117,7 @@ export const useEmployerServiceManagementStore = defineStore('employerServiceMan
         fetchMySubscription,
         fetchMyAddons,
         applyAddonToJobPost,
+        applyBrandingToCompany,
         reset,
     }
 })

@@ -2,13 +2,14 @@ import {
     BillingCycle,
     SubscriptionStatus,
     JobPostAddonStatus,
+    BrandingAddonStatus,
 } from '@/constants/servicePackage.constants'
 import type { PaginationMeta, ResultPaginationDTO } from '@/types/common.types'
 import type { ResServicePackageDetailDTO, ServiceCategory } from '@/types/serviceCatalog.types'
 
 export type { ResServicePackageDetailDTO, ServiceCategory }
 
-export { BillingCycle, SubscriptionStatus, JobPostAddonStatus }
+export { BillingCycle, SubscriptionStatus, JobPostAddonStatus, BrandingAddonStatus }
 export type { PaginationMeta, ResultPaginationDTO }
 
 // ─── Addon Package ───────────────────────────────────────────────────────────
@@ -141,6 +142,19 @@ export interface ResJobPostAddonDTO {
     addonServiceId: number
     addonName:      string | null
     status:         JobPostAddonStatus
+    startedAt:      string | null
+    expiredAt:      string | null
+    createdAt:      string
+}
+
+export interface ResCompanyBrandingDTO {
+    id:             number
+    companyId:      number
+    companyAddonId: number
+    addonServiceId: number
+    addonName:      string | null
+    serviceCode:    string | null
+    status:         BrandingAddonStatus
     startedAt:      string | null
     expiredAt:      string | null
     createdAt:      string

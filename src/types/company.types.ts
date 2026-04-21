@@ -117,6 +117,11 @@ export interface ResCompanyDTO {
     socialLinks: string | null
 
 
+    // Dịch vụ Branding đang active
+    isBanner: boolean | null
+    isTopEmployer: boolean | null
+    isBrandVerified: boolean | null
+
     verificationStatus: VerificationStatus
     verifiedAt: string | null
     verifiedBy: number | null

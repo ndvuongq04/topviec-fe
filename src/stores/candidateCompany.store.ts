@@ -37,6 +37,9 @@ export const useCandidateCompanyStore = defineStore('candidateCompany', () => {
         keyword?: string
         provinceId?: number
         industryId?: number
+        isBanner?: boolean
+        isTopEmployer?: boolean
+        isBrandVerified?: boolean
         page?: number
         size?: number
         sort?: string
