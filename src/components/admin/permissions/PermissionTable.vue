@@ -26,6 +26,7 @@
             :perm="perm"
             :state="state"
             @update="onUpdate"
+            @rename="$emit('rename', $event)"
           />
         </template>
       </tbody>
@@ -39,7 +40,7 @@ import PermissionGroupRow from './PermissionGroupRow.vue'
 import PermissionRow from './PermissionRow.vue'
 
 const props = defineProps<{ groups: any[]; state: Record<string, boolean> }>()
-const emit = defineEmits(['update:state', 'change'])
+const emit = defineEmits(['update:state', 'rename', 'toggle'])
 
 const collapsed = reactive<Record<string, boolean>>(
   props.groups.reduce((acc, g) => ({ ...acc, [g.id]: true }), {})
@@ -54,7 +55,7 @@ const roles = [
 
 const onUpdate = (permId: string, role: string, val: boolean) => {
   props.state[`${permId}|${role}`] = val
-  emit('change')
+  emit('toggle', { permId, role, val })
 }
 </script>
 

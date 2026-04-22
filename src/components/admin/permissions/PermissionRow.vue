@@ -4,6 +4,9 @@
       <div class="perm-row__label">
         {{ perm.label }}
         <span class="perm-row__code">{{ perm.id }}</span>
+        <button class="perm-row__rename-btn" title="Đổi tên" @click="$emit('rename', { id: perm.id, label: perm.label })">
+          <span class="material-symbols-outlined">edit</span>
+        </button>
       </div>
     </td>
 
@@ -26,7 +29,7 @@
 import PermissionToggle from './PermissionToggle.vue'
 
 defineProps<{ perm: any; state: Record<string, boolean> }>()
-defineEmits(['update'])
+defineEmits(['update', 'rename'])
 </script>
 
 <style scoped>
@@ -44,5 +47,15 @@ defineEmits(['update'])
   background: #f1f5f9; padding: 3px 8px; border-radius: 6px;
   margin-left: 4px; border: 1px solid #e2e8f0;
 }
+.perm-row__rename-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 26px; height: 26px; border-radius: 6px; border: none;
+  background: transparent; color: #94a3b8; cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  flex-shrink: 0;
+}
+.perm-row__rename-btn .material-symbols-outlined { font-size: 15px; }
+.perm-row__rename-btn:hover { background: #e2e8f0; color: #475569; }
+
 .perm-row__toggle-cell { text-align: center; padding: 14px 12px; vertical-align: middle; }
 </style>
