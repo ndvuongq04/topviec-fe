@@ -10,6 +10,17 @@ export interface SearchFilters {
   isUrgent?: boolean
 }
 
+const props = withDefaults(defineProps<{
+  initialIndustryId?: number
+  initialSalaryMin?: number
+  initialSalaryMax?: number
+  initialFeatured?: boolean
+  initialUrgent?: boolean
+}>(), {
+  initialFeatured: false,
+  initialUrgent: false,
+})
+
 const emit = defineEmits<{ change: [filters: SearchFilters] }>()
 
 const industryStore = useIndustryStore()
@@ -25,13 +36,29 @@ const SALARY_PRESETS = [
   { label: 'Trên 50 triệu', min: 50_000_000 },
 ]
 
-const selectedIndustryId = ref<number | undefined>(undefined)
+const selectedIndustryId = ref<number | undefined>(props.initialIndustryId)
 const showIndustryDropdown = ref(false)
-const selectedSalaryIdx = ref(0)
-const customSalaryMinStr = ref('')
-const customSalaryMaxStr = ref('')
-const isFeatured = ref(false)
-const isUrgent = ref(false)
+const isFeatured = ref(props.initialFeatured)
+const isUrgent = ref(props.initialUrgent)
+
+// Khởi tạo salary preset từ initialSalaryMin/Max
+function findSalaryPresetIdx(min?: number, max?: number): number {
+  if (min === undefined && max === undefined) return 0
+  const idx = SALARY_PRESETS.findIndex(p => p.min === min && p.max === max)
+  return idx >= 0 ? idx : -1
+}
+
+const selectedSalaryIdx = ref(findSalaryPresetIdx(props.initialSalaryMin, props.initialSalaryMax))
+const customSalaryMinStr = ref(
+  selectedSalaryIdx.value === -1 && props.initialSalaryMin
+    ? String(props.initialSalaryMin / 1_000_000)
+    : ''
+)
+const customSalaryMaxStr = ref(
+  selectedSalaryIdx.value === -1 && props.initialSalaryMax
+    ? String(props.initialSalaryMax / 1_000_000)
+    : ''
+)
 
 // v-model trên type="number" trả về number ở runtime → dùng Number() trực tiếp
 const customSalaryMin = computed(() => Number(customSalaryMinStr.value))
