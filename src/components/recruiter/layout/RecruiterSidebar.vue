@@ -155,6 +155,7 @@ const navItems = [
   // { to: '/recruiter/search-cv', icon: 'person_search',    label: 'Tìm CV' },
   // { to: '/recruiter/reports',   icon: 'bar_chart',        label: 'Báo cáo' },
   { to: '/recruiter/team',      icon: 'manage_accounts',  label: 'Quản lý nhóm' },
+  { to: '/recruiter/permissions',icon: 'admin_panel_settings', label: 'Phân quyền' },
   { to: '/recruiter/company-profile', icon: 'business',     label: 'Thông tin công ty' },
   { to: '/recruiter/messages',  icon: 'chat',             label: 'Tin nhắn' },
   { to: '/recruiter/services',  icon: 'diamond',          label: 'Dịch vụ' },
