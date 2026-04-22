@@ -23,6 +23,16 @@ const avatarInitial = computed(() => {
   return displayName.value.charAt(0).toUpperCase();
 });
 
+const ROLE_LABELS: Record<string, string> = {
+  CANDIDATE: 'Ứng viên',
+  EMPLOYER:  'Nhà tuyển dụng',
+  ADMIN:     'Quản trị viên',
+}
+
+const roleLabel = computed(() =>
+  authStore.user?.role ? (ROLE_LABELS[authStore.user.role] ?? authStore.user.role) : 'Ứng viên'
+)
+
 function toggleDropdown() {
   isDropdownOpen.value = !isDropdownOpen.value;
 }
@@ -126,7 +136,7 @@ async function handleLogout() {
                 {{ displayName }}
               </span>
               <span class="text-xs text-slate-400 dark:text-slate-500 uppercase tracking-wide">
-                Ứng viên
+                {{ roleLabel }}
               </span>
             </div>
 

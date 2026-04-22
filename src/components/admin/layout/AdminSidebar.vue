@@ -69,14 +69,14 @@
     <div class="p-4 border-t border-white/10">
       <div class="flex items-center gap-3 p-2 rounded-xl bg-white/5">
         <!-- Avatar -->
-        <div class="size-9 rounded-full bg-white/20 flex items-center justify-center shrink-0">
-          <span class="material-symbols-outlined text-white text-xl">person</span>
+        <div class="size-9 rounded-full bg-white/20 flex items-center justify-center shrink-0 text-sm font-bold text-white uppercase">
+          {{ avatarInitial }}
         </div>
 
         <!-- Name + role -->
         <div class="flex-1 min-w-0">
-          <p class="text-sm font-bold text-white truncate">Admin</p>
-          <p class="text-xs text-white/50 truncate">Quản trị viên</p>
+          <p class="text-sm font-bold text-white truncate">{{ displayName }}</p>
+          <p class="text-xs text-white/50 truncate">{{ roleLabel }}</p>
         </div>
 
         <!-- Settings trigger -->
@@ -121,18 +121,37 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth.store'
 import GlobalDropdown from '@/components/ui/GlobalDropdown.vue'
 import GlobalDropdownItem from '@/components/ui/GlobalDropdownItem.vue'
 import ChangePasswordModal from '@/components/admin/profile/ChangePasswordModal.vue'
 import AdminProfileModal from '@/components/admin/profile/AdminProfileModal.vue'
+import { adminUserService } from '@/services/adminUser.service'
+import type { ResAdminUser } from '@/types/adminUser.types'
+import { ADMIN_ROLE_LABELS } from '@/types/adminUser.types'
 
 const authStore = useAuthStore()
 const route = useRoute()
 const showPasswordModal = ref(false)
 const showProfileModal = ref(false)
+
+const profile = ref<ResAdminUser | null>(null)
+
+const displayName = computed(() => profile.value?.fullName || 'Admin')
+const roleLabel = computed(() =>
+  profile.value ? (ADMIN_ROLE_LABELS[profile.value.adminRole] ?? 'Quản trị viên') : 'Quản trị viên'
+)
+const avatarInitial = computed(() => displayName.value.charAt(0).toUpperCase())
+
+onMounted(async () => {
+  try {
+    profile.value = await adminUserService.getMyProfile()
+  } catch {
+    // Giữ fallback nếu API lỗi
+  }
+})
 
 type SubItem = { to: string; icon: string; label: string }
 type Group   = { label: string; items: SubItem[] }

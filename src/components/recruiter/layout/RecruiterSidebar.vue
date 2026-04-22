@@ -31,16 +31,16 @@
     <div class="p-4 border-t border-slate-200 dark:border-slate-800">
       <div class="flex items-center gap-3 p-2 rounded-xl bg-slate-50 dark:bg-slate-800/50">
         <div
-          class="size-10 rounded-full bg-cover bg-center bg-slate-200"
-          :style="user?.avatarUrl ? `background-image: url('${user.avatarUrl}')` : ''"
+          class="size-10 rounded-full bg-cover bg-center bg-slate-200 shrink-0"
+          :style="profile?.companyLogoUrl ? `background-image: url('${profile.companyLogoUrl}')` : ''"
         >
-          <div v-if="!user?.avatarUrl" class="w-full h-full flex items-center justify-center">
-            <span class="material-symbols-outlined text-slate-400">person</span>
+          <div v-if="!profile?.companyLogoUrl" class="w-full h-full flex items-center justify-center rounded-full bg-primary/10">
+            <span class="text-sm font-bold text-primary uppercase">{{ avatarInitial }}</span>
           </div>
         </div>
         <div class="flex-1 min-w-0">
-          <p class="text-sm font-bold truncate">{{ user?.name || 'Recruiter' }}</p>
-          <p class="text-xs text-slate-500 truncate">{{ user?.title || 'HR Manager' }}</p>
+          <p class="text-sm font-bold truncate">{{ displayName }}</p>
+          <p class="text-xs text-slate-500 truncate">{{ roleLabel }}</p>
         </div>
         <GlobalDropdown align="left" direction="up" :offset="12">
           <template #trigger="{ toggle, isOpen }">
@@ -83,18 +83,49 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import GlobalDropdown from '@/components/ui/GlobalDropdown.vue'
 import GlobalDropdownItem from '@/components/ui/GlobalDropdownItem.vue'
 import { useAuthStore } from '@/stores/auth.store'
 import EmployerProfileModal from '@/components/recruiter/profile/EmployerProfileModal.vue'
 import ChangePasswordModal from '@/components/recruiter/profile/ChangePasswordModal.vue'
+import { employerProfileService } from '@/services/employerProfile.service'
+import type { ResEmployerProfileDTO } from '@/types/companyMember.types'
+import { MEMBER_ROLE } from '@/constants/companyMember.constants'
 
 const route = useRoute()
 const authStore = useAuthStore()
 const showProfileModal = ref(false)
 const showPasswordModal = ref(false)
+
+const profile = ref<ResEmployerProfileDTO | null>(null)
+
+const ROLE_LABELS: Record<string, string> = {
+  [MEMBER_ROLE.OWNER]:     'Chủ sở hữu',
+  [MEMBER_ROLE.MANAGER]:   'Quản lý',
+  [MEMBER_ROLE.RECRUITER]: 'Tuyển dụng',
+  [MEMBER_ROLE.VIEWER]:    'Xem',
+}
+
+const displayName = computed(() => {
+  if (!profile.value?.email) return 'Recruiter'
+  return profile.value.email.split('@')[0]
+})
+
+const roleLabel = computed(() =>
+  profile.value ? (ROLE_LABELS[profile.value.roleName] ?? profile.value.roleName) : 'HR Manager'
+)
+
+const avatarInitial = computed(() => displayName.value.charAt(0).toUpperCase())
+
+onMounted(async () => {
+  try {
+    profile.value = await employerProfileService.getMyProfile()
+  } catch {
+    // Giữ fallback nếu API lỗi
+  }
+})
 
 // Routes nằm dưới /recruiter/jobs/* nhưng thuộc nhóm Phỏng vấn
 const interviewJobRouteNames = new Set(['recruiter-job-interview-setup'])
@@ -130,10 +161,4 @@ const navItems = [
   { to: '/recruiter/billing',   icon: 'receipt_long',     label: 'Lịch sử đơn hàng' },
 ]
 
-// TODO: lấy từ auth store khi có employer profile
-const user = {
-  name: 'Hồng Nhung',
-  title: 'HR Manager',
-  avatarUrl: '',
-}
 </script>
