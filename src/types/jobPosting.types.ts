@@ -64,9 +64,10 @@ export interface ReqRejectJobPostingDTO {
 
 export interface ResJobPostLocationDTO {
     id: number
-    provinceId: number
+    name: string
     addressDetail?: string
     isRemote: boolean
+    provinceId?: number
 }
 
 export interface ResJobPostSkillDTO {
@@ -82,9 +83,9 @@ export interface JobPostCompanyDTO {
     name: string
     slug: string
     logoUrl?: string
-    address?: string
     isTopEmployer?: boolean
     isBrandVerified?: boolean
+    address?: string
 }
 
 export interface JobPostIndustryDTO {
@@ -124,7 +125,7 @@ export interface ResJobPostingDetail {
     salaryNegotiable: boolean
     workType: string
     headcount: number
-    hiredCount: number
+    hiredCount?: number
     deadline: string
     status: JobPostingStatus
     isFeatured: boolean
@@ -139,7 +140,7 @@ export interface ResJobPostingDetail {
     deletedAt?: string | null
     locations: ResJobPostLocationDTO[]
     skills: ResJobPostSkillDTO[]
-    interviewRoundsCount: number
+    interviewRoundsCount?: number
 }
 
 export interface ResJobPostingSummary {
@@ -200,4 +201,33 @@ export interface JobPostingQueryParams {
 
 export interface EmployerJobPostingQueryParams extends JobPostingQueryParams {
     status?: JobPostingStatus
+}
+
+
+// ─── Utilities ────────────────────────────────────────────────────────────────
+
+export interface SalaryInfo {
+    salaryMin?: number
+    salaryMax?: number
+    salaryNegotiable: boolean
+}
+
+export function formatSalary(job: SalaryInfo): string {
+    if (job.salaryNegotiable) return 'Thỏa thuận'
+    if (job.salaryMin && job.salaryMax)
+        return `${(job.salaryMin / 1_000_000).toFixed(0)}–${(job.salaryMax / 1_000_000).toFixed(0)} triệu/tháng`
+    if (job.salaryMin) return `Từ ${(job.salaryMin / 1_000_000).toFixed(0)} triệu/tháng`
+    if (job.salaryMax) return `Đến ${(job.salaryMax / 1_000_000).toFixed(0)} triệu/tháng`
+    return 'Thỏa thuận'
+}
+
+const WORK_TYPE_LABELS: Record<string, string> = {
+    FULL_TIME: 'Toàn thời gian',
+    PART_TIME: 'Bán thời gian',
+    INTERN:    'Thực tập',
+    REMOTE:    'Remote',
+}
+
+export function formatWorkType(workType: string): string {
+    return WORK_TYPE_LABELS[workType] ?? workType
 }

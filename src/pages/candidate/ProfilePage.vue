@@ -34,7 +34,7 @@
           <button
             v-for="tab in tabs"
             :key="tab.key"
-            class="whitespace-nowrap border-b-[3px] py-4 px-1 text-sm font-medium transition-colors"
+            class="whitespace-nowrap border-b-[3px] py-4 px-1 text-sm font-medium transition-colors cursor-pointer"
             :class="activeTab === tab.key
               ? 'border-primary text-primary font-bold'
               : 'border-transparent text-text-muted hover:border-slate-300 hover:text-text-main dark:hover:text-white'"

@@ -17,6 +17,15 @@
           <h2 class="process-card__job-title">{{ process.jobTitle }}</h2>
           <div class="process-card__details">
             <span class="process-card__company">{{ process.companyName }}</span>
+            <div v-if="process.isBrandVerified" class="relative flex items-center group/verified">
+              <span
+                class="material-symbols-outlined text-blue-600 cursor-default"
+                style="font-size:16px; font-variation-settings:'FILL' 1"
+              >verified</span>
+              <span class="pointer-events-none absolute bottom-[calc(100%+6px)] left-1/2 -translate-x-1/2 bg-blue-800 text-white text-[11px] font-medium whitespace-nowrap px-2.5 py-1 rounded-md opacity-0 group-hover/verified:opacity-100 transition-opacity z-10">
+                Công ty đã xác minh
+              </span>
+            </div>
             <span v-if="process.status" class="process-card__status-badge" :class="`process-card__status-badge--${statusColor}`">
               {{ statusLabel }}
             </span>
@@ -70,6 +79,7 @@ const props = defineProps<{
     jobTitle: string
     companyName: string
     companyLogo?: string
+    isBrandVerified?: boolean | null
     status?: string
     nextStep?: string
     rounds: any[]

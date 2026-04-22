@@ -139,8 +139,8 @@
               v-if="job.status !== 'deleted'"
               icon="groups"
               label="Bắt đầu phỏng vấn"
-              :disabled="!canInterview"
-              :tooltip="!canInterview ? 'Chỉ có thể bắt đầu phỏng vấn khi tin đang ở trạng thái Đã đóng' : undefined"
+            
+    
               @click="handleAction('interview', job.id, close)"
             />
             <div class="dropdown-divider-v2" v-if="job.status !== 'deleted'" />

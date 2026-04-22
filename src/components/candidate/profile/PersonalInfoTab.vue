@@ -215,7 +215,7 @@
     <div class="flex justify-end gap-3 pt-2">
       <button
         type="button"
-        class="px-6 py-2.5 rounded-2xl border border-slate-200 dark:border-slate-700 text-text-muted dark:text-gray-400 font-bold text-base hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+        class="px-6 py-2.5 rounded-2xl border border-slate-200 dark:border-slate-700 text-text-muted dark:text-gray-400 font-bold text-base hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
         :disabled="store.loading"
         @click="resetForm"
       >
@@ -223,7 +223,7 @@
       </button>
       <button
         type="button"
-        class="px-6 py-2.5 rounded-2xl bg-primary hover:bg-primary-hover text-white font-bold text-base shadow-lg shadow-blue-500/30 transition-colors disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-2"
+        class="px-6 py-2.5 rounded-2xl bg-primary hover:bg-primary-hover text-white font-bold text-base shadow-lg shadow-blue-500/30 transition-colors disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer flex items-center gap-2"
         :disabled="store.loading"
         @click="saveChanges"
       >

@@ -37,7 +37,7 @@ export const APPLICATION_STATUS_OPTIONS = [
   { value: APPLICATION_STATUS.SCHEDULE_PENDING, label: 'Chờ chọn lịch', color: 'orange' },
   { value: APPLICATION_STATUS.OVERDUE, label: 'Quá hạn chọn lịch', color: 'red' },
   { value: APPLICATION_STATUS.INTERVIEWING, label: 'Đang phỏng vấn', color: 'orange' },
-  { value: APPLICATION_STATUS.OFFERED, label: 'Gửi đề nghị', color: 'green' },
+  { value: APPLICATION_STATUS.OFFERED, label: 'Gửi đề nghị Offering', color: 'green' },
   { value: APPLICATION_STATUS.HIRED, label: 'Đã tuyển', color: 'success' },
   { value: APPLICATION_STATUS.REJECTED, label: 'Từ chối', color: 'red' },
   { value: APPLICATION_STATUS.WITHDRAWN, label: 'Rút đơn', color: 'gray' },

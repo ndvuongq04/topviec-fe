@@ -50,16 +50,7 @@
             <p class="text-sm font-semibold text-text-main dark:text-white">{{ item.label }}</p>
             <p class="text-xs text-text-muted mt-0.5">{{ item.desc }}</p>
           </div>
-          <button
-            class="relative w-11 h-6 rounded-full transition-colors duration-200 focus:outline-none shrink-0"
-            :class="item.enabled ? 'bg-primary' : 'bg-slate-200 dark:bg-slate-700'"
-            @click="item.enabled = !item.enabled"
-          >
-            <span
-              class="absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform duration-200"
-              :class="item.enabled ? 'translate-x-6' : 'translate-x-1'"
-            ></span>
-          </button>
+          <ToggleSwitch v-model="item.enabled" />
         </div>
 
       </div>
@@ -92,7 +83,7 @@
             </div>
           </div>
           <button
-            class="text-sm font-bold px-4 py-2 rounded-xl transition-colors"
+            class="text-sm font-bold px-4 py-2 rounded-xl transition-colors cursor-pointer"
             :class="action.danger
               ? 'text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10'
               : 'text-primary hover:bg-primary/10'"
@@ -108,13 +99,13 @@
     <div class="flex justify-end gap-3 pt-2">
       <button
         type="button"
-        class="px-6 py-2.5 rounded-2xl border border-slate-200 dark:border-slate-700 text-text-muted font-bold text-sm hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+        class="px-6 py-2.5 rounded-2xl border border-slate-200 dark:border-slate-700 text-text-muted font-bold text-sm hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
       >
         Hủy
       </button>
       <button
         type="button"
-        class="px-6 py-2.5 rounded-2xl bg-primary hover:bg-primary-hover text-white font-bold text-sm shadow-lg shadow-blue-500/30 transition-colors"
+        class="px-6 py-2.5 rounded-2xl bg-primary hover:bg-primary-hover text-white font-bold text-sm shadow-lg shadow-blue-500/30 transition-colors cursor-pointer"
         @click="saveSettings"
       >
         Lưu thay đổi
@@ -126,6 +117,7 @@
 
 <script setup lang="ts">
 import { ref, reactive } from 'vue'
+import ToggleSwitch from '@/components/common/ToggleSwitch.vue'
 
 const cvPrivacy = ref<'public' | 'recruiters' | 'private'>('recruiters')
 

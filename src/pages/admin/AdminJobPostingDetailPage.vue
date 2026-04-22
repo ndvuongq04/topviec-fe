@@ -65,7 +65,7 @@
 
     <!-- Content -->
     <template v-else-if="job">
-      <div class="max-w-7xl mx-auto space-y-6">
+      <div class="mx-auto space-y-6">
       
         <!-- Full Header Card -->
         <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
@@ -101,8 +101,7 @@
               </div>
               <div class="flex items-center gap-2">
                 <span class="material-symbols-outlined text-lg opacity-70">payments</span>
-                <span v-if="job.salaryNegotiable">Thỏa thuận</span>
-                <span v-else>{{ formatCurrency(job.salaryMin) }} - {{ formatCurrency(job.salaryMax) }}</span>
+                {{ formatSalary(job) }}
               </div>
               <div class="flex items-center gap-2">
                 <span class="material-symbols-outlined text-lg opacity-70">schedule</span>
@@ -139,9 +138,10 @@
               <span class="material-symbols-outlined text-[#963131]">description</span>
               Mô tả công việc
             </h3>
-            <div class="prose dark:prose-invert max-w-none prose-sm sm:prose-base whitespace-pre-line text-slate-600 dark:text-slate-300">
-              {{ job.description }}
-            </div>
+            <div
+              class="prose prose-slate dark:prose-invert max-w-none prose-sm sm:prose-base tiptap-content"
+              v-html="job.description"
+            />
           </div>
 
           <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-6 md:p-8">
@@ -149,9 +149,10 @@
               <span class="material-symbols-outlined text-[#963131]">assignment_turned_in</span>
               Yêu cầu ứng viên
             </h3>
-            <div class="prose dark:prose-invert max-w-none prose-sm sm:prose-base whitespace-pre-line text-slate-600 dark:text-slate-300">
-              {{ job.requirements }}
-            </div>
+            <div
+              class="prose prose-slate dark:prose-invert max-w-none prose-sm sm:prose-base tiptap-content"
+              v-html="job.requirements"
+            />
           </div>
 
           <div v-if="job.benefits" class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-6 md:p-8">
@@ -159,9 +160,10 @@
               <span class="material-symbols-outlined text-[#963131]">redeem</span>
               Quyền lợi
             </h3>
-            <div class="prose dark:prose-invert max-w-none prose-sm sm:prose-base whitespace-pre-line text-slate-600 dark:text-slate-300">
-              {{ job.benefits }}
-            </div>
+            <div
+              class="prose prose-slate dark:prose-invert max-w-none prose-sm sm:prose-base tiptap-content"
+              v-html="job.benefits"
+            />
           </div>
         </div>
 
@@ -243,6 +245,7 @@ import dayjs from 'dayjs'
 
 import { JobPostingStatus, JOB_POSTING_STATUS_LABELS, JOB_POSTING_STATUS_BADGE, WORK_TYPE_LABELS, WorkType } from '@/constants/jobPosting.constants'
 import type { ReqRejectJobPostingDTO } from '@/types/jobPosting.types'
+import { formatSalary } from '@/types/jobPosting.types'
 import AdminJobPostingActionModal from '@/components/admin/job-postings/AdminJobPostingActionModal.vue'
 
 const route = useRoute()
@@ -276,10 +279,6 @@ function formatDate(val?: string) {
   return dayjs(val).format('DD/MM/YYYY HH:mm')
 }
 
-function formatCurrency(val?: number) {
-  if (val == null) return ''
-  return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(val)
-}
 
 async function onApprove() {
   if (!job.value) return

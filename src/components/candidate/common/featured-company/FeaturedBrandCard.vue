@@ -56,14 +56,15 @@ const initials = computed(() =>
   background: #fff;
   border-radius: 0.75rem; padding: 1rem;
   display: flex; flex-direction: column;
-  border: 1px solid rgba(192,199,212,0.3);
+  border: 1px solid rgba(192,199,212,0.4);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
   cursor: pointer;
   transition: transform 200ms ease, box-shadow 200ms ease, border-color 200ms ease;
 }
 .brand-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 20px rgba(0,94,164,0.08);
-  border-color: #005ea4;
+  box-shadow: 0 6px 24px rgba(180,83,9,0.1);
+  border-color: #f59e0b;
 }
 
 .brand-card__top { display: flex; align-items: center; gap: 12px; margin-bottom: 0.75rem; }

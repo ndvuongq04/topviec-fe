@@ -13,7 +13,7 @@
           </div>
         </div>
         <button
-          class="absolute bottom-0 right-0 p-2 bg-primary text-white rounded-full shadow-lg hover:bg-primary-hover transition-colors"
+          class="absolute bottom-0 right-0 p-2 bg-primary text-white rounded-full shadow-lg hover:bg-primary-hover transition-colors cursor-pointer"
           title="Đổi ảnh đại diện"
           @click="triggerAvatarUpload"
         >
@@ -98,7 +98,7 @@
       </div>
 
       <div class="mt-6 w-full">
-        <button class="w-full py-2.5 px-4 bg-primary/10 text-primary font-bold text-sm rounded-2xl hover:bg-primary/20 transition-colors flex items-center justify-center gap-2">
+        <button class="w-full py-2.5 px-4 bg-primary/10 text-primary font-bold text-sm rounded-2xl hover:bg-primary/20 transition-colors flex items-center justify-center gap-2 cursor-pointer">
           <span class="material-symbols-outlined text-[18px]">visibility</span>
           Xem hồ sơ công khai
         </button>
