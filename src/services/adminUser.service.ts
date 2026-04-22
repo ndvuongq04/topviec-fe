@@ -67,6 +67,15 @@ const adminUserService = {
     async deleteAdmin(id: number): Promise<void> {
         await axiosInstance.delete<RestResponse<null>>(`/admin/users/${id}`)
     },
+
+    /**
+     * GET /admin/users/me
+     * Admin xem thông tin cá nhân của chính mình
+     */
+    async getMyProfile(): Promise<ResAdminUser> {
+        const res = await axiosInstance.get<RestResponse<ResAdminUser>>('/admin/users/me')
+        return res.data.data
+    },
 }
 
 export { adminUserService }

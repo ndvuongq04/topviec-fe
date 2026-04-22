@@ -65,27 +65,74 @@
       </template>
     </nav>
 
-    <!-- Logout -->
+    <!-- User info + settings dropdown -->
     <div class="p-4 border-t border-white/10">
-      <button
-        class="flex w-full items-center justify-center gap-2 py-3 rounded-lg bg-white/5 hover:bg-white/10 text-white font-semibold transition-all"
-        @click="handleLogout"
-      >
-        <span class="material-symbols-outlined">logout</span>
-        <span>Đăng xuất</span>
-      </button>
+      <div class="flex items-center gap-3 p-2 rounded-xl bg-white/5">
+        <!-- Avatar -->
+        <div class="size-9 rounded-full bg-white/20 flex items-center justify-center shrink-0">
+          <span class="material-symbols-outlined text-white text-xl">person</span>
+        </div>
+
+        <!-- Name + role -->
+        <div class="flex-1 min-w-0">
+          <p class="text-sm font-bold text-white truncate">Admin</p>
+          <p class="text-xs text-white/50 truncate">Quản trị viên</p>
+        </div>
+
+        <!-- Settings trigger -->
+        <GlobalDropdown align="left" direction="up" :offset="12">
+          <template #trigger="{ toggle, isOpen }">
+            <button
+              class="text-white/50 hover:text-white transition-colors cursor-pointer"
+              :class="{ 'text-white': isOpen }"
+              @click.stop="toggle"
+            >
+              <span class="material-symbols-outlined text-xl">settings</span>
+            </button>
+          </template>
+
+          <template #default="{ close }">
+            <GlobalDropdownItem
+              icon="person_outline"
+              label="Thông tin cá nhân"
+              @click="() => { close(); showProfileModal = true }"
+            />
+            <GlobalDropdownItem
+              icon="lock_open"
+              label="Đổi mật khẩu"
+              @click="() => { close(); showPasswordModal = true }"
+            />
+            <div class="h-px bg-slate-100 my-1 mx-2"></div>
+            <GlobalDropdownItem
+              icon="logout"
+              label="Đăng xuất"
+              danger
+              @click="() => { close(); handleLogout() }"
+            />
+          </template>
+        </GlobalDropdown>
+      </div>
     </div>
 
   </aside>
+
+  <AdminProfileModal :visible="showProfileModal" @close="showProfileModal = false" />
+  <ChangePasswordModal :visible="showPasswordModal" @close="showPasswordModal = false" />
 </template>
 
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth.store'
+import GlobalDropdown from '@/components/ui/GlobalDropdown.vue'
+import GlobalDropdownItem from '@/components/ui/GlobalDropdownItem.vue'
+import ChangePasswordModal from '@/components/admin/profile/ChangePasswordModal.vue'
+import AdminProfileModal from '@/components/admin/profile/AdminProfileModal.vue'
 
 const authStore = useAuthStore()
 const route = useRoute()
+const showPasswordModal = ref(false)
+const showProfileModal = ref(false)
 
 type SubItem = { to: string; icon: string; label: string }
 type Group   = { label: string; items: SubItem[] }

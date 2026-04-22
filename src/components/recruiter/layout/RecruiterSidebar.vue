@@ -63,7 +63,7 @@
             <GlobalDropdownItem
               icon="lock_open"
               label="Đổi mật khẩu"
-              @click="close"
+              @click="() => { close(); showPasswordModal = true }"
             />
             <div class="h-px bg-slate-100 my-1 mx-2"></div>
             <GlobalDropdownItem
@@ -79,6 +79,7 @@
   </aside>
 
   <EmployerProfileModal :visible="showProfileModal" @close="showProfileModal = false" />
+  <ChangePasswordModal :visible="showPasswordModal" @close="showPasswordModal = false" />
 </template>
 
 <script setup lang="ts">
@@ -88,10 +89,12 @@ import GlobalDropdown from '@/components/ui/GlobalDropdown.vue'
 import GlobalDropdownItem from '@/components/ui/GlobalDropdownItem.vue'
 import { useAuthStore } from '@/stores/auth.store'
 import EmployerProfileModal from '@/components/recruiter/profile/EmployerProfileModal.vue'
+import ChangePasswordModal from '@/components/recruiter/profile/ChangePasswordModal.vue'
 
 const route = useRoute()
 const authStore = useAuthStore()
 const showProfileModal = ref(false)
+const showPasswordModal = ref(false)
 
 // Routes nằm dưới /recruiter/jobs/* nhưng thuộc nhóm Phỏng vấn
 const interviewJobRouteNames = new Set(['recruiter-job-interview-setup'])
