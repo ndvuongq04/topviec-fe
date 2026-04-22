@@ -56,14 +56,10 @@
           <template #default="{ close }">
             <GlobalDropdownItem
               icon="person_outline"
-              label="Cài đặt tài khoản"
-              @click="close"
+              label="Thông tin cá nhân"
+              @click="() => { close(); showProfileModal = true }"
             />
-            <GlobalDropdownItem
-              icon="business"
-              label="Thông tin công ty"
-              @click="close"
-            />
+
             <GlobalDropdownItem
               icon="lock_open"
               label="Đổi mật khẩu"
@@ -74,21 +70,28 @@
               icon="logout"
               label="Đăng xuất"
               danger
-              @click="close"
+              @click="() => { close(); authStore.logout() }"
             />
           </template>
         </GlobalDropdown>
       </div>
     </div>
   </aside>
+
+  <EmployerProfileModal :visible="showProfileModal" @close="showProfileModal = false" />
 </template>
 
 <script setup lang="ts">
+import { ref } from 'vue'
 import { useRoute } from 'vue-router'
 import GlobalDropdown from '@/components/ui/GlobalDropdown.vue'
 import GlobalDropdownItem from '@/components/ui/GlobalDropdownItem.vue'
+import { useAuthStore } from '@/stores/auth.store'
+import EmployerProfileModal from '@/components/recruiter/profile/EmployerProfileModal.vue'
 
 const route = useRoute()
+const authStore = useAuthStore()
+const showProfileModal = ref(false)
 
 // Routes nằm dưới /recruiter/jobs/* nhưng thuộc nhóm Phỏng vấn
 const interviewJobRouteNames = new Set(['recruiter-job-interview-setup'])

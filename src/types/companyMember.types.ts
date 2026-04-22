@@ -1,5 +1,24 @@
 import type { MemberRole, MemberStatus } from '@/constants/companyMember.constants';
 
+export interface ResEmployerProfileDTO {
+  // Tài khoản
+  userId: number
+  email: string
+  accountStatus: string
+  emailVerifiedAt: string | null
+  lastLoginAt: string | null
+  // Thành viên công ty
+  memberId: number
+  roleName: MemberRole
+  memberStatus: string
+  memberCreatedAt: string
+  // Công ty
+  companyId: number
+  companyName: string
+  companySlug: string
+  companyLogoUrl: string | null
+}
+
 export interface ReqAddMember {
     email: string;
     tempPassword: string;
