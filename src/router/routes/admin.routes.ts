@@ -76,6 +76,11 @@ export const adminRoutes: RouteRecordRaw[] = [
                 name: 'admin-employer-monitor',
                 component: () => import('@/pages/admin/SubscriberDetailPage.vue'),
             },
+            {
+                path: 'settings/permissions',
+                name: 'admin-settings-permissions',
+                component: () => import('@/pages/admin/PermissionConfigPage.vue'),
+            },
         ],
     },
 ]

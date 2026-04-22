@@ -188,7 +188,18 @@ const navItems: NavItem[] = [
     ],
   },
   { to: '/admin/statistics', icon: 'bar_chart', label: 'Thống kê' },
-  { to: '/admin/settings',   icon: 'settings',  label: 'Cài đặt' },
+  {
+    icon: 'settings',
+    label: 'Cài đặt',
+    children: [
+      {
+        label: 'Hệ thống',
+        items: [
+          { to: '/admin/settings/permissions', icon: 'admin_panel_settings', label: 'Cài đặt quyền' },
+        ],
+      },
+    ],
+  },
 ]
 
 // Collect all sub-routes belonging to dropdown items
