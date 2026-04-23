@@ -1,12 +1,13 @@
 import { ref } from 'vue';
 import { defineStore } from 'pinia';
 import { employerMemberService } from '@/services/employerMember.service';
-import type { ResCompanyMember, ReqAddMember, ReqUpdatePermission } from '@/types/companyMember.types';
+import type { ResCompanyMember, ReqAddMember, ReqUpdatePermission, ResMemberPermissionDetail } from '@/types/companyMember.types';
 import type { ResultPaginationDTO } from '@/types/common.types';
 
 export const useEmployerMemberStore = defineStore('employerMember', () => {
     // State
     const members = ref<ResultPaginationDTO<ResCompanyMember> | null>(null);
+    const memberPermissions = ref<ResMemberPermissionDetail[]>([]);
     const loading = ref(false);
     const error = ref<string | null>(null);
 
@@ -77,8 +78,27 @@ export const useEmployerMemberStore = defineStore('employerMember', () => {
         }
     }
 
+    /**
+     * Lấy quyền chi tiết của nhiều thành viên cùng lúc (tối đa 5)
+     */
+    async function getBatchMemberPermissions(userIds: number[]) {
+        loading.value = true;
+        error.value = null;
+        try {
+            const res = await employerMemberService.getBatchMemberPermissions({ userIds });
+            memberPermissions.value = res.data;
+            return res.data;
+        } catch (err: any) {
+            error.value = err.response?.data?.message || 'Không thể lấy thông tin quyền thành viên';
+            throw err;
+        } finally {
+            loading.value = false;
+        }
+    }
+
     function reset() {
         members.value = null;
+        memberPermissions.value = [];
         loading.value = false;
         error.value = null;
     }
@@ -86,6 +106,7 @@ export const useEmployerMemberStore = defineStore('employerMember', () => {
     return {
         // State
         members,
+        memberPermissions,
         loading,
         error,
 
@@ -94,6 +115,7 @@ export const useEmployerMemberStore = defineStore('employerMember', () => {
         addMember,
         updateMemberPermission,
         removeMember,
+        getBatchMemberPermissions,
         reset
     };
 });

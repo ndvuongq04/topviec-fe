@@ -1,4 +1,5 @@
 import type { MemberRole, MemberStatus } from '@/constants/companyMember.constants';
+import type { ActionItem } from '@/types/role.types';
 
 export interface ResEmployerProfileDTO {
   // Tài khoản
@@ -43,4 +44,20 @@ export interface ResCompanyMember {
     actions: Record<string, boolean>;
     jobTitle: string | null;
     createdAt: string; // ISO 8601
+}
+
+export interface ReqBatchMemberPermission {
+    userIds: number[];
+}
+
+export interface ResMemberPermissionDetail {
+    userId: number;
+    email: string;
+    roleId: number;
+    roleName: MemberRole;
+    status: string;
+    jobTitle: string | null;
+    createdAt: string;
+    customPermissions: Record<string, boolean>;
+    effectivePermissions: ActionItem[];
 }
