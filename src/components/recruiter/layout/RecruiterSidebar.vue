@@ -83,16 +83,16 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
-import GlobalDropdown from '@/components/ui/GlobalDropdown.vue'
-import GlobalDropdownItem from '@/components/ui/GlobalDropdownItem.vue'
-import { useAuthStore } from '@/stores/auth.store'
 import EmployerProfileModal from '@/components/recruiter/profile/EmployerProfileModal.vue'
 import ChangePasswordModal from '@/components/recruiter/profile/ChangePasswordModal.vue'
-import { employerProfileService } from '@/services/employerProfile.service'
-import type { ResEmployerProfileDTO } from '@/types/companyMember.types'
+import GlobalDropdown from '@/components/ui/GlobalDropdown.vue'
+import GlobalDropdownItem from '@/components/ui/GlobalDropdownItem.vue'
 import { MEMBER_ROLE } from '@/constants/companyMember.constants'
+import { employerProfileService } from '@/services/employerProfile.service'
+import { useAuthStore } from '@/stores/auth.store'
+import type { ResEmployerProfileDTO } from '@/types/companyMember.types'
 
 const route = useRoute()
 const authStore = useAuthStore()
@@ -102,10 +102,10 @@ const showPasswordModal = ref(false)
 const profile = ref<ResEmployerProfileDTO | null>(null)
 
 const ROLE_LABELS: Record<string, string> = {
-  [MEMBER_ROLE.OWNER]:     'Chủ sở hữu',
-  [MEMBER_ROLE.MANAGER]:   'Quản lý',
+  [MEMBER_ROLE.OWNER]: 'Chủ sở hữu',
+  [MEMBER_ROLE.MANAGER]: 'Quản lý',
   [MEMBER_ROLE.RECRUITER]: 'Tuyển dụng',
-  [MEMBER_ROLE.VIEWER]:    'Xem',
+  [MEMBER_ROLE.VIEWER]: 'Xem',
 }
 
 const displayName = computed(() => {
@@ -114,7 +114,7 @@ const displayName = computed(() => {
 })
 
 const roleLabel = computed(() =>
-  profile.value ? (ROLE_LABELS[profile.value.roleName] ?? profile.value.roleName) : 'HR Manager'
+  profile.value ? (ROLE_LABELS[profile.value.roleName] ?? profile.value.roleName) : 'HR Manager',
 )
 
 const avatarInitial = computed(() => displayName.value.charAt(0).toUpperCase())
@@ -123,15 +123,23 @@ onMounted(async () => {
   try {
     profile.value = await employerProfileService.getMyProfile()
   } catch {
-    // Giữ fallback nếu API lỗi
+    // Keep fallback values when profile API fails.
   }
 })
 
-// Routes nằm dưới /recruiter/jobs/* nhưng thuộc nhóm Phỏng vấn
+// Routes nằm dưới /recruiter/jobs/* nhưng thuộc nhóm Phỏng vấn.
 const interviewJobRouteNames = new Set(['recruiter-job-interview-setup'])
 
 function isActive(to: string): boolean {
   if (to === '/recruiter') return route.path === '/recruiter'
+
+  if (to === '/recruiter/permissions') {
+    return route.path === '/recruiter/permissions'
+  }
+
+  if (to === '/recruiter/permissions/log') {
+    return route.path.startsWith('/recruiter/permissions/log')
+  }
 
   if (to === '/recruiter/interviews') {
     return route.path.startsWith('/recruiter/interviews') ||
@@ -147,19 +155,19 @@ function isActive(to: string): boolean {
 }
 
 const navItems = [
-  { to: '/recruiter',           icon: 'dashboard',        label: 'Dashboard' },
-  { to: '/recruiter/jobs',      icon: 'work',             label: 'Tin tuyển dụng' },
-  // { to: '/recruiter/candidates',icon: 'group',            label: 'Ứng viên' },
-  { to: '/recruiter/interviews', icon: 'event',    label: 'Phỏng vấn' },
-  // { to: '/recruiter/offers',     icon: 'handshake', label: 'Mời làm việc' },
-  // { to: '/recruiter/search-cv', icon: 'person_search',    label: 'Tìm CV' },
-  // { to: '/recruiter/reports',   icon: 'bar_chart',        label: 'Báo cáo' },
-  { to: '/recruiter/team',      icon: 'manage_accounts',  label: 'Quản lý nhóm' },
-  { to: '/recruiter/permissions',icon: 'admin_panel_settings', label: 'Phân quyền' },
-  { to: '/recruiter/company-profile', icon: 'business',     label: 'Thông tin công ty' },
-  { to: '/recruiter/messages',  icon: 'chat',             label: 'Tin nhắn' },
-  { to: '/recruiter/services',  icon: 'diamond',          label: 'Dịch vụ' },
-  { to: '/recruiter/billing',   icon: 'receipt_long',     label: 'Lịch sử đơn hàng' },
+  { to: '/recruiter', icon: 'dashboard', label: 'Dashboard' },
+  { to: '/recruiter/jobs', icon: 'work', label: 'Tin tuyển dụng' },
+  // { to: '/recruiter/candidates', icon: 'group', label: 'Ứng viên' },
+  { to: '/recruiter/interviews', icon: 'event', label: 'Phỏng vấn' },
+  // { to: '/recruiter/offers', icon: 'handshake', label: 'Mời làm việc' },
+  // { to: '/recruiter/search-cv', icon: 'person_search', label: 'Tìm CV' },
+  // { to: '/recruiter/reports', icon: 'bar_chart', label: 'Báo cáo' },
+  { to: '/recruiter/team', icon: 'manage_accounts', label: 'Quản lý nhóm' },
+  { to: '/recruiter/permissions', icon: 'admin_panel_settings', label: 'Phân quyền' },
+  { to: '/recruiter/permissions/log', icon: 'history', label: 'Lịch sử phân quyền' },
+  { to: '/recruiter/company-profile', icon: 'business', label: 'Thông tin công ty' },
+  { to: '/recruiter/messages', icon: 'chat', label: 'Tin nhắn' },
+  { to: '/recruiter/services', icon: 'diamond', label: 'Dịch vụ' },
+  { to: '/recruiter/billing', icon: 'receipt_long', label: 'Lịch sử đơn hàng' },
 ]
-
 </script>

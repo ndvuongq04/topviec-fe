@@ -33,6 +33,11 @@ export const recruiterRoutes: RouteRecordRaw[] = [
         component: () => import('@/pages/recruiter/PermissionConfigPage.vue'),
       },
       {
+        path: 'permissions/log',
+        name: 'recruiter-permissions-log',
+        component: () => import('@/pages/recruiter/PermissionLogPage.vue'),
+      },
+      {
         path: 'jobs',
         name: 'recruiter-jobs',
         component: () => import('@/pages/recruiter/JobPostingsPage.vue'),

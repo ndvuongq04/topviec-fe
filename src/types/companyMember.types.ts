@@ -1,4 +1,4 @@
-import type { MemberRole, MemberStatus } from '@/constants/companyMember.constants';
+import type { MemberRole, MemberStatus, PermissionChangeType } from '@/constants/companyMember.constants';
 import type { ActionItem } from '@/types/role.types';
 
 export interface ResEmployerProfileDTO {
@@ -27,7 +27,7 @@ export interface ReqAddMember {
 }
 
 export interface ReqUpdatePermission {
-    roleName: string;
+    roleId: number;
     reason?: string;
 }
 
@@ -50,6 +50,21 @@ export interface ReqBatchMemberPermission {
 
 export interface ReqToggleMemberAction {
     enabled: boolean;
+}
+
+export interface ResPermissionChangeLogDTO {
+    id: number;
+    targetUserId: number;
+    targetEmail: string;
+    changedBy: number;
+    changedByEmail: string;
+    changeType: PermissionChangeType;
+    oldRole: MemberRole | null;
+    newRole: MemberRole | null;
+    oldPermissions: Record<string, string[]> | null;
+    newPermissions: Record<string, string[]> | null;
+    reason: string | null;
+    createdAt: string;
 }
 
 export interface ResMemberPermissionDetail {

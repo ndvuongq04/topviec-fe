@@ -145,6 +145,16 @@ const tableMembers = computed(() => {
   }))
 })
 
+// Build roleName → roleId map từ danh sách members đã load (không cần gọi thêm API)
+const roleIdByName = computed(() => {
+  const map: Record<string, number> = {}
+  for (const m of memberStore.members?.result ?? []) {
+    const key = String(m.roleName).toLowerCase()
+    if (!map[key]) map[key] = m.roleId
+  }
+  return map
+})
+
 // filteredMembers computed is no longer needed as search is done on BE
 const filteredMembers = computed(() => tableMembers.value)
 
@@ -169,10 +179,15 @@ function onEdit(member: any) {
   isUpdateModalOpen.value = true
 }
 
-async function handleUpdatePermission(data: any) {
+async function handleUpdatePermission(data: { roleName: string; reason?: string }) {
   if (!selectedMember.value) return
+  const roleId = roleIdByName.value[data.roleName.toLowerCase()]
+  if (!roleId) {
+    toast.error('Không tìm thấy roleId cho vai trò này. Vui lòng thử lại.')
+    return
+  }
   try {
-    await memberStore.updateMemberPermission(selectedMember.value.id, data)
+    await memberStore.updateMemberPermission(selectedMember.value.id, { roleId, reason: data.reason })
     toast.success('Đã cập nhật quyền thành công')
     isUpdateModalOpen.value = false
     fetchMembers()

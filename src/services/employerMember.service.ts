@@ -1,6 +1,6 @@
 import axiosInstance from './axios';
 import type { RestResponse, ResultPaginationDTO } from '@/types/common.types';
-import type { ReqAddMember, ReqBatchMemberPermission, ReqToggleMemberAction, ReqUpdatePermission, ResCompanyMember, ResMemberPermissionDetail } from '@/types/companyMember.types';
+import type { ReqAddMember, ReqBatchMemberPermission, ReqToggleMemberAction, ReqUpdatePermission, ResCompanyMember, ResMemberPermissionDetail, ResPermissionChangeLogDTO } from '@/types/companyMember.types';
 
 export const employerMemberService = {
     /**
@@ -54,6 +54,29 @@ export const employerMemberService = {
      */
     async getMyPermissions(): Promise<RestResponse<ResMemberPermissionDetail>> {
         const res = await axiosInstance.get<RestResponse<ResMemberPermissionDetail>>('/employer/member/me/permissions');
+        return res.data;
+    },
+
+    /**
+     * GET /employer/member/{targetUserId}/permissions/history
+     * Lấy lịch sử thay đổi quyền của một thành viên cụ thể
+     */
+    async getMemberPermissionHistory(targetUserId: number): Promise<RestResponse<ResPermissionChangeLogDTO[]>> {
+        const res = await axiosInstance.get<RestResponse<ResPermissionChangeLogDTO[]>>(
+            `/employer/member/${targetUserId}/permissions/history`
+        );
+        return res.data;
+    },
+
+    /**
+     * GET /employer/member/permissions/history
+     * Lấy lịch sử thay đổi quyền toàn công ty (có phân trang)
+     */
+    async getCompanyPermissionHistory(params?: Record<string, unknown>): Promise<RestResponse<ResultPaginationDTO<ResPermissionChangeLogDTO>>> {
+        const res = await axiosInstance.get<RestResponse<ResultPaginationDTO<ResPermissionChangeLogDTO>>>(
+            '/employer/member/permissions/history',
+            { params }
+        );
         return res.data;
     },
 
