@@ -143,6 +143,11 @@ export const recruiterRoutes: RouteRecordRaw[] = [
         component: () => import('@/pages/recruiter/OfferManagementPage.vue'),
       },
       {
+        path: 'talent-pool',
+        name: 'recruiter-talent-pool',
+        component: () => import('@/pages/recruiter/TalentPoolPage.vue'),
+      },
+      {
         path: 'messages',
         name: 'recruiter-messages',
         component: () => import('@/pages/recruiter/MessagesPage.vue'),
