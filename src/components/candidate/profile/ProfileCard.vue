@@ -96,13 +96,6 @@
           <span class="material-symbols-outlined text-[20px]">language</span>
         </a>
       </div>
-
-      <div class="mt-6 w-full">
-        <button class="w-full py-2.5 px-4 bg-primary/10 text-primary font-bold text-sm rounded-2xl hover:bg-primary/20 transition-colors flex items-center justify-center gap-2 cursor-pointer">
-          <span class="material-symbols-outlined text-[18px]">visibility</span>
-          Xem hồ sơ công khai
-        </button>
-      </div>
     </div>
 
   </div>

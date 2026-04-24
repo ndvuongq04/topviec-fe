@@ -153,7 +153,7 @@ function handleInvite()  { router.push('/recruiter/job-applications') }
   --radius-sm: 0.5rem;
 
   font-family: 'Manrope', sans-serif;
-  background: #f8fafc;
+
   color: #0f172a;
   min-height: 100vh;
 }

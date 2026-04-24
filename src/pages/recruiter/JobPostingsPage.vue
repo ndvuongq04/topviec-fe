@@ -565,7 +565,7 @@ const confirmStartInterviewing = async () => {
   flex-direction: column;
   gap: 2rem;
   min-height: 100vh;
-  background-color: #f8fafc;
+ 
   font-family: 'Manrope', sans-serif;
 }
 
