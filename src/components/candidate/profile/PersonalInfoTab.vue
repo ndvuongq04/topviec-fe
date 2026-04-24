@@ -114,6 +114,18 @@
       </h3>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 
+        <!-- Vị trí làm việc mong muốn -->
+        <div class="space-y-2 md:col-span-2">
+          <label class="text-sm font-bold text-text-muted uppercase tracking-wider">Vị trí làm việc mong muốn</label>
+          <input
+            v-model="form.preferredJobTitle"
+            type="text"
+            maxlength="255"
+            class="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 px-4 py-2.5 text-text-main dark:text-white placeholder:text-text-muted dark:placeholder:text-gray-500 focus:border-primary focus:ring-1 focus:ring-primary text-base font-medium outline-none transition-all"
+            placeholder="VD: Intern Java, Frontend Developer, Product Manager..."
+          />
+        </div>
+
         <!-- Mức lương -->
         <div class="space-y-2 md:col-span-2">
           <label class="text-sm font-bold text-text-muted uppercase tracking-wider">
@@ -255,6 +267,7 @@ const form = reactive({
   expectedSalaryMin: null as number | null,
   expectedSalaryMax: null as number | null,
   salaryNegotiable: false,
+  preferredJobTitle: '',
   preferredWorkType: '' as PreferredWorkType | '',
   preferredLocationId: null as number | null,
   jobSeekingStatus: JobSeekingStatus.ACTIVE,
@@ -347,6 +360,7 @@ function syncFromStore() {
   form.expectedSalaryMin   = p.expectedSalaryMin
   form.expectedSalaryMax   = p.expectedSalaryMax
   form.salaryNegotiable    = p.salaryNegotiable ?? false
+  form.preferredJobTitle   = p.preferredJobTitle ?? ''
   form.preferredWorkType   = (p.preferredWorkType ?? '') as typeof form.preferredWorkType
   form.preferredLocationId = p.preferredLocationId
   form.jobSeekingStatus    = p.jobSeekingStatus ?? JobSeekingStatus.ACTIVE
@@ -383,6 +397,7 @@ async function saveChanges() {
     expectedSalaryMin:   form.expectedSalaryMin,
     expectedSalaryMax:   form.expectedSalaryMax,
     salaryNegotiable:    form.salaryNegotiable,
+    preferredJobTitle:   form.preferredJobTitle || null,
     preferredWorkType:   (form.preferredWorkType || null) as PreferredWorkType | null,
     preferredLocationId: form.preferredLocationId,
     jobSeekingStatus:    form.jobSeekingStatus,
