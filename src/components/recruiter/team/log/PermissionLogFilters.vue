@@ -36,24 +36,6 @@
 
             <div class="member-picker-list">
               <button
-                type="button"
-                class="member-picker-item"
-                :class="{ 'member-picker-item--on': !member }"
-                @click="selectMember('')"
-              >
-                <div class="member-picker-ava member-picker-ava--empty">
-                  <span class="material-symbols-outlined">group</span>
-                </div>
-                <div class="member-picker-info">
-                  <span class="member-picker-name">Tất cả thành viên</span>
-                  <span class="member-picker-email">Hiển thị toàn bộ lịch sử thay đổi</span>
-                </div>
-                <div class="member-picker-check" :class="{ 'member-picker-check--on': !member }">
-                  <span class="material-symbols-outlined">{{ !member ? 'check' : 'add' }}</span>
-                </div>
-              </button>
-
-              <button
                 v-for="memberItem in members"
                 :key="memberItem.id"
                 type="button"
@@ -80,6 +62,56 @@
                   </span>
                 </div>
               </button>
+            </div>
+          </div>
+        </Transition>
+      </div>
+
+      <!-- Date range picker -->
+      <div ref="dateRef" class="type-wrap">
+        <button class="type-btn" type="button" @click="showDate = !showDate">
+          <span class="material-symbols-outlined type-btn-icon">calendar_month</span>
+          {{ dateLabel }}
+          <span
+            v-if="dateFrom || dateTo"
+            class="date-clear"
+            @click.stop="clearDate"
+          >
+            <span class="material-symbols-outlined">close</span>
+          </span>
+          <span v-else class="material-symbols-outlined type-chevron" :class="{ open: showDate }">expand_more</span>
+        </button>
+
+        <Transition name="picker-fade">
+          <div v-if="showDate" class="date-dropdown">
+            <div class="date-dropdown-head">
+              <span class="material-symbols-outlined">date_range</span>
+              Khoảng thời gian
+            </div>
+            <div class="date-fields">
+              <div class="date-field">
+                <label class="date-label">Từ ngày</label>
+                <input
+                  v-model="draftDateFrom"
+                  type="date"
+                  class="date-input"
+                  :max="draftDateTo || undefined"
+                />
+              </div>
+              <span class="date-sep material-symbols-outlined">arrow_forward</span>
+              <div class="date-field">
+                <label class="date-label">Đến ngày</label>
+                <input
+                  v-model="draftDateTo"
+                  type="date"
+                  class="date-input"
+                  :min="draftDateFrom || undefined"
+                />
+              </div>
+            </div>
+            <div class="date-actions">
+              <button class="date-action-clear" type="button" @click="clearDate">Xóa</button>
+              <button class="date-action-apply" type="button" @click="onApply">Áp dụng</button>
             </div>
           </div>
         </Transition>
@@ -117,7 +149,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import type { ResCompanyMember } from '@/types/companyMember.types'
 
 const props = defineProps<{
@@ -126,12 +158,17 @@ const props = defineProps<{
   member: string
   members: ResCompanyMember[]
   resultCount: number
+  dateFrom: string
+  dateTo: string
 }>()
 
 const emit = defineEmits<{
   'update:tab': [value: 'company' | 'member']
   'update:type': [value: string]
   'update:member': [value: string]
+  'update:dateFrom': [value: string]
+  'update:dateTo': [value: string]
+  'apply': []
 }>()
 
 const showPicker = ref(false)
@@ -139,6 +176,42 @@ const pickerRef = ref<HTMLElement | null>(null)
 
 const showType = ref(false)
 const typeRef = ref<HTMLElement | null>(null)
+
+const showDate = ref(false)
+const dateRef = ref<HTMLElement | null>(null)
+const draftDateFrom = ref(props.dateFrom)
+const draftDateTo = ref(props.dateTo)
+
+const dateLabel = computed(() => {
+  if (!props.dateFrom && !props.dateTo) return 'Thời gian'
+  const fmt = (d: string) => d.split('-').reverse().join('/')
+  if (props.dateFrom && props.dateTo) return `${fmt(props.dateFrom)} – ${fmt(props.dateTo)}`
+  if (props.dateFrom) return `Từ ${fmt(props.dateFrom)}`
+  return `Đến ${fmt(props.dateTo)}`
+})
+
+watch(showDate, (isOpen) => {
+  if (isOpen) {
+    draftDateFrom.value = props.dateFrom
+    draftDateTo.value = props.dateTo
+  }
+})
+
+function onApply() {
+  emit('update:dateFrom', draftDateFrom.value)
+  emit('update:dateTo', draftDateTo.value)
+  showDate.value = false
+  emit('apply')
+}
+
+function clearDate() {
+  draftDateFrom.value = ''
+  draftDateTo.value = ''
+  emit('update:dateFrom', '')
+  emit('update:dateTo', '')
+  showDate.value = false
+  emit('apply')
+}
 
 const typeOptions = [
   { value: 'all',               label: 'Tất cả thay đổi', icon: 'list'            },
@@ -202,10 +275,21 @@ function onDocClick(event: MouseEvent) {
   if (typeRef.value && !typeRef.value.contains(event.target as Node)) {
     showType.value = false
   }
+  if (dateRef.value && !dateRef.value.contains(event.target as Node)) {
+    showDate.value = false
+  }
 }
 
 onMounted(() => document.addEventListener('mousedown', onDocClick))
 onUnmounted(() => document.removeEventListener('mousedown', onDocClick))
+
+watch(
+  () => [props.dateFrom, props.dateTo],
+  ([nextFrom, nextTo]) => {
+    draftDateFrom.value = nextFrom
+    draftDateTo.value = nextTo
+  },
+)
 </script>
 
 <style scoped>
@@ -357,14 +441,6 @@ onUnmounted(() => document.removeEventListener('mousedown', onDocClick))
   color: #fff;
   font-size: 0.75rem;
   font-weight: 700;
-}
-
-.member-picker-ava--empty {
-  background: linear-gradient(135deg, #94a3b8, #64748b);
-}
-
-.member-picker-ava--empty .material-symbols-outlined {
-  font-size: 18px;
 }
 
 .member-picker-info {
@@ -560,6 +636,151 @@ onUnmounted(() => document.removeEventListener('mousedown', onDocClick))
   flex-shrink: 0;
 }
 
+/* ── Date range picker ── */
+.date-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  z-index: 10;
+  width: min(420px, calc(100vw - 32px));
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1), 0 2px 6px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+}
+
+.date-dropdown-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  border-bottom: 1px solid #f1f5f9;
+  background: #f8fafc;
+  color: #475569;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.date-dropdown-head .material-symbols-outlined {
+  color: #4b9af6;
+  font-size: 18px;
+}
+
+.date-fields {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: end;
+  column-gap: 8px;
+  padding: 16px;
+}
+
+.date-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.date-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.date-input {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-family: 'Manrope', sans-serif;
+  font-size: 0.875rem;
+  color: #0f172a;
+  background: #f8fafc;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.date-input:focus {
+  border-color: #4b9af6;
+  box-shadow: 0 0 0 3px rgba(75, 154, 246, 0.1);
+  background: #fff;
+}
+
+.date-sep {
+  font-size: 16px;
+  color: #cbd5e1;
+  flex-shrink: 0;
+  margin-bottom: 9px;
+}
+
+.date-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 12px 16px;
+  border-top: 1px solid #f1f5f9;
+  background: #f8fafc;
+}
+
+.date-action-clear {
+  padding: 7px 16px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #fff;
+  color: #64748b;
+  font-family: 'Manrope', sans-serif;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.date-action-clear:hover {
+  background: #f1f5f9;
+}
+
+.date-action-apply {
+  padding: 7px 16px;
+  border: none;
+  border-radius: 8px;
+  background: #4b9af6;
+  color: #fff;
+  font-family: 'Manrope', sans-serif;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.date-action-apply:hover {
+  background: #3b82f6;
+}
+
+.date-clear {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.12);
+  color: inherit;
+  margin-left: 2px;
+  transition: background 0.15s;
+}
+
+.date-clear:hover {
+  background: rgba(0, 0, 0, 0.22);
+}
+
+.date-clear .material-symbols-outlined {
+  font-size: 13px !important;
+}
+
 .result-count {
   margin-left: auto;
   color: #94a3b8;
@@ -578,12 +799,22 @@ onUnmounted(() => document.removeEventListener('mousedown', onDocClick))
   .member-picker-dropdown,
   .type-wrap,
   .type-btn,
-  .type-dropdown {
+  .type-dropdown,
+  .date-dropdown {
     width: 100%;
   }
 
   .member-picker-dropdown {
     left: 0;
+  }
+
+  .date-fields {
+    grid-template-columns: 1fr;
+    row-gap: 12px;
+  }
+
+  .date-sep {
+    display: none;
   }
 
   .result-count {

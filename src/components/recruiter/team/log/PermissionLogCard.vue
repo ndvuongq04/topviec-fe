@@ -53,6 +53,12 @@
           <span class="material-symbols-outlined footer-icon">chat_bubble</span>
           <span class="footer-value reason-text">{{ log.reason }}</span>
         </div>
+
+        <div class="footer-created-at">
+          <span class="material-symbols-outlined footer-created-icon">event</span>
+          <span class="footer-created-label">Ngày tạo</span>
+          <span class="footer-created-value">{{ log.createdDate }}</span>
+        </div>
       </div>
     </div>
   </div>
@@ -77,6 +83,7 @@ const props = defineProps<{
     removedPerms: string[]
     changedBy: string
     time: string
+    createdDate: string
     reason: string | null
   }
 }>()
@@ -236,8 +243,33 @@ const typeClass = computed(() =>
   color: #475569;
 }
 
+.footer-created-at {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  align-self: flex-end;
+  margin-top: 4px;
+  color: #94A3B8;
+  font-size: 0.75rem;
+  white-space: nowrap;
+}
+
+.footer-created-icon {
+  font-size: 14px;
+}
+
+.footer-created-label::after {
+  content: ':';
+}
+
+.footer-created-value {
+  color: #64748B;
+  font-weight: 700;
+}
+
 @media (max-width: 600px) {
   .log-time { width: 100%; }
   .badge { margin-left: auto; }
+  .footer-created-at { align-self: flex-start; }
 }
 </style>
