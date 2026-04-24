@@ -74,6 +74,7 @@
           @schedule="emit('schedule', $event)"
           @evaluate="emit('evaluate', $event)"
           @offer="emit('offer', $event)"
+          @save-talent-pool="emit('saveTalentPool', $event)"
         />
       </tbody>
     </table>
@@ -171,6 +172,7 @@ const emit = defineEmits<{
   schedule: [candidateId: number]
   evaluate: [candidateId: number]
   offer: [candidateId: number]
+  saveTalentPool: [candidateId: number]
 }>()
 </script>
 

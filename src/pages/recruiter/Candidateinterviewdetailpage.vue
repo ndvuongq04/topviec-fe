@@ -177,7 +177,7 @@
 
             <!-- Submit button per round (Only if not evaluated) -->
             <div v-if="!round.result" class="eval-form__actions">
-              <button 
+              <button
                 class="btn-save-eval"
                 :disabled="isSubmitting[round.scheduleId!]"
                 @click="saveRoundEvaluation(round)"
@@ -186,6 +186,14 @@
                   {{ isSubmitting[round.scheduleId!] ? 'hourglass_empty' : 'save' }}
                 </span>
                 {{ 'Lưu kết quả' }}
+              </button>
+              <button
+                class="btn-talent-pool-eval"
+                type="button"
+                @click="saveToTalentPool(round)"
+              >
+                <span class="material-symbols-outlined">group_add</span>
+                Lưu vào TalentPool
               </button>
             </div>
           </div>
@@ -210,6 +218,7 @@ import { useRoute } from 'vue-router'
 import Breadcrumb from '@/components/ui/Breadcrumb.vue'
 import InterviewTimeline from '@/components/recruiter/interviews/candidate-detail/InterviewTimeline.vue'
 import employerInterviewService from '@/services/employerInterview.service'
+import employerTalentPoolService from '@/services/employerTalentPool.service'
 import type { ResInterviewHistoryDTO, RoundHistory } from '@/types/interview.types'
 import { useToast } from '@/composables/useToast'
 
@@ -361,6 +370,20 @@ async function saveRoundEvaluation(round: RoundHistory) {
     toast.error('Lỗi', err?.response?.data?.message ?? 'Không thể lưu kết quả. Vui lòng thử lại.')
   } finally {
     isSubmitting.value[round.scheduleId] = false
+  }
+}
+
+async function saveToTalentPool(_round: RoundHistory) {
+  if (!history.value?.candidateUserId) return
+  try {
+    await employerTalentPoolService.addToTalentPool({
+      candidateUserId: history.value.candidateUserId,
+      source: 'INTERVIEW',
+    })
+    toast.success('Đã lưu vào TalentPool!', `Ứng viên ${history.value.candidateName} đã được thêm vào TalentPool.`)
+  } catch (err: any) {
+    const msg = err?.response?.data?.message ?? 'Không thể lưu vào TalentPool. Vui lòng thử lại.'
+    toast.error('Lỗi', typeof msg === 'string' ? msg : msg?.[0])
   }
 }
 </script>
@@ -905,7 +928,7 @@ async function saveRoundEvaluation(round: RoundHistory) {
 .eval-form__textarea:focus { border-color: #4b9af6; background: #fff; }
 
 .eval-form__actions {
-  display: flex; justify-content: flex-end; margin-top: 0.5rem;
+  display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 0.5rem;
 }
 
 .btn-save-eval {
@@ -919,6 +942,18 @@ async function saveRoundEvaluation(round: RoundHistory) {
 .btn-save-eval:active:not(:disabled) { transform: translateY(0); }
 .btn-save-eval:disabled { background: #94a3b8; cursor: not-allowed; opacity: 0.7; }
 .btn-save-eval .material-symbols-outlined { font-size: 1.1rem; }
+
+.btn-talent-pool-eval {
+  display: inline-flex; align-items: center; gap: 0.5rem;
+  padding: 0.625rem 1.25rem; border-radius: 0.625rem;
+  background: #fff; color: #059669;
+  border: 2px solid #d1fae5;
+  font-size: 0.875rem; font-weight: 700; cursor: pointer;
+  transition: background 0.2s, color 0.2s, border-color 0.2s, transform 0.1s;
+}
+.btn-talent-pool-eval:hover { background: #059669; color: #fff; border-color: #059669; transform: translateY(-1px); }
+.btn-talent-pool-eval:active { transform: translateY(0); }
+.btn-talent-pool-eval .material-symbols-outlined { font-size: 1.1rem; }
 
 /* ── Responsive ─────────────────────────────────────────────── */
 @media (max-width: 1024px) {

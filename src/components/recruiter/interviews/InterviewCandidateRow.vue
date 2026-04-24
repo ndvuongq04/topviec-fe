@@ -131,6 +131,13 @@
             @click="handleAction('offer', close)"
           />
 
+          <!-- Lưu vào TalentPool -->
+          <GlobalDropdownItem
+            icon="group_add"
+            label="Lưu vào TalentPool"
+            @click="handleAction('saveTalentPool', close)"
+          />
+
           <div class="dropdown-divider-v2"></div>
 
           <!-- Hủy lịch -->
@@ -191,9 +198,10 @@ const emit = defineEmits<{
   schedule: [candidateId: number]
   evaluate: [candidateId: number]
   offer: [candidateId: number]
+  saveTalentPool: [candidateId: number]
 }>()
 
-function handleAction(action: 'viewDetail' | 'openLink' | 'reschedule' | 'remind' | 'cancel' | 'schedule' | 'evaluate' | 'offer', close: () => void) {
+function handleAction(action: 'viewDetail' | 'openLink' | 'reschedule' | 'remind' | 'cancel' | 'schedule' | 'evaluate' | 'offer' | 'saveTalentPool', close: () => void) {
   close()
   emit(action as any, props.candidate.id)
 }

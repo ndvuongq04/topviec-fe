@@ -109,6 +109,7 @@ export interface ResInterviewRoundDTO {
 export interface ResInterviewScheduleDTO {
   id: number;
   applicationId: number;
+  candidateUserId: number;
   roundId: number;
   roundNumber: number;
   roundName: string;
@@ -177,6 +178,7 @@ export interface RoundHistory {
 
 export interface ResInterviewHistoryDTO {
   applicationId: number;
+  candidateUserId: number;
   candidateName: string;
   currentStatus: string;
   cvUrl?: string;

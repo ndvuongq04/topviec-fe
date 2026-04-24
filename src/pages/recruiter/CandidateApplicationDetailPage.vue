@@ -22,6 +22,7 @@
           :initial-status="application.status"
           @save="handleSave"
           @invite-interview="handleInviteInterview"
+          @save-to-talent-pool="handleSaveToTalentPool"
         />
         <CandidateActivityLog :activities="activityLog" />
       </aside>
@@ -36,6 +37,7 @@ import CvPreviewPanel from '@/components/recruiter/application/Cvpreviewpanel.vu
 import CandidateEvaluationPanel from '@/components/recruiter/application/Candidateevaluationpanel.vue'
 import CandidateActivityLog from '@/components/recruiter/application/Candidateactivitylog.vue'
 import employerApplicationService from '@/services/employerApplication.service'
+import employerTalentPoolService from '@/services/employerTalentPool.service'
 import { useToast } from '@/composables/useToast'
 import type { ResEmployerApplicationDTO } from '@/types/employerApplication.types'
 
@@ -103,6 +105,20 @@ async function handleSave(data: { status: string; rating: number; note: string; 
 
 function handleInviteInterview() {
   toast.info('Tính năng đang phát triển')
+}
+
+async function handleSaveToTalentPool() {
+  if (!application.value?.candidateUserId) return
+  try {
+    await employerTalentPoolService.addToTalentPool({
+      candidateUserId: application.value.candidateUserId,
+      source: 'REVIEW_CV',
+    })
+    toast.success('Đã lưu vào TalentPool!', `Ứng viên ${application.value.candidateName} đã được thêm vào TalentPool.`)
+  } catch (err: any) {
+    const msg = err?.response?.data?.message ?? 'Không thể lưu vào TalentPool. Vui lòng thử lại.'
+    toast.error('Lỗi', typeof msg === 'string' ? msg : msg?.[0])
+  }
 }
 
 onMounted(fetchApplication)

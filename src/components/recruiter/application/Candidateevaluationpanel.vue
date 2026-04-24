@@ -109,7 +109,10 @@
         <span class="material-symbols-outlined">save</span>
         Lưu Đánh Giá
       </button>
-
+      <button class="btn-talent-pool" type="button" @click="emit('save-to-talent-pool')">
+        <span class="material-symbols-outlined">group_add</span>
+        Lưu vào talentPool
+      </button>
     </div>
   </div>
 </template>
@@ -139,6 +142,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   save: [data: EvaluationFormData]
   'invite-interview': []
+  'save-to-talent-pool': []
 }>()
 
 // ── Status options — value là status thật gửi lên API ──
@@ -417,12 +421,12 @@ function onSave() {
   background: #f8fafc;
   border-top: 1px solid #f1f5f9;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   gap: 0.75rem;
 }
 
 .btn-primary {
-  width: 100%;
+  flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -440,6 +444,25 @@ function onSave() {
 }
 .btn-primary:hover  { background: #2563eb; transform: scale(1.02); }
 .btn-primary:active { transform: scale(0.97); }
+
+.btn-talent-pool {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  border-radius: 0.75rem;
+  background: #fff;
+  color: #059669;
+  font-size: 0.875rem;
+  font-weight: 800;
+  border: 2px solid #d1fae5;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s, transform 0.12s;
+}
+.btn-talent-pool:hover  { background: #059669; color: #fff; border-color: #059669; transform: scale(1.02); }
+.btn-talent-pool:active { transform: scale(0.97); }
 
 .btn-secondary {
   width: 100%;
