@@ -10,7 +10,7 @@ import type {
 export const roleService = {
     /**
      * GET /admin/roles/default-permissions
-     * Lấy danh sách cấu hình phân quyền mặc định của các role
+     * Lấy danh sách cấu hình phân quyền mặc định của các role (admin only)
      */
     async getDefaultRoles(): Promise<ResRoleDefaultDTO[]> {
         const res = await axiosInstance.get<RestResponse<ResRoleDefaultDTO[]>>(
@@ -19,7 +19,7 @@ export const roleService = {
         return res.data.data
     },
 
-    /**
+/**
      * PATCH /admin/roles/{roleId}/actions/{actionName}
      * Bật / tắt một action của role
      */

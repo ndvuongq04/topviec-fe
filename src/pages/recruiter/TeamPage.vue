@@ -57,7 +57,6 @@ import TeamTable from '@/components/recruiter/team/TeamTable.vue'
 import InviteMemberModal from '@/components/recruiter/team/InviteMemberModal.vue'
 import UpdatePermissionModal from '@/components/recruiter/team/UpdatePermissionModal.vue'
 import { useEmployerMemberStore } from '@/stores/employerMember.store'
-import { useRoleStore } from '@/stores/role.store'
 import { useConfirm } from '@/composables/useConfirm'
 import type { ResCompanyMember } from '@/types/companyMember.types'
 import { MEMBER_ROLE, MEMBER_STATUS } from '@/constants/companyMember.constants'
@@ -65,7 +64,6 @@ import { useToast } from '@/composables/useToast'
 
 // ─── State ───────────────────────────────────────────────────────────────────
 const memberStore = useEmployerMemberStore()
-const roleStore = useRoleStore()
 const toast = useToast()
 
 const searchQuery = ref('')
@@ -81,7 +79,6 @@ const selectedMember    = ref<any>(null)
 const { confirm } = useConfirm()
 
 onMounted(() => {
-  roleStore.fetchDefaultPermissions()
   fetchMembers()
 })
 

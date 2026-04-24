@@ -30,14 +30,13 @@
                 @click="toggleMember(m)"
               >
                 <div class="pmm-picker-ava" :style="avaStyle(m)">
-                  <img v-if="m.avatar" :src="m.avatar" class="pmm-ava-img" @error="handleImgError($event)" />
-                  <span v-else>{{ m.initials || getInitials(m.name) }}</span>
+                  <span>{{ getInitials(m.email) }}</span>
                 </div>
                 <div class="pmm-picker-info">
-                  <span class="pmm-picker-name">{{ m.name }}</span>
+                  <span class="pmm-picker-name">{{ m.email.split('@')[0] }}</span>
                   <span class="pmm-picker-email">{{ m.email }}</span>
                 </div>
-                <span :class="['pmm-r-tag', `pmm-r-tag--${m.role}`]">{{ roleLabel[m.role] }}</span>
+                <span :class="['pmm-r-tag', `pmm-r-tag--${m.roleName}`]">{{ roleLabel[m.roleName as string] }}</span>
                 <div :class="['pmm-picker-check', isSelected(m.id) && 'pmm-picker-check--on']">
                   <span class="material-symbols-outlined">{{ isSelected(m.id) ? 'check' : 'add' }}</span>
                 </div>
@@ -57,12 +56,11 @@
             <th v-for="m in selectedMembers" :key="m.id" class="pmm-th pmm-th--member">
               <div class="pmm-member-head">
                 <div class="pmm-member-ava" :style="avaStyle(m)">
-                  <img v-if="m.avatar" :src="m.avatar" class="pmm-ava-img" @error="handleImgError($event)" />
-                  <span v-else>{{ m.initials || getInitials(m.name) }}</span>
+                  <span>{{ getInitials(m.email) }}</span>
                 </div>
                 <div class="pmm-member-meta">
-                  <span class="pmm-member-name">{{ m.name }}</span>
-                  <span :class="['pmm-r-tag', `pmm-r-tag--${m.role}`]">{{ roleLabel[m.role] }}</span>
+                  <span class="pmm-member-name">{{ m.email.split('@')[0] }}</span>
+                  <span :class="['pmm-r-tag', `pmm-r-tag--${m.roleName}`]">{{ roleLabel[m.roleName as string] }}</span>
                 </div>
                 <button class="pmm-remove-btn" @click="removeMember(m.id)" title="Bỏ khỏi bảng">
                   <span class="material-symbols-outlined">close</span>
@@ -106,11 +104,20 @@
                 </div>
               </td>
               <td v-for="m in selectedMembers" :key="m.id" class="pmm-toggle-cell">
-                <RPermToggle
-                  :model-value="state[`${perm.id}|${m.id}`] ?? false"
-                  :locked="m.role === 'owner'"
-                  @update:model-value="state[`${perm.id}|${m.id}`] = $event"
-                />
+                <div v-if="loadingM[m.id] || savingCell[`${perm.id}|${m.id}`]" class="pmm-cell-loading">
+                  <span class="material-symbols-outlined pmm-spin">progress_activity</span>
+                </div>
+                <div v-else class="pmm-cell-inner">
+                  <span
+                    v-if="customPerms[m.id]?.[perm.id] === true"
+                    class="pmm-tag-custom"
+                  >Custom</span>
+                  <RPermToggle
+                    :model-value="state[`${perm.id}|${m.id}`] ?? false"
+                    :locked="m.roleName === 'owner'"
+                    @update:model-value="handleToggle(m, perm.id, $event)"
+                  />
+                </div>
               </td>
             </tr>
 
@@ -134,15 +141,16 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
 import RPermToggle from './RPermToggle.vue'
+import { employerMemberService } from '@/services/employerMember.service'
+import type { ResCompanyMember } from '@/types/companyMember.types'
+import { useToast } from '@/composables/useToast'
 
-interface Member {
-  id: string; name: string; email: string; role: string;
-  avatar?: string; initials?: string
-}
+const toast = useToast()
+
 interface Perm  { id: string; label: string }
 interface Group { id: string; label: string; sub: string; icon: string; perms: Perm[] }
 
-const props = defineProps<{ members: Member[] }>()
+const props = defineProps<{ members: ResCompanyMember[] }>()
 
 const roleLabel: Record<string, string> = {
   owner: 'Owner', manager: 'Manager', recruiter: 'Recruiter', viewer: 'Viewer',
@@ -155,89 +163,114 @@ const ROLE_COLORS: Record<string, string> = {
   viewer:    'linear-gradient(135deg,#94a3b8,#64748b)',
 }
 
-const groups: Group[] = [
-  { id:'cv',        label:'Quản lý Hồ sơ ứng tuyển', sub:'CV',        icon:'description',   perms:[
-    { id:'cv:view',   label:'Xem danh sách CV' },
-    { id:'cv:export', label:'Tải xuất CV' },
-  ]},
-  { id:'job',       label:'Quản lý Tin tuyển dụng',   sub:'Job',       icon:'work',          perms:[
-    { id:'job:create',  label:'Tạo tin tuyển dụng mới' },
-    { id:'job:edit',    label:'Chỉnh sửa tin đăng' },
-    { id:'job:delete',  label:'Xoá tin tuyển dụng' },
-    { id:'job:approve', label:'Duyệt tin đăng' },
-  ]},
-  { id:'talent',    label:'Quản lý Ứng viên',          sub:'Talent',    icon:'person',        perms:[
-    { id:'talent:view',    label:'Xem hồ sơ ứng viên' },
-    { id:'talent:contact', label:'Liên hệ ứng viên' },
-    { id:'talent:export',  label:'Xuất danh sách ứng viên' },
-  ]},
-  { id:'interview', label:'Quản lý Phỏng vấn',         sub:'Interview', icon:'event_upcoming',perms:[
-    { id:'interview:create',   label:'Tạo lịch phỏng vấn' },
-    { id:'interview:evaluate', label:'Đánh giá ứng viên' },
-  ]},
-  { id:'member',    label:'Quản lý Thành viên',         sub:'Member',    icon:'group',         perms:[
-    { id:'member:invite', label:'Mời thành viên mới' },
-    { id:'member:remove', label:'Xoá thành viên' },
-    { id:'member:perm',   label:'Phân quyền thành viên' },
-  ]},
-  { id:'report',    label:'Báo cáo & Thống kê',         sub:'Report',    icon:'bar_chart',     perms:[
-    { id:'report:view',   label:'Xem báo cáo tuyển dụng' },
-    { id:'report:export', label:'Xuất báo cáo' },
-  ]},
-]
-
-const DEFAULT_ON: Record<string, string[]> = {
-  owner:     ['cv:view','cv:export','job:create','job:edit','job:delete','job:approve','talent:view','talent:contact','talent:export','interview:create','interview:evaluate','member:invite','member:remove','member:perm','report:view','report:export'],
-  manager:   ['cv:view','cv:export','job:create','job:edit','job:approve','talent:view','talent:contact','interview:create','interview:evaluate','member:invite','report:view'],
-  recruiter: ['cv:view','job:create','job:edit','talent:view','talent:contact','interview:create','interview:evaluate'],
-  viewer:    ['cv:view','talent:view','report:view'],
+const GROUP_META: Record<string, { label: string; sub: string; icon: string }> = {
+  cv:        { label: 'Quản lý Hồ sơ ứng tuyển', sub: 'CV',        icon: 'description' },
+  job:       { label: 'Quản lý Tin tuyển dụng',   sub: 'Job',       icon: 'work' },
+  talent:    { label: 'Quản lý Ứng viên',          sub: 'Talent',    icon: 'person' },
+  member:    { label: 'Quản lý Thành viên',         sub: 'Member',    icon: 'group' },
+  report:    { label: 'Báo cáo & Thống kê',         sub: 'Report',    icon: 'bar_chart' },
+  company:   { label: 'Quản lý Công ty',            sub: 'Company',   icon: 'business' },
+  service:   { label: 'Dịch vụ',                    sub: 'Service',   icon: 'inventory_2' },
 }
 
-const selectedMembers = ref<Member[]>([])
-const state  = reactive<Record<string, boolean>>({})
-const search = ref('')
+// Danh sách action lấy từ BE (effectivePermissions của lần fetch đầu tiên)
+const allActions = ref<{ code: string; name: string }[]>([])
+
+const groups = computed<Group[]>(() => {
+  const groupMap = new Map<string, Group>()
+  for (const a of allActions.value) {
+    const prefix = a.code.split(':')[0]
+    if (!groupMap.has(prefix)) {
+      const meta = GROUP_META[prefix] ?? { label: prefix, sub: prefix, icon: 'settings' }
+      groupMap.set(prefix, { id: prefix, ...meta, perms: [] })
+    }
+    groupMap.get(prefix)!.perms.push({ id: a.code, label: a.name })
+  }
+  return [...groupMap.values()]
+})
+
+const selectedMembers = ref<ResCompanyMember[]>([])
+const state       = reactive<Record<string, boolean>>({})
+const customPerms = reactive<Record<number, Record<string, boolean>>>({}) // memberId → customPermissions
+const loadingM    = reactive<Record<number, boolean>>({})
+const savingCell  = reactive<Record<string, boolean>>({})
+const search   = ref('')
 const showPicker = ref(false)
 const pickerRef  = ref<HTMLElement | null>(null)
-const collapsed  = reactive<Record<string, boolean>>(
-  groups.reduce((a, g) => ({ ...a, [g.id]: false }), {} as Record<string, boolean>)
-)
+const collapsed  = reactive<Record<string, boolean>>({})
 
-const isSelected = (id: string) => selectedMembers.value.some(m => m.id === id)
+const isSelected = (id: number) => selectedMembers.value.some(m => m.id === id)
 
-const toggleMember = (m: Member) => {
+const toggleMember = async (m: ResCompanyMember) => {
   if (isSelected(m.id)) {
     removeMember(m.id)
-  } else {
-    selectedMembers.value.push(m)
-    for (const g of groups) {
-      for (const p of g.perms) {
-        if (!(`${p.id}|${m.id}` in state)) {
-          state[`${p.id}|${m.id}`] = DEFAULT_ON[m.role]?.includes(p.id) ?? false
-        }
+    return
+  }
+  selectedMembers.value.push(m)
+  loadingM[m.id] = true
+  try {
+    const res = await employerMemberService.getBatchMemberPermissions({ userIds: [m.userId] })
+    const detail = res.data?.[0]
+    if (detail) {
+      // Lấy định nghĩa action từ lần fetch đầu tiên
+      if (allActions.value.length === 0) {
+        allActions.value = detail.effectivePermissions.map(p => ({ code: p.code, name: p.name }))
+      }
+      // Map toggle state và custom permissions
+      customPerms[m.id] = detail.customPermissions ?? {}
+      for (const item of detail.effectivePermissions) {
+        state[`${item.code}|${m.id}`] = item.enabled
       }
     }
+  } catch {
+    // fallback: tắt hết khi lỗi
+    for (const a of allActions.value) {
+      state[`${a.code}|${m.id}`] = false
+    }
+  } finally {
+    loadingM[m.id] = false
   }
 }
 
-const removeMember = (id: string) => {
+const removeMember = (id: number) => {
   selectedMembers.value = selectedMembers.value.filter(m => m.id !== id)
+  delete customPerms[id]
 }
 
-const getInitials = (name: string) =>
-  name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
+async function handleToggle(m: ResCompanyMember, permCode: string, newValue: boolean) {
+  const key = `${permCode}|${m.id}`
+  const prev = state[key]
+  state[key] = newValue
+  savingCell[key] = true
+  try {
+    const res = await employerMemberService.toggleMemberActionPermission(m.userId, permCode, { enabled: newValue })
+    const detail = res.data
+    if (detail) {
+      customPerms[m.id] = detail.customPermissions ?? {}
+      for (const item of detail.effectivePermissions) {
+        state[`${item.code}|${m.id}`] = item.enabled
+      }
+    }
+    toast.success('Cập nhật quyền thành công')
+  } catch (err: any) {
+    state[key] = prev
+    toast.error(err?.response?.data?.message || 'Cập nhật quyền thất bại')
+  } finally {
+    savingCell[key] = false
+  }
+}
 
-const avaStyle = (m: Member) => ({
-  background: ROLE_COLORS[m.role] ?? ROLE_COLORS.viewer,
+const getInitials = (email: string) =>
+  email.split('@')[0].split(/[._-]/).map(p => p[0]?.toUpperCase() ?? '').join('').slice(0, 2)
+
+const avaStyle = (m: ResCompanyMember) => ({
+  background: ROLE_COLORS[m.roleName as string] ?? ROLE_COLORS.viewer,
 })
-
-const handleImgError = (e: Event) => {
-  (e.target as HTMLImageElement).style.display = 'none'
-}
 
 const filteredGroups = computed(() => {
   const q = search.value.toLowerCase().trim()
-  if (!q) return groups
-  return groups
+  if (!q) return groups.value
+  return groups.value
     .map(g => ({ ...g, perms: g.perms.filter(p => p.label.toLowerCase().includes(q) || p.id.includes(q)) }))
     .filter(g => g.perms.length > 0)
 })
@@ -288,7 +321,7 @@ onUnmounted(() => document.removeEventListener('mousedown', onDocClick))
 
 /* Picker dropdown */
 .pmm-picker-dropdown {
-  position: absolute; top: calc(100% + 8px); right: 0; z-index: 100;
+  position: absolute; top: calc(100% + 8px); right: 0; z-index: 9;
   width: 340px; background: #fff;
   border: 1px solid #e2e8f0; border-radius: 14px;
   box-shadow: 0 10px 32px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.06);
@@ -353,7 +386,7 @@ onUnmounted(() => document.removeEventListener('mousedown', onDocClick))
 }
 .pmm-table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
 
-.pmm-head-row { position: sticky; top: 0; z-index: 10; }
+.pmm-head-row { position: sticky; top: 0;  }
 .pmm-th {
   background: #f8fafc; border-bottom: 1px solid #e2e8f0; padding: 14px 16px;
 }
@@ -432,7 +465,7 @@ onUnmounted(() => document.removeEventListener('mousedown', onDocClick))
   background: #f1f5f9; padding: 2px 7px; border-radius: 5px;
   border: 1px solid #e2e8f0;
 }
-.pmm-toggle-cell { text-align: center; padding: 12px 16px; vertical-align: middle; }
+.pmm-toggle-cell { text-align: center; padding: 10px 16px; vertical-align: middle; }
 
 /* ── Empty state ──────────────────────────────────────────── */
 .pmm-empty {
@@ -450,4 +483,22 @@ onUnmounted(() => document.removeEventListener('mousedown', onDocClick))
 .pmm-empty-title { font-size: 1rem; font-weight: 700; color: #0f172a; margin: 0; }
 .pmm-empty-desc  { font-size: 0.875rem; color: #64748b; text-align: center; margin: 0; line-height: 1.6; }
 .pmm-empty-desc strong { color: #4B9AF6; }
+
+.pmm-cell-loading { display: flex; align-items: center; justify-content: center; height: 32px; }
+.pmm-spin { font-size: 20px; color: #4B9AF6; animation: pmm-spin 0.8s linear infinite; }
+@keyframes pmm-spin { to { transform: rotate(360deg); } }
+
+.pmm-cell-inner {
+  position: relative;
+  display: inline-flex; align-items: center; justify-content: center;
+  padding-top: 14px;
+}
+.pmm-tag-custom {
+  position: absolute; top: 0; right: -50px;
+  font-size: 0.6rem; font-weight: 700; letter-spacing: 0.04em;
+  padding: 1px 5px; border-radius: 4px;
+  background: rgba(75,154,246,0.12); color: #3b82f6;
+  border: 1px solid rgba(75,154,246,0.3);
+  white-space: nowrap; line-height: 1.5;
+}
 </style>

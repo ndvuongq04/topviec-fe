@@ -32,7 +32,7 @@ export const useRoleStore = defineStore('role', () => {
         }
     }
 
-    function getPermissionsForRole(role: MemberRole | string): Record<string, boolean> {
+function getPermissionsForRole(role: MemberRole | string): Record<string, boolean> {
         return defaultPermissions.value[role.toLowerCase()] ?? {}
     }
 

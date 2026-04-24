@@ -23,13 +23,11 @@ export interface ResEmployerProfileDTO {
 export interface ReqAddMember {
     email: string;
     tempPassword: string;
-    roleId: number;
-    customActions?: Record<string, boolean>;
+    roleName: string;
 }
 
 export interface ReqUpdatePermission {
-    roleId: number;
-    customActions?: Record<string, boolean>;
+    roleName: string;
     reason?: string;
 }
 
@@ -48,6 +46,10 @@ export interface ResCompanyMember {
 
 export interface ReqBatchMemberPermission {
     userIds: number[];
+}
+
+export interface ReqToggleMemberAction {
+    enabled: boolean;
 }
 
 export interface ResMemberPermissionDetail {

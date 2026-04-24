@@ -1,6 +1,6 @@
 import axiosInstance from './axios';
 import type { RestResponse, ResultPaginationDTO } from '@/types/common.types';
-import type { ReqAddMember, ReqBatchMemberPermission, ReqUpdatePermission, ResCompanyMember, ResMemberPermissionDetail } from '@/types/companyMember.types';
+import type { ReqAddMember, ReqBatchMemberPermission, ReqToggleMemberAction, ReqUpdatePermission, ResCompanyMember, ResMemberPermissionDetail } from '@/types/companyMember.types';
 
 export const employerMemberService = {
     /**
@@ -44,7 +44,32 @@ export const employerMemberService = {
      * Lấy thông tin quyền chi tiết của nhiều thành viên cùng lúc (tối đa 5)
      */
     async getBatchMemberPermissions(data: ReqBatchMemberPermission): Promise<RestResponse<ResMemberPermissionDetail[]>> {
-        const res = await axiosInstance.post<RestResponse<ResMemberPermissionDetail[]>>('/employer/permissions/batch', data);
+        const res = await axiosInstance.post<RestResponse<ResMemberPermissionDetail[]>>('/employer/member/permissions/batch', data);
+        return res.data;
+    },
+
+    /**
+     * GET /employer/me/permissions
+     * Lấy thông tin quyền hạn của chính mình trong công ty
+     */
+    async getMyPermissions(): Promise<RestResponse<ResMemberPermissionDetail>> {
+        const res = await axiosInstance.get<RestResponse<ResMemberPermissionDetail>>('/employer/member/me/permissions');
+        return res.data;
+    },
+
+    /**
+     * PATCH /employer/member/{targetUserId}/permissions/{actionCode}
+     * Bật/tắt một quyền cụ thể của thành viên
+     */
+    async toggleMemberActionPermission(
+        targetUserId: number,
+        actionCode: string,
+        data: ReqToggleMemberAction
+    ): Promise<RestResponse<ResMemberPermissionDetail>> {
+        const res = await axiosInstance.patch<RestResponse<ResMemberPermissionDetail>>(
+            `/employer/member/${targetUserId}/permissions/${encodeURIComponent(actionCode)}`,
+            data
+        );
         return res.data;
     }
 };

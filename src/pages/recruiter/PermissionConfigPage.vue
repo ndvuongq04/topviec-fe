@@ -35,9 +35,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import PermMemberMatrix  from '@/components/recruiter/permissions/PermMemberMatrix.vue'
 import PermMyPermissions from '@/components/recruiter/permissions/PermMyPermissions.vue'
+import { useEmployerMemberStore } from '@/stores/employerMember.store'
 
 const tabs = [
   { key: 'member', label: 'Theo thành viên' },
@@ -45,13 +46,10 @@ const tabs = [
 ]
 const activeTab = ref('member')
 
-const members = [
-  { id:'1', name:'Minh Tran',    email:'minh.t@topviec.vn',  role:'owner',     avatar:'https://lh3.googleusercontent.com/aida-public/AB6AXuDl3qEFV5ZpYDjR0HV9gFyW7K9coaI6WQ4JYdw1e_maPCelIqSwXbawcK2hDMc2RY1xZdNUQWvcVNO3oVsXCcZDnRdgfU2mkt14AzH0r0ZdZtkoibMNXZUM7ELiRib0cPZeilZA0QObGXKJ4PTaTHNR-iHoC7b-PvWBqe4jdqcYQPcJZzeYTON2iuRx9TCRSGnTXdkNviH4athmxODOrLX4vYHT07JxYlK0VmPreeQqfu6sPLANPzkgjgqgNtjvl2ymO1BZsuCXTA' },
-  { id:'2', name:'Hoang Nguyen', email:'hoang.n@topviec.vn', role:'manager',   avatar:'https://lh3.googleusercontent.com/aida-public/AB6AXuD9uQJ9Lk7Fd0igCSNngvyaHxquxzNdRjjypRPd3TgZ0sEVNS5Uq4HrNysEmaCG3itS4b_kVDr-0Vg9lnSnO0F2zeaM9QqDioaw2xi1NAnWxzihNJMIfNdHz19y4X1mj-D70KEG7fqAnctXH9rkh4i7sqijMYKuB_x08Iol9gWEOPtmL9sLJq4R3shFV81liasv-LBBeijUBIaA9ylStgPbyOb-uiq3V57amdGgVBgV4AM1dBVlPQYZhaV9zijFCwUC7e49jWOXnA' },
-  { id:'3', name:'Linh Le',      email:'linh.l@topviec.vn',  role:'recruiter', avatar:'https://lh3.googleusercontent.com/aida-public/AB6AXuCE60LL36vMBkZdL2VxO3x5aAHmcveh6o3Rz4xPGLK_dZ9qT0HB5xYKrF-ikFd0pJ6WV7FzeZE4SaC2UFYWr37rQNjo7ysNqUZYNkSgttg16yxN9ughpDiP3op7pxiYW7Xeb4UgmwO1DGCu8zKDNviqfZgIEL0JK6kol5CuZioSmDCs3hMn08fvjm1_PSAAUKGzLLA2IzUjEBEj_4gMxvZia2FCmdP3c-CWxGDhB0wCMPGo-MKFkIKc8Qb-6_PKg5nMNgTYVBtCzQ' },
-  { id:'4', name:'Tuan Pham',    email:'tuan.p@topviec.vn',  role:'recruiter', avatar:'https://lh3.googleusercontent.com/aida-public/AB6AXuCLKI94aFd6nKK5HyFbiZFclF8eLs3Oq_H7jEIzRLxres1PTnYknVMn8aJFQM6w8l5I0aYxtJ1HLlonWuLu4jijQJeVNR6kr3vhkNz5gXFwZXQC3KtaaKIicIdtREUThwUyJt4rzGKD4oCJFgb5qpYVZoEevrGr1at-6PAGN1E2A3mXPNYZuCdgyb2T4f61IJfoq5Ph6UyFQ9gAp81IH2Cl6rAeiDdissJHdjd4dq53YBXuztHNm5OokO0fk7f2ib_d-zhp20OXfA' },
-  { id:'5', name:'Quynh Anh',   email:'qa@topviec.vn',       role:'viewer',    initials:'QA' },
-]
+const memberStore = useEmployerMemberStore()
+onMounted(() => memberStore.getMembers({ page: 0, size: 50 }))
+
+const members = computed(() => memberStore.members?.result ?? [])
 </script>
 
 <style scoped>

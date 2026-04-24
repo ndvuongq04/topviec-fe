@@ -8,6 +8,7 @@ export const useEmployerMemberStore = defineStore('employerMember', () => {
     // State
     const members = ref<ResultPaginationDTO<ResCompanyMember> | null>(null);
     const memberPermissions = ref<ResMemberPermissionDetail[]>([]);
+    const myPermissions = ref<ResMemberPermissionDetail | null>(null);
     const loading = ref(false);
     const error = ref<string | null>(null);
 
@@ -96,9 +97,28 @@ export const useEmployerMemberStore = defineStore('employerMember', () => {
         }
     }
 
+    /**
+     * Lấy quyền hạn của chính mình trong công ty
+     */
+    async function getMyPermissions() {
+        loading.value = true;
+        error.value = null;
+        try {
+            const res = await employerMemberService.getMyPermissions();
+            myPermissions.value = res.data;
+            return res.data;
+        } catch (err: any) {
+            error.value = err.response?.data?.message || 'Không thể lấy thông tin quyền hạn của bạn';
+            throw err;
+        } finally {
+            loading.value = false;
+        }
+    }
+
     function reset() {
         members.value = null;
         memberPermissions.value = [];
+        myPermissions.value = null;
         loading.value = false;
         error.value = null;
     }
@@ -107,6 +127,7 @@ export const useEmployerMemberStore = defineStore('employerMember', () => {
         // State
         members,
         memberPermissions,
+        myPermissions,
         loading,
         error,
 
@@ -116,6 +137,7 @@ export const useEmployerMemberStore = defineStore('employerMember', () => {
         updateMemberPermission,
         removeMember,
         getBatchMemberPermissions,
+        getMyPermissions,
         reset
     };
 });

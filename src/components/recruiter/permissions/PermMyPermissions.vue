@@ -1,22 +1,27 @@
 <template>
   <div class="pmp-page">
+    <!-- Loading skeleton -->
+    <div v-if="store.loading && !store.myPermissions" class="pmp-loading">
+      <span class="material-symbols-outlined pmp-spin">progress_activity</span>
+    </div>
+
+    <template v-else-if="currentUser">
     <!-- User header -->
     <div class="pmp-user-card">
       <div class="pmp-user-card-bg" />
       <div class="pmp-avatar-wrap">
-        <img v-if="currentUser.avatar" :src="currentUser.avatar" :alt="currentUser.name" class="pmp-avatar" />
-        <div v-else class="pmp-avatar-initials">{{ currentUser.initials }}</div>
+        <div class="pmp-avatar-initials">{{ currentUser.initials }}</div>
         <div class="pmp-verified">
           <span class="material-symbols-outlined">verified</span>
         </div>
       </div>
       <div class="pmp-user-info">
         <div class="pmp-user-name-row">
-          <h2 class="pmp-user-name">{{ currentUser.name }}</h2>
+          <h2 class="pmp-user-name">{{ currentUser.displayName }}</h2>
           <span :class="['pmp-role-badge', `badge-${currentUser.role}`]">{{ roleLabel[currentUser.role] }}</span>
         </div>
         <p class="pmp-user-email">{{ currentUser.email }}</p>
-        <p class="pmp-user-desc">{{ currentUser.description }}</p>
+        <p v-if="currentUser.description" class="pmp-user-desc">{{ currentUser.description }}</p>
       </div>
     </div>
 
@@ -51,57 +56,80 @@
         </ul>
       </div>
     </div>
+    </template>
   </div>
 </template>
 
 <script setup lang="ts">
+import { computed, onMounted } from 'vue'
+import { useEmployerMemberStore } from '@/stores/employerMember.store'
+
+const store = useEmployerMemberStore()
+onMounted(() => store.getMyPermissions())
+
 const roleLabel: Record<string, string> = { owner:'Owner', manager:'Manager', recruiter:'Recruiter', viewer:'Viewer' }
 
 const sourceIcon:      Record<string, string> = { role:'check_circle', granted:'add_circle', denied:'lock' }
 const sourceIconClass: Record<string, string> = { role:'pmp-icon-role', granted:'pmp-icon-granted', denied:'pmp-icon-denied' }
 const sourceTag:       Record<string, string> = { role:'Theo vai trò', granted:'Được cấp thêm', denied:'Bị giới hạn' }
 
-const currentUser = {
-  name: 'Hoa Nguyễn', email: 'hoa.recruiter@gmail.com',
-  role: 'recruiter', initials: 'HN',
-  description: 'Chuyên viên Tuyển dụng tại Công ty TNHH Horizon. Đang tham gia 3 dự án tuyển dụng active.',
-  avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBYlO1SjDlx0mzRaGg-Yu_-Jjf9-Ks-kfHpsXANbv48x0MtAugBsYSW2uYbiy95jBCg98D7FMKN27OQYVzh51qdPwdj0qaUoPkSrrGdeWA1w3loJkW1c-VE2h8z7fABJoLsKuMSvEodxnDiVb96aMT9S-pQSqbqTrfF1lmjbX15jkTH7KGt-jwFI611RK-SFmHThBmKI9G5h2fYuCvD6R6qJSh-M26pPCzaHobLc41nG7frXpbvi_EP34C8NdGY1dbDWbMIxp8JgA'
+const GROUP_META: Record<string, { label: string; icon: string; highlight?: boolean }> = {
+  cv:        { label: 'Quản lý Hồ sơ ứng tuyển', icon: 'description' },
+  job:       { label: 'Quản lý Tin tuyển dụng',   icon: 'work' },
+  talent:    { label: 'Quản lý Ứng viên',          icon: 'person', highlight: true },
+  interview: { label: 'Quản lý Phỏng vấn',         icon: 'event_upcoming' },
+  member:    { label: 'Quản lý Thành viên',         icon: 'group' },
+  report:    { label: 'Báo cáo & Thống kê',         icon: 'bar_chart' },
 }
 
-const permGroups = [
-  { label: 'Quản lý Hồ sơ ứng tuyển', icon: 'description', highlight: false, perms: [
-    { label: 'Xem danh sách CV',  source: 'role'   },
-    { label: 'Tải xuất CV',       source: 'denied'  },
-  ]},
-  { label: 'Quản lý Tin tuyển dụng', icon: 'work', highlight: false, perms: [
-    { label: 'Tạo tin tuyển dụng mới', source: 'role'   },
-    { label: 'Chỉnh sửa tin đăng',     source: 'role'   },
-    { label: 'Xoá tin tuyển dụng',     source: 'denied'  },
-    { label: 'Duyệt tin đăng',         source: 'denied'  },
-  ]},
-  { label: 'Quản lý Ứng viên', icon: 'person', highlight: true, perms: [
-    { label: 'Xem hồ sơ ứng viên',        source: 'role'   },
-    { label: 'Liên hệ ứng viên',           source: 'role'   },
-    { label: 'Xuất danh sách ứng viên',   source: 'denied'  },
-  ]},
-  { label: 'Quản lý Phỏng vấn', icon: 'event_upcoming', highlight: false, perms: [
-    { label: 'Tạo lịch phỏng vấn', source: 'role'  },
-    { label: 'Đánh giá ứng viên',  source: 'role'  },
-  ]},
-  { label: 'Quản lý Thành viên', icon: 'group', highlight: false, perms: [
-    { label: 'Mời thành viên mới',     source: 'denied' },
-    { label: 'Xoá thành viên',         source: 'denied' },
-    { label: 'Phân quyền thành viên',  source: 'denied' },
-  ]},
-  { label: 'Báo cáo & Thống kê', icon: 'bar_chart', highlight: false, perms: [
-    { label: 'Xem báo cáo tuyển dụng', source: 'denied' },
-    { label: 'Xuất báo cáo',           source: 'denied' },
-  ]},
-]
+const currentUser = computed(() => {
+  const p = store.myPermissions
+  if (!p) return null
+  const namePart = p.email.split('@')[0]
+  return {
+    displayName: namePart,
+    email: p.email,
+    role: p.roleName as string,
+    initials: namePart.split(/[._-]/).map(s => s[0]?.toUpperCase() ?? '').join('').slice(0, 2),
+    description: p.jobTitle ?? '',
+  }
+})
+
+const permGroups = computed(() => {
+  const p = store.myPermissions
+  if (!p) return []
+
+  const custom = p.customPermissions ?? {}
+  const groupMap = new Map<string, { label: string; icon: string; highlight: boolean; perms: { label: string; source: string }[] }>()
+
+  for (const item of p.effectivePermissions) {
+    const groupKey = item.code.split(':')[0]
+
+    let source: 'role' | 'granted' | 'denied'
+    if (item.code in custom) {
+      source = custom[item.code] ? 'granted' : 'denied'
+    } else {
+      if (!item.enabled) continue
+      source = 'role'
+    }
+
+    if (!groupMap.has(groupKey)) {
+      const meta = GROUP_META[groupKey] ?? { label: groupKey, icon: 'settings' }
+      groupMap.set(groupKey, { label: meta.label, icon: meta.icon, highlight: meta.highlight ?? false, perms: [] })
+    }
+    groupMap.get(groupKey)!.perms.push({ label: item.name, source })
+  }
+
+  return [...groupMap.values()].filter(g => g.perms.length > 0)
+})
 </script>
 
 <style scoped>
-.pmp-page {  overflow-y: auto; display: flex; flex-direction: column; gap: 24px; }
+.pmp-page { overflow-y: auto; display: flex; flex-direction: column; gap: 24px; }
+
+.pmp-loading { display: flex; justify-content: center; align-items: center; padding: 4rem; }
+.pmp-spin { font-size: 36px; color: #4B9AF6; animation: pmp-spin 0.8s linear infinite; }
+@keyframes pmp-spin { to { transform: rotate(360deg); } }
 
 /* User card */
 .pmp-user-card {
