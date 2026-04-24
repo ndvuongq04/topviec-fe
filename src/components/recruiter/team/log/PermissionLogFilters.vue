@@ -85,34 +85,31 @@
         </Transition>
       </div>
 
-      <div class="date-range">
-        <svg
-          width="15"
-          height="15"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-        >
-          <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-          <line x1="16" y1="2" x2="16" y2="6" />
-          <line x1="8" y1="2" x2="8" y2="6" />
-          <line x1="3" y1="10" x2="21" y2="10" />
-        </svg>
-        01/04/2025 - 24/04/2025
-      </div>
+      <!-- Type filter dropdown -->
+      <div ref="typeRef" class="type-wrap">
+        <button class="type-btn" type="button" @click="showType = !showType">
+          <span class="material-symbols-outlined type-btn-icon">{{ activeTypeOption.icon }}</span>
+          {{ activeTypeOption.label }}
+          <span class="material-symbols-outlined type-chevron" :class="{ open: showType }">expand_more</span>
+        </button>
 
-      <select
-        :value="type"
-        @change="$emit('update:type', ($event.target as HTMLSelectElement).value)"
-        class="filter-select"
-      >
-        <option value="all">Tất cả thay đổi</option>
-        <option value="role_change">Đổi vai trò</option>
-        <option value="permission_update">Cập nhật quyền</option>
-      </select>
+        <Transition name="picker-fade">
+          <div v-if="showType" class="type-dropdown">
+            <button
+              v-for="opt in typeOptions"
+              :key="opt.value"
+              type="button"
+              class="type-option"
+              :class="{ 'type-option--on': type === opt.value }"
+              @click="selectType(opt.value)"
+            >
+              <span class="material-symbols-outlined type-option-icon">{{ opt.icon }}</span>
+              <span class="type-option-label">{{ opt.label }}</span>
+              <span v-if="type === opt.value" class="material-symbols-outlined type-option-check">check</span>
+            </button>
+          </div>
+        </Transition>
+      </div>
 
       <span class="result-count">{{ resultCount }} kết quả</span>
     </div>
@@ -139,6 +136,24 @@ const emit = defineEmits<{
 
 const showPicker = ref(false)
 const pickerRef = ref<HTMLElement | null>(null)
+
+const showType = ref(false)
+const typeRef = ref<HTMLElement | null>(null)
+
+const typeOptions = [
+  { value: 'all',               label: 'Tất cả thay đổi', icon: 'list'            },
+  { value: 'role_change',       label: 'Đổi vai trò',     icon: 'manage_accounts' },
+  { value: 'permission_update', label: 'Cập nhật quyền',  icon: 'tune'            },
+]
+
+const activeTypeOption = computed(
+  () => typeOptions.find((o) => o.value === props.type) ?? typeOptions[0],
+)
+
+function selectType(value: string) {
+  emit('update:type', value)
+  showType.value = false
+}
 
 const roleLabel: Record<string, string> = {
   owner: 'Owner',
@@ -183,6 +198,9 @@ function selectMember(value: string) {
 function onDocClick(event: MouseEvent) {
   if (pickerRef.value && !pickerRef.value.contains(event.target as Node)) {
     showPicker.value = false
+  }
+  if (typeRef.value && !typeRef.value.contains(event.target as Node)) {
+    showType.value = false
   }
 }
 
@@ -436,48 +454,110 @@ onUnmounted(() => document.removeEventListener('mousedown', onDocClick))
   transform: translateY(-6px);
 }
 
-.filter-select {
-  padding: 8px 12px;
+/* ── Type filter dropdown ── */
+.type-wrap {
+  position: relative;
+}
+
+.type-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 14px;
   border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  outline: none;
+  border-radius: 10px;
   background: #fff;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
-  color: #0f172a;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  color: #334155;
   cursor: pointer;
   font-family: 'Manrope', sans-serif;
-  font-size: 1rem;
-  font-weight: 500;
+  font-size: 0.875rem;
+  font-weight: 600;
   transition: border-color 0.15s, box-shadow 0.15s;
+  white-space: nowrap;
 }
 
-.filter-select:hover {
+.type-btn:hover {
   border-color: #cbd5e1;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
 }
 
-.filter-select:focus {
-  border-color: #2563eb;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+.type-btn-icon {
+  font-size: 16px;
+  color: #64748b;
 }
 
-.date-range {
+.type-chevron {
+  font-size: 18px;
+  color: #94a3b8;
+  transition: transform 0.15s;
+  margin-left: 2px;
+}
+
+.type-chevron.open {
+  transform: rotate(180deg);
+}
+
+.type-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  z-index: 10;
+  min-width: 200px;
+  padding: 6px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1), 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+.type-option {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
-  border: 1px solid #e2e8f0;
+  gap: 9px;
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid transparent;
   border-radius: 8px;
-  background: #fff;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
-  color: #64748b;
+  background: transparent;
   cursor: pointer;
-  font-size: 1rem;
+  font-family: 'Manrope', sans-serif;
+  font-size: 0.875rem;
   font-weight: 500;
-  transition: border-color 0.15s;
+  color: #334155;
+  text-align: left;
+  transition: background 0.12s;
 }
 
-.date-range:hover {
-  border-color: #cbd5e1;
+.type-option:hover {
+  background: #f8fafc;
+}
+
+.type-option--on {
+  border-color: #dbeafe;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-weight: 600;
+}
+
+.type-option-icon {
+  font-size: 16px;
+  color: #64748b;
+  flex-shrink: 0;
+}
+
+.type-option--on .type-option-icon {
+  color: #2563eb;
+}
+
+.type-option-label {
+  flex: 1;
+}
+
+.type-option-check {
+  font-size: 16px;
+  color: #2563eb;
+  flex-shrink: 0;
 }
 
 .result-count {
@@ -496,8 +576,9 @@ onUnmounted(() => document.removeEventListener('mousedown', onDocClick))
   .member-picker-wrap,
   .member-picker-btn,
   .member-picker-dropdown,
-  .filter-select,
-  .date-range {
+  .type-wrap,
+  .type-btn,
+  .type-dropdown {
     width: 100%;
   }
 

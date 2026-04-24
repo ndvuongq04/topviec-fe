@@ -27,5 +27,10 @@ export interface ReqAddAction {
     code: string
 }
 
+export interface ResRoleSummaryDTO {
+    id: number
+    roleName: MemberRole
+}
+
 // Alias giữ backward-compat với store cũ
 export type ResRoleDefault = ResRoleDefaultDTO

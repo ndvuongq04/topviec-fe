@@ -90,38 +90,6 @@ watch(filterMember, (email) => {
 
 const AV_CLASSES = ['av1', 'av2', 'av3', 'av4'] as const
 
-// ─── Label maps ──────────────────────────────────────────────────────────────
-
-const GROUP_LABELS: Record<string, string> = {
-  cv:        'Hồ sơ ứng tuyển',
-  job:       'Tin tuyển dụng',
-  talent:    'Ứng viên',
-  interview: 'Phỏng vấn',
-  member:    'Thành viên',
-  report:    'Báo cáo',
-  company:   'Công ty',
-  service:   'Dịch vụ',
-}
-
-const ACTION_LABELS: Record<string, string> = {
-  add:           'Thêm',
-  create:        'Tạo mới',
-  edit:          'Chỉnh sửa',
-  update:        'Cập nhật',
-  delete:        'Xóa',
-  remove:        'Xóa',
-  view:          'Xem',
-  read:          'Xem',
-  manage:        'Quản lý',
-  post:          'Đăng',
-  view_activity: 'Xem hoạt động',
-  invite:        'Mời',
-  export:        'Xuất dữ liệu',
-  approve:       'Duyệt',
-  reject:        'Từ chối',
-  assign:        'Phân công',
-}
-
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function getInitials(email: string) {
@@ -146,44 +114,46 @@ function formatTime(isoStr: string): string {
   return date.toLocaleDateString('vi-VN')
 }
 
-/**
- * Chuyển action code thô thành nhãn tiếng Việt.
- * Xử lý 3 dạng: "grant:company:edit", "company:edit", "company:edit:something"
- */
-function formatPermCode(raw: string): string {
-  const parts = raw.split(':')
-  // Bỏ phần đầu nếu là grant/revoke
-  const startIdx = parts[0] === 'grant' || parts[0] === 'revoke' ? 1 : 0
-  const groupKey  = parts[startIdx] ?? raw
-  const actionKey = parts.slice(startIdx + 1).join('_') // ghép phần còn lại bằng _
-
-  const group  = GROUP_LABELS[groupKey]  ?? groupKey
-  const action = ACTION_LABELS[actionKey] ?? actionKey.replace(/_/g, ' ')
-  return `${group} › ${action}`
+/** Build map code → name từ tất cả các action trong dto */
+function buildCodeNameMap(dto: ResPermissionChangeLogDTO): Record<string, string> {
+  const map: Record<string, string> = {}
+  for (const perms of [dto.oldPermissions, dto.newPermissions]) {
+    for (const item of [...(perms?.grant ?? []), ...(perms?.revoke ?? [])]) {
+      map[item.code] = item.name
+    }
+  }
+  return map
 }
 
-/**
- * Làm đẹp reason do hệ thống tự sinh.
- * Pattern: "Toggle action [company:edit] -> revoke"
- */
-function formatReason(reason: string | null): string | null {
+/** Làm đẹp reason hệ thống: "Toggle action [company:edit] -> revoke" */
+function formatReason(reason: string | null, nameMap: Record<string, string>): string | null {
   if (!reason) return null
   const m = reason.match(/Toggle action \[(.+?)\] -> (grant|revoke)/i)
   if (m) {
-    const code = formatPermCode(m[1])
-    return m[2] === 'grant' ? `Cấp quyền: ${code}` : `Thu hồi quyền: ${code}`
+    const name = nameMap[m[1]] ?? m[1]
+    return m[2] === 'grant' ? `Cấp quyền: ${name}` : `Thu hồi quyền: ${name}`
   }
   return reason
 }
 
-function flattenPerms(map: Record<string, string[]> | null): Set<string> {
-  if (!map) return new Set()
-  return new Set(Object.entries(map).flatMap(([cat, codes]) => codes.map((c) => `${cat}:${c}`)))
+/**
+ * Tính diff quyền:
+ * - added  = mới xuất hiện trong grant  (so với old)
+ * - removed = mới xuất hiện trong revoke (so với old)
+ */
+function diffPerms(dto: ResPermissionChangeLogDTO) {
+  const oldGrantCodes = new Set((dto.oldPermissions?.grant ?? []).map((p) => p.code))
+  const oldRevokeCodes = new Set((dto.oldPermissions?.revoke ?? []).map((p) => p.code))
+
+  const added   = (dto.newPermissions?.grant  ?? []).filter((p) => !oldGrantCodes.has(p.code)).map((p) => p.name)
+  const removed = (dto.newPermissions?.revoke ?? []).filter((p) => !oldRevokeCodes.has(p.code)).map((p) => p.name)
+
+  return { added, removed }
 }
 
 function mapLog(dto: ResPermissionChangeLogDTO) {
-  const oldSet = flattenPerms(dto.oldPermissions)
-  const newSet = flattenPerms(dto.newPermissions)
+  const nameMap = buildCodeNameMap(dto)
+  const { added, removed } = diffPerms(dto)
   return {
     id: dto.id,
     type: dto.changeType.toLowerCase(),
@@ -193,11 +163,11 @@ function mapLog(dto: ResPermissionChangeLogDTO) {
     avatarClass: AV_CLASSES[dto.id % 4],
     oldRole: dto.oldRole ?? null,
     newRole: dto.newRole ?? null,
-    addedPerms: [...newSet].filter((p) => !oldSet.has(p)).map(formatPermCode),
-    removedPerms: [...oldSet].filter((p) => !newSet.has(p)).map(formatPermCode),
+    addedPerms: added,
+    removedPerms: removed,
     changedBy: dto.changedByEmail,
     time: formatTime(dto.createdAt),
-    reason: formatReason(dto.reason),
+    reason: formatReason(dto.reason, nameMap),
   }
 }
 

@@ -57,6 +57,7 @@ import TeamTable from '@/components/recruiter/team/TeamTable.vue'
 import InviteMemberModal from '@/components/recruiter/team/InviteMemberModal.vue'
 import UpdatePermissionModal from '@/components/recruiter/team/UpdatePermissionModal.vue'
 import { useEmployerMemberStore } from '@/stores/employerMember.store'
+import { useRoleStore } from '@/stores/role.store'
 import { useConfirm } from '@/composables/useConfirm'
 import type { ResCompanyMember } from '@/types/companyMember.types'
 import { MEMBER_ROLE, MEMBER_STATUS } from '@/constants/companyMember.constants'
@@ -64,6 +65,7 @@ import { useToast } from '@/composables/useToast'
 
 // ─── State ───────────────────────────────────────────────────────────────────
 const memberStore = useEmployerMemberStore()
+const roleStore = useRoleStore()
 const toast = useToast()
 
 const searchQuery = ref('')
@@ -80,6 +82,7 @@ const { confirm } = useConfirm()
 
 onMounted(() => {
   fetchMembers()
+  roleStore.fetchEmployerRoles()
 })
 
 async function fetchMembers() {
@@ -145,16 +148,6 @@ const tableMembers = computed(() => {
   }))
 })
 
-// Build roleName → roleId map từ danh sách members đã load (không cần gọi thêm API)
-const roleIdByName = computed(() => {
-  const map: Record<string, number> = {}
-  for (const m of memberStore.members?.result ?? []) {
-    const key = String(m.roleName).toLowerCase()
-    if (!map[key]) map[key] = m.roleId
-  }
-  return map
-})
-
 // filteredMembers computed is no longer needed as search is done on BE
 const filteredMembers = computed(() => tableMembers.value)
 
@@ -163,9 +156,14 @@ function openInviteModal() {
   isInviteModalOpen.value = true
 }
 
-async function handleInvite(data: any) {
+async function handleInvite(data: { email: string; tempPassword: string; roleName: string }) {
+  const roleId = roleStore.getEmployerRoleId(data.roleName)
+  if (!roleId) {
+    toast.error('Không tìm thấy vai trò. Vui lòng thử lại.')
+    return
+  }
   try {
-    await memberStore.addMember(data)
+    await memberStore.addMember({ email: data.email, tempPassword: data.tempPassword, roleId })
     toast.success('Đã gửi lời mời thành công')
     isInviteModalOpen.value = false
     fetchMembers()
@@ -181,9 +179,9 @@ function onEdit(member: any) {
 
 async function handleUpdatePermission(data: { roleName: string; reason?: string }) {
   if (!selectedMember.value) return
-  const roleId = roleIdByName.value[data.roleName.toLowerCase()]
+  const roleId = roleStore.getEmployerRoleId(data.roleName)
   if (!roleId) {
-    toast.error('Không tìm thấy roleId cho vai trò này. Vui lòng thử lại.')
+    toast.error('Không tìm thấy vai trò. Vui lòng thử lại.')
     return
   }
   try {

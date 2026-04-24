@@ -1,11 +1,12 @@
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 import { roleService } from '@/services/role.service'
-import type { ResRoleDefaultDTO } from '@/types/role.types'
+import type { ResRoleDefaultDTO, ResRoleSummaryDTO } from '@/types/role.types'
 import type { MemberRole } from '@/constants/companyMember.constants'
 
 export const useRoleStore = defineStore('role', () => {
     const rolesData = ref<ResRoleDefaultDTO[]>([])
+    const employerRoles = ref<ResRoleSummaryDTO[]>([])
     const loading = ref(false)
     const error = ref<string | null>(null)
 
@@ -36,17 +37,33 @@ function getPermissionsForRole(role: MemberRole | string): Record<string, boolea
         return defaultPermissions.value[role.toLowerCase()] ?? {}
     }
 
-    function getRoleIdByName(role: MemberRole | string): number | null {
+        function getRoleIdByName(role: MemberRole | string): number | null {
         return rolesData.value.find(r => r.roleName.toLowerCase() === role.toLowerCase())?.id ?? null
+    }
+
+    async function fetchEmployerRoles() {
+        if (employerRoles.value.length > 0) return
+        try {
+            employerRoles.value = await roleService.getEmployerRoleSummaries()
+        } catch (err: any) {
+            error.value = err.response?.data?.message || 'Không thể tải danh sách vai trò'
+        }
+    }
+
+    function getEmployerRoleId(role: MemberRole | string): number | null {
+        return employerRoles.value.find(r => r.roleName.toLowerCase() === role.toLowerCase())?.id ?? null
     }
 
     return {
         rolesData,
+        employerRoles,
         loading,
         error,
         defaultPermissions,
         fetchDefaultPermissions,
         getPermissionsForRole,
         getRoleIdByName,
+        fetchEmployerRoles,
+        getEmployerRoleId,
     }
 })

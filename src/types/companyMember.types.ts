@@ -23,7 +23,7 @@ export interface ResEmployerProfileDTO {
 export interface ReqAddMember {
     email: string;
     tempPassword: string;
-    roleName: string;
+    roleId: number;
 }
 
 export interface ReqUpdatePermission {
@@ -52,6 +52,11 @@ export interface ReqToggleMemberAction {
     enabled: boolean;
 }
 
+export interface ResActionSummaryDTO {
+    code: string;
+    name: string;
+}
+
 export interface ResPermissionChangeLogDTO {
     id: number;
     targetUserId: number;
@@ -61,8 +66,8 @@ export interface ResPermissionChangeLogDTO {
     changeType: PermissionChangeType;
     oldRole: MemberRole | null;
     newRole: MemberRole | null;
-    oldPermissions: Record<string, string[]> | null;
-    newPermissions: Record<string, string[]> | null;
+    oldPermissions: { grant: ResActionSummaryDTO[]; revoke: ResActionSummaryDTO[] } | null;
+    newPermissions: { grant: ResActionSummaryDTO[]; revoke: ResActionSummaryDTO[] } | null;
     reason: string | null;
     createdAt: string;
 }

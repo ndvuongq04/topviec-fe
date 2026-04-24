@@ -2,12 +2,22 @@ import axiosInstance from './axios'
 import type { RestResponse } from '@/types/common.types'
 import type {
     ResRoleDefaultDTO,
+    ResRoleSummaryDTO,
     ReqToggleAction,
     ReqRenameAction,
     ReqAddAction,
 } from '@/types/role.types'
 
 export const roleService = {
+    /**
+     * GET /employer/roles
+     * Lấy danh sách role summary (id + roleName) dành cho employer
+     */
+    async getEmployerRoleSummaries(): Promise<ResRoleSummaryDTO[]> {
+        const res = await axiosInstance.get<RestResponse<ResRoleSummaryDTO[]>>('/employer/roles')
+        return res.data.data
+    },
+
     /**
      * GET /admin/roles/default-permissions
      * Lấy danh sách cấu hình phân quyền mặc định của các role (admin only)
