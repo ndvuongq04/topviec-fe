@@ -273,7 +273,7 @@
           class="modal-btn modal-btn--talent-pool"
           type="button"
           :disabled="isEvaluateLoading"
-          @click="handleSaveTalentPoolFromModal"
+          @click="handleSaveTalentPoolFromModal(); isEvaluateVisible = false"
         >
           <span class="material-symbols-outlined">group_add</span>
           Lưu vào TalentPool
@@ -290,6 +290,15 @@
         </button>
       </template>
     </GlobalModal>
+
+    <!-- Talent Pool Modal -->
+    <SaveToTalentPoolModal
+      :visible="showTalentPoolModal"
+      :candidate-name="talentPoolCandidate?.name"
+      :loading="savingToPool"
+      @close="showTalentPoolModal = false"
+      @confirm="confirmSaveToTalentPool"
+    />
   </div>
 </template>
 
@@ -300,6 +309,7 @@ import InterviewStageCards from '@/components/recruiter/interviews/InterviewStag
 import InterviewCandidateTable from '@/components/recruiter/interviews/InterviewCandidateTable.vue'
 import employerInterviewService from '@/services/employerInterview.service'
 import employerTalentPoolService from '@/services/employerTalentPool.service'
+import SaveToTalentPoolModal from '@/components/recruiter/talent-pool/SaveToTalentPoolModal.vue'
 import type { ResInterviewRoundDTO, ResInterviewScheduleDTO } from '@/types/interview.types'
 import { INTERVIEW_STATUS, INTERVIEW_TYPE, OFFER_RESULT } from '@/constants/interview.constants'
 import { useToast } from '@/composables/useToast'
@@ -752,33 +762,40 @@ async function handleDeleteStage(stageId: number) {
   }
 }
 
-async function handleSaveTalentPool(applicationId: number) {
+// ── Talent Pool Modal ────────────────────────────────────────────────────────
+const showTalentPoolModal    = ref(false)
+const savingToPool           = ref(false)
+const talentPoolCandidate    = ref<{ userId: number; name: string } | null>(null)
+
+function handleSaveTalentPool(applicationId: number) {
   const schedule = roundSchedules.value.find(s => s.applicationId === applicationId)
   if (!schedule?.candidateUserId) return
-  try {
-    await employerTalentPoolService.addToTalentPool({
-      candidateUserId: schedule.candidateUserId,
-      source: 'INTERVIEW',
-    })
-    toast.success('Đã lưu vào TalentPool!', `Ứng viên ${schedule.candidateName} đã được thêm vào TalentPool.`)
-  } catch (err: any) {
-    const msg = err?.response?.data?.message ?? 'Không thể lưu vào TalentPool. Vui lòng thử lại.'
-    toast.error('Lỗi', typeof msg === 'string' ? msg : msg?.[0])
-  }
+  talentPoolCandidate.value = { userId: schedule.candidateUserId, name: schedule.candidateName }
+  showTalentPoolModal.value = true
 }
 
-async function handleSaveTalentPoolFromModal() {
+function handleSaveTalentPoolFromModal() {
   if (!evaluateCandidate.value?.candidateUserId) return
+  talentPoolCandidate.value = { userId: evaluateCandidate.value.candidateUserId, name: evaluateCandidate.value.name }
+  showTalentPoolModal.value = true
+}
+
+async function confirmSaveToTalentPool(note: string) {
+  if (!talentPoolCandidate.value) return
+  savingToPool.value = true
   try {
     await employerTalentPoolService.addToTalentPool({
-      candidateUserId: evaluateCandidate.value.candidateUserId,
+      candidateUserId: talentPoolCandidate.value.userId,
       source: 'INTERVIEW',
+      note: note || undefined,
     })
-    toast.success('Đã lưu vào TalentPool!', `Ứng viên ${evaluateCandidate.value.name} đã được thêm vào TalentPool.`)
-    isEvaluateVisible.value = false
+    showTalentPoolModal.value = false
+    toast.success('Đã lưu vào Talent Pool!', `Ứng viên ${talentPoolCandidate.value.name} đã được thêm vào Talent Pool.`)
   } catch (err: any) {
-    const msg = err?.response?.data?.message ?? 'Không thể lưu vào TalentPool. Vui lòng thử lại.'
+    const msg = err?.response?.data?.message ?? 'Không thể lưu vào Talent Pool. Vui lòng thử lại.'
     toast.error('Lỗi', typeof msg === 'string' ? msg : msg?.[0])
+  } finally {
+    savingToPool.value = false
   }
 }
 

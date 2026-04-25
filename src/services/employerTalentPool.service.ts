@@ -110,6 +110,10 @@ const employerTalentPoolService = {
     return res.data.data;
   },
 
+  async updateNote(talentPoolId: number, note: string): Promise<void> {
+    await axiosInstance.patch(`${BASE_URL}/${talentPoolId}/note`, { note });
+  },
+
   async removeFromTalentPool(talentPoolId: number): Promise<void> {
     await axiosInstance.delete(`${BASE_URL}/${talentPoolId}`);
   },

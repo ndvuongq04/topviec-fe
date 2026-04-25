@@ -27,6 +27,10 @@
       <div v-if="candidate.jobSeekingStatus" class="sc-card__meta-item sc-card__meta-item--right">
         <span class="material-symbols-outlined">circle</span>{{ seekingStatusLabel }}
       </div>
+      <div v-if="candidate.note" class="sc-card__meta-item sc-card__meta-item--note">
+        <span class="material-symbols-outlined">edit_note</span>
+        <span class="sc-card__note-text">{{ candidate.note }}</span>
+      </div>
     </div>
 
     <div class="sc-card__footer">
@@ -37,6 +41,9 @@
         </button>
         <button class="sc-card__action-btn" title="Gửi email">
           <span class="material-symbols-outlined">mail</span>
+        </button>
+        <button class="sc-card__action-btn" title="Chỉnh sửa ghi chú" @click="emit('edit-note', candidate.talentPoolId, candidate.note ?? '')">
+          <span class="material-symbols-outlined">edit_note</span>
         </button>
         <button class="sc-card__action-btn sc-card__action-btn--delete" title="Xóa khỏi danh sách" @click="emit('delete', candidate.talentPoolId)">
           <span class="material-symbols-outlined">delete</span>
@@ -53,6 +60,7 @@ import type { ResTalentPoolCandidateDTO } from '@/services/employerTalentPool.se
 const props = defineProps<{ candidate: ResTalentPoolCandidateDTO }>()
 const emit = defineEmits<{
   (e: 'view-detail', talentPoolId: number): void
+  (e: 'edit-note', talentPoolId: number, currentNote: string): void
   (e: 'delete', talentPoolId: number): void
 }>()
 
@@ -155,6 +163,25 @@ function formatDate(iso: string): string {
 .sc-card__meta-item .material-symbols-outlined { font-size: 0.875rem; }
 .sc-card__meta-item--placeholder { visibility: hidden; }
 .sc-card__meta-item--right { grid-column: 2; }
+.sc-card__meta-item--note {
+  grid-column: 1 / -1;
+  align-items: flex-start;
+  background: #fffbeb;
+  border-left: 3px solid #fbbf24;
+  border-radius: 0 6px 6px 0;
+  padding: 6px 10px;
+  gap: 8px;
+}
+.sc-card__meta-item--note .material-symbols-outlined { color: #f59e0b; margin-top: 1px; flex-shrink: 0; }
+.sc-card__note-text {
+  color: #78716c;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
 
 .sc-card__footer {
   display: flex; align-items: center; justify-content: space-between;

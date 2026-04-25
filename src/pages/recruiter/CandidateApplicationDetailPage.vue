@@ -22,11 +22,19 @@
           :initial-status="application.status"
           @save="handleSave"
           @invite-interview="handleInviteInterview"
-          @save-to-talent-pool="handleSaveToTalentPool"
+          @save-to-talent-pool="openTalentPoolModal"
         />
         <CandidateActivityLog :activities="activityLog" />
       </aside>
     </template>
+
+    <SaveToTalentPoolModal
+      :visible="showTalentPoolModal"
+      :candidate-name="application?.candidateName"
+      :loading="savingToPool"
+      @close="showTalentPoolModal = false"
+      @confirm="handleSaveToTalentPool"
+    />
   </main>
 </template>
 
@@ -38,6 +46,7 @@ import CandidateEvaluationPanel from '@/components/recruiter/application/Candida
 import CandidateActivityLog from '@/components/recruiter/application/Candidateactivitylog.vue'
 import employerApplicationService from '@/services/employerApplication.service'
 import employerTalentPoolService from '@/services/employerTalentPool.service'
+import SaveToTalentPoolModal from '@/components/recruiter/talent-pool/SaveToTalentPoolModal.vue'
 import { useToast } from '@/composables/useToast'
 import type { ResEmployerApplicationDTO } from '@/types/employerApplication.types'
 
@@ -107,17 +116,29 @@ function handleInviteInterview() {
   toast.info('Tính năng đang phát triển')
 }
 
-async function handleSaveToTalentPool() {
+const showTalentPoolModal = ref(false)
+const savingToPool        = ref(false)
+
+function openTalentPoolModal() {
+  showTalentPoolModal.value = true
+}
+
+async function handleSaveToTalentPool(note: string) {
   if (!application.value?.candidateUserId) return
+  savingToPool.value = true
   try {
     await employerTalentPoolService.addToTalentPool({
       candidateUserId: application.value.candidateUserId,
       source: 'REVIEW_CV',
+      note: note || undefined,
     })
-    toast.success('Đã lưu vào TalentPool!', `Ứng viên ${application.value.candidateName} đã được thêm vào TalentPool.`)
+    showTalentPoolModal.value = false
+    toast.success('Đã lưu vào Talent Pool!', `Ứng viên ${application.value.candidateName} đã được thêm vào Talent Pool.`)
   } catch (err: any) {
-    const msg = err?.response?.data?.message ?? 'Không thể lưu vào TalentPool. Vui lòng thử lại.'
+    const msg = err?.response?.data?.message ?? 'Không thể lưu vào Talent Pool. Vui lòng thử lại.'
     toast.error('Lỗi', typeof msg === 'string' ? msg : msg?.[0])
+  } finally {
+    savingToPool.value = false
   }
 }
 

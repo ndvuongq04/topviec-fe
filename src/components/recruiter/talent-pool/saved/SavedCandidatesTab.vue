@@ -2,6 +2,14 @@
   <div class="saved-tab">
     <CandidateDetailModal v-model="showModal" :talent-pool-id="selectedTalentPoolId" />
 
+    <EditNoteModal
+      :visible="showEditNote"
+      :candidate-name="editNoteCandidate?.candidateName"
+      :initial-note="editNoteCandidate?.note"
+      :loading="savingNote"
+      @close="showEditNote = false"
+      @confirm="handleSaveNote"
+    />
 
     <SavedCandidatesFilters
       v-model:search="search"
@@ -28,6 +36,7 @@
         :key="c.talentPoolId"
         :candidate="c"
         @view-detail="openDetail"
+        @edit-note="openEditNote"
         @delete="openDeleteConfirm"
       />
     </div>
@@ -50,6 +59,7 @@ import SavedCandidatesFilters from './SavedCandidatesFilters.vue'
 import SavedCandidateCard from './SavedCandidateCard.vue'
 import CandidatePagination from '../shared/CandidatePagination.vue'
 import CandidateDetailModal from './CandidateDetailModal.vue'
+import EditNoteModal from './EditNoteModal.vue'
 import { useConfirm } from '@/composables/useConfirm'
 import employerTalentPoolService from '@/services/employerTalentPool.service'
 import type { ResTalentPoolCandidateDTO } from '@/services/employerTalentPool.service'
@@ -66,6 +76,33 @@ const selectedTalentPoolId = ref<number | null>(null)
 function openDetail(talentPoolId: number) {
   selectedTalentPoolId.value = talentPoolId
   showModal.value = true
+}
+
+// ─── Edit note ───────────────────────────────────────────────────────────────
+const showEditNote       = ref(false)
+const savingNote         = ref(false)
+const editNoteCandidate  = ref<ResTalentPoolCandidateDTO | null>(null)
+
+function openEditNote(talentPoolId: number) {
+  editNoteCandidate.value = candidates.value.find(c => c.talentPoolId === talentPoolId) ?? null
+  showEditNote.value = true
+}
+
+async function handleSaveNote(note: string) {
+  if (!editNoteCandidate.value) return
+  savingNote.value = true
+  try {
+    await employerTalentPoolService.updateNote(editNoteCandidate.value.talentPoolId, note)
+    const target = candidates.value.find(c => c.talentPoolId === editNoteCandidate.value!.talentPoolId)
+    if (target) target.note = note || undefined
+    showEditNote.value = false
+    toast.success('Đã lưu', 'Ghi chú đã được cập nhật.')
+  } catch (err: any) {
+    const msg = err?.response?.data?.message ?? 'Lưu ghi chú thất bại, vui lòng thử lại.'
+    toast.error('Lỗi', typeof msg === 'string' ? msg : msg?.[0])
+  } finally {
+    savingNote.value = false
+  }
 }
 
 // ─── Delete ──────────────────────────────────────────────────────────────────
