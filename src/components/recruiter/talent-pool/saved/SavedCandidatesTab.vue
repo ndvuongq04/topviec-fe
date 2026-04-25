@@ -1,58 +1,155 @@
 <template>
   <div class="saved-tab">
-    <SavedCandidatesFilters />
-    <div class="saved-tab__grid">
-      <SavedCandidateCard v-for="c in candidates" :key="c.id" :candidate="c" />
+    <CandidateDetailModal v-model="showModal" :talent-pool-id="selectedTalentPoolId" />
+
+
+    <SavedCandidatesFilters
+      v-model:search="search"
+      v-model:source="source"
+      @do-search="onSearch"
+    />
+
+    <!-- Loading -->
+    <div v-if="loading" class="saved-tab__loading">
+      <span class="material-symbols-outlined saved-tab__spinner">progress_activity</span>
+      <span>Đang tải...</span>
     </div>
+
+    <!-- Empty -->
+    <div v-else-if="!loading && candidates.length === 0" class="saved-tab__empty">
+      <span class="material-symbols-outlined saved-tab__empty-icon">group_off</span>
+      <p>Chưa có ứng viên nào trong TalentPool.</p>
+    </div>
+
+    <!-- Grid -->
+    <div v-else class="saved-tab__grid">
+      <SavedCandidateCard
+        v-for="c in candidates"
+        :key="c.talentPoolId"
+        :candidate="c"
+        @view-detail="openDetail"
+        @delete="openDeleteConfirm"
+      />
+    </div>
+
     <CandidatePagination
-      :current="currentPage" :total-pages="125"
-      :total="1248" :page-size="10" :show-info="true"
-      @change="currentPage = $event"
+      v-if="totalPages > 0"
+      :current="currentPage"
+      :total-pages="totalPages"
+      :total="total"
+      :page-size="pageSize"
+      :show-info="true"
+      @change="onPageChange"
     />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import SavedCandidatesFilters from './SavedCandidatesFilters.vue'
 import SavedCandidateCard from './SavedCandidateCard.vue'
 import CandidatePagination from '../shared/CandidatePagination.vue'
+import CandidateDetailModal from './CandidateDetailModal.vue'
+import { useConfirm } from '@/composables/useConfirm'
+import employerTalentPoolService from '@/services/employerTalentPool.service'
+import type { ResTalentPoolCandidateDTO } from '@/services/employerTalentPool.service'
+import { useToast } from '@/composables/useToast'
 
+const emit = defineEmits<{ 'update:total': [value: number] }>()
+const toast = useToast()
+const { confirm } = useConfirm()
+
+// ─── Detail modal ────────────────────────────────────────────────────────────
+const showModal = ref(false)
+const selectedTalentPoolId = ref<number | null>(null)
+
+function openDetail(talentPoolId: number) {
+  selectedTalentPoolId.value = talentPoolId
+  showModal.value = true
+}
+
+// ─── Delete ──────────────────────────────────────────────────────────────────
+async function openDeleteConfirm(talentPoolId: number) {
+  const candidate = candidates.value.find(c => c.talentPoolId === talentPoolId)
+  const ok = await confirm({
+    title: 'Xóa ứng viên khỏi Talent Pool?',
+    message: `Ứng viên "${candidate?.candidateName ?? ''}" sẽ bị xóa vĩnh viễn khỏi danh sách tiềm năng. Hành động này không thể hoàn tác.`,
+    confirmText: 'Xóa vĩnh viễn',
+    confirmColor: 'red',
+    icon: 'delete_forever',
+  })
+  if (!ok) return
+  try {
+    await employerTalentPoolService.removeFromTalentPool(talentPoolId)
+    candidates.value = candidates.value.filter(c => c.talentPoolId !== talentPoolId)
+    total.value -= 1
+    emit('update:total', total.value)
+    toast.success('Đã xóa', 'Ứng viên đã được xóa khỏi Talent Pool.')
+  } catch (err: any) {
+    const msg = err?.response?.data?.message ?? 'Xóa thất bại, vui lòng thử lại.'
+    toast.error('Lỗi', typeof msg === 'string' ? msg : msg?.[0])
+  }
+}
+
+// ─── Fetch ───────────────────────────────────────────────────────────────────
+const candidates  = ref<ResTalentPoolCandidateDTO[]>([])
+const loading     = ref(false)
+const total       = ref(0)
+const totalPages  = ref(0)
 const currentPage = ref(1)
+const pageSize    = 10
+const search      = ref('')
+const source      = ref('')
 
-const candidates = ref([
-  {
-    id: 1, name: 'Nguyễn Thị Thanh Trúc', role: 'Senior UI/UX Designer',
-    label: 'Ưu tiên', labelVariant: 'priority',
-    skills: ['Figma', 'Prototyping', 'User Research'],
-    experience: '5 năm', location: 'TP.HCM',
-    salary: '25,000,000 - 35,000,000 VNĐ', savedAt: '12/10/2023',
-    avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBGKe-4mv9eIEL3kH0c76XLzOaMghZG8cFv5b6sPDtv94XbdShkGjYaOmoJxpvYkf4iVqYSr-wllAdUaScqvku5U94Vs3B7HpMLKNPLS4bUPMWqncJnFtp2W-_co3jpnF0apWSmG7VJ2Ag43LHqlWvnfsZVc8cHTGedVQ9gCcJTuNSyrz0gBZAz1Zl4rnx5UXBFvGBDm7B-OMot-YFmHZIvlT5wq0Af9mMRy5YUxopheyqeKRKXFN9WQcO9xTZ7NLg6ry8zzZCVWA',
-  },
-  {
-    id: 2, name: 'Lê Đức Đạt', role: 'Frontend Developer (VueJS)',
-    label: 'Tiềm năng', labelVariant: 'default',
-    skills: ['Vue 3', 'TypeScript', 'Tailwind CSS'],
-    experience: '3 năm', location: 'Hà Nội',
-    salary: '18,000,000 - 25,000,000 VNĐ', savedAt: '05/10/2023',
-    avatar: '', initials: 'LD',
-  },
-  {
-    id: 3, name: 'Trần Hoàng Phong', role: 'Product Manager',
-    label: 'Bình thường', labelVariant: 'default',
-    skills: ['Agile', 'Scrum', 'Data Analysis'],
-    experience: '7 năm', location: 'TP.HCM',
-    salary: 'Thương lượng', savedAt: '01/10/2023',
-    avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuA3_hl3GzFeQJ_bxd_9OyrCJrECw7QNx5w6p4UUGjo6bOeEOKHe6CUUpK7utNVLL6Om_RwoT9TSPzuNwz878wmhAlVan3ZMvBX7DxDrQvO62jrrEbjSiOPVQCZrawpNLfHwEv7YlP-xJLCM6PVk7DZkMl3P3wK15gQlRZxMxobaHzMc9sIuHVaX1bJDlMQw8lp1hivQQtt4vI8zYTk3gcebiTr9zMF28-x46QC47HZHI356GvFSFf0Rga-VIqu4Ws96a0EmlWgrFQ',
-  },
-])
+async function fetchData(page = 1) {
+  loading.value = true
+  try {
+    const res = await employerTalentPoolService.getTalentPool({
+      search: search.value || undefined,
+      source: source.value || undefined,
+      page:   page - 1,
+      size:   pageSize,
+    })
+    candidates.value  = res.result
+    total.value       = res.meta.totals
+    totalPages.value  = res.meta.pages
+    emit('update:total', res.meta.totals)
+    currentPage.value = page
+  } catch (err: any) {
+    const msg = err?.response?.data?.message ?? 'Không thể tải danh sách TalentPool.'
+    toast.error('Lỗi', typeof msg === 'string' ? msg : msg?.[0])
+  } finally {
+    loading.value = false
+  }
+}
+
+function onSearch()             { fetchData(1) }
+function onPageChange(p: number) { fetchData(p) }
+
+onMounted(() => fetchData(1))
 </script>
 
 <style scoped>
 .saved-tab { display: flex; flex-direction: column; gap: 1.5rem; padding-top: 1.5rem; }
+
 .saved-tab__grid {
   display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.25rem;
 }
 @media (max-width: 1280px) { .saved-tab__grid { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 768px)  { .saved-tab__grid { grid-template-columns: 1fr; } }
+
+.saved-tab__loading {
+  display: flex; align-items: center; justify-content: center;
+  gap: 0.75rem; padding: 4rem 0; color: #64748b; font-size: 0.9375rem;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.saved-tab__spinner { font-size: 1.75rem !important; color: #4b9af6; animation: spin 0.8s linear infinite; }
+
+.saved-tab__empty {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 0.75rem; padding: 4rem 0; color: #94a3b8;
+}
+.saved-tab__empty-icon { font-size: 3rem !important; }
+.saved-tab__empty p { font-size: 0.9375rem; font-weight: 600; }
+
 </style>

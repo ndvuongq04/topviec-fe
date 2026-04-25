@@ -5,6 +5,7 @@
       <h1 class="tp-header__title">Talent Pool</h1>
       <span class="tp-header__count">{{ total.toLocaleString() }}</span>
     </div>
+    <p class="tp-header__subtitle">Quản lý và tìm kiếm ứng viên tiềm năng cho công ty.</p>
     <div class="tp-header__tabs">
       <button
         v-for="t in tabs"
@@ -50,7 +51,13 @@ const tabs = [
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-bottom: 1.5rem;
+  margin-bottom: 0.25rem;
+}
+
+.tp-header__subtitle {
+  color: #64748b;
+  font-size: 1rem;
+  margin: 0 0 1.5rem;
 }
 
 .tp-header__title {

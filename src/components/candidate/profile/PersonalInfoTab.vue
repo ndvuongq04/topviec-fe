@@ -182,15 +182,11 @@
         <!-- Địa điểm -->
         <div class="space-y-2">
           <label class="text-sm font-bold text-text-muted uppercase tracking-wider">Địa điểm mong muốn</label>
-          <select
+          <SearchableSelect
             v-model="form.preferredLocationId"
-            class="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 px-4 py-2.5 text-text-main dark:text-white placeholder:text-text-muted dark:placeholder:text-gray-500 focus:border-primary focus:ring-1 focus:ring-primary text-base font-medium outline-none transition-all"
-          >
-            <option :value="null">-- Chọn địa điểm --</option>
-            <option :value="1">Hồ Chí Minh</option>
-            <option :value="2">Hà Nội</option>
-            <option :value="3">Đà Nẵng</option>
-          </select>
+            :options="locationOptions"
+            placeholder="-- Chọn địa điểm --"
+          />
         </div>
 
         <!-- Trạng thái tìm việc -->
@@ -248,11 +244,25 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, watch, ref, computed } from 'vue'
+import { reactive, watch, ref, computed, onMounted } from 'vue'
 import { JobSeekingStatus, PreferredWorkType } from '@/constants/candidateProfile.constants'
 import { useCandidateProfileStore } from '@/stores/candidateProfile.store'
+import { locationService } from '@/services/location.service'
+import type { ResLocationDTO } from '@/types/masterData.types'
+import SearchableSelect from '@/components/ui/SearchableSelect.vue'
 
 const store = useCandidateProfileStore()
+
+// ─── Locations từ API ─────────────────────────────────────────────────────────
+const locations = ref<ResLocationDTO[]>([])
+const locationOptions = computed(() => locations.value.map(l => ({ id: l.id, name: l.name })))
+
+onMounted(async () => {
+  try {
+    const res = await locationService.getLocations({ size: 100 })
+    locations.value = res.result
+  } catch {}
+})
 
 // ─── Form state ──────────────────────────────────────────────────────────────
 const form = reactive({

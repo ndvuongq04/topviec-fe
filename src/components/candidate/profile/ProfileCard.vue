@@ -102,10 +102,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useCandidateProfileStore } from '@/stores/candidateProfile.store'
 import { useToast } from '@/composables/useToast'
 import { JobSeekingStatus, PreferredWorkType } from '@/constants/candidateProfile.constants'
+import { locationService } from '@/services/location.service'
+import type { ResLocationDTO } from '@/types/masterData.types'
 
 const store = useCandidateProfileStore()
 const toast = useToast()
@@ -150,14 +152,18 @@ const workTypeLabel = computed(() => {
 })
 
 // ─── Location ─────────────────────────────────────────────────────────────────
-const LOCATION_MAP: Record<number, string> = {
-  1: 'Hồ Chí Minh',
-  2: 'Hà Nội',
-  3: 'Đà Nẵng',
-}
+const locationMap = ref<Record<number, string>>({})
+onMounted(async () => {
+  try {
+    const res = await locationService.getLocations({ size: 100 })
+    const map: Record<number, string> = {}
+    res.result.forEach((l: ResLocationDTO) => { map[l.id] = l.name })
+    locationMap.value = map
+  } catch {}
+})
 const locationLabel = computed(() =>
   profile.value?.preferredLocationId
-    ? LOCATION_MAP[profile.value.preferredLocationId] ?? ''
+    ? locationMap.value[profile.value.preferredLocationId] ?? ''
     : ''
 )
 
