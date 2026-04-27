@@ -200,5 +200,27 @@ export interface ResMyViolationScore {
   companyStatus: string | null;
 }
 
+export interface ResCandidateReportJobPostInfo {
+  id: number;
+  title: string;
+}
+
+export interface ResCandidateReportCompanyInfo {
+  id: number;
+  name: string;
+  logoUrl: string | null;
+}
+
+export interface ResCandidateReportSummary {
+  id: number;
+  reportCode: string;
+  jobPost: ResCandidateReportJobPostInfo;
+  company: ResCandidateReportCompanyInfo;
+  complaintType: ComplaintType;
+  status: ComplaintStatus;
+  createdAt: string;
+}
+
 export type ResReportPagination = ResultPaginationDTO<ResReportSummary>;
 export type ResEmployerReportPagination = ResultPaginationDTO<ResEmployerReportSummary>;
+export type ResCandidateReportPagination = ResultPaginationDTO<ResCandidateReportSummary>;
