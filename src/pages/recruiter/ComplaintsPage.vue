@@ -26,11 +26,13 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import RecruiterViolationScore from '@/components/recruiter/complaints/RecruiterViolationScore.vue'
 import RecruiterComplaintTable, {
   type RecruiterComplaint,
 } from '@/components/recruiter/complaints/RecruiterComplaintTable.vue'
 
+const router = useRouter()
 const page = ref(1)
 const pageSize = ref(10)
 
@@ -112,7 +114,10 @@ function onPageChange(nextPage: number) {
 }
 
 function onAction(complaint: RecruiterComplaint) {
-  console.log('action', complaint.id, complaint.action)
+  router.push({
+    name: 'recruiter-complaint-detail',
+    params: { id: complaint.id.replace('#', '') },
+  })
 }
 </script>
 

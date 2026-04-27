@@ -158,6 +158,11 @@ export const recruiterRoutes: RouteRecordRaw[] = [
         name: 'recruiter-complaints',
         component: () => import('@/pages/recruiter/ComplaintsPage.vue'),
       },
+      {
+        path: 'complaints/:id',
+        name: 'recruiter-complaint-detail',
+        component: () => import('@/pages/recruiter/ComplaintDetailPage.vue'),
+      },
     ],
   },
 ]
