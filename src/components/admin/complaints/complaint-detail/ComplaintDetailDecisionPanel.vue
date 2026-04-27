@@ -23,9 +23,9 @@
           :disabled="form.decision !== 'approve'"
         >
           <option value="">Chọn biện pháp...</option>
-          <option value="warning">Cảnh cáo và gỡ tin</option>
-          <option value="suspend">Trừ điểm và tạm khóa tài khoản</option>
-          <option value="ban">Khóa vĩnh viễn</option>
+          <option v-for="item in actionOptions" :key="item.value" :value="item.value">
+            {{ item.label }}
+          </option>
         </select>
       </div>
     </div>
@@ -122,10 +122,16 @@ import type { ReqProcessReport } from '@/types/report.types'
 const route = useRoute()
 const store = useAdminReportStore()
 const toast = useToast()
-const PROCESSABLE_STATUSES = ['pending', 'processing', 'waiting_employer'] as const
+const PROCESSABLE_STATUSES = ['processing', 'waiting_employer'] as const
 
 const complaintTypeOptions = COMPLAINT_TYPE_OPTIONS
 const violationGroupOptions = VIOLATION_GROUP_OPTIONS
+const actionOptions = [
+  { value: 'request_employer_fix', label: 'Yêu cầu nhà tuyển dụng sửa tin' },
+  { value: 'hide_job', label: 'Ẩn / gỡ tin tuyển dụng' },
+  { value: 'suspend_company', label: 'Tạm khóa công ty' },
+  { value: 'resolve', label: 'Đánh dấu đã xử lý' },
+] as const
 const complaintStatusLabelMap = Object.fromEntries(COMPLAINT_STATUS_OPTIONS.map((item) => [item.value, item.label])) as Record<string, string>
 
 const submitting = ref(false)
@@ -203,7 +209,10 @@ async function onSubmit() {
   }
 
   if (!isProcessable.value) {
-    toast.error('Không thể xử lý', 'Báo cáo này không còn ở trạng thái cho phép xử lý.')
+    toast.error(
+      'Không thể xử lý',
+      'Báo cáo phải được admin xác nhận trước và ở trạng thái processing hoặc waiting_employer.',
+    )
     return
   }
 
