@@ -26,43 +26,49 @@
           v-model="search"
           type="text"
           class="bg-transparent border-none focus:ring-0 text-sm w-full py-3 outline-none ml-2"
-          placeholder="Tìm theo mã hoặc người gửi..."
+          placeholder="Tìm theo mã, người báo cáo, công ty..."
+          @input="emitFilter"
         />
       </div>
 
-      <!-- Loại -->
+      <!-- Loại vi phạm -->
       <select
-        v-model="type"
+        v-model="category"
         class="shrink-0 bg-slate-50 border border-[#963131]/5 rounded-lg text-sm pl-4 pr-8 py-2.5 focus:ring-2 focus:ring-[#963131]/20 outline-none cursor-pointer text-slate-700"
+        @change="emitFilter"
       >
-        <option value="">Loại: Tất cả</option>
-        <option value="fraud">Tin lừa đảo</option>
-        <option value="payment">Vấn đề thanh toán</option>
+        <option value="">Loại vi phạm: Tất cả</option>
+        <option value="missing-info">Tin thiếu thông tin</option>
+        <option value="duplicate">Tin trùng lặp / spam</option>
+        <option value="company-mismatch">Thông tin công ty sai</option>
+        <option value="fee-abuse">Yêu cầu phí bất hợp lý</option>
+        <option value="fraud">Lừa đảo có bằng chứng</option>
       </select>
 
-      <!-- Ưu tiên -->
+      <!-- Nhóm -->
       <select
-        v-model="priority"
+        v-model="group"
         class="shrink-0 bg-slate-50 border border-[#963131]/5 rounded-lg text-sm pl-4 pr-8 py-2.5 focus:ring-2 focus:ring-[#963131]/20 outline-none cursor-pointer text-slate-700"
+        @change="emitFilter"
       >
-        <option value="">Ưu tiên: Tất cả</option>
-        <option value="urgent">Khẩn cấp</option>
-        <option value="important">Quan trọng</option>
-        <option value="normal">Bình thường</option>
+        <option value="">Nhóm: Tất cả</option>
+        <option value="A">Nhóm A (vi phạm nhẹ)</option>
+        <option value="B">Nhóm B (vi phạm nặng)</option>
       </select>
 
       <!-- Trạng thái -->
       <select
         v-model="status"
         class="shrink-0 bg-slate-50 border border-[#963131]/5 rounded-lg text-sm pl-4 pr-8 py-2.5 focus:ring-2 focus:ring-[#963131]/20 outline-none cursor-pointer text-slate-700"
+        @change="emitFilter"
       >
         <option value="">Trạng thái: Tất cả</option>
         <option value="pending">Chờ xử lý</option>
         <option value="processing">Đang xử lý</option>
-        <option value="sent">Đã gửi</option>
         <option value="resolved">Đã giải quyết</option>
+        <option value="auto-closed">Tự động đóng</option>
+        <option value="hidden">Đã ẩn tin</option>
       </select>
-
 
     </div>
   </div>
@@ -72,32 +78,32 @@
 import { ref } from 'vue'
 
 const emit = defineEmits<{
-  filter: [{ search: string; type: string; priority: string; status: string }]
+  filter: [{ search: string; category: string; group: string; status: string }]
 }>()
 
-const search   = ref('')
-const type     = ref('')
-const priority = ref('')
-const status   = ref('')
+const search    = ref('')
+const category  = ref('')
+const group     = ref('')
+const status    = ref('')
 const activeTab = ref('all')
 
 const tabs = [
   { key: 'all',        label: 'Tất cả' },
+  { key: 'group-b',    label: 'Nhóm B (nặng)' },
+  { key: 'group-a',    label: 'Nhóm A (nhẹ)' },
   { key: 'pending',    label: 'Chờ xử lý' },
-  { key: 'processing', label: 'Đang xử lý' },
-  { key: 'urgent',     label: 'Khẩn cấp' },
   { key: 'resolved',   label: 'Đã giải quyết' },
 ]
 
 function onTabClick(key: string) {
   activeTab.value = key
-  priority.value  = ''
-  status.value    = ''
+  group.value  = ''
+  status.value = ''
 
-  if (key === 'pending')    status.value   = 'pending'
-  if (key === 'processing') status.value   = 'processing'
-  if (key === 'urgent')     priority.value = 'urgent'
-  if (key === 'resolved')   status.value   = 'resolved'
+  if (key === 'group-a')  group.value  = 'A'
+  if (key === 'group-b')  group.value  = 'B'
+  if (key === 'pending')  status.value = 'pending'
+  if (key === 'resolved') status.value = 'resolved'
 
   emitFilter()
 }
@@ -105,10 +111,9 @@ function onTabClick(key: string) {
 function emitFilter() {
   emit('filter', {
     search:   search.value,
-    type:     type.value,
-    priority: priority.value,
+    category: category.value,
+    group:    group.value,
     status:   status.value,
   })
 }
-
 </script>

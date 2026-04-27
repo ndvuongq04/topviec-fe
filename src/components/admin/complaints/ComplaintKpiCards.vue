@@ -15,14 +15,14 @@
 
 <script setup lang="ts">
 const cards = [
-  { label: 'Tổng khiếu nại', icon: 'receipt_long', value: 128,
+  { label: 'Tổng báo cáo',  icon: 'receipt_long',    value: 128,
     iconBg: '#f0eee7', iconColor: '#963131', circleBg: '#f0eee7' },
-  { label: 'Chờ xử lý',     icon: 'hourglass_empty', value: 34,
+  { label: 'Chờ xử lý',    icon: 'hourglass_empty',  value: 34,
     iconBg: '#FAEEDA', iconColor: '#633806', circleBg: 'rgba(250,238,218,0.2)' },
-  { label: 'Khẩn cấp',      icon: 'warning', value: 12,
+  { label: 'Nhóm B (nặng)', icon: 'warning',          value: 12,
     iconBg: '#ffdad6', iconColor: '#ba1a1a', circleBg: 'rgba(255,218,214,0.2)' },
-  { label: 'Đã giải quyết', icon: 'check_circle', value: 82,
-    iconBg: '#E1F5EE', iconColor: '#085041', circleBg: 'rgba(225,245,238,0.2)' },
+  { label: 'Quá hạn SLA',   icon: 'alarm_off',        value: 3,
+    iconBg: '#ffdad6', iconColor: '#ba1a1a', circleBg: 'rgba(255,218,214,0.2)' },
 ]
 </script>
 
