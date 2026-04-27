@@ -43,7 +43,7 @@ export interface ResViolationLogInfo {
 export interface ResViolationScore {
   employerId: number
   employerEmail: string
-  company: ResViolationScoreCompanyInfo
+  company: ResViolationScoreCompanyInfo | null
   score: ResViolationScoreInfo
   history: ResViolationLogInfo[]
 }

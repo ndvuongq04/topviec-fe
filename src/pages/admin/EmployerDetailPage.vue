@@ -1,19 +1,16 @@
 <template>
   <div class="space-y-6">
-
-    <!-- Breadcrumbs -->
     <nav class="flex items-center gap-2 text-sm">
       <router-link
         :to="{ name: 'admin-employers' }"
-        class="text-slate-500 hover:text-[#963131] transition-colors"
+        class="text-slate-500 transition-colors hover:text-[#963131]"
       >
         Quản lý Nhà Tuyển Dụng
       </router-link>
       <span class="material-symbols-outlined text-xs text-slate-400">chevron_right</span>
-      <span class="text-slate-900 dark:text-slate-100 font-medium">Chi tiết NTD</span>
+      <span class="font-medium text-slate-900 dark:text-slate-100">Chi tiết NTD</span>
     </nav>
 
-    <!-- Profile Header -->
     <EmployerProfileHeader
       v-if="store.selectedCompany"
       :company="store.selectedCompany"
@@ -22,16 +19,13 @@
       @suspend="onSuspend"
     />
 
-    <!-- Stats Cards -->
     <EmployerStatsCards :stats="stats" />
 
-    <!-- Tabs -->
     <EmployerDetailTabs
       v-model:active-tab="activeTab"
       :tabs="tabs"
     />
 
-    <!-- Tab Content -->
     <EmployerProfileTab
       v-if="activeTab === 'profile' && store.selectedCompany"
       :company="store.selectedCompany"
@@ -45,28 +39,41 @@
       @request-supplement="onRequestSupplement"
     />
 
-    <div v-else-if="!store.selectedCompany" class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-12 text-center text-slate-400">
+    <EmployerViolationScorePanel
+      v-else-if="activeTab === 'violation'"
+      :employer-id="employerId"
+    />
+
+    <div
+      v-else-if="!store.selectedCompany"
+      class="rounded-xl border border-slate-200 bg-white p-12 text-center text-slate-400 dark:border-slate-800 dark:bg-slate-900"
+    >
       <p class="text-sm">Đang tải dữ liệu...</p>
     </div>
 
-    <div v-else class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-12 text-center text-slate-400">
-      <span class="material-symbols-outlined text-4xl block mb-2">construction</span>
-      <p class="text-sm">Nội dung tab "{{ tabs.find(t => t.key === activeTab)?.label }}" đang được phát triển...</p>
+    <div
+      v-else
+      class="rounded-xl border border-slate-200 bg-white p-12 text-center text-slate-400 dark:border-slate-800 dark:bg-slate-900"
+    >
+      <span class="material-symbols-outlined mb-2 block text-4xl">construction</span>
+      <p class="text-sm">
+        Nội dung tab "{{ tabs.find((t) => t.key === activeTab)?.label }}" đang được phát triển...
+      </p>
     </div>
-
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import EmployerProfileHeader from '@/components/admin/employers/EmployerProfileHeader.vue'
-import EmployerStatsCards from '@/components/admin/employers/EmployerStatsCards.vue'
 import EmployerDetailTabs from '@/components/admin/employers/EmployerDetailTabs.vue'
 import EmployerLicensePanel from '@/components/admin/employers/EmployerLicensePanel.vue'
+import EmployerProfileHeader from '@/components/admin/employers/EmployerProfileHeader.vue'
 import EmployerProfileTab from '@/components/admin/employers/EmployerProfileTab.vue'
-import { useAdminCompanyStore } from '@/stores/adminCompany.store'
+import EmployerStatsCards from '@/components/admin/employers/EmployerStatsCards.vue'
+import EmployerViolationScorePanel from '@/components/admin/employers/EmployerViolationScorePanel.vue'
 import { useToast } from '@/composables/useToast'
+import { useAdminCompanyStore } from '@/stores/adminCompany.store'
 import type { StatItem } from '@/components/admin/employers/EmployerStatsCards.vue'
 
 const route = useRoute()
@@ -75,6 +82,7 @@ const store = useAdminCompanyStore()
 const toast = useToast()
 
 const companyId = Number(route.params.id)
+const employerId = computed(() => store.selectedCompany?.createdBy ?? null)
 
 onMounted(async () => {
   if (!companyId) return
@@ -85,7 +93,6 @@ onMounted(async () => {
   }
 })
 
-// ─── Stats ───────────────────────────────────────────────────────────────────────
 const stats: StatItem[] = [
   {
     label: 'Tin đã đăng',
@@ -110,16 +117,15 @@ const stats: StatItem[] = [
   },
 ]
 
-// ─── Tabs ────────────────────────────────────────────────────────────────────────
 const activeTab = ref('profile')
 const tabs = [
-  { key: 'profile',  label: 'Hồ sơ công ty' },
-  { key: 'license',  label: 'Giấy phép & Xác thực' },
+  { key: 'profile', label: 'Hồ sơ công ty' },
+  { key: 'license', label: 'Giấy phép & Xác thực' },
+  { key: 'violation', label: 'Điểm vi phạm' },
   { key: 'activity', label: 'Lịch sử hoạt động' },
-  { key: 'payment',  label: 'Lịch sử thanh toán' },
+  { key: 'payment', label: 'Lịch sử thanh toán' },
 ]
 
-// ─── Event handlers ──────────────────────────────────────────────────────────────
 function onResetPassword() {
   toast.info('Tính năng', 'Reset mật khẩu đang được phát triển.')
 }
@@ -138,7 +144,7 @@ async function onSuspend() {
       await store.suspendCompany(store.selectedCompany.id, 'Admin khóa tài khoản')
       toast.success('Thành công', 'Đã khóa công ty.')
     }
-  } catch (err) {
+  } catch {
     toast.error('Thất bại', store.error || 'Có lỗi xảy ra.')
   }
 }
@@ -147,8 +153,8 @@ async function onApprove() {
   if (!store.selectedCompany) return
   try {
     await store.verifyCompany(store.selectedCompany.id, true)
-    toast.success('Phê duyệt thành công', 'Công ty đã được xác thực.')
-  } catch (err) {
+    toast.success('Thành công', 'Công ty đã được xác thực.')
+  } catch {
     toast.error('Thất bại', store.error || 'Không thể phê duyệt.')
   }
 }
@@ -159,10 +165,11 @@ async function onReject(reason: string) {
     toast.warning('Chú ý', 'Vui lòng nhập lý do từ chối.')
     return
   }
+
   try {
     await store.verifyCompany(store.selectedCompany.id, false, reason)
-    toast.success('Từ chối thành công', 'Đã từ chối xác thực công ty.')
-  } catch (err) {
+    toast.success('Thành công', 'Đã từ chối xác thực công ty.')
+  } catch {
     toast.error('Thất bại', store.error || 'Không thể từ chối.')
   }
 }

@@ -16,67 +16,14 @@
       </div>
 
       <div class="cd-decision__field">
-        <label class="cd-decision__label">Biện pháp xử lý</label>
-        <select
-          v-model="form.action"
-          class="cd-decision__select"
-          :disabled="form.decision !== 'approve'"
-        >
-          <option value="">Chọn biện pháp...</option>
-          <option v-for="item in actionOptions" :key="item.value" :value="item.value">
-            {{ item.label }}
-          </option>
-        </select>
-      </div>
-    </div>
-
-    <div class="cd-decision__row">
-      <div class="cd-decision__field">
-        <label class="cd-decision__label">Loại khiếu nại</label>
-        <select
-          v-model="form.complaintType"
-          class="cd-decision__select"
-          :disabled="form.decision !== 'approve'"
-        >
-          <option value="">Chọn loại khiếu nại...</option>
-          <option v-for="item in complaintTypeOptions" :key="item.value" :value="item.value">
-            {{ item.label }}
-          </option>
-        </select>
-      </div>
-
-      <div v-if="!form.complaintType" class="cd-decision__field">
-        <label class="cd-decision__label">Nhóm vi phạm</label>
-        <select
-          v-model="form.violationGroup"
-          class="cd-decision__select"
-          :disabled="form.decision !== 'approve'"
-        >
-          <option value="">Chọn nhóm vi phạm...</option>
-          <option v-for="item in violationGroupOptions" :key="item.value" :value="item.value">
-            {{ item.label }}
-          </option>
-        </select>
-      </div>
-    </div>
-
-    <div class="cd-decision__row">
-      <div class="cd-decision__field">
-        <label class="cd-decision__label">Điểm xử phạt</label>
-        <input
-          v-model.number="form.points"
-          class="cd-decision__input"
-          type="number"
-          min="0"
-          :disabled="form.decision !== 'approve'"
-        />
-        <p class="cd-decision__hint">Điểm dự kiến sau xử lý: {{ projectedScore }}</p>
-      </div>
-
-      <div class="cd-decision__field">
         <label class="cd-decision__label">Trạng thái hiện tại</label>
         <input :value="currentStatusLabel" class="cd-decision__input" type="text" readonly />
       </div>
+    </div>
+
+    <div class="cd-decision__note">
+      API xử lý hiện chỉ nhận `decision` và `resolutionNote`. Các cấu hình như nhóm vi phạm,
+      điểm phạt hoặc biện pháp xử lý không còn được gửi từ form này.
     </div>
 
     <div class="cd-decision__field">
@@ -108,13 +55,7 @@
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import {
-  COMPLAINT_STATUS_OPTIONS,
-  COMPLAINT_TYPE_OPTIONS,
-  VIOLATION_GROUP_OPTIONS,
-  type ComplaintType,
-  type ViolationGroup,
-} from '@/constants/complaints.constants'
+import { COMPLAINT_STATUS_OPTIONS } from '@/constants/complaints.constants'
 import { useToast } from '@/composables/useToast'
 import { useAdminReportStore } from '@/stores/adminReport.store'
 import type { ReqProcessReport } from '@/types/report.types'
@@ -124,68 +65,34 @@ const store = useAdminReportStore()
 const toast = useToast()
 const PROCESSABLE_STATUSES = ['processing', 'waiting_employer'] as const
 
-const complaintTypeOptions = COMPLAINT_TYPE_OPTIONS
-const violationGroupOptions = VIOLATION_GROUP_OPTIONS
-const actionOptions = [
-  { value: 'request_employer_fix', label: 'Yêu cầu nhà tuyển dụng sửa tin' },
-  { value: 'hide_job', label: 'Ẩn / gỡ tin tuyển dụng' },
-  { value: 'suspend_company', label: 'Tạm khóa công ty' },
-  { value: 'resolve', label: 'Đánh dấu đã xử lý' },
-] as const
-const complaintStatusLabelMap = Object.fromEntries(COMPLAINT_STATUS_OPTIONS.map((item) => [item.value, item.label])) as Record<string, string>
+const complaintStatusLabelMap = Object.fromEntries(
+  COMPLAINT_STATUS_OPTIONS.map((item) => [item.value, item.label]),
+) as Record<string, string>
 
 const submitting = ref(false)
 const form = reactive({
   decision: '',
-  action: '',
-  complaintType: '' as ComplaintType | '',
-  violationGroup: '' as ViolationGroup | '',
-  points: 0,
   resolutionNote: '',
 })
 
-const currentScore = computed(() => store.currentReport?.jobPosting.company.violationScore ?? 0)
 const currentStatusLabel = computed(() => {
   const status = store.currentReport?.status
   return status ? (complaintStatusLabelMap[status] ?? status) : '-'
 })
+
 const isProcessable = computed(() => {
   const status = store.currentReport?.status
-  return Boolean(status && PROCESSABLE_STATUSES.includes(status as (typeof PROCESSABLE_STATUSES)[number]))
+  return Boolean(
+    status && PROCESSABLE_STATUSES.includes(status as (typeof PROCESSABLE_STATUSES)[number]),
+  )
 })
 
-const projectedScore = computed(() => currentScore.value + (Number(form.points) || 0))
-const canSubmit = computed(() => {
-  if (!form.decision || !isProcessable.value) return false
-  if (form.decision === 'approve') return Boolean(form.action)
-  return true
-})
-
-watch(
-  () => form.complaintType,
-  (complaintType) => {
-    if (complaintType) {
-      form.violationGroup = ''
-    }
-  },
-)
-
-watch(
-  () => form.decision,
-  (decision) => {
-    if (decision === 'approve') return
-    form.action = ''
-    form.points = 0
-  },
-)
+const canSubmit = computed(() => Boolean(form.decision) && isProcessable.value)
 
 watch(
   () => store.currentReport,
   (detail) => {
     if (!detail) return
-    form.complaintType = detail.complaintType
-    form.violationGroup = detail.violationGroup ?? ''
-    form.points = 0
     form.resolutionNote = detail.resolutionNote ?? ''
   },
   { immediate: true },
@@ -194,10 +101,6 @@ watch(
 function onCancel() {
   const detail = store.currentReport
   form.decision = ''
-  form.action = ''
-  form.complaintType = detail?.complaintType ?? ''
-  form.violationGroup = detail?.violationGroup ?? ''
-  form.points = 0
   form.resolutionNote = detail?.resolutionNote ?? ''
 }
 
@@ -211,22 +114,13 @@ async function onSubmit() {
   if (!isProcessable.value) {
     toast.error(
       'Không thể xử lý',
-      'Báo cáo phải được admin xác nhận trước và ở trạng thái processing hoặc waiting_employer.',
+      'Báo cáo phải ở trạng thái processing hoặc waiting_employer mới có thể xử lý.',
     )
     return
   }
 
-  if (form.decision === 'approve' && !form.action) {
-    toast.warning('Thiếu thông tin', 'Vui lòng chọn biện pháp xử lý.')
-    return
-  }
-
   const payload: ReqProcessReport = {
-    decision: form.decision,
-    action: form.decision === 'approve' ? (form.action || undefined) : undefined,
-    complaintType: form.decision === 'approve' ? (form.complaintType || undefined) : undefined,
-    violationGroup: form.decision === 'approve' ? (form.violationGroup || undefined) : undefined,
-    points: form.decision === 'approve' && Number.isFinite(Number(form.points)) ? Number(form.points) : undefined,
+    decision: form.decision as 'approve' | 'reject',
     resolutionNote: form.resolutionNote.trim() || undefined,
   }
 
@@ -235,7 +129,7 @@ async function onSubmit() {
   try {
     await store.processReport(reportId, payload)
     toast.success('Thành công', 'Đã xử lý khiếu nại thành công.')
-  } catch (error) {
+  } catch {
     toast.error('Lỗi', store.error ?? 'Không thể xử lý khiếu nại.')
   } finally {
     submitting.value = false
@@ -318,67 +212,62 @@ async function onSubmit() {
   box-shadow: 0 0 0 2px rgba(118, 25, 29, 0.12);
 }
 
-.cd-decision__select:disabled,
-.cd-decision__input:disabled {
-  cursor: not-allowed;
-  opacity: 0.65;
-}
-
 .cd-decision__input[readonly] {
-  cursor: default;
   color: #574240;
 }
 
 .cd-decision__textarea {
   resize: vertical;
+  min-height: 112px;
 }
 
-.cd-decision__hint {
-  font-size: 11px;
-  color: #574240;
+.cd-decision__note {
+  border-radius: 0.75rem;
+  background: #fff8e8;
+  border: 1px solid #f5dec2;
+  color: #8a5b18;
+  padding: 0.875rem 1rem;
+  font-size: 0.8125rem;
+  line-height: 1.5;
 }
 
 .cd-decision__footer {
   display: flex;
   justify-content: flex-end;
-  gap: 12px;
-  padding-top: 1rem;
-  border-top: 1px solid #f0eee7;
+  gap: 0.75rem;
 }
 
 .cd-decision__btn {
-  padding: 10px 24px;
-  border-radius: 0.5rem;
-  font-size: 0.875rem;
-  font-weight: 600;
-  cursor: pointer;
-  font-family: 'Inter', sans-serif;
-  transition: all 0.15s;
   border: none;
+  border-radius: 0.625rem;
+  padding: 0.75rem 1.25rem;
+  font-size: 0.875rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.15s ease, opacity 0.15s ease, background-color 0.15s ease;
 }
 
 .cd-decision__btn:disabled {
+  opacity: 0.55;
   cursor: not-allowed;
-  opacity: 0.6;
 }
 
 .cd-decision__btn--cancel {
-  background: #fbf9f2;
-  color: #1b1c18;
-  border: 1px solid #e4e2dc;
+  background: #ece9e1;
+  color: #574240;
 }
 
-.cd-decision__btn--cancel:hover {
-  background: #f0eee7;
+.cd-decision__btn--cancel:hover:not(:disabled) {
+  background: #e4dfd4;
 }
 
 .cd-decision__btn--submit {
-  background: #963131;
+  background: #76191d;
   color: #fff;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  min-width: 160px;
 }
 
-.cd-decision__btn--submit:hover {
-  background: #76191d;
+.cd-decision__btn--submit:hover:not(:disabled) {
+  background: #5f1216;
 }
 </style>

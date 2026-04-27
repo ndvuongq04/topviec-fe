@@ -23,10 +23,6 @@ export interface ReqEvidenceItem {
 
 export interface ReqProcessReport {
   decision: 'approve' | 'reject';
-  action?: string;
-  complaintType?: ComplaintType;
-  violationGroup?: ViolationGroup;
-  points?: number;
   resolutionNote?: string;
 }
 
