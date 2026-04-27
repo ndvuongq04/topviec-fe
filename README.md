@@ -1,88 +1,217 @@
 package com.topviec.topviec_be.controller;
 
-import com.topviec.topviec_be.dto.response.ResEmployerComplaintDetailDTO;
-import com.topviec.topviec_be.dto.response.ResMyViolationScoreDTO;
-import com.topviec.topviec_be.dto.response.ResultPaginationDTO;
-import com.topviec.topviec_be.service.ReportService;
+import com.topviec.topviec_be.dto.request.ReqAdjustViolationScoreDTO;
+import com.topviec.topviec_be.dto.request.ReqResetViolationScoreDTO;
+import com.topviec.topviec_be.dto.response.ResAppealDTO;
+import com.topviec.topviec_be.dto.response.ResViolationScoreDTO;
+import com.topviec.topviec_be.enums.adminUsers.AdminRoleConstants;
+import com.topviec.topviec_be.service.AppealService;
 import com.topviec.topviec_be.service.ViolationScoreService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
+
 /**
- * NTD tự quan sát các khiếu nại nhắm vào tin tuyển dụng của mình.
- * Base URL: /employer/me
+ * Admin quản lý điểm vi phạm của NTD.
+ * Base URL: /admin/employers/{employerId}/violation-score
  */
 @RestController
-@RequestMapping("/employer/me")
+@RequestMapping("/admin/employers")
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('EMPLOYER')")
-public class EmployerComplaintController {
+@PreAuthorize("hasRole('ADMIN')")
+public class AdminViolationScoreController {
 
-    private final ReportService reportService;
     private final ViolationScoreService violationScoreService;
+    private final AppealService appealService;
 
     /**
-     * GET /employer/me/reports
-     * Danh sách khiếu nại nhắm vào tin của NTD (ẩn danh người báo cáo).
+     * GET /admin/employers/{employerId}/violation-score
+     * Xem tổng điểm vi phạm hiện tại và lịch sử vi phạm của NTD.
      */
-    @GetMapping("/reports")
-    public ResponseEntity<ResultPaginationDTO> getMyReports(
-            @AuthenticationPrincipal Jwt jwt,
-            @RequestParam(required = false) String status,
-            @PageableDefault(size = 10, sort = "createdAt") Pageable pageable) {
-
-        return ResponseEntity.ok(reportService.getEmployerReports(extractUserId(jwt), status, pageable));
+    @GetMapping("/{employerId}/violation-score")
+    @PreAuthorize("@adminSecurity.hasAnyRole(authentication, '"
+            + AdminRoleConstants.SUPER_ADMIN + "', '"
+            + AdminRoleConstants.CONTENT_MODERATOR + "', '"
+            + AdminRoleConstants.SUPPORT_ADMIN + "')")
+    public ResponseEntity<ResViolationScoreDTO> getScore(@PathVariable Long employerId) {
+        return ResponseEntity.ok(violationScoreService.getScore(employerId));
     }
 
     /**
-     * GET /employer/me/reports/{id}
-     * Chi tiết một khiếu nại — chỉ cho phép nếu tin thuộc công ty của NTD.
+     * POST /admin/employers/{employerId}/violation-score/reset
+     * Reset điểm về 0.
+     * Điều kiện: NTD không tái phạm nhóm B trong vòng 6 tháng gần nhất.
      */
-    @GetMapping("/reports/{id}")
-    public ResponseEntity<ResEmployerComplaintDetailDTO> getReportDetail(
+    @PostMapping("/{employerId}/violation-score/reset")
+    @PreAuthorize("@adminSecurity.hasAnyRole(authentication, '"
+            + AdminRoleConstants.SUPER_ADMIN + "', '"
+            + AdminRoleConstants.CONTENT_MODERATOR + "')")
+    public ResponseEntity<ResViolationScoreDTO> resetScore(
             @AuthenticationPrincipal Jwt jwt,
-            @PathVariable Long id) {
+            @PathVariable Long employerId,
+            @Valid @RequestBody ReqResetViolationScoreDTO request) {
 
-        return ResponseEntity.ok(reportService.getEmployerReportDetail(extractUserId(jwt), id));
+        return ResponseEntity.ok(violationScoreService.resetScore(extractUserId(jwt), employerId, request));
     }
 
     /**
-     * GET /employer/me/violation-score
-     * NTD xem điểm vi phạm hiện tại của mình.
+     * PATCH /admin/employers/{employerId}/violation-score/adjust
+     * Giảm điểm vi phạm thủ công khi NTD chủ động khắc phục hậu quả.
      */
-    @GetMapping("/violation-score")
-    public ResponseEntity<ResMyViolationScoreDTO> getMyViolationScore(
-            @AuthenticationPrincipal Jwt jwt) {
+    @PatchMapping("/{employerId}/violation-score/adjust")
+    @PreAuthorize("@adminSecurity.hasAnyRole(authentication, '"
+            + AdminRoleConstants.SUPER_ADMIN + "', '"
+            + AdminRoleConstants.CONTENT_MODERATOR + "')")
+    public ResponseEntity<ResViolationScoreDTO> adjustScore(
+            @AuthenticationPrincipal Jwt jwt,
+            @PathVariable Long employerId,
+            @Valid @RequestBody ReqAdjustViolationScoreDTO request) {
 
-        return ResponseEntity.ok(violationScoreService.getMyScore(extractUserId(jwt)));
+        return ResponseEntity.ok(violationScoreService.adjustScore(extractUserId(jwt), employerId, request));
     }
 
     /**
-     * POST /employer/me/reports/{id}/respond
-     * NTD xác nhận đã sửa tin (nhóm A) → trigger tự đóng báo cáo.
+     * GET /admin/employers/{employerId}/appeals
+     * Xem toàn bộ danh sách kháng cáo của một NTD.
      */
-    @PostMapping("/reports/{id}/respond")
-    public ResponseEntity<ResEmployerComplaintDetailDTO> respondToReport(
-            @AuthenticationPrincipal Jwt jwt,
-            @PathVariable Long id) {
-
-        return ResponseEntity.ok(reportService.respondToReport(extractUserId(jwt), id));
+    @GetMapping("/{employerId}/appeals")
+    @PreAuthorize("@adminSecurity.hasAnyRole(authentication, '"
+            + AdminRoleConstants.SUPER_ADMIN + "', '"
+            + AdminRoleConstants.CONTENT_MODERATOR + "', '"
+            + AdminRoleConstants.SUPPORT_ADMIN + "')")
+    public ResponseEntity<List<ResAppealDTO>> getAppeals(@PathVariable Long employerId) {
+        return ResponseEntity.ok(appealService.getByEmployer(employerId));
     }
 
     private Long extractUserId(Jwt jwt) {
         return Long.parseLong(jwt.getSubject());
     }
+}
+package com.topviec.topviec_be.controller;
+
+import com.topviec.topviec_be.dto.request.ReqCreateAppealDTO;
+import com.topviec.topviec_be.dto.response.ResAppealDTO;
+import com.topviec.topviec_be.service.AppealService;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+/**
+ * NTD nộp kháng cáo sau khi bị xử lý vi phạm nhóm B.
+ * Base URL: /employer/appeals
+ */
+@RestController
+@RequestMapping("/employer/appeals")
+@RequiredArgsConstructor
+@PreAuthorize("hasRole('EMPLOYER')")
+public class EmployerAppealController {
+
+    private final AppealService appealService;
+
+    /**
+     * POST /employer/appeals
+     * NTD nộp kháng cáo cho một báo cáo nhóm B đã bị xử lý (resolved).
+     * Chỉ được kháng cáo 1 lần mỗi báo cáo.
+     */
+    @PostMapping
+    public ResponseEntity<ResAppealDTO> create(
+            @AuthenticationPrincipal Jwt jwt,
+            @Valid @RequestBody ReqCreateAppealDTO request) {
+
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(appealService.create(extractUserId(jwt), request));
+    }
+
+    private Long extractUserId(Jwt jwt) {
+        return Long.parseLong(jwt.getSubject());
+    }
+}
+package com.topviec.topviec_be.dto.request;
+
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+public class ReqAdjustViolationScoreDTO {
+
+    @NotNull(message = "Số điểm giảm không được để trống")
+    @Min(value = 1, message = "Số điểm giảm phải lớn hơn 0")
+    private Integer pointsToDecrease;
+
+    @NotBlank(message = "Lý do giảm điểm không được để trống")
+    @Size(max = 500, message = "Lý do không được vượt quá 500 ký tự")
+    private String note;
+}
+package com.topviec.topviec_be.dto.request;
+
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+public class ReqCreateAppealDTO {
+
+    @NotNull(message = "ID báo cáo không được để trống")
+    private Long complaintId;
+
+    @NotBlank(message = "Nội dung kháng cáo không được để trống")
+    @Size(max = 2000, message = "Nội dung kháng cáo không được vượt quá 2000 ký tự")
+    private String content;
+}
+package com.topviec.topviec_be.dto.request;
+
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+public class ReqResetViolationScoreDTO {
+
+    @NotBlank(message = "Lý do reset không được để trống")
+    @Size(max = 500, message = "Lý do không được vượt quá 500 ký tự")
+    private String note;
 }
 package com.topviec.topviec_be.dto.response;
 
@@ -94,50 +223,34 @@ import lombok.Setter;
 
 import java.time.LocalDateTime;
 
-/**
- * Response chi tiết một khiếu nại từ góc nhìn của NTD.
- * Không chứa danh tính người báo cáo, không chứa bằng chứng, không chứa ghi chú nội bộ Admin.
- */
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class ResEmployerComplaintDetailDTO {
+public class ResAppealDTO {
 
     private Long id;
-    private String reportCode;
+    private Long employerId;
 
-    private JobPostInfo jobPost;
+    /** Thông tin báo cáo bị kháng cáo */
+    private ComplaintInfo complaint;
 
-    private String complaintType;
-    private String violationGroup;
-    private String priority;
+    private String content;
+
+    /**
+     * Trạng thái kháng cáo.
+     * Giá trị hợp lệ: {@code pending} | {@code approved} | {@code rejected}
+     */
     private String status;
 
-    /** Mô tả khiếu nại do UV nhập (hiển thị để NTD biết cần sửa gì) */
-    private String description;
+    /** Ghi chú Admin khi xử lý kháng cáo. NULL nếu chưa xử lý */
+    private String adminNote;
 
-    // ── Thông tin xử lý nhóm A ────────────────────────────────────────────────
+    /** Admin đã xử lý kháng cáo */
+    private AdminInfo reviewedByAdmin;
 
-    /** Thời điểm hệ thống gửi email nhắc NTD sửa tin */
-    private LocalDateTime emailSentAt;
-
-    /** Deadline NTD phải sửa tin = emailSentAt + 48h */
-    private LocalDateTime employerDeadline;
-
-    /** Thời gian còn lại (giờ) trước deadline. 0 nếu đã hết hạn hoặc đã xử lý xong */
-    private Long remainingHours;
-
-    /** Thời điểm NTD bấm xác nhận đã sửa */
-    private LocalDateTime employerRespondedAt;
-
-    // ── Kết quả xử lý (hiển thị khi resolved / rejected) ─────────────────────
-
-    /** Ghi chú kết quả xử lý của Admin (public — không chứa thông tin nội bộ) */
-    private String resolutionNote;
-
-    private LocalDateTime resolvedAt;
+    private LocalDateTime reviewedAt;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
@@ -146,62 +259,28 @@ public class ResEmployerComplaintDetailDTO {
     @NoArgsConstructor
     @AllArgsConstructor
     @Builder
-    public static class JobPostInfo {
+    public static class ComplaintInfo {
         private Long id;
-        private String title;
+        private String reportCode;
+        /** Giá trị hợp lệ: {@code fraudulent} | {@code payment_issue} | ... */
+        private String complaintType;
+        /** Giá trị hợp lệ: {@code A} | {@code B} */
+        private String violationGroup;
         private String status;
+        private Long jobPostId;
+        private String jobPostTitle;
+        private String companyName;
+        private LocalDateTime createdAt;
     }
-}
-package com.topviec.topviec_be.dto.response;
-
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-
-import java.time.LocalDateTime;
-
-/**
- * Response danh sách khiếu nại mà NTD bị báo cáo.
- * Không chứa thông tin định danh của người báo cáo (UV).
- */
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
-public class ResEmployerComplaintSummaryDTO {
-
-    private Long id;
-    private String reportCode;
-
-    private JobPostInfo jobPost;
-
-    /** Giá trị hợp lệ: {@code wrong_info} | {@code spam} | {@code payment_issue} | ... */
-    private String complaintType;
-    /** Giá trị hợp lệ: {@code A} (nhẹ) | {@code B} (nặng) */
-    private String violationGroup;
-    /** Giá trị hợp lệ: {@code urgent} | {@code important} | {@code normal} */
-    private String priority;
-    /** Giá trị hợp lệ: {@code pending} | {@code processing} | {@code waiting_employer} | {@code resolved} | {@code rejected} | {@code auto_closed} */
-    private String status;
-
-    /** Deadline NTD phải sửa tin (chỉ có với nhóm A ở trạng thái waiting_employer) */
-    private LocalDateTime employerDeadline;
-    private Long remainingHours;
-
-    private LocalDateTime createdAt;
 
     @Getter
     @Setter
     @NoArgsConstructor
     @AllArgsConstructor
     @Builder
-    public static class JobPostInfo {
-        private Long id;
-        private String title;
-        private String status;
+    public static class AdminInfo {
+        private Long adminUserId;
+        private String fullName;
     }
 }
 package com.topviec.topviec_be.dto.response;
@@ -213,43 +292,88 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
- * Response điểm vi phạm dành cho NTD xem thông tin của chính mình.
- * Không bao gồm lịch sử chi tiết từng lần vi phạm (dành riêng cho Admin).
+ * Response trả về khi Admin xem điểm vi phạm của một NTD.
+ * Bao gồm thông tin tổng hợp và lịch sử từng lần vi phạm.
  */
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class ResMyViolationScoreDTO {
+public class ResViolationScoreDTO {
 
-    private Integer totalScore;
+    private Long employerId;
+    private String employerEmail;
 
-    /**
-     * Mức độ vi phạm hiện tại.
-     * Giá trị: {@code normal} (0–19) | {@code limited} (20–49) | {@code suspended} (≥50)
-     */
-    private String scoreLevel;
+    private CompanyInfo company;
+    private ScoreInfo score;
 
-    /**
-     * Mô tả hạn chế áp dụng tương ứng với scoreLevel.
-     * VD: "Chỉ được đăng tối đa 3 tin/tuần, tin mới cần Admin duyệt trước khi hiển thị"
-     */
-    private String restrictionDescription;
+    /** Lịch sử vi phạm sắp xếp mới nhất trước */
+    private List<ViolationLogInfo> history;
 
-    /**
-     * Thời điểm vi phạm nhóm B gần nhất.
-     * Dùng để NTD biết khi nào đủ điều kiện yêu cầu Admin reset điểm (sau 6 tháng).
-     */
-    private LocalDateTime lastGroupBViolationAt;
+    @Getter
+    @Setter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    public static class CompanyInfo {
+        private Long id;
+        private String name;
+        private String logoUrl;
+        /** Giá trị hợp lệ: {@code pending} | {@code active} | {@code suspended} | {@code deleted} */
+        private String status;
+    }
 
-    /**
-     * NTD đã đủ điều kiện để liên hệ Admin yêu cầu reset điểm về 0 hay chưa.
-     * true nếu chưa từng vi phạm nhóm B hoặc đã qua 6 tháng kể từ lần vi phạm nhóm B gần nhất.
-     */
-    private Boolean canRequestReset;
+    @Getter
+    @Setter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    public static class ScoreInfo {
+        private Integer totalScore;
 
-    private String companyStatus;
+        /**
+         * Mức độ vi phạm hiện tại dựa trên tổng điểm.
+         * Giá trị: {@code normal} (0–19) | {@code limited} (20–49) | {@code suspended} (≥50)
+         */
+        private String scoreLevel;
+
+        /** Thời điểm vi phạm nhóm B gần nhất — dùng để kiểm tra điều kiện reset 6 tháng */
+        private LocalDateTime lastGroupBViolationAt;
+
+        /** Thời điểm Admin reset điểm về 0 gần nhất */
+        private LocalDateTime lastResetAt;
+
+        /** Tên Admin đã thực hiện reset gần nhất */
+        private String resetByAdminName;
+
+        /**
+         * Admin có thể reset điểm về 0 không.
+         * true nếu chưa từng vi phạm nhóm B hoặc vi phạm nhóm B gần nhất đã qua 6 tháng.
+         */
+        private Boolean canResetScore;
+    }
+
+    @Getter
+    @Setter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    public static class ViolationLogInfo {
+        private Long id;
+        /** Khớp với {@code complaint_type}: fraudulent | spam | wrong_info | ... */
+        private String violationType;
+        private Integer points;
+        /** Nguồn phát hiện: {@code admin} | {@code system} | {@code complaint} */
+        private String source;
+        /** ID báo cáo liên quan. NULL nếu vi phạm do system phát hiện */
+        private Long complaintId;
+        private String note;
+        /** Tên Admin tạo log. NULL nếu do system */
+        private String createdByAdminName;
+        private LocalDateTime createdAt;
+    }
 }
