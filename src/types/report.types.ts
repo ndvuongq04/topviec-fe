@@ -22,7 +22,7 @@ export interface ReqEvidenceItem {
 }
 
 export interface ReqProcessReport {
-  decision: string;
+  decision: 'approve' | 'reject';
   action?: string;
   complaintType?: ComplaintType;
   violationGroup?: ViolationGroup;
@@ -43,6 +43,13 @@ export interface ReqGetAdminReports {
 }
 
 export interface ReqGetMyReports {
+  status?: ComplaintStatus;
+  page?: number;
+  size?: number;
+  sort?: string;
+}
+
+export interface ReqGetEmployerReports {
   status?: ComplaintStatus;
   page?: number;
   size?: number;
@@ -136,4 +143,52 @@ export interface ResViolationReason {
   priority: ComplaintPriority;
 }
 
+export interface ResEmployerReportJobPostInfo {
+  id: number;
+  title: string;
+  status: string;
+}
+
+export interface ResEmployerReportSummary {
+  id: number;
+  reportCode: string;
+  jobPost: ResEmployerReportJobPostInfo;
+  complaintType: ComplaintType;
+  violationGroup: ViolationGroup | null;
+  priority: ComplaintPriority;
+  status: ComplaintStatus;
+  employerDeadline: string | null;
+  remainingHours: number | null;
+  createdAt: string;
+}
+
+export interface ResEmployerReportDetail {
+  id: number;
+  reportCode: string;
+  jobPost: ResEmployerReportJobPostInfo;
+  complaintType: ComplaintType;
+  violationGroup: ViolationGroup | null;
+  priority: ComplaintPriority;
+  status: ComplaintStatus;
+  description: string | null;
+  emailSentAt: string | null;
+  employerDeadline: string | null;
+  remainingHours: number | null;
+  employerRespondedAt: string | null;
+  resolutionNote: string | null;
+  resolvedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ResMyViolationScore {
+  totalScore: number;
+  scoreLevel: 'normal' | 'limited' | 'suspended' | string;
+  restrictionDescription: string | null;
+  lastGroupBViolationAt: string | null;
+  canRequestReset: boolean;
+  companyStatus: string | null;
+}
+
 export type ResReportPagination = ResultPaginationDTO<ResReportSummary>;
+export type ResEmployerReportPagination = ResultPaginationDTO<ResEmployerReportSummary>;
