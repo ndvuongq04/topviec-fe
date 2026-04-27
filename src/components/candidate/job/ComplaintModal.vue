@@ -64,33 +64,38 @@
               <!-- Loại vi phạm -->
               <div>
                 <p class="text-xs font-bold text-slate-500 uppercase tracking-wide mb-3">Chọn loại vi phạm</p>
-                <div class="flex flex-col gap-2">
+
+                <!-- Loading -->
+                <div v-if="loadingReasons" class="flex flex-col gap-2">
+                  <div v-for="i in 4" :key="i" class="h-14 rounded-xl bg-slate-100 animate-pulse" />
+                </div>
+
+                <div v-else class="flex flex-col gap-2">
                   <label
-                    v-for="opt in violationOptions"
-                    :key="opt.value"
+                    v-for="opt in violationReasons"
+                    :key="opt.code"
                     class="flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-all"
-                    :class="selectedCategory === opt.value
+                    :class="selectedCode === opt.code
                       ? 'border-primary bg-primary/5'
                       : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'"
                   >
                     <input
                       type="radio"
-                      :value="opt.value"
-                      v-model="selectedCategory"
+                      :value="opt.code"
+                      v-model="selectedCode"
                       class="mt-0.5 accent-primary shrink-0"
                     />
                     <div class="min-w-0">
                       <div class="flex items-center gap-2 flex-wrap">
-                        <span class="text-sm font-semibold text-slate-900">{{ opt.label }}</span>
+                        <span class="text-sm font-semibold text-slate-900">{{ opt.name }}</span>
                         <span
                           class="text-[10px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wide"
                           :class="opt.group === 'B' ? 'bg-red-100 text-red-600' : 'bg-slate-200 text-slate-600'"
                         >Nhóm {{ opt.group }}</span>
-                        <span v-if="opt.group === 'B'" class="text-[10px] font-bold text-red-500 flex items-center gap-0.5">
+                        <span v-if="opt.requiresEvidence" class="text-[10px] font-bold text-red-500 flex items-center gap-0.5">
                           <span class="material-symbols-outlined text-[12px]">warning</span> Yêu cầu bằng chứng
                         </span>
                       </div>
-                      <p class="text-xs text-slate-500 mt-0.5">{{ opt.description }}</p>
                     </div>
                   </label>
                 </div>
@@ -112,7 +117,7 @@
                 <span class="text-xs font-bold text-slate-500 uppercase tracking-wide">Loại vi phạm:</span>
                 <span class="text-xs font-bold px-2 py-0.5 rounded-full"
                   :class="isGroupB ? 'bg-red-100 text-red-600' : 'bg-slate-200 text-slate-600'">
-                  {{ selectedOption?.label }}
+                  {{ selectedOption?.name }}
                 </span>
               </div>
 
@@ -230,10 +235,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
+import candidateReportService from '@/services/candidateReport.service'
+import { useToast } from '@/composables/useToast'
+import type { ResViolationReason } from '@/types/report.types'
 
 interface Props {
   show: boolean
+  jobPostId: number
   jobTitle: string
   companyName: string
   companyLogo?: string
@@ -242,55 +251,40 @@ interface Props {
 const props = defineProps<Props>()
 const emit  = defineEmits<{ close: []; submitted: [] }>()
 
+const toast = useToast()
+
 // Hardcode: tài khoản đủ 7 ngày
 const accountTooNew = false
 
-const step        = ref(1)
-const selectedCategory = ref('')
-const description = ref('')
-const files       = ref<File[]>([])
-const fileError   = ref('')
-const isDragging  = ref(false)
-const fileInput   = ref<HTMLInputElement | null>(null)
-const submitting  = ref(false)
+const step             = ref(1)
+const selectedCode     = ref('')
+const description      = ref('')
+const files            = ref<File[]>([])
+const fileError        = ref('')
+const isDragging       = ref(false)
+const fileInput        = ref<HTMLInputElement | null>(null)
+const submitting       = ref(false)
 
-const violationOptions = [
-  {
-    value: 'missing-info',
-    label: 'Tin thiếu thông tin',
-    description: 'Tin đăng thiếu mức lương, địa điểm làm việc, hoặc mô tả công việc không rõ ràng.',
-    group: 'A',
-  },
-  {
-    value: 'duplicate',
-    label: 'Tin trùng lặp / spam nội dung',
-    description: 'Tin đăng giống hệt hoặc gần giống với một tin khác của cùng công ty.',
-    group: 'A',
-  },
-  {
-    value: 'company-mismatch',
-    label: 'Thông tin công ty không khớp',
-    description: 'Tên công ty, logo hoặc địa chỉ trên tin đăng không khớp với thực tế.',
-    group: 'A',
-  },
-  {
-    value: 'fee-abuse',
-    label: 'Yêu cầu phí bất hợp lý từ ứng viên',
-    description: 'Nhà tuyển dụng yêu cầu ứng viên đóng tiền dưới bất kỳ hình thức nào.',
-    group: 'B',
-  },
-  {
-    value: 'fraud',
-    label: 'Lừa đảo có bằng chứng rõ ràng',
-    description: 'Tin ma, công ty không tồn tại, hoặc đã thu tiền rồi mất liên lạc.',
-    group: 'B',
-  },
-]
+const violationReasons    = ref<ResViolationReason[]>([])
+const loadingReasons      = ref(false)
 
-const selectedOption = computed(() => violationOptions.find(o => o.value === selectedCategory.value))
+watch(() => props.show, async (val) => {
+  if (val && !violationReasons.value.length) {
+    loadingReasons.value = true
+    try {
+      violationReasons.value = await candidateReportService.getViolationReasons()
+    } catch {
+      toast.error('Không thể tải danh sách vi phạm', 'Vui lòng thử lại sau.')
+    } finally {
+      loadingReasons.value = false
+    }
+  }
+}, { immediate: true })
+
+const selectedOption = computed(() => violationReasons.value.find(o => o.code === selectedCode.value))
 const isGroupB       = computed(() => selectedOption.value?.group === 'B')
 
-const canGoNext = computed(() => !!selectedCategory.value)
+const canGoNext = computed(() => !!selectedCode.value)
 const canSubmit = computed(() => {
   if (isGroupB.value) return !!description.value.trim() && files.value.length > 0
   return true
@@ -331,20 +325,35 @@ function removeFile(index: number) {
 }
 
 async function handleSubmit() {
+  if (!selectedCode.value) return
+
   submitting.value = true
-  // Hardcode: giả lập gửi thành công sau 1s
-  await new Promise(r => setTimeout(r, 1000))
-  submitting.value = false
-  emit('submitted')
-  resetForm()
+  try {
+    await candidateReportService.create({
+      jobPostId: props.jobPostId,
+      complaintType: selectedCode.value as any,
+      description: description.value.trim() || undefined,
+      evidences: [],
+    })
+
+    toast.success('Gửi khiếu nại thành công', 'Chúng tôi sẽ xem xét và phản hồi trong thời gian sớm nhất.')
+    emit('submitted')
+    resetForm()
+  } catch (err: any) {
+    const msg = err?.response?.data?.message
+    const text = typeof msg === 'object' ? Object.values(msg)[0] as string : (msg ?? 'Có lỗi xảy ra, vui lòng thử lại.')
+    toast.error('Gửi khiếu nại thất bại', text)
+  } finally {
+    submitting.value = false
+  }
 }
 
 function resetForm() {
-  step.value             = 1
-  selectedCategory.value = ''
-  description.value      = ''
-  files.value            = []
-  fileError.value        = ''
+  step.value         = 1
+  selectedCode.value = ''
+  description.value  = ''
+  files.value        = []
+  fileError.value    = ''
 }
 </script>
 

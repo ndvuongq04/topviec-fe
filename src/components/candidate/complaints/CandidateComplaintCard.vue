@@ -1,27 +1,27 @@
 <template>
-  <div :class="['ccc-card', dimmed ? 'ccc-card--dimmed' : '']">
+  <div :class="['ccc-card', isDimmed(complaint.status) ? 'ccc-card--dimmed' : '']">
     <div class="ccc-top">
       <div class="ccc-id-row">
-        <span class="ccc-id">{{ complaint.id }}</span>
-        <span class="ccc-date">{{ complaint.date }}</span>
+        <span class="ccc-id">{{ complaint.reportCode }}</span>
+        <span class="ccc-date">{{ formatDate(complaint.createdAt) }}</span>
       </div>
-      <span :class="['ccc-status', `status-${complaint.status}`]">
-        {{ statusLabel[complaint.status] }}
+      <span class="ccc-status" :style="statusStyle[complaint.status]">
+        {{ statusLabel[complaint.status] ?? complaint.status }}
       </span>
     </div>
 
     <div class="ccc-body">
-      <h3 class="ccc-job-title">{{ complaint.jobTitle }}</h3>
+      <h3 class="ccc-job-title">{{ complaint.jobPostTitle }}</h3>
       <p class="ccc-company">
         <span class="material-symbols-outlined">business</span>
-        {{ complaint.company }}
+        {{ complaint.companyName }}
       </p>
     </div>
 
     <div class="ccc-footer">
       <div class="ccc-reason">
-        <span class="material-symbols-outlined ccc-reason-icon">{{ complaint.reasonIcon }}</span>
-        <span class="ccc-reason-text">{{ complaint.reason }}</span>
+        <span class="material-symbols-outlined ccc-reason-icon">{{ typeIcon[complaint.complaintType] ?? 'gavel' }}</span>
+        <span class="ccc-reason-text">{{ typeLabel[complaint.complaintType] ?? complaint.complaintType }}</span>
       </div>
       <button class="ccc-detail-btn" @click="$emit('view', complaint)">
         Xem chi tiết
@@ -32,26 +32,51 @@
 </template>
 
 <script setup lang="ts">
-export interface CandidateComplaint {
-  id: string
-  date: string
-  status: 'pending' | 'processing' | 'resolved' | 'closed'
-  jobTitle: string
-  company: string
-  reason: string
-  reasonIcon: string
+import type { ResReportSummary } from '@/types/report.types'
+
+defineProps<{ complaint: ResReportSummary }>()
+defineEmits<{ view: [ResReportSummary] }>()
+
+function isDimmed(status: string) { return status === 'auto_closed' || status === 'rejected' }
+
+function formatDate(iso: string) {
+  return new Date(iso).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })
 }
 
-const props = defineProps<{ complaint: CandidateComplaint }>()
-defineEmits<{ view: [CandidateComplaint] }>()
-
-const dimmed = props.complaint.status === 'closed'
-
 const statusLabel: Record<string, string> = {
-  pending:    'Chờ xử lý',
-  processing: 'Đang xử lý',
-  resolved:   'Đã giải quyết',
-  closed:     'Tự động đóng',
+  pending:          'Chờ xử lý',
+  processing:       'Đang xử lý',
+  waiting_employer: 'Chờ NTD phản hồi',
+  resolved:         'Đã giải quyết',
+  rejected:         'Từ chối',
+  auto_closed:      'Tự động đóng',
+}
+
+const statusStyle: Record<string, { background: string; color: string }> = {
+  pending:          { background: '#e2e7f0', color: '#404752' },
+  processing:       { background: '#fff8e1', color: '#795548' },
+  waiting_employer: { background: '#e8f0fe', color: '#1a56db' },
+  resolved:         { background: '#75fd99', color: '#005224' },
+  rejected:         { background: '#ffe4e4', color: '#ba1a1a' },
+  auto_closed:      { background: '#e0e8ff', color: '#404752' },
+}
+
+const typeLabel: Record<string, string> = {
+  fraudulent:    'Lừa đảo',
+  spam:          'Spam / Trùng lặp',
+  wrong_info:    'Thông tin sai lệch',
+  inappropriate: 'Nội dung không phù hợp',
+  payment_issue: 'Yêu cầu phí bất hợp lý',
+  other:         'Vi phạm khác',
+}
+
+const typeIcon: Record<string, string> = {
+  fraudulent:    'security',
+  spam:          'block',
+  wrong_info:    'warning',
+  inappropriate: 'report',
+  payment_issue: 'money_off',
+  other:         'gavel',
 }
 </script>
 

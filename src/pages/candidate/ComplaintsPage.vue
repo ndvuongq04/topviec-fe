@@ -5,73 +5,72 @@
       <p class="ccp-desc">Theo dõi trạng thái xử lý các báo cáo vi phạm của bạn</p>
     </header>
 
-    <div class="flex flex-col gap-6">
+    <!-- Loading skeleton -->
+    <div v-if="store.loading" class="flex flex-col gap-4">
+      <div v-for="i in 4" :key="i" class="h-32 rounded-xl bg-slate-100 animate-pulse" />
+    </div>
+
+    <!-- Empty state -->
+    <div v-else-if="!store.reports.length" class="flex flex-col items-center justify-center py-20 gap-3 text-center">
+      <span class="material-symbols-outlined text-slate-300 text-[56px]">inbox</span>
+      <p class="text-slate-500 font-medium">Bạn chưa gửi khiếu nại nào</p>
+    </div>
+
+    <!-- List -->
+    <div v-else class="flex flex-col gap-4">
       <CandidateComplaintCard
-        v-for="complaint in complaints"
+        v-for="complaint in store.reports"
         :key="complaint.id"
         :complaint="complaint"
         @view="onView"
       />
     </div>
 
+    <!-- Pagination -->
     <CandidateComplaintPagination
-      :current="page"
-      :total="total"
-      @change="page = $event"
+      v-if="store.meta.totals > 0"
+      :current-page="currentPage"
+      :total="store.meta.totals"
+      :per-page="pageSize"
+      @change="onPageChange"
     />
   </main>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
-import CandidateComplaintCard, { type CandidateComplaint }
-  from '@/components/candidate/complaints/CandidateComplaintCard.vue'
-import CandidateComplaintPagination
-  from '@/components/candidate/complaints/CandidateComplaintPagination.vue'
+import { ref, onMounted, watch } from 'vue'
+import { useRouter } from 'vue-router'
+import { useCandidateReportStore } from '@/stores/candidateReport.store'
+import CandidateComplaintCard from '@/components/candidate/complaints/CandidateComplaintCard.vue'
+import CandidateComplaintPagination from '@/components/candidate/complaints/CandidateComplaintPagination.vue'
+import type { ResReportSummary } from '@/types/report.types'
 
-const page  = ref(1)
-const total = ref(115)
+const router      = useRouter()
+const store       = useCandidateReportStore()
+const currentPage = ref(0)
+const pageSize    = ref(10)
 
-const complaints: CandidateComplaint[] = [
-  {
-    id: '#BC-2904', date: '15/10/2023', status: 'pending',
-    jobTitle: 'Senior Frontend Developer', company: 'TechCorp Solutions',
-    reason: 'Thông tin sai sự thật', reasonIcon: 'warning',
-  },
-  {
-    id: '#BC-2891', date: '12/10/2023', status: 'processing',
-    jobTitle: 'Marketing Executive', company: 'Global Media Agency',
-    reason: 'Yêu cầu phí phi lý', reasonIcon: 'money_off',
-  },
-  {
-    id: '#BC-2755', date: '05/10/2023', status: 'resolved',
-    jobTitle: 'Data Analyst Intern', company: 'DataViz Inc.',
-    reason: 'Lừa đảo', reasonIcon: 'security',
-  },
-  {
-    id: '#BC-2610', date: '20/09/2023', status: 'closed',
-    jobTitle: 'Customer Service Rep', company: 'CallCenter Pro',
-    reason: 'Vi phạm khác', reasonIcon: 'gavel',
-  },
-]
+async function loadPage(page: number) {
+  await store.fetchMyReports({ page, size: pageSize.value, sort: 'createdAt,desc' })
+}
 
-const onView = (c: CandidateComplaint) => {
-  console.log('navigate to detail', c.id)
-  // router.push(`/candidate/complaints/${c.id}`)
+onMounted(() => loadPage(currentPage.value))
+
+function onPageChange(page: number) {
+  currentPage.value = page
+}
+
+watch(currentPage, (page) => loadPage(page))
+
+function onView(complaint: ResReportSummary) {
+  router.push(`/my-complaints/${complaint.id}`)
 }
 </script>
 
 <style scoped>
-.ccp-page {
-  padding: 32px;
-  max-width: 860px;
-  margin: 0 auto;
-}
-.ccp-header { margin-bottom: 40px; }
 .ccp-title {
   font-size: 1.875rem; font-weight: 800; font-family: 'Manrope', sans-serif;
   color: #071b3b; letter-spacing: -0.02em; margin-bottom: 8px;
 }
 .ccp-desc { font-size: 1rem; color: #404752; font-family: 'Manrope', sans-serif; }
-.ccp-list { display: flex; flex-direction: column; gap: 24px; }
 </style>

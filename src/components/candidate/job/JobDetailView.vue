@@ -504,6 +504,7 @@ async function toggleCompanyFollow() {
     <!-- Complaint Modal -->
     <ComplaintModal
       :show="showComplaintModal"
+      :job-post-id="Number(props.id)"
       :job-title="job.title"
       :company-name="job.company.name"
       :company-logo="getLogoUrl(job.company.logoUrl)"
