@@ -50,7 +50,10 @@ export interface ReqGetMyReports {
 }
 
 export interface ReqGetEmployerReports {
+  search?: string;
   status?: ComplaintStatus;
+  group?: ViolationGroup;
+  complaintType?: ComplaintType;
   page?: number;
   size?: number;
   sort?: string;

@@ -12,7 +12,7 @@
     <RecruiterViolationScore :score="score" />
 
     <RecruiterComplaintTable
-      :complaints="filtered"
+      :complaints="complaints"
       :total="total"
       :current-page="page"
       :page-size="pageSize"
@@ -25,81 +25,73 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import RecruiterViolationScore from '@/components/recruiter/complaints/RecruiterViolationScore.vue'
 import RecruiterComplaintTable, {
   type RecruiterComplaint,
 } from '@/components/recruiter/complaints/RecruiterComplaintTable.vue'
+import { useEmployerReportStore } from '@/stores/employerReport.store'
 
 const router = useRouter()
+const store = useEmployerReportStore()
+
 const page = ref(1)
 const pageSize = ref(10)
-
 const searchQuery = ref('')
 const filterGroup = ref('')
 const filterType = ref('')
 const filterStatus = ref('')
 
-const score = { violation: 23, pending: 2, thisMonth: 5 }
+const score = computed(() => ({
+  violation: store.myViolationScore?.totalScore ?? 0,
+  pending: store.reports.filter((item) =>
+    item.status === 'pending' || item.status === 'processing' || item.status === 'waiting_employer').length,
+  thisMonth: store.reports.filter((item) => {
+    const createdAt = new Date(item.createdAt)
+    const now = new Date()
+    return createdAt.getMonth() === now.getMonth() && createdAt.getFullYear() === now.getFullYear()
+  }).length,
+}))
 
-const allComplaints: RecruiterComplaint[] = [
-  {
-    id: '#BC-2931',
-    jobTitle: 'Senior Frontend Developer',
-    group: 'b',
-    violationType: 'fraud',
-    status: 'processing',
-    action: 'appeal',
-  },
-  {
-    id: '#BC-2930',
-    jobTitle: 'Kế toán tổng hợp',
-    group: 'a',
-    violationType: 'missing_info',
-    status: 'pending',
-    sla: { type: 'remaining', label: 'Còn 18h' },
-    action: 'fix',
-  },
-  {
-    id: '#BC-2929',
-    jobTitle: 'Marketing Executive',
-    group: 'a',
-    violationType: 'missing_info',
-    status: 'pending',
-    sla: { type: 'overdue', label: 'Quá hạn 3h' },
-    action: 'fix',
-  },
-  {
-    id: '#BC-2910',
-    jobTitle: 'Java Backend',
-    group: 'b',
-    violationType: 'wrong_category',
-    status: 'resolved',
-    action: 'view',
-  },
-]
-
-const filtered = computed(() =>
-  allComplaints.filter((complaint) => {
-    const query = searchQuery.value.toLowerCase()
-    const matchSearch =
-      !query ||
-      complaint.id.toLowerCase().includes(query) ||
-      complaint.jobTitle.toLowerCase().includes(query)
-    const matchGroup = !filterGroup.value || complaint.group === filterGroup.value
-    const matchType = !filterType.value || complaint.violationType === filterType.value
-    const matchStatus = !filterStatus.value || complaint.status === filterStatus.value
-
-    return matchSearch && matchGroup && matchType && matchStatus
-  }),
+const complaints = computed<RecruiterComplaint[]>(() =>
+  store.reports.map((item) => ({
+    id: item.reportCode.startsWith('#') ? item.reportCode : `#${item.reportCode}`,
+    jobTitle: item.jobPost.title,
+    group: item.violationGroup?.toLowerCase() === 'b' ? 'b' : 'a',
+    violationType: item.complaintType,
+    status: item.status,
+    sla: item.remainingHours === null
+      ? undefined
+      : item.remainingHours < 0
+        ? { type: 'overdue', label: `Quá hạn ${Math.abs(item.remainingHours)}h` }
+        : { type: 'remaining', label: `Còn ${item.remainingHours}h` },
+    action: item.status === 'waiting_employer'
+      ? 'fix'
+      : item.status === 'resolved' || item.status === 'rejected' || item.status === 'auto_closed'
+        ? 'view'
+        : 'appeal',
+  })),
 )
 
-const total = computed(() => filtered.value.length)
+const total = computed(() => store.meta.totals)
+
+async function fetchData() {
+  await store.fetchMyReports({
+    search: searchQuery.value.trim() || undefined,
+    status: filterStatus.value || undefined,
+    group: filterGroup.value ? filterGroup.value.toUpperCase() : undefined,
+    complaintType: filterType.value || undefined,
+    page: page.value - 1,
+    size: pageSize.value,
+    sort: 'createdAt,desc',
+  })
+}
 
 function onSearch(query: string) {
   searchQuery.value = query
   page.value = 1
+  fetchData()
 }
 
 function onFilter(filters: { group: string; type: string; status: string }) {
@@ -107,10 +99,12 @@ function onFilter(filters: { group: string; type: string; status: string }) {
   filterType.value = filters.type
   filterStatus.value = filters.status
   page.value = 1
+  fetchData()
 }
 
 function onPageChange(nextPage: number) {
   page.value = nextPage
+  fetchData()
 }
 
 function onAction(complaint: RecruiterComplaint) {
@@ -119,6 +113,13 @@ function onAction(complaint: RecruiterComplaint) {
     params: { id: complaint.id.replace('#', '') },
   })
 }
+
+onMounted(async () => {
+  await Promise.all([
+    store.fetchMyViolationScore().catch(() => null),
+    fetchData(),
+  ])
+})
 </script>
 
 <style scoped>
