@@ -56,7 +56,8 @@ const score = computed(() => ({
 
 const complaints = computed<RecruiterComplaint[]>(() =>
   store.reports.map((item) => ({
-    id: item.reportCode.startsWith('#') ? item.reportCode : `#${item.reportCode}`,
+    id: item.id,
+    reportCode: item.reportCode.startsWith('#') ? item.reportCode : `#${item.reportCode}`,
     jobTitle: item.jobPost.title,
     group: item.violationGroup?.toLowerCase() === 'b' ? 'b' : 'a',
     violationType: item.complaintType,
@@ -107,10 +108,13 @@ function onPageChange(nextPage: number) {
   fetchData()
 }
 
-function onAction(complaint: RecruiterComplaint) {
-  router.push({
+async function onAction(complaint: RecruiterComplaint) {
+  const reportId = complaint.id
+
+  await store.fetchById(reportId)
+  await router.push({
     name: 'recruiter-complaint-detail',
-    params: { id: complaint.id.replace('#', '') },
+    params: { id: reportId },
   })
 }
 

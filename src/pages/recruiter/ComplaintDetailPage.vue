@@ -5,8 +5,8 @@
 
       <div class="complaint-detail__header-body">
         <div class="complaint-detail__header-main">
-          <h1 class="complaint-detail__title">Chi tiết khiếu nại #BC-2931</h1>
-          <div class="complaint-detail__badges">
+          <h1 class="complaint-detail__title">{{ pageTitle }}</h1>
+          <div v-if="report" class="complaint-detail__badges">
             <span
               v-for="badge in complaint.badges"
               :key="badge.label"
@@ -19,11 +19,11 @@
         </div>
 
         <div class="complaint-detail__header-actions">
-          <button class="complaint-detail__btn complaint-detail__btn--ghost">
+          <button class="complaint-detail__btn complaint-detail__btn--ghost" type="button">
             <span class="material-symbols-outlined">support_agent</span>
             Liên hệ Admin
           </button>
-          <button class="complaint-detail__btn complaint-detail__btn--primary">
+          <button class="complaint-detail__btn complaint-detail__btn--primary" type="button">
             <span class="material-symbols-outlined">send</span>
             Gửi giải trình
           </button>
@@ -31,7 +31,15 @@
       </div>
     </header>
 
-    <div class="complaint-detail__canvas">
+    <div v-if="store.loading && !report" class="complaint-detail__state">
+      Đang tải chi tiết báo cáo...
+    </div>
+
+    <div v-else-if="!report" class="complaint-detail__state complaint-detail__state--error">
+      {{ store.error ?? 'Không tải được chi tiết báo cáo.' }}
+    </div>
+
+    <div v-else class="complaint-detail__canvas">
       <ComplaintDetailAlert :complaint="complaint" />
 
       <div class="complaint-detail__grid">
@@ -52,7 +60,8 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onMounted, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import Breadcrumb from '@/components/ui/Breadcrumb.vue'
 import ComplaintDetailAlert from '@/components/recruiter/complaints/complaint-detail/ComplaintDetailAlert.vue'
 import ComplaintDetailChecklist from '@/components/recruiter/complaints/complaint-detail/ComplaintDetailChecklist.vue'
@@ -61,73 +70,239 @@ import ComplaintDetailImpacts from '@/components/recruiter/complaints/complaint-
 import ComplaintDetailJobInfo from '@/components/recruiter/complaints/complaint-detail/ComplaintDetailJobInfo.vue'
 import ComplaintDetailResponseForm from '@/components/recruiter/complaints/complaint-detail/ComplaintDetailResponseForm.vue'
 import ComplaintDetailViolationScore from '@/components/recruiter/complaints/complaint-detail/ComplaintDetailViolationScore.vue'
+import {
+  COMPLAINT_PRIORITY_OPTIONS,
+  COMPLAINT_STATUS,
+  COMPLAINT_STATUS_OPTIONS,
+  COMPLAINT_TYPE_OPTIONS,
+  VIOLATION_GROUP_OPTIONS,
+} from '@/constants/complaints.constants'
+import { JOB_POSTING_STATUS_LABELS } from '@/constants/jobPosting.constants'
+import { useEmployerReportStore } from '@/stores/employerReport.store'
+
+const route = useRoute()
+const store = useEmployerReportStore()
+
+const reportId = computed(() => {
+  const rawId = Array.isArray(route.params.id) ? route.params.id[0] : route.params.id
+  const parsed = Number(rawId)
+  return Number.isFinite(parsed) ? parsed : null
+})
+
+const report = computed(() => store.currentReport)
+const scoreData = computed(() => store.myViolationScore)
 
 const breadcrumbItems = computed(() => [
   { label: 'Báo cáo vi phạm', to: '/recruiter/complaints' },
-  { label: 'Chi tiết' },
+  { label: report.value?.reportCode ? `Chi tiết ${report.value.reportCode}` : 'Chi tiết' },
 ])
 
-const complaint = {
-  badges: [
-    { label: 'Nhóm B', variant: 'warning' },
-    { label: 'Chờ phản hồi', variant: 'error' },
-    { label: 'Còn 18 giờ', variant: 'error-outline', icon: 'timer' },
-    { label: 'Ảnh hưởng: Cao', variant: 'error-soft' },
-  ],
-  alert: {
-    title: 'Cảnh báo khẩn cấp: Hạn phản hồi sắp hết',
-    message:
-      'Bạn đang bị báo cáo vì "Yêu cầu phí bất hợp lý". Hạn phản hồi chỉ còn 18 giờ. Nếu không phản hồi đúng hạn, tin tuyển dụng có thể bị ẩn và điểm vi phạm sẽ bị cộng vào tài khoản của bạn.',
-    highlight: ['Yêu cầu phí bất hợp lý', '18 giờ'],
-  },
-  job: {
-    title: 'Senior Frontend Developer',
-    id: 'J12345',
-    company: 'Công ty ABC Tech',
-    status: 'Đang tuyển',
-  },
-  content: {
-    violationType: 'Yêu cầu phí bất hợp lý',
-    summary:
-      'Ứng viên phản ánh có yêu cầu chuyển khoản phí hồ sơ hoặc phí phỏng vấn trước khi bắt đầu quy trình tuyển dụng chính thức.',
-    note:
-      'Khiếu nại đang được xem xét dựa trên bằng chứng do ứng viên cung cấp. Vui lòng cung cấp giải trình chi tiết để làm rõ vấn đề.',
-  },
-  score: {
-    current: 23,
-    status: 'Hạn chế đăng tin',
-    statusVariant: 'error',
-    statusLabel: 'Nguy hiểm',
-    progressPercent: 75,
-    penaltyIfFail: '+10 điểm',
-  },
-  impacts: [
+const pageTitle = computed(() =>
+  report.value?.reportCode ? `Chi tiết khiếu nại ${report.value.reportCode}` : 'Chi tiết khiếu nại',
+)
+
+function formatLabel(value?: string | null) {
+  if (!value) return 'Không xác định'
+  return value
+    .split('_')
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+    .join(' ')
+}
+
+function lookupLabel<T extends string>(
+  options: Array<{ value: T; label: string }>,
+  value?: string | null,
+  fallback = 'Không xác định',
+) {
+  if (!value) return fallback
+  return options.find((option) => option.value === value)?.label ?? formatLabel(value)
+}
+
+function formatDateTime(value?: string | null) {
+  if (!value) return ''
+  return new Date(value).toLocaleString('vi-VN', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
+
+function scoreStatusVariant(level?: string | null) {
+  switch (level) {
+    case 'suspended':
+      return 'error'
+    case 'limited':
+      return 'warning'
+    default:
+      return 'safe'
+  }
+}
+
+function scoreStatusLabel(level?: string | null) {
+  switch (level) {
+    case 'suspended':
+      return 'Nguy cơ rất cao'
+    case 'limited':
+      return 'Cần theo dõi'
+    case 'normal':
+      return 'Ổn định'
+    default:
+      return 'Đang cập nhật'
+  }
+}
+
+function scoreProgress(current: number) {
+  return Math.max(0, Math.min(100, Math.round((current / 30) * 100)))
+}
+
+function buildImpacts(status?: string | null, group?: string | null) {
+  const impacts = [
     {
-      icon: 'edit_document',
-      iconVariant: 'secondary',
-      title: 'Yêu cầu sửa đổi (48h)',
-      desc: 'Admin có thể yêu cầu bạn cập nhật lại JD để làm rõ thông tin.',
+      icon: 'schedule',
+      iconVariant: 'tertiary',
+      title: 'Cần phản hồi đúng hạn',
+      desc: 'Nếu quá hạn phản hồi, báo cáo có thể bị đóng bất lợi cho tài khoản tuyển dụng.',
     },
     {
       icon: 'visibility_off',
-      iconVariant: 'tertiary',
-      title: 'Ẩn tin tự động (72h)',
-      desc: 'Nếu không có phản hồi hợp lệ, tin sẽ bị gỡ khỏi kết quả tìm kiếm.',
+      iconVariant: 'secondary',
+      title: 'Tin tuyển dụng có thể bị hạn chế hiển thị',
+      desc: 'Admin có thể tạm ẩn hoặc yêu cầu chỉnh sửa tin tuyển dụng trước khi tiếp tục hiển thị.',
     },
-    {
+  ]
+
+  if (group === 'B') {
+    impacts.push({
       icon: 'lock',
       iconVariant: 'error',
-      title: 'Hạn chế tài khoản',
-      desc: 'Điểm vi phạm vượt ngưỡng sẽ tạm khóa quyền đăng tin mới.',
-    },
-  ],
-  checklist: [
-    'Kiểm tra lại JD đã đăng',
-    'Chỉnh sửa thông tin sai lệch',
-    'Soạn thảo giải trình chi tiết',
-    'Tải lên bằng chứng chứng minh',
-  ],
+      title: 'Nguy cơ tăng điểm vi phạm',
+      desc: 'Nhóm B thường có mức độ nghiêm trọng cao hơn và ảnh hưởng trực tiếp đến trạng thái tài khoản.',
+    })
+  }
+
+  if (status === COMPLAINT_STATUS.WAITING_EMPLOYER) {
+    impacts.unshift({
+      icon: 'mark_email_unread',
+      iconVariant: 'error',
+      title: 'Đang chờ nhà tuyển dụng phản hồi',
+      desc: 'Admin đã yêu cầu bạn giải trình. Hãy cung cấp thông tin và bằng chứng sớm nhất có thể.',
+    })
+  }
+
+  return impacts
 }
+
+const complaint = computed(() => {
+  const currentReport = report.value
+  if (!currentReport) {
+    return {
+      badges: [],
+      alert: { title: '', message: '', highlight: [] as string[] },
+      job: { title: '', id: '', company: 'Tin tuyển dụng của bạn', status: '' },
+      content: { violationType: '', summary: '', noteTitle: '', note: '' },
+      score: {
+        current: 0,
+        status: 'Đang cập nhật',
+        statusVariant: 'safe',
+        statusLabel: 'Đang cập nhật',
+        progressPercent: 0,
+        penaltyIfFail: 'Sẽ do admin quyết định',
+      },
+      impacts: [] as { icon: string; iconVariant: string; title: string; desc: string }[],
+      checklist: [] as string[],
+    }
+  }
+
+  const complaintTypeLabel = lookupLabel(COMPLAINT_TYPE_OPTIONS, currentReport.complaintType)
+  const groupLabel = lookupLabel(VIOLATION_GROUP_OPTIONS, currentReport.violationGroup, 'Chưa phân nhóm')
+  const statusLabel = lookupLabel(COMPLAINT_STATUS_OPTIONS, currentReport.status)
+  const priorityLabel = lookupLabel(COMPLAINT_PRIORITY_OPTIONS, currentReport.priority)
+  const remainingLabel = currentReport.remainingHours === null
+    ? 'Không giới hạn thời gian'
+    : currentReport.remainingHours < 0
+      ? `Quá hạn ${Math.abs(currentReport.remainingHours)} giờ`
+      : `Còn ${currentReport.remainingHours} giờ`
+  const violationScore = scoreData.value?.totalScore ?? 0
+
+  return {
+    badges: [
+      { label: groupLabel, variant: currentReport.violationGroup === 'B' ? 'warning' : 'neutral' },
+      {
+        label: statusLabel,
+        variant: currentReport.status === COMPLAINT_STATUS.WAITING_EMPLOYER ? 'error' : 'info',
+      },
+      { label: remainingLabel, variant: 'error-outline', icon: 'timer' },
+      { label: `Ưu tiên: ${priorityLabel}`, variant: 'error-soft' },
+    ],
+    alert: {
+      title: currentReport.status === COMPLAINT_STATUS.WAITING_EMPLOYER
+        ? 'Yêu cầu phản hồi từ admin'
+        : 'Thông tin báo cáo vi phạm',
+      message: currentReport.remainingHours !== null
+        ? `Bạn đang bị báo cáo vì "${complaintTypeLabel}". Hạn phản hồi hiện tại là ${remainingLabel}. Vui lòng cung cấp giải trình đầy đủ để admin xem xét.`
+        : `Bạn đang bị báo cáo vì "${complaintTypeLabel}". Vui lòng cung cấp giải trình và thông tin liên quan để admin xem xét.`,
+      highlight: [complaintTypeLabel, remainingLabel].filter(Boolean),
+    },
+    job: {
+      title: currentReport.jobPost.title,
+      id: String(currentReport.jobPost.id),
+      company: 'Nhà tuyển dụng',
+      status: JOB_POSTING_STATUS_LABELS[
+        currentReport.jobPost.status as keyof typeof JOB_POSTING_STATUS_LABELS
+      ] ?? formatLabel(currentReport.jobPost.status),
+    },
+    content: {
+      violationType: complaintTypeLabel,
+      summary: currentReport.description?.trim() || 'Chưa có mô tả chi tiết từ bên báo cáo.',
+      noteTitle: currentReport.violationGroup === 'B' ? 'Lưu ý cho Nhóm B' : 'Lưu ý từ admin',
+      note: currentReport.resolutionNote?.trim()
+        || 'Nếu bạn có bằng chứng hoặc cần làm rõ bối cảnh tuyển dụng, hãy gửi giải trình để admin tiếp tục xử lý.',
+    },
+    score: {
+      current: violationScore,
+      status: scoreData.value?.restrictionDescription || 'Tài khoản đang hoạt động',
+      statusVariant: scoreStatusVariant(scoreData.value?.scoreLevel),
+      statusLabel: scoreStatusLabel(scoreData.value?.scoreLevel),
+      progressPercent: scoreProgress(violationScore),
+      penaltyIfFail: currentReport.violationGroup === 'B' ? '+10 điểm' : '+5 điểm',
+    },
+    impacts: buildImpacts(currentReport.status, currentReport.violationGroup),
+    checklist: [
+      'Kiểm tra lại nội dung tin tuyển dụng liên quan',
+      'Chuẩn bị giải trình rõ ràng cho admin',
+      'Đính kèm bằng chứng hỗ trợ nếu có',
+      currentReport.employerDeadline
+        ? `Hoàn tất phản hồi trước ${formatDateTime(currentReport.employerDeadline)}`
+        : 'Theo dõi cập nhật từ admin trên hệ thống',
+    ],
+  }
+})
+
+async function loadData() {
+  if (!reportId.value) return
+
+  store.currentReport = null
+
+  try {
+    await Promise.all([
+      store.fetchById(reportId.value),
+      store.myViolationScore ? Promise.resolve(store.myViolationScore) : store.fetchMyViolationScore().catch(() => null),
+    ])
+  } catch {
+    // Error message is already normalized in the store.
+  }
+}
+
+onMounted(loadData)
+
+watch(reportId, (nextId, prevId) => {
+  if (nextId && nextId !== prevId) {
+    loadData()
+  }
+})
 </script>
 
 <style scoped>
@@ -192,6 +367,8 @@ const complaint = {
 }
 
 .complaint-detail__badge--warning { background: #fef3c7; color: #b45309; }
+.complaint-detail__badge--neutral { background: #e2e8f0; color: #475569; }
+.complaint-detail__badge--info { background: #dbeafe; color: #1d4ed8; }
 .complaint-detail__badge--error { background: #fee2e2; color: #b91c1c; }
 .complaint-detail__badge--error-outline {
   border: 1px solid #ef4444;
@@ -246,6 +423,21 @@ const complaint = {
 
 .complaint-detail__btn--primary:active {
   transform: scale(0.97);
+}
+
+.complaint-detail__state {
+  padding: 2rem;
+  border-radius: 0.75rem;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  color: #475569;
+  font-weight: 600;
+}
+
+.complaint-detail__state--error {
+  color: #b91c1c;
+  background: #fff1f2;
+  border-color: #fecdd3;
 }
 
 .complaint-detail__canvas {

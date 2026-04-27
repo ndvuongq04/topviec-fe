@@ -60,6 +60,8 @@ defineProps<{
 .cd-score__status {
   padding: 4px 12px; border-radius: 999px; font-size: 0.75rem; font-weight: 700;
 }
+.cd-score__status--safe { background: #dcfce7; color: #15803d; }
+.cd-score__status--warning { background: #fef3c7; color: #b45309; }
 .cd-score__status--error { background: #fee2e2; color: #b91c1c; }
 
 .cd-score__meta { display: flex; flex-direction: column; gap: 10px; }

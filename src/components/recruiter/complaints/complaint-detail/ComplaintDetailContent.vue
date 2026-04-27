@@ -17,14 +17,14 @@
 
     <div class="cd-content__note">
       <span class="material-symbols-outlined cd-content__note-icon">info</span>
-      <p><strong>Lưu ý cho Nhóm B:</strong> {{ content.note }}</p>
+      <p><strong>{{ content.noteTitle }}:</strong> {{ content.note }}</p>
     </div>
   </section>
 </template>
 
 <script setup lang="ts">
 defineProps<{
-  content: { violationType: string; summary: string; note: string }
+  content: { violationType: string; summary: string; noteTitle: string; note: string }
 }>()
 </script>
 

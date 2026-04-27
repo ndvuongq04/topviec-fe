@@ -118,7 +118,7 @@
             :key="row.id"
             class="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors"
           >
-            <td class="px-6 py-4 text-sm font-bold text-slate-500">{{ row.id }}</td>
+            <td class="px-6 py-4 text-sm font-bold text-slate-500">{{ row.reportCode }}</td>
             <td class="px-6 py-4 max-w-55">
               <p class="text-sm font-bold text-slate-900 dark:text-white line-clamp-2">{{ row.jobTitle }}</p>
             </td>
@@ -162,11 +162,13 @@
             </td>
             <td class="px-6 py-4 text-right">
               <button
-                class="px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer"
-                :class="actionStyle[row.action]"
+                class="tt-view-btn"
+                type="button"
+                title="Xem chi tiết"
+                aria-label="Xem chi tiết"
                 @click="$emit('action', row)"
               >
-                {{ actionLabel[row.action] }}
+                <span class="material-symbols-outlined text-lg">visibility</span>
               </button>
             </td>
           </tr>
@@ -223,7 +225,8 @@
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 
 export interface RecruiterComplaint {
-  id: string
+  id: number
+  reportCode: string
   jobTitle: string
   group: 'a' | 'b'
   violationType: 'fraudulent' | 'spam' | 'wrong_info' | 'inappropriate' | 'payment_issue' | 'other'
@@ -391,18 +394,6 @@ const statusDot: Record<RecruiterComplaint['status'], string> = {
   resolved: 'bg-emerald-500',
   rejected: 'bg-red-500',
   auto_closed: 'bg-slate-500',
-}
-
-const actionLabel: Record<RecruiterComplaint['action'], string> = {
-  appeal: 'Gửi giải trình',
-  fix: 'Sửa tin ngay',
-  view: 'Xem chi tiết',
-}
-
-const actionStyle: Record<RecruiterComplaint['action'], string> = {
-  appeal: 'bg-primary/10 text-primary border border-primary/20 hover:bg-primary hover:text-white',
-  fix: 'bg-primary text-white shadow-sm hover:bg-primary/90',
-  view: 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50',
 }
 
 const totalPages = computed(() => Math.max(1, Math.ceil(props.total / props.pageSize)))
@@ -574,6 +565,21 @@ const visiblePages = computed(() => {
 
 .tt-clear-btn:hover { background: #fef2f2; }
 .tt-clear-btn .material-symbols-outlined { font-size: 16px; }
+
+.tt-view-btn {
+  padding: 6px;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  color: #94a3b8;
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s;
+}
+
+.tt-view-btn:hover {
+  color: #4b9af6;
+  background: #eff6ff;
+}
 
 .tt-fade-enter-active, .tt-fade-leave-active { transition: opacity 0.13s, transform 0.13s; }
 .tt-fade-enter-from, .tt-fade-leave-to { opacity: 0; transform: translateY(-4px); }
