@@ -18,11 +18,13 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import ComplaintKpiCards   from '@/components/admin/complaints/ComplaintKpiCards.vue'
 import ComplaintFilters    from '@/components/admin/complaints/ComplaintFilters.vue'
 import ComplaintTable, { type Complaint } from '@/components/admin/complaints/ComplaintTable.vue'
 import ComplaintPagination from '@/components/admin/complaints/ComplaintPagination.vue'
 
+const router = useRouter()
 const page = ref(1)
 const filterState = ref({ search: '', category: '', group: '', status: '' })
 
@@ -83,7 +85,12 @@ const filtered = computed(() => {
 })
 
 const onFilter = (f: typeof filterState.value) => { filterState.value = f; page.value = 1 }
-const onSelect = (c: Complaint) => console.log('selected', c)
+const onSelect = (c: Complaint) => {
+  router.push({
+    name: 'admin-complaint-detail',
+    params: { id: c.id.replace('#', '') },
+  })
+}
 </script>
 
 <style scoped>
