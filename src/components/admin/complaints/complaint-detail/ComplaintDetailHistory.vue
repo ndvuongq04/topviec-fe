@@ -1,6 +1,6 @@
 <template>
   <div class="cd-history">
-    <h2 class="cd-history__title">Recent History</h2>
+    <h2 class="cd-history__title">Lịch sử gần đây</h2>
     <div class="cd-history__list">
       <div v-for="item in history" :key="item.id" class="cd-history__item">
         <div class="cd-history__item-header">

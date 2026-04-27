@@ -1,9 +1,9 @@
 <template>
   <div class="cd-reporter">
     <div class="cd-reporter__header">
-      <h2 class="cd-reporter__title">Reporter</h2>
+      <h2 class="cd-reporter__title">Người báo cáo</h2>
       <span v-if="reporter.credible" class="cd-reporter__badge">
-        <span class="material-symbols-outlined">verified</span> Credible
+        <span class="material-symbols-outlined">verified</span> Đáng tin cậy
       </span>
     </div>
 
@@ -11,12 +11,12 @@
       <div class="cd-reporter__avatar">{{ reporter.initials }}</div>
       <div>
         <h3 class="cd-reporter__name">{{ reporter.name }}</h3>
-        <p class="cd-reporter__id">ID: {{ reporter.id }}</p>
+        <p class="cd-reporter__id">Mã: {{ reporter.id }}</p>
       </div>
     </div>
 
     <div class="cd-reporter__footer">
-      <span class="cd-reporter__footer-label">Today's Reports</span>
+      <span class="cd-reporter__footer-label">Số báo cáo hôm nay</span>
       <span class="cd-reporter__footer-value">{{ reporter.reportsToday }} / {{ reporter.reportsLimit }}</span>
     </div>
   </div>

@@ -1,33 +1,33 @@
 <template>
   <div class="cd-content">
-    <h2 class="cd-content__title">Complaint Details</h2>
+    <h2 class="cd-content__title">Nội dung khiếu nại</h2>
 
     <!-- Description -->
     <div class="cd-content__section">
-      <p class="cd-content__label">User's Description</p>
+      <p class="cd-content__label">Mô tả của người dùng</p>
       <div class="cd-content__desc">{{ content.description }}</div>
     </div>
 
     <!-- Evidence -->
     <div class="cd-content__section">
-      <p class="cd-content__label">Evidence Provided</p>
+      <p class="cd-content__label">Bằng chứng đính kèm</p>
       <div class="cd-content__evidences">
         <div
           v-for="(src, i) in content.evidences" :key="i"
           class="cd-content__evidence-img"
         >
-          <img :alt="`Evidence ${i + 1}`" :src="src" />
+          <img :alt="`Bang chung ${i + 1}`" :src="src" />
         </div>
         <div class="cd-content__evidence-add">
           <span class="material-symbols-outlined">add_photo_alternate</span>
-          <span class="cd-content__evidence-add-label">Add file</span>
+          <span class="cd-content__evidence-add-label">Thêm tệp</span>
         </div>
       </div>
     </div>
 
     <!-- Auto-check -->
     <div class="cd-content__section">
-      <p class="cd-content__label">Auto-Check Results</p>
+      <p class="cd-content__label">Kết quả kiểm tra tự động</p>
       <div class="cd-content__auto-checks">
         <div
           v-for="check in content.autoCheck" :key="check.label"

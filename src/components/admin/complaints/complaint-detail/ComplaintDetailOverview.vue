@@ -1,6 +1,6 @@
 <template>
   <div class="cd-overview">
-    <h2 class="cd-overview__title">Complaint Overview</h2>
+    <h2 class="cd-overview__title">Tổng quan khiếu nại</h2>
     <div class="cd-overview__grid">
       <div v-for="item in fields" :key="item.label" class="cd-overview__item">
         <p class="cd-overview__label">{{ item.label }}</p>
@@ -24,10 +24,10 @@ const props = defineProps<{
 }>()
 
 const fields = computed(() => [
-  { label: 'Created Date',    value: props.overview.createdAt,      highlight: false, icon: '' },
-  { label: 'Last Updated',    value: props.overview.updatedAt,      highlight: false, icon: '' },
-  { label: 'Channel',         value: props.overview.channel,        highlight: false, icon: '' },
-  { label: 'Evidence Status', value: props.overview.evidenceStatus, highlight: true,  icon: 'check_circle' },
+  { label: 'Ngày tạo',        value: props.overview.createdAt,      highlight: false, icon: '' },
+  { label: 'Cập nhật cuối',   value: props.overview.updatedAt,      highlight: false, icon: '' },
+  { label: 'Kênh gửi',        value: props.overview.channel,        highlight: false, icon: '' },
+  { label: 'Bằng chứng',      value: props.overview.evidenceStatus, highlight: true,  icon: 'check_circle' },
 ])
 </script>
 

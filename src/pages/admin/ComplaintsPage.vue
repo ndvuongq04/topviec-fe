@@ -74,7 +74,8 @@ function onPageChange(page: number) {
   fetchData()
 }
 
-function onSelect(row: ResReportSummary) {
+async function onSelect(row: ResReportSummary) {
+  await store.fetchById(row.id)
   router.push({ name: 'admin-complaint-detail', params: { id: row.id } })
 }
 </script>

@@ -1,15 +1,15 @@
 <template>
   <div class="cd-impact">
-    <h2 class="cd-impact__title">Account Impact</h2>
+    <h2 class="cd-impact__title">Ảnh hưởng tài khoản</h2>
 
     <div class="cd-impact__score-row">
       <div class="cd-impact__score">
         <span class="cd-impact__score-value">{{ impact.currentScore }}</span>
-        <span class="cd-impact__score-unit">pts</span>
+        <span class="cd-impact__score-unit">điểm</span>
       </div>
       <div class="cd-impact__projected">
         <span class="material-symbols-outlined">trending_up</span>
-        <span>Proj: {{ impact.projectedScore }}</span>
+        <span>Dự kiến: {{ impact.projectedScore }}</span>
       </div>
     </div>
 
@@ -19,9 +19,9 @@
       <div class="cd-impact__bar-seg cd-impact__bar-seg--locked"></div>
     </div>
     <div class="cd-impact__bar-labels">
-      <span>Normal (0-19)</span>
-      <span>Limited (20-49)</span>
-      <span>Locked (50+)</span>
+      <span>Bình thường (0-19)</span>
+      <span>Hạn chế (20-49)</span>
+      <span>Khóa (50+)</span>
     </div>
   </div>
 </template>

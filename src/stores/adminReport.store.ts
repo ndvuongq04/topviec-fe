@@ -44,13 +44,15 @@ export const useAdminReportStore = defineStore('adminReport', () => {
     }
   }
 
-  async function fetchById(id: number) {
+  async function fetchById(id: number): Promise<ResReportDetail> {
     loading.value = true;
     error.value = null;
     try {
       currentReport.value = await adminReportService.getById(id);
+      return currentReport.value;
     } catch (err) {
       setError(err);
+      throw err;
     } finally {
       loading.value = false;
     }
@@ -64,7 +66,10 @@ export const useAdminReportStore = defineStore('adminReport', () => {
       currentReport.value = updated;
       const index = reports.value.findIndex((r) => r.id === id);
       if (index !== -1) {
-        reports.value[index] = { ...reports.value[index], status: updated.status };
+        const existingReport = reports.value[index];
+        if (existingReport) {
+          reports.value[index] = { ...existingReport, status: updated.status };
+        }
       }
       return updated;
     } catch (err) {

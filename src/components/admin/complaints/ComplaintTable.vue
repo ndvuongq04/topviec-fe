@@ -17,7 +17,7 @@
         <tr
           v-for="row in complaints"
           :key="row.id"
-          :class="['ct-row', row.highlighted ? 'ct-row--highlighted' : '']"
+          class="ct-row"
           @click="$emit('select', row)"
         >
           <td class="ct-td">
@@ -77,7 +77,7 @@
               type="button"
               title="Xem chi tiết"
               aria-label="Xem chi tiết"
-              @click.stop="goToDetail(row.id)"
+              @click.stop="$emit('select', row)"
             >
               <span class="material-symbols-outlined text-lg">visibility</span>
             </button>
@@ -89,13 +89,10 @@
 </template>
 
 <script setup lang="ts">
-import { useRouter } from 'vue-router'
 import type { ResReportSummary } from '@/types/report.types'
 
 defineProps<{ complaints: ResReportSummary[] }>()
 defineEmits<{ select: [ResReportSummary] }>()
-
-const router = useRouter()
 
 const resolvedStatuses = ['resolved', 'auto_closed', 'rejected']
 
@@ -142,10 +139,15 @@ function avatarColor(name: string) {
 }
 
 function initials(name: string) {
-  const parts = name.trim().split(' ')
-  return parts.length >= 2
-    ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
-    : name.slice(0, 2).toUpperCase()
+  const parts = name.trim().split(' ').filter(Boolean)
+  const first = parts[0]
+  const last = parts[parts.length - 1]
+
+  if (first && last && parts.length >= 2) {
+    return `${first[0]}${last[0]}`.toUpperCase()
+  }
+
+  return name.slice(0, 2).toUpperCase()
 }
 
 function slaClass(hours: number): string {
@@ -154,9 +156,6 @@ function slaClass(hours: number): string {
   return 'sla-ok'
 }
 
-function goToDetail(id: number) {
-  router.push({ name: 'admin-complaint-detail', params: { id } })
-}
 </script>
 
 <style scoped>

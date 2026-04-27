@@ -2,7 +2,7 @@
   <div class="cd-warnings">
     <div class="cd-warnings__header">
       <span class="material-symbols-outlined">warning</span>
-      <h3 class="cd-warnings__title">Active Warnings</h3>
+      <h3 class="cd-warnings__title">Cảnh báo đang có</h3>
     </div>
     <ul class="cd-warnings__list">
       <li v-for="w in warnings" :key="w.text" class="cd-warnings__item">

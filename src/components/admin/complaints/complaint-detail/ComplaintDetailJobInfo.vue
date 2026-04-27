@@ -1,7 +1,7 @@
 <template>
   <div class="cd-job">
     <div class="cd-job__header">
-      <h2 class="cd-job__title">Job Context</h2>
+      <h2 class="cd-job__title">Thông tin tin tuyển dụng</h2>
       <span class="material-symbols-outlined cd-job__open-icon">open_in_new</span>
     </div>
     <h3 class="cd-job__name">{{ job.title }}</h3>
