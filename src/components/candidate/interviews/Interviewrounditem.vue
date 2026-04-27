@@ -126,6 +126,13 @@ defineEmits<{
   outline: 4px solid rgba(0, 96, 168, 0.1);
 }
 
+.round-item__indicator--confirmed {
+  background: #16a34a;
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(22, 163, 74, 0.15);
+  outline: 4px solid rgba(22, 163, 74, 0.1);
+}
+
 .round-item__indicator--locked {
   background: #e9edff;
   color: #707783;
@@ -152,6 +159,10 @@ defineEmits<{
 
 .round-item__line--pending {
   background: rgba(180, 120, 0, 0.2);
+}
+
+.round-item__line--confirmed {
+  background: rgba(22, 163, 74, 0.25);
 }
 
 .round-item__line--pending_confirmation,
@@ -197,6 +208,16 @@ defineEmits<{
   border-color: rgba(0, 96, 168, 0.4);
 }
 
+.round-item__content--confirmed {
+  background: #fff;
+  border: 1px solid rgba(22, 163, 74, 0.25);
+  box-shadow: 0 1px 4px rgba(22, 163, 74, 0.06);
+}
+
+.round-item__content--confirmed:hover {
+  border-color: rgba(22, 163, 74, 0.45);
+}
+
 .round-item__content--locked {
   background: rgba(233, 237, 255, 0.3);
   border: 1px dashed rgba(192, 199, 212, 0.4);
@@ -226,6 +247,7 @@ defineEmits<{
 }
 
 .round-item__label--completed { color: #006d32; }
+.round-item__label--confirmed { color: #16a34a; }
 .round-item__label--pending { color: #b47800; }
 .round-item__label--pending_confirmation { color: #005ea4; }
 .round-item__label--locked { color: #707783; }

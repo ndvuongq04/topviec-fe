@@ -37,3 +37,9 @@ export interface ReqResetPasswordDTO {
   token: string
   newPassword: string
 }
+
+export interface ReqChangePasswordDTO {
+  currentPassword: string
+  newPassword: string
+  confirmPassword: string
+}

@@ -7,6 +7,7 @@ import type {
     ReqRegisterEmployerDTO,
     ReqForgotPasswordDTO,
     ReqResetPasswordDTO,
+    ReqChangePasswordDTO,
     ResLoginDTO
 } from '@/types/auth.types'
 
@@ -46,6 +47,10 @@ const authService = {
 
     async resendVerifyEmail(payload: ReqForgotPasswordDTO): Promise<void> {
         await axiosInstance.post<RestResponse<null>>('/auth/resend-verify-email', payload)
+    },
+
+    async changePassword(payload: ReqChangePasswordDTO): Promise<void> {
+        await axiosInstance.post<RestResponse<null>>('/auth/change-password', payload)
     },
 }
 

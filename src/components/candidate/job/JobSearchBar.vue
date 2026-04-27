@@ -1,73 +1,84 @@
 <script setup lang="ts">
-import { ref } from "vue";
-import { useRouter, useRoute } from "vue-router";
-import BannerSelect from "./BannerSelect.vue";
+import { ref, watch } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
+import BannerSelect from './BannerSelect.vue'
+import { WorkType } from '@/constants/jobPosting.constants'
 
-const router = useRouter();
-const route = useRoute();
+const router = useRouter()
+const route = useRoute()
 
-const keyword = ref((route.query.keyword as string) || "");
-const location = ref<string | null>(null);
-const industry = ref<string | null>(null);
+// ── Khởi tạo từ URL ──────────────────────────────────────────────────────────
+const keyword  = ref((route.query.keyword  as string) || '')
+const location = ref((route.query.location as string) || '')
+const workType = ref((route.query.workType as string) || '')
+const experience = ref((route.query.experience as string) || '')
 
-// Filter States
-const typeFilter = ref<string | null>(null);
-const levelFilter = ref<string | null>(null);
-const experienceFilter = ref<string | null>(null);
-
-// Hardcoded Options
+// ── Options ──────────────────────────────────────────────────────────────────
 const locations = [
-  { id: "hcm", name: "TP. Hồ Chí Minh" },
-  { id: "hn", name: "Hà Nội" },
-  { id: "dn", name: "Đà Nẵng" },
-  { id: "remote", name: "Làm việc từ xa" },
-  { id: "other", name: "Tỉnh thành khác" },
-];
+  { id: 'hcm',    name: 'TP. Hồ Chí Minh' },
+  { id: 'hn',     name: 'Hà Nội' },
+  { id: 'dn',     name: 'Đà Nẵng' },
+  { id: 'remote', name: 'Làm việc từ xa' },
+  { id: 'other',  name: 'Tỉnh thành khác' },
+]
 
-const industries = [
-  { id: "it", name: "IT / Phần mềm" },
-  { id: "marketing", name: "Marketing" },
-  { id: "design", name: "Thiết kế / UI/UX" },
-  { id: "sales", name: "Kinh doanh / Bán hàng" },
-  { id: "finance", name: "Tài chính / Kế toán" },
-  { id: "hr", name: "Nhân sự / HR" },
-  { id: "education", name: "Giáo dục / Đào tạo" },
-  { id: "healthcare", name: "Y tế / Sức khỏe" },
-];
+const WORK_TYPE_OPTIONS = [
+  { id: WorkType.FULL_TIME, name: 'Toàn thời gian' },
+  { id: WorkType.PART_TIME, name: 'Bán thời gian' },
+  { id: WorkType.INTERN,    name: 'Thực tập' },
+  { id: WorkType.REMOTE,    name: 'Remote' },
+]
 
-const types = [
-  { id: "fulltime", name: "Toàn thời gian" },
-  { id: "parttime", name: "Bán thời gian" },
-  { id: "internship", name: "Thực tập" },
-  { id: "remote", name: "Làm việc từ xa" },
-  { id: "freelance", name: "Freelance" },
-];
+const EXPERIENCE_OPTIONS = [
+  { id: '0',   name: 'Chưa có kinh nghiệm' },
+  { id: '1',   name: 'Dưới 1 năm' },
+  { id: '1-3', name: '1 - 3 năm' },
+  { id: '3-5', name: '3 - 5 năm' },
+  { id: '5',   name: 'Trên 5 năm' },
+]
 
-const levels = [
-  { id: "intern", name: "Thực tập sinh" },
-  { id: "fresher", name: "Mới tốt nghiệp" },
-  { id: "junior", name: "Nhân viên" },
-  { id: "senior", name: "Trưởng nhóm / Senior" },
-  { id: "manager", name: "Trưởng phòng / Manager" },
-  { id: "director", name: "Giám đốc / Director" },
-];
+// ── Query builder ─────────────────────────────────────────────────────────────
+function buildQuery() {
+  return {
+    keyword:    keyword.value    || undefined,
+    location:   location.value   || undefined,
+    workType:   workType.value   || undefined,
+    experience: experience.value || undefined,
+  }
+}
 
-const experiences = [
-  { id: "0", name: "Chưa có kinh nghiệm" },
-  { id: "1", name: "Dưới 1 năm" },
-  { id: "1-3", name: "1 - 3 năm" },
-  { id: "3-5", name: "3 - 5 năm" },
-  { id: "5+", name: "Trên 5 năm" },
-];
+// ── Search (từ home → navigate; từ search page → replace) ────────────────────
+function handleSearch() {
+  router.push({ name: 'JobSearch', query: buildQuery() })
+}
 
-// Computed: has any active filter?
-const hasActiveFilters = () =>
-  typeFilter.value || levelFilter.value || experienceFilter.value;
+// Khi đang ở search page, pill thay đổi → replace URL ngay (không push history)
+function updateInPlace() {
+  if (route.name === 'JobSearch') {
+    router.replace({
+      name: 'JobSearch',
+      query: { ...route.query, ...buildQuery() },
+    })
+  }
+}
+
+watch(workType,   updateInPlace)
+watch(experience, updateInPlace)
+
+// Khi navigate về trang search từ nơi khác → đồng bộ lại local state
+watch(() => route.query, (q) => {
+  keyword.value    = (q.keyword    as string) || ''
+  location.value   = (q.location   as string) || ''
+  workType.value   = (q.workType   as string) || ''
+  experience.value = (q.experience as string) || ''
+}, { deep: true })
+
+// ── Clear ─────────────────────────────────────────────────────────────────────
+const hasActiveFilters = () => workType.value || experience.value
 
 function clearFilters() {
-  typeFilter.value = null;
-  levelFilter.value = null;
-  experienceFilter.value = null;
+  workType.value   = ''
+  experience.value = ''
 }
 </script>
 
@@ -82,11 +93,12 @@ function clearFilters() {
           class="w-full border-none focus:ring-0 text-gray-800 placeholder-gray-400 text-base py-2"
           placeholder="Tên công việc, vị trí hoặc công ty..."
           type="text"
+          @keydown.enter="handleSearch"
         />
       </div>
 
       <!-- Location -->
-      <div class="flex-1 lg:max-w-[240px] flex items-center px-3 gap-1 py-1 lg:border-r border-slate-100">
+      <div class="flex-1 lg:max-w-55 flex items-center px-3 gap-1 py-1 lg:border-r border-slate-100">
         <span class="material-symbols-outlined text-gray-400 text-[20px] shrink-0">location_on</span>
         <BannerSelect
           v-model="location"
@@ -97,46 +109,37 @@ function clearFilters() {
         />
       </div>
 
-      <!-- Industry -->
-      <div class="flex-1 lg:max-w-[240px] flex items-center px-3 gap-1 py-1">
+      <!-- Work type -->
+      <div class="flex-1 lg:max-w-50 flex items-center px-3 gap-1 py-1">
         <span class="material-symbols-outlined text-gray-400 text-[20px] shrink-0">work</span>
         <BannerSelect
-          v-model="industry"
-          :options="industries"
-          placeholder="Ngành nghề"
+          v-model="workType"
+          :options="WORK_TYPE_OPTIONS"
+          placeholder="Loại hình"
           variant="bar"
           class="flex-1"
         />
       </div>
 
-      <!-- Search Button -->
+      <!-- Search button -->
       <button
-        class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-8 py-3 rounded-lg transition-all transform active:scale-95 shadow-md uppercase text-base tracking-wide"
-        @click="router.push({ name: 'JobSearch', query: { keyword: keyword || undefined } })"
+        class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-8 py-3 rounded-lg transition-all transform active:scale-95 shadow-md uppercase text-base tracking-wide cursor-pointer"
+        @click="handleSearch"
       >
         Tìm việc
       </button>
     </div>
 
-    <!-- Advanced Filter Pills (BannerSelect with search) -->
+    <!-- Filter pills -->
     <div class="flex flex-wrap items-center gap-2">
+      <!-- Experience pill -->
       <BannerSelect
-        v-model="typeFilter"
-        :options="types"
-        placeholder="Loại hình"
-      />
-      <BannerSelect
-        v-model="levelFilter"
-        :options="levels"
-        placeholder="Cấp bậc"
-      />
-      <BannerSelect
-        v-model="experienceFilter"
-        :options="experiences"
+        v-model="experience"
+        :options="EXPERIENCE_OPTIONS"
         placeholder="Kinh nghiệm"
       />
 
-      <!-- Clear all filters -->
+      <!-- Clear -->
       <Transition
         enter-active-class="transition duration-200"
         enter-from-class="opacity-0 scale-90"
@@ -147,7 +150,7 @@ function clearFilters() {
       >
         <button
           v-if="hasActiveFilters()"
-          class="flex items-center gap-1.5 px-3 py-2 rounded-full border border-red-300/40 bg-red-500/15 hover:bg-red-500/25 text-red-100 text-sm font-medium transition-all active:scale-95"
+          class="flex items-center gap-1.5 px-3 py-2 rounded-full border border-red-300/40 bg-red-500/15 hover:bg-red-500/25 text-red-100 text-sm font-medium transition-all active:scale-95 cursor-pointer"
           @click="clearFilters"
         >
           <span class="material-symbols-outlined text-[14px]">close</span>
@@ -155,7 +158,8 @@ function clearFilters() {
         </button>
         <button
           v-else
-          class="ml-auto px-4 py-2 rounded-full border border-white/20 bg-white/10 hover:bg-white/20 text-sm font-medium transition-all active:scale-95 text-white/80"
+          class="px-4 py-2 rounded-full border border-white/20 bg-white/10 hover:bg-white/20 text-sm font-medium transition-all active:scale-95 text-white/80 cursor-pointer"
+          @click="clearFilters"
         >
           Xóa lọc
         </button>

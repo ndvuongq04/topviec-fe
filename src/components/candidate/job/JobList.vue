@@ -31,7 +31,8 @@ const mappedJobs = computed(() => {
       : job.salaryMax ? `${(job.salaryMax / 1_000_000).toFixed(0)}tr` : "",
     location: "Vietnam", // Summary chưa có location, tạm để fix
     postedAt: formatDate(job.publishedAt || job.createdAt),
-    isHot: job.isFeatured || job.isUrgent,
+    isHot: job.isHot,
+    isUrgent: job.isUrgent,
     isSaved: savedJobStore.isSavedMap[job.id] || false,
   }));
 });

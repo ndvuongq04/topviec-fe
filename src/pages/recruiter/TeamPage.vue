@@ -81,8 +81,8 @@ const selectedMember    = ref<any>(null)
 const { confirm } = useConfirm()
 
 onMounted(() => {
-  roleStore.fetchDefaultPermissions()
   fetchMembers()
+  roleStore.fetchEmployerRoles()
 })
 
 async function fetchMembers() {
@@ -156,9 +156,14 @@ function openInviteModal() {
   isInviteModalOpen.value = true
 }
 
-async function handleInvite(data: any) {
+async function handleInvite(data: { email: string; tempPassword: string; roleName: string }) {
+  const roleId = roleStore.getEmployerRoleId(data.roleName)
+  if (!roleId) {
+    toast.error('Không tìm thấy vai trò. Vui lòng thử lại.')
+    return
+  }
   try {
-    await memberStore.addMember(data)
+    await memberStore.addMember({ email: data.email, tempPassword: data.tempPassword, roleId })
     toast.success('Đã gửi lời mời thành công')
     isInviteModalOpen.value = false
     fetchMembers()
@@ -172,10 +177,15 @@ function onEdit(member: any) {
   isUpdateModalOpen.value = true
 }
 
-async function handleUpdatePermission(data: any) {
+async function handleUpdatePermission(data: { roleName: string; reason?: string }) {
   if (!selectedMember.value) return
+  const roleId = roleStore.getEmployerRoleId(data.roleName)
+  if (!roleId) {
+    toast.error('Không tìm thấy vai trò. Vui lòng thử lại.')
+    return
+  }
   try {
-    await memberStore.updateMemberPermission(selectedMember.value.id, data)
+    await memberStore.updateMemberPermission(selectedMember.value.id, { roleId, reason: data.reason })
     toast.success('Đã cập nhật quyền thành công')
     isUpdateModalOpen.value = false
     fetchMembers()

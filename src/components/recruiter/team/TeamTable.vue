@@ -2,56 +2,86 @@
   <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
 
     <!-- Toolbar -->
-    <div class="p-4 border-b border-slate-200 dark:border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-4">
-      <div class="relative max-w-md w-full">
-        <span class="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-slate-400 text-xl">search</span>
+    <div class="tt-toolbar">
+      <!-- Search -->
+      <div class="tt-search-wrap">
+        <span class="material-symbols-outlined tt-search-icon">search</span>
         <input
           v-model="searchInput"
-          class="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary text-base outline-none"
+          class="tt-search-input"
           placeholder="Tìm kiếm theo tên hoặc email..."
           type="text"
           @keyup.enter="$emit('search', searchInput)"
         />
-        <button 
-          class="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-primary transition-colors cursor-pointer"
-          @click="$emit('search', searchInput)"
+        <button
+          v-if="searchInput"
+          class="tt-search-clear"
+          title="Xóa tìm kiếm"
+          @click="searchInput = ''; $emit('search', '')"
         >
-          <span class="material-symbols-outlined text-xl">subdirectory_arrow_left</span>
+          <span class="material-symbols-outlined">close</span>
         </button>
       </div>
-      <div class="flex flex-wrap items-center gap-2">
-        <!-- Filter Role -->
-        <select
-          v-model="filterRole"
-          class="pl-3 pr-8 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-base outline-none focus:ring-2 focus:ring-primary appearance-none cursor-pointer"
-          @change="handleFilterChange"
-        >
-          <option value="">Tất cả vai trò</option>
-          <option :value="MEMBER_ROLE.OWNER">Chủ sở hữu</option>
-          <option :value="MEMBER_ROLE.MANAGER">Quản lý</option>
-          <option :value="MEMBER_ROLE.RECRUITER">Nhà tuyển dụng</option>
-          <option :value="MEMBER_ROLE.VIEWER">Người xem</option>
-        </select>
 
-        <!-- Filter Status -->
-        <select
-          v-model="filterStatus"
-          class="pl-3 pr-8 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-base outline-none focus:ring-2 focus:ring-primary appearance-none cursor-pointer"
-          @change="handleFilterChange"
-        >
-          <option value="">Tất cả trạng thái</option>
-          <option :value="MEMBER_STATUS.ACTIVE">Đang hoạt động</option>
-          <option :value="MEMBER_STATUS.PENDING">Chờ xác nhận</option>
-          <option :value="MEMBER_STATUS.DEACTIVATED">Đã khóa</option>
-        </select>
+      <div class="tt-filters">
+        <!-- Role dropdown -->
+        <div ref="roleRef" class="tt-dd-wrap">
+          <button class="tt-dd-btn" :class="{ 'tt-dd-btn--active': filterRole }" type="button" @click="showRole = !showRole">
+            <span class="material-symbols-outlined tt-dd-icon">{{ activeRoleOpt.icon }}</span>
+            <span :class="{ 'tt-dd-label--active': filterRole }">{{ activeRoleOpt.label }}</span>
+            <span class="material-symbols-outlined tt-dd-chevron" :class="{ open: showRole }">expand_more</span>
+          </button>
+          <Transition name="tt-fade">
+            <div v-if="showRole" class="tt-dropdown">
+              <button
+                v-for="opt in roleOptions"
+                :key="opt.value"
+                class="tt-opt"
+                :class="{ 'tt-opt--on': filterRole === opt.value }"
+                type="button"
+                @click="selectRole(opt.value)"
+              >
+                <span class="material-symbols-outlined tt-opt-icon" :class="opt.colorClass">{{ opt.icon }}</span>
+                <span class="tt-opt-label">{{ opt.label }}</span>
+                <span v-if="filterRole === opt.value" class="material-symbols-outlined tt-opt-check">check</span>
+              </button>
+            </div>
+          </Transition>
+        </div>
 
-        <button 
+        <!-- Status dropdown -->
+        <div ref="statusRef" class="tt-dd-wrap">
+          <button class="tt-dd-btn" :class="{ 'tt-dd-btn--active': filterStatus }" type="button" @click="showStatus = !showStatus">
+            <span class="material-symbols-outlined tt-dd-icon">{{ activeStatusOpt.icon }}</span>
+            <span :class="{ 'tt-dd-label--active': filterStatus }">{{ activeStatusOpt.label }}</span>
+            <span class="material-symbols-outlined tt-dd-chevron" :class="{ open: showStatus }">expand_more</span>
+          </button>
+          <Transition name="tt-fade">
+            <div v-if="showStatus" class="tt-dropdown">
+              <button
+                v-for="opt in statusOptions"
+                :key="opt.value"
+                class="tt-opt"
+                :class="{ 'tt-opt--on': filterStatus === opt.value }"
+                type="button"
+                @click="selectStatus(opt.value)"
+              >
+                <span class="material-symbols-outlined tt-opt-icon" :class="opt.colorClass">{{ opt.icon }}</span>
+                <span class="tt-opt-label">{{ opt.label }}</span>
+                <span v-if="filterStatus === opt.value" class="material-symbols-outlined tt-opt-check">check</span>
+              </button>
+            </div>
+          </Transition>
+        </div>
+
+        <!-- Clear filters -->
+        <button
           v-if="filterRole || filterStatus || searchInput"
-          class="p-2 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950 rounded-lg transition-colors cursor-pointer"
-          title="Xóa lọc"
+          class="tt-clear-btn"
+          title="Xóa bộ lọc"
           @click="clearFilters"
         >
-          <span class="material-symbols-outlined text-sm">filter_alt_off</span>
+          <span class="material-symbols-outlined">filter_alt_off</span>
         </button>
       </div>
     </div>
@@ -190,7 +220,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { MEMBER_ROLE, MEMBER_STATUS } from '@/constants/companyMember.constants'
 
 export interface TeamMember {
@@ -220,20 +250,60 @@ const emit = defineEmits<{
 }>()
 
 const searchInput = ref('')
-const filterRole = ref('')
+const filterRole   = ref('')
 const filterStatus = ref('')
 
-function handleFilterChange() {
+// ─── Dropdown state ───────────────────────────────────────────────────────────
+const showRole   = ref(false)
+const showStatus = ref(false)
+const roleRef    = ref<HTMLElement | null>(null)
+const statusRef  = ref<HTMLElement | null>(null)
+
+const roleOptions = [
+  { value: '',                    label: 'Tất cả vai trò',   icon: 'groups',              colorClass: 'ico-slate'     },
+  { value: MEMBER_ROLE.OWNER,     label: 'Chủ sở hữu',       icon: 'admin_panel_settings', colorClass: 'ico-red'       },
+  { value: MEMBER_ROLE.MANAGER,   label: 'Quản lý',           icon: 'manage_accounts',      colorClass: 'ico-blue'      },
+  { value: MEMBER_ROLE.RECRUITER, label: 'Nhà tuyển dụng',   icon: 'person_search',        colorClass: 'ico-green'     },
+  { value: MEMBER_ROLE.VIEWER,    label: 'Người xem',         icon: 'visibility',           colorClass: 'ico-slate'     },
+]
+
+const statusOptions = [
+  { value: '',                        label: 'Tất cả trạng thái', icon: 'radio_button_unchecked', colorClass: 'ico-slate' },
+  { value: MEMBER_STATUS.ACTIVE,      label: 'Đang hoạt động',    icon: 'check_circle',           colorClass: 'ico-green' },
+  { value: MEMBER_STATUS.PENDING,     label: 'Chờ xác nhận',      icon: 'schedule',               colorClass: 'ico-amber' },
+  { value: MEMBER_STATUS.DEACTIVATED, label: 'Đã khóa',           icon: 'block',                  colorClass: 'ico-red'   },
+]
+
+const activeRoleOpt   = computed(() => roleOptions.find((o) => o.value === filterRole.value)   ?? roleOptions[0])
+const activeStatusOpt = computed(() => statusOptions.find((o) => o.value === filterStatus.value) ?? statusOptions[0])
+
+function selectRole(value: string) {
+  filterRole.value = value
+  showRole.value = false
+  emit('filter', { role: filterRole.value, status: filterStatus.value })
+}
+
+function selectStatus(value: string) {
+  filterStatus.value = value
+  showStatus.value = false
   emit('filter', { role: filterRole.value, status: filterStatus.value })
 }
 
 function clearFilters() {
   searchInput.value = ''
-  filterRole.value = ''
+  filterRole.value   = ''
   filterStatus.value = ''
   emit('search', '')
   emit('filter', { role: '', status: '' })
 }
+
+function onDocClick(e: MouseEvent) {
+  if (roleRef.value   && !roleRef.value.contains(e.target as Node))   showRole.value   = false
+  if (statusRef.value && !statusRef.value.contains(e.target as Node)) showStatus.value = false
+}
+
+onMounted(() => document.addEventListener('mousedown', onDocClick))
+onUnmounted(() => document.removeEventListener('mousedown', onDocClick))
 
 // ─── Role helpers ─────────────────────────────────────────────────────────────
 function roleLabel(role: TeamMember['role']) {
@@ -258,7 +328,7 @@ function initials(name: string) {
   return name.split(' ').slice(-2).map(w => w[0]).join('').toUpperCase()
 }
 
-// ─── Pagination ───────────────────────────────────────────────────────────────
+// ─── Pagination ──────────────────────────────────────────────────────────────
 const totalPages = computed(() => Math.ceil(props.total / props.pageSize))
 const rangeStart = computed(() => (props.currentPage - 1) * props.pageSize + 1)
 const rangeEnd   = computed(() => Math.min(props.currentPage * props.pageSize, props.total))
@@ -282,3 +352,172 @@ const visiblePages = computed(() => {
   return pages
 })
 </script>
+
+<style scoped>
+/* ── Toolbar ── */
+.tt-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 1px solid #e2e8f0;
+  flex-wrap: wrap;
+  font-family: 'Manrope', sans-serif;
+}
+
+/* Search */
+.tt-search-wrap {
+  position: relative;
+  flex: 1;
+  min-width: 200px;
+  max-width: 400px;
+}
+.tt-search-icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 18px;
+  color: #94a3b8;
+  pointer-events: none;
+}
+.tt-search-input {
+  width: 100%;
+  background: #f1f4f9;
+  border: none;
+  border-radius: 999px;
+  padding: 9px 40px 9px 42px;
+  font-size: 0.875rem;
+  font-family: 'Manrope', sans-serif;
+  color: #0f172a;
+  outline: none;
+  box-sizing: border-box;
+  transition: box-shadow 0.15s;
+}
+.tt-search-input::placeholder { color: #94a3b8; }
+.tt-search-input:focus { box-shadow: 0 0 0 2px rgba(75, 154, 246, 0.25); }
+.tt-search-clear {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  padding: 2px;
+  border: none;
+  background: none;
+  color: #94a3b8;
+  cursor: pointer;
+  border-radius: 50%;
+  transition: color 0.15s, background 0.15s;
+}
+.tt-search-clear:hover { color: #475569; background: #e2e8f0; }
+.tt-search-clear .material-symbols-outlined { font-size: 16px; }
+
+/* Filters row */
+.tt-filters {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-left: auto;
+}
+
+/* Shared dropdown wrapper */
+.tt-dd-wrap { position: relative; }
+
+.tt-dd-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+  color: #475569;
+  cursor: pointer;
+  font-family: 'Manrope', sans-serif;
+  font-size: 0.875rem;
+  font-weight: 500;
+  white-space: nowrap;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.tt-dd-btn:hover { border-color: #cbd5e1; box-shadow: 0 2px 6px rgba(0,0,0,0.06); }
+.tt-dd-btn--active { border-color: #93c5fd; background: #eff6ff; color: #1d4ed8; }
+.tt-dd-icon { font-size: 16px; color: #94a3b8; }
+.tt-dd-btn--active .tt-dd-icon { color: #2563eb; }
+.tt-dd-label--active { color: #1d4ed8; font-weight: 600; }
+.tt-dd-chevron { font-size: 17px; color: #94a3b8; transition: transform 0.15s; margin-left: 2px; }
+.tt-dd-chevron.open { transform: rotate(180deg); }
+
+.tt-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 20;
+  min-width: 190px;
+  padding: 5px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.1), 0 2px 6px rgba(0,0,0,0.05);
+}
+
+.tt-opt {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  padding: 7px 10px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  cursor: pointer;
+  font-family: 'Manrope', sans-serif;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #334155;
+  text-align: left;
+  transition: background 0.12s;
+}
+.tt-opt:hover { background: #f8fafc; }
+.tt-opt--on { border-color: #dbeafe; background: #eff6ff; color: #1d4ed8; font-weight: 600; }
+.tt-opt-icon { font-size: 16px; flex-shrink: 0; }
+.tt-opt--on .tt-opt-icon { color: #2563eb !important; }
+.tt-opt-label { flex: 1; }
+.tt-opt-check { font-size: 16px; color: #2563eb; flex-shrink: 0; }
+
+/* Icon colors */
+.ico-slate { color: #94a3b8; }
+.ico-blue  { color: #3b82f6; }
+.ico-green { color: #10b981; }
+.ico-amber { color: #f59e0b; }
+.ico-red   { color: #ef4444; }
+
+/* Clear button */
+.tt-clear-btn {
+  display: flex;
+  align-items: center;
+  padding: 7px;
+  border: 1px solid #fecaca;
+  border-radius: 9px;
+  background: #fff;
+  color: #ef4444;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.tt-clear-btn:hover { background: #fef2f2; }
+.tt-clear-btn .material-symbols-outlined { font-size: 16px; }
+
+/* Transitions */
+.tt-fade-enter-active, .tt-fade-leave-active { transition: opacity 0.13s, transform 0.13s; }
+.tt-fade-enter-from, .tt-fade-leave-to { opacity: 0; transform: translateY(-4px); }
+
+@media (max-width: 640px) {
+  .tt-search-wrap { max-width: 100%; }
+  .tt-filters { margin-left: 0; width: 100%; }
+  .tt-dd-wrap, .tt-dd-btn { width: 100%; }
+  .tt-dropdown { width: 100%; }
+}
+</style>

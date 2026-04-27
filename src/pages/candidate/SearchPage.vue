@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import JobSearchBar from '@/components/candidate/job/JobSearchBar.vue'
 import AdvancedFilter from '@/components/candidate/job/AdvancedFilter.vue'
 import type { SearchFilters } from '@/components/candidate/job/AdvancedFilter.vue'
@@ -10,8 +10,10 @@ import { useSavedJobStore } from '@/stores/savedJob.store'
 import { useAuthStore } from '@/stores/auth.store'
 import { useToast } from '@/composables/useToast'
 import type { ResJobPostingSummary, ResJobPostingDetail, PaginationMeta } from '@/types/jobPosting.types'
+import { formatSalary, formatWorkType } from '@/types/jobPosting.types'
 
 const route = useRoute()
+const router = useRouter()
 const savedJobStore = useSavedJobStore()
 const authStore = useAuthStore()
 const toast = useToast()
@@ -23,11 +25,31 @@ const loading = ref(false)
 const meta = ref<PaginationMeta>({ page: 0, pageSize: 10, pages: 0, totals: 0 })
 const currentPage = ref(0)
 const sort = ref('publishedAt,desc')
-const searchType = ref<'title' | 'company' | 'both'>('title')
-const sidebarFilters = ref<SearchFilters>({})
 const showMobileFilter = ref(false)
 
+// ─── Đọc filter từ URL ───────────────────────────────────────────────────────
 const keyword = computed(() => (route.query.keyword as string) || '')
+
+/** Map experience key → { experienceYearsMin, experienceYearsMax } */
+function parseExperience(exp: string | undefined): { experienceYearsMin?: number; experienceYearsMax?: number } {
+  switch (exp) {
+    case '0':   return { experienceYearsMin: 0, experienceYearsMax: 1 }
+    case '1':   return { experienceYearsMin: 0, experienceYearsMax: 1 }
+    case '1-3': return { experienceYearsMin: 1, experienceYearsMax: 3 }
+    case '3-5': return { experienceYearsMin: 3, experienceYearsMax: 5 }
+    case '5':   return { experienceYearsMin: 5 }
+    default:    return {}
+  }
+}
+
+/** Initial values cho AdvancedFilter từ URL (khi reload hoặc link trực tiếp) */
+const initialSidebarFilters = computed(() => ({
+  initialIndustryId: route.query.industryId ? Number(route.query.industryId) : undefined,
+  initialSalaryMin:  route.query.salaryMin  ? Number(route.query.salaryMin)  : undefined,
+  initialSalaryMax:  route.query.salaryMax  ? Number(route.query.salaryMax)  : undefined,
+  initialFeatured:   route.query.isFeatured === 'true',
+  initialUrgent:     route.query.isUrgent   === 'true',
+}))
 
 // ─── Quick View ──────────────────────────────────────────────────────────────
 
@@ -39,14 +61,14 @@ const isSavedQuickView = computed(() =>
   quickViewJobId.value ? savedJobStore.isSavedMap[quickViewJobId.value] || false : false
 )
 
-const formatQuickViewSalary = computed(() => {
-  const d = quickViewDetail.value
-  if (!d) return ''
-  if (d.salaryNegotiable) return 'Thỏa thuận'
-  const min = d.salaryMin ? `${(d.salaryMin / 1_000_000).toFixed(0)}tr` : ''
-  const max = d.salaryMax ? `${(d.salaryMax / 1_000_000).toFixed(0)}tr` : ''
-  if (min && max) return `${min} – ${max}`
-  return min || max || 'Thỏa thuận'
+const formatQuickViewSalary = computed(() =>
+  quickViewDetail.value ? formatSalary(quickViewDetail.value) : ''
+)
+
+const formatQuickViewLocation = computed(() => {
+  const locs = quickViewDetail.value?.locations
+  if (!locs?.length) return 'Việt Nam'
+  return [...new Set(locs.map(l => l.isRemote ? 'Remote' : l.name))].join(', ')
 })
 
 async function openQuickView(id: number) {
@@ -74,23 +96,25 @@ const SORT_OPTIONS = [
   { label: 'Lượt xem nhiều nhất', value: 'viewCount,desc' },
 ]
 
-const SEARCH_TYPE_OPTIONS = [
-  { label: 'Tên việc làm', value: 'title' as const },
-  { label: 'Tên công ty', value: 'company' as const },
-  { label: 'Cả hai', value: 'both' as const },
-]
 
 // ─── Fetch ──────────────────────────────────────────────────────────────────
 
 async function fetchJobs() {
   loading.value = true
   try {
+    const q = route.query
     const params = {
-      keyword: keyword.value || undefined,
+      keyword:     (q.keyword  as string) || undefined,
+      workType:    (q.workType as string) || undefined,
+      ...parseExperience(q.experience as string),
+      industryId:  q.industryId ? Number(q.industryId) : undefined,
+      salaryMin:   q.salaryMin  ? Number(q.salaryMin)  : undefined,
+      salaryMax:   q.salaryMax  ? Number(q.salaryMax)  : undefined,
+      isFeatured:  q.isFeatured === 'true' ? true : undefined,
+      isUrgent:    q.isUrgent   === 'true' ? true : undefined,
       page: currentPage.value,
       size: 10,
       sort: sort.value || undefined,
-      ...sidebarFilters.value,
     }
     const result = await publicJobPostingService.getList(params)
     jobs.value = result.result
@@ -110,8 +134,17 @@ async function fetchJobs() {
 
 function onFilterChange(filters: SearchFilters) {
   sidebarFilters.value = filters
-  currentPage.value = 0
-  fetchJobs()
+  // Đẩy sidebar params lên URL → watcher sẽ tự gọi fetchJobs
+  router.replace({
+    query: {
+      ...route.query,
+      industryId: filters.industryId?.toString()      || undefined,
+      salaryMin:  filters.salaryMin?.toString()       || undefined,
+      salaryMax:  filters.salaryMax?.toString()       || undefined,
+      isFeatured: filters.isFeatured ? 'true'         : undefined,
+      isUrgent:   filters.isUrgent   ? 'true'         : undefined,
+    },
+  })
 }
 
 function onSortChange() {
@@ -154,33 +187,34 @@ function formatDate(dateStr: string) {
 }
 
 function mapToCardProps(job: ResJobPostingSummary) {
+  const locationNames = job.locations?.length
+    ? [...new Set(job.locations.map(l => l.isRemote ? 'Remote' : l.name))].join(', ')
+    : 'Việt Nam'
   return {
     id: job.id,
     title: job.title,
     company: job.company.name,
-    logoUrl: job.company.logoUrl || '',
+    isBrandVerified: job.company.isBrandVerified,
+    logoUrl: job.company.logoUrl || '/default-company.png',
     logoBg: 'bg-blue-50',
     logoBorder: 'border-blue-100',
-    tags: [job.workType, job.level.name],
-    salaryMin: job.salaryNegotiable
-      ? 'Thỏa thuận'
-      : `${((job.salaryMin ?? 0) / 1_000_000).toFixed(0)}tr`,
-    salaryMax: job.salaryNegotiable
-      ? ''
-      : job.salaryMax ? `${(job.salaryMax / 1_000_000).toFixed(0)}tr` : '',
-    location: 'Vietnam',
+    tags: [formatWorkType(job.workType), job.level.name],
+    salaryMin: formatSalary(job),
+    salaryMax: '',
+    location: locationNames,
     postedAt: formatDate(job.publishedAt || job.createdAt),
-    isHot: job.isFeatured || job.isUrgent,
+    isHot: job.isHot,
+    isUrgent: job.isUrgent,
     isSaved: savedJobStore.isSavedMap[job.id] || false,
   }
 }
 
 // ─── Watchers ───────────────────────────────────────────────────────────────
 
-watch(() => route.query.keyword, () => {
+watch(() => route.query, () => {
   currentPage.value = 0
   fetchJobs()
-})
+}, { deep: true })
 
 watch(sort, onSortChange)
 
@@ -191,7 +225,7 @@ onMounted(fetchJobs)
   <div class="flex flex-col flex-1 min-w-0">
 
     <!-- Search bar -->
-    <div class="sticky top-0 z-[45] bg-linear-to-r from-blue-400 via-blue-500 to-blue-600 py-5 shadow-sm">
+    <div class="sticky top-0 z-45 bg-linear-to-r from-blue-400 via-blue-500 to-blue-600 py-5 shadow-sm">
       <!-- Dot pattern -->
       <div class="absolute inset-0 overflow-hidden pointer-events-none">
         <div
@@ -200,18 +234,18 @@ onMounted(fetchJobs)
         />
         <div class="absolute right-0 top-0 h-full w-1/3 opacity-20 bg-linear-to-l from-white to-transparent transform skew-x-12 translate-x-12" />
       </div>
-      <div class="relative z-10 w-full max-w-[1440px] mx-auto px-4 md:px-10">
+      <div class="relative z-10 w-full max-w-360 mx-auto px-4 md:px-10">
         <JobSearchBar />
       </div>
     </div>
 
     <!-- Content -->
-    <div class="max-w-[1440px] mx-auto w-full px-4 md:px-10 py-6 flex gap-5 items-start min-h-screen">
+    <div class="max-w-360 mx-auto w-full px-4 md:px-10 py-6 flex gap-5 items-start min-h-screen">
 
       <!-- Sidebar (desktop) -->
       <aside v-if="!quickViewJobId" class="w-65 min-w-55 shrink-0 hidden lg:block self-stretch">
-        <div class="sticky top-[170px] max-h-[calc(100vh-190px)] overflow-y-auto custom-scrollbar pr-1">
-          <AdvancedFilter @change="onFilterChange" />
+        <div class="sticky top-42.5 max-h-[calc(100vh-190px)] overflow-y-auto custom-scrollbar pr-1">
+          <AdvancedFilter v-bind="initialSidebarFilters" @change="onFilterChange" />
         </div>
       </aside>
 
@@ -248,7 +282,7 @@ onMounted(fetchJobs)
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
             </button>
           </div>
-          <AdvancedFilter @change="(f) => { onFilterChange(f); showMobileFilter = false }" />
+          <AdvancedFilter v-bind="initialSidebarFilters" @change="(f) => { onFilterChange(f); showMobileFilter = false }" />
         </div>
       </Transition>
 
@@ -284,25 +318,7 @@ onMounted(fetchJobs)
                 Lọc
               </button>
 
-              <span v-if="!quickViewJobId" class="text-xs font-bold text-text-muted whitespace-nowrap uppercase tracking-wider hidden sm:block">|</span>
-              <button
-                v-if="!quickViewJobId"
-                v-for="opt in SEARCH_TYPE_OPTIONS"
-                :key="opt.value"
-                type="button"
-                class="flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-bold border transition-all cursor-pointer"
-                :class="searchType === opt.value
-                  ? 'bg-primary/10 border-primary text-primary shadow-sm'
-                  : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-600 text-text-muted hover:border-slate-300'"
-                @click="searchType = opt.value"
-              >
-                <svg
-                  v-if="searchType === opt.value"
-                  width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5"
-                  class="text-primary shrink-0"
-                ><polyline points="20 6 9 17 4 12" /></svg>
-                {{ opt.label }}
-              </button>
+
             </div>
 
             <!-- Sort -->
@@ -415,7 +431,7 @@ onMounted(fetchJobs)
         >
           <div
             v-if="quickViewJobId"
-            class="flex-1 sticky top-[170px] bg-white dark:bg-surface-dark rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden flex flex-col"
+            class="flex-1 sticky top-42.5 bg-white dark:bg-surface-dark rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden flex flex-col"
             style="max-height: calc(100vh - 190px)"
           >
             <!-- Loading state -->
@@ -442,7 +458,7 @@ onMounted(fetchJobs)
                 </div>
 
                 <!-- Company -->
-                <div class="flex items-center gap-2 mt-2">
+                <div class="flex items-center gap-1.5 mt-2">
                   <img
                     v-if="quickViewDetail.company.logoUrl"
                     :src="quickViewDetail.company.logoUrl"
@@ -450,21 +466,35 @@ onMounted(fetchJobs)
                     class="w-5 h-5 rounded object-contain"
                   />
                   <span class="text-sm text-text-muted">{{ quickViewDetail.company.name }}</span>
+                  <div v-if="quickViewDetail.company.isBrandVerified" class="relative flex items-center group/verified">
+                    <span class="material-symbols-outlined text-blue-600 cursor-default" style="font-size: 15px; font-variation-settings: 'FILL' 1">verified</span>
+                    <span class="pointer-events-none absolute bottom-[calc(100%+6px)] left-1/2 -translate-x-1/2 bg-blue-800 text-white text-[11px] font-medium whitespace-nowrap px-2.5 py-1 rounded-md opacity-0 group-hover/verified:opacity-100 transition-opacity z-10">
+                      Công ty đã xác minh
+                    </span>
+                  </div>
                 </div>
 
                 <!-- Info pills -->
                 <div class="flex flex-wrap gap-1.5 mt-3">
-                  <span class="px-2.5 py-1 rounded-full bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 text-xs font-medium">
+                  <span class="flex items-center gap-0.5 px-2.5 py-1 rounded-full bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 text-xs font-medium">
+                    <span class="material-symbols-outlined text-[13px]">payments</span>
                     {{ formatQuickViewSalary }}
                   </span>
-                  <span class="px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-700 text-text-muted text-xs">
+                  <span class="flex items-center gap-0.5 px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-700 text-text-muted text-xs">
+                    <span class="material-symbols-outlined text-[13px]">work</span>
+                    {{ formatWorkType(quickViewDetail.workType) }}
+                  </span>
+                  <span class="flex items-center gap-0.5 px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-700 text-text-muted text-xs">
+                    <span class="material-symbols-outlined text-[13px]">military_tech</span>
                     {{ quickViewDetail.level.name }}
                   </span>
-                  <span class="px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-700 text-text-muted text-xs">
-                    {{ quickViewDetail.workType }}
+                  <span v-if="quickViewDetail.experienceYearsMin" class="flex items-center gap-0.5 px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-700 text-text-muted text-xs">
+                    <span class="material-symbols-outlined text-[13px]">schedule</span>
+                    {{ quickViewDetail.experienceYearsMin }}+ năm kinh nghiệm
                   </span>
-                  <span v-if="quickViewDetail.experienceYearsMin" class="px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-700 text-text-muted text-xs">
-                    {{ quickViewDetail.experienceYearsMin }}+ năm
+                  <span class="flex items-center gap-0.5 px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-700 text-text-muted text-xs">
+                    <span class="material-symbols-outlined text-[13px]">location_on</span>
+                    {{ formatQuickViewLocation }}
                   </span>
                 </div>
 

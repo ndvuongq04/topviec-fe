@@ -1,30 +1,28 @@
 <template>
   <div class="space-y-5">
-    <!-- Header Card: Title + Filters merged -->
-    <div class="bg-white dark:bg-surface-dark rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
-      <div class="p-5 sm:p-6">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <h2 class="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">Việc làm đã ứng tuyển</h2>
-            <p class="text-slate-500 dark:text-gray-400 text-base mt-1">Theo dõi trạng thái và tiến độ các đơn ứng tuyển.</p>
-          </div>
-          <div v-if="!loading" class="flex items-center gap-2">
-            <span class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-base font-bold bg-primary/10 text-primary border border-primary/20">
-              <span class="material-symbols-outlined text-[18px]">send</span>
-              {{ meta.totals }} đơn
-            </span>
-          </div>
+    <!-- Header: Title + Filters -->
+    <div class="pt-4 mt-2">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4">
+        <div>
+          <h2 class="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">Việc làm đã ứng tuyển</h2>
+          <p class="text-slate-500 dark:text-gray-400 text-base mt-1">Theo dõi trạng thái và tiến độ các đơn ứng tuyển.</p>
+        </div>
+        <div v-if="!loading" class="flex items-center gap-2">
+          <span class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-base font-bold bg-primary/10 text-primary border border-primary/20">
+            <span class="material-symbols-outlined text-[18px]">send</span>
+            {{ meta.totals }} đơn
+          </span>
         </div>
       </div>
       <!-- Filter Tabs -->
-      <div class="px-5 sm:px-6 py-3 bg-slate-50/50 dark:bg-slate-800/30 border-t border-slate-100 dark:border-slate-800 flex items-center gap-2 overflow-x-auto scrollbar-hide">
-        <button 
-          v-for="filter in filterOptions" 
+      <div class="flex items-center gap-2 overflow-x-auto scrollbar-hide">
+        <button
+          v-for="filter in filterOptions"
           :key="filter.value"
           @click="handleFilterChange(filter.value)"
-          class="whitespace-nowrap px-3.5 py-1.5 rounded-lg text-sm font-bold transition-all duration-200"
-          :class="activeFilter === filter.value 
-            ? 'bg-primary text-white shadow-md shadow-primary/20' 
+          class="whitespace-nowrap px-3.5 py-1.5 rounded-lg text-sm font-bold transition-all duration-200 cursor-pointer"
+          :class="activeFilter === filter.value
+            ? 'bg-primary text-white shadow-md shadow-primary/20'
             : 'text-slate-500 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-slate-700'"
         >
           {{ filter.label }}
@@ -48,7 +46,7 @@
       <button 
         v-if="activeFilter !== 'all'"
         @click="handleFilterChange('all')"
-        class="inline-flex items-center gap-2 text-primary font-bold text-sm hover:underline"
+        class="inline-flex items-center gap-2 text-primary font-bold text-sm hover:underline cursor-pointer"
       >
         <span class="material-symbols-outlined text-[16px]">filter_list_off</span>
         Xem tất cả các đơn
@@ -75,7 +73,18 @@
                 <h3 class="text-lg font-bold text-slate-900 dark:text-white group-hover:text-primary transition-colors truncate">
                   {{ app.jobPosting?.title || 'Công việc không còn tồn tại' }}
                 </h3>
-                <p class="text-slate-500 dark:text-gray-400 text-base mt-0.5 truncate">{{ app.jobPosting?.company.name || 'N/A' }}</p>
+                <div class="flex items-center gap-1 mt-0.5">
+                  <p class="text-slate-500 dark:text-gray-400 text-base truncate">{{ app.jobPosting?.company.name || 'N/A' }}</p>
+                  <div v-if="app.jobPosting?.company.isBrandVerified" class="relative flex items-center shrink-0 group/verified">
+                    <span
+                      class="material-symbols-outlined text-blue-600 cursor-default"
+                      style="font-size: 15px; font-variation-settings: 'FILL' 1"
+                    >verified</span>
+                    <span class="pointer-events-none absolute bottom-[calc(100%+6px)] left-1/2 -translate-x-1/2 bg-blue-800 text-white text-[11px] font-medium whitespace-nowrap px-2.5 py-1 rounded-md opacity-0 group-hover/verified:opacity-100 transition-opacity z-10">
+                      Công ty đã xác minh
+                    </span>
+                  </div>
+                </div>
               </div>
               <div :class="getStatusClasses(app.status)" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold border shrink-0 self-start">
                 <span class="material-symbols-outlined text-[14px]">{{ getStatusIcon(app.status) }}</span>
@@ -103,7 +112,7 @@
           <div class="flex sm:flex-col items-center gap-1.5 shrink-0 sm:border-l sm:border-slate-100 sm:dark:border-slate-800 sm:pl-4">
             <router-link 
               :to="{ name: 'JobDetail', params: { id: app.jobPostId } }"
-              class="p-2 rounded-lg text-slate-400 hover:text-primary hover:bg-primary/5 transition-all"
+              class="p-2 rounded-lg text-slate-400 hover:text-primary hover:bg-primary/5 transition-all cursor-pointer"
               title="Xem chi tiết"
             >
               <span class="material-symbols-outlined text-[20px]">visibility</span>
@@ -111,7 +120,7 @@
             <button 
               v-if="app.cvId"
               @click="handleViewCv(app)"
-              class="p-2 rounded-lg text-slate-400 hover:text-primary hover:bg-primary/5 transition-all"
+              class="p-2 rounded-lg text-slate-400 hover:text-primary hover:bg-primary/5 transition-all cursor-pointer"
               title="Xem CV"
             >
               <span class="material-symbols-outlined text-[20px]">description</span>
@@ -119,7 +128,7 @@
             <button 
               v-if="app.status === APPLICATION_STATUS.PENDING"
               @click="handleChangeCv(app)"
-              class="p-2 rounded-lg text-slate-400 hover:text-primary hover:bg-primary/5 transition-all"
+              class="p-2 rounded-lg text-slate-400 hover:text-primary hover:bg-primary/5 transition-all cursor-pointer"
               title="Đổi CV"
             >
               <span class="material-symbols-outlined text-[20px]">edit_document</span>
@@ -127,7 +136,7 @@
             <button 
               v-if="app.status === APPLICATION_STATUS.PENDING"
               @click="handleWithdraw(app)"
-              class="p-2 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all"
+              class="p-2 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all cursor-pointer"
               title="Rút đơn"
             >
               <span class="material-symbols-outlined text-[20px]">cancel</span>

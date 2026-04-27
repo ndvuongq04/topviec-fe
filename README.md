@@ -1,1625 +1,1260 @@
+hiện tại bên BE tôi đã có sự thay đổi : 
+
+controler:AdminServicePackageController 
+
+các API :
 package com.topviec.topviec_be.controller;
 
-import com.topviec.topviec_be.dto.request.*;
-import com.topviec.topviec_be.dto.response.*;
-import com.topviec.topviec_be.service.CompanyService;
-import com.topviec.topviec_be.service.InterviewService;
-import com.topviec.topviec_be.util.SecurityUtil;
+import com.topviec.topviec_be.dto.request.ReqServicePackageDTO;
+import com.topviec.topviec_be.dto.response.ResServicePackageDTO;
+import com.topviec.topviec_be.dto.response.ResultPaginationDTO;
+import com.topviec.topviec_be.enums.adminUsers.AdminRoleConstants;
+import com.topviec.topviec_be.service.ServicePackageService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-
-/**
- * Controller dành cho Employer — quản lý phỏng vấn.
- * Base URL: /api/v1/employer
- */
 @RestController
-@RequestMapping("/employer")
+@RequestMapping("/admin/service-packages")
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('EMPLOYER')")
-public class EmployerInterviewController {
+@PreAuthorize("hasRole('ADMIN')")
+public class AdminServicePackageController {
 
-    private final InterviewService interviewService;
-    private final CompanyService companyService;
+    private final ServicePackageService servicePackageService;
 
-    // ── Vòng phỏng vấn ────────────────────────────────────────────────────────
-
-    @PostMapping("/job-postings/{jobPostId}/interview-rounds")
-    public ResponseEntity<ResInterviewRoundDTO> createRound(
-            @PathVariable Long jobPostId,
-            @Valid @RequestBody ReqCreateInterviewRoundDTO request) {
-
-        Long userId = SecurityUtil.getCurrentUserId();
-        Long companyId = companyService.getCompanyIdByUserId(userId);
-
-        return ResponseEntity
-                .status(HttpStatus.CREATED)
-                .body(interviewService.createRound(jobPostId, userId, companyId, request));
+    @GetMapping
+    @PreAuthorize("hasRole('ADMIN') and @adminSecurity.hasAnyRole(authentication, '"
+            + AdminRoleConstants.SUPER_ADMIN + "', '"
+            + AdminRoleConstants.FINANCE_ADMIN + "', '"
+            + AdminRoleConstants.SUPPORT_ADMIN + "', '"
+            + AdminRoleConstants.CONTENT_MODERATOR + "')")
+    public ResponseEntity<ResultPaginationDTO> getAllServicePackages(
+            @RequestParam(required = false) String keyword,
+            @PageableDefault(size = 10, sort = "sortOrder") Pageable pageable) {
+        return ResponseEntity.ok(servicePackageService.getAllServicePackages(keyword, pageable));
     }
 
-    @GetMapping("/job-postings/{jobPostId}/interview-rounds")
-    public ResponseEntity<List<ResInterviewRoundDTO>> getRounds(
-            @PathVariable Long jobPostId) {
-
-        Long userId = SecurityUtil.getCurrentUserId();
-        Long companyId = companyService.getCompanyIdByUserId(userId);
-
-        return ResponseEntity.ok(interviewService.getRounds(jobPostId, companyId));
+    @GetMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN') and @adminSecurity.hasAnyRole(authentication, '"
+            + AdminRoleConstants.SUPER_ADMIN + "', '"
+            + AdminRoleConstants.FINANCE_ADMIN + "')")
+    public ResponseEntity<ResServicePackageDTO> getServicePackageById(@PathVariable Long id) {
+        return ResponseEntity.ok(servicePackageService.getServicePackageById(id));
     }
 
-    @PatchMapping("/interview-rounds/{roundId}")
-    public ResponseEntity<ResInterviewRoundDTO> updateRound(
-            @PathVariable Long roundId,
-            @Valid @RequestBody ReqUpdateInterviewRoundDTO request) {
-
-        Long userId = SecurityUtil.getCurrentUserId();
-        Long companyId = companyService.getCompanyIdByUserId(userId);
-
-        return ResponseEntity.ok(interviewService.updateRound(roundId, userId, companyId, request));
+    @PostMapping
+    @PreAuthorize("hasRole('ADMIN') and @adminSecurity.hasAnyRole(authentication, '"
+            + AdminRoleConstants.SUPER_ADMIN + "', '"
+            + AdminRoleConstants.FINANCE_ADMIN + "')")
+    public ResponseEntity<ResServicePackageDTO> createServicePackage(
+            @Valid @RequestBody ReqServicePackageDTO request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(servicePackageService.createServicePackage(request));
     }
 
-    @DeleteMapping("/interview-rounds/{roundId}")
-    public ResponseEntity<Void> deleteRound(@PathVariable Long roundId) {
-        Long userId = SecurityUtil.getCurrentUserId();
-        Long companyId = companyService.getCompanyIdByUserId(userId);
-
-        interviewService.deleteRound(roundId, userId, companyId);
-        return ResponseEntity.noContent().build();
-    }
-
-    // ── Lịch phỏng vấn ───────────────────────────────────────────────────────
-
-    @PostMapping("/interview-rounds/{roundId}/schedules")
-    public ResponseEntity<ResInterviewScheduleDTO> createSchedule(
-            @PathVariable Long roundId,
-            @Valid @RequestBody ReqCreateInterviewScheduleDTO request) {
-
-        Long userId = SecurityUtil.getCurrentUserId();
-        Long companyId = companyService.getCompanyIdByUserId(userId);
-
-        return ResponseEntity
-                .status(HttpStatus.CREATED)
-                .body(interviewService.createSchedule(roundId, userId, companyId, request));
-    }
-
-    @PostMapping("/interview-rounds/{roundId}/schedule-slots")
-    public ResponseEntity<Void> createSlots(
-            @PathVariable Long roundId,
-            @Valid @RequestBody ReqCreateInterviewSlotsDTO request) {
-
-        Long userId = SecurityUtil.getCurrentUserId();
-        Long companyId = companyService.getCompanyIdByUserId(userId);
-
-        interviewService.createSlots(roundId, userId, companyId, request);
-        return ResponseEntity.status(HttpStatus.CREATED).build();
-    }
-
-    @GetMapping("/job-postings/{jobPostId}/interview-schedules")
-    public ResponseEntity<List<ResInterviewScheduleDTO>> getSchedules(
-            @PathVariable Long jobPostId,
-            @RequestParam(required = false) Long roundId,
-            @RequestParam(required = false) String status,
-            @RequestParam(required = false) String search) {
-
-        Long userId = SecurityUtil.getCurrentUserId();
-        Long companyId = companyService.getCompanyIdByUserId(userId);
-
-        return ResponseEntity.ok(interviewService.getSchedules(jobPostId, companyId, roundId, status, search));
-    }
-
-    @PutMapping("/interview-schedules/{scheduleId}")
-    public ResponseEntity<ResInterviewScheduleDTO> updateSchedule(
-            @PathVariable Long scheduleId,
-            @Valid @RequestBody ReqUpdateInterviewScheduleDTO request) {
-
-        Long userId = SecurityUtil.getCurrentUserId();
-        Long companyId = companyService.getCompanyIdByUserId(userId);
-
-        return ResponseEntity.ok(interviewService.updateSchedule(scheduleId, userId, companyId, request));
-    }
-
-    @DeleteMapping("/interview-schedules/{scheduleId}")
-    public ResponseEntity<Void> deleteSchedule(@PathVariable Long scheduleId) {
-        Long userId = SecurityUtil.getCurrentUserId();
-        Long companyId = companyService.getCompanyIdByUserId(userId);
-
-        interviewService.deleteSchedule(scheduleId, userId, companyId);
-        return ResponseEntity.noContent().build();
-    }
-
-    // ── Kết quả phỏng vấn ────────────────────────────────────────────────────
-
-    @PostMapping("/interview-schedules/{scheduleId}/results")
-    public ResponseEntity<ResInterviewResultDTO> createResult(
-            @PathVariable Long scheduleId,
-            @Valid @RequestBody ReqInterviewResultDTO request) {
-
-        Long userId = SecurityUtil.getCurrentUserId();
-        Long companyId = companyService.getCompanyIdByUserId(userId);
-
-        return ResponseEntity
-                .status(HttpStatus.CREATED)
-                .body(interviewService.createResult(scheduleId, userId, companyId, request));
-    }
-
-    @GetMapping("/interview-schedules/{scheduleId}/results")
-    public ResponseEntity<ResInterviewResultDTO> getResult(
-            @PathVariable Long scheduleId) {
-
-        Long userId = SecurityUtil.getCurrentUserId();
-        Long companyId = companyService.getCompanyIdByUserId(userId);
-
-        return ResponseEntity.ok(interviewService.getResult(scheduleId, companyId));
-    }
-
-    // ── Lịch sử PV ──────────────────────────────────────────────────────────
-
-    @GetMapping("/applications/{applicationId}/interview-history")
-    public ResponseEntity<ResInterviewHistoryDTO> getInterviewHistory(
-            @PathVariable Long applicationId) {
-
-        Long userId = SecurityUtil.getCurrentUserId();
-        Long companyId = companyService.getCompanyIdByUserId(userId);
-
-        return ResponseEntity.ok(interviewService.getInterviewHistory(applicationId, companyId));
-    }
-
-    // ── Overdue ──────────────────────────────────────────────────────────────
-
-    @GetMapping("/job-postings/{jobPostId}/overdue-applications")
-    public ResponseEntity<List<ResOverdueApplicationDTO>> getOverdueApplications(
-            @PathVariable Long jobPostId) {
-
-        Long userId = SecurityUtil.getCurrentUserId();
-        Long companyId = companyService.getCompanyIdByUserId(userId);
-
-        return ResponseEntity.ok(interviewService.getOverdueApplications(jobPostId, companyId));
-    }
-
-    @PatchMapping("/applications/{applicationId}/extend-deadline")
-    public ResponseEntity<Void> extendDeadline(
-            @PathVariable Long applicationId,
-            @Valid @RequestBody ReqExtendDeadlineDTO request) {
-
-        Long userId = SecurityUtil.getCurrentUserId();
-        Long companyId = companyService.getCompanyIdByUserId(userId);
-
-        interviewService.extendDeadline(applicationId, userId, companyId, request);
-        return ResponseEntity.ok().build();
-    }
-
-    @PatchMapping("/applications/{applicationId}/force-schedule")
-    public ResponseEntity<ResInterviewScheduleDTO> forceSchedule(
-            @PathVariable Long applicationId,
-            @Valid @RequestBody ReqForceScheduleDTO request) {
-
-        Long userId = SecurityUtil.getCurrentUserId();
-        Long companyId = companyService.getCompanyIdByUserId(userId);
-
-        return ResponseEntity.ok(interviewService.forceSchedule(applicationId, userId, companyId, request));
-    }
-
-    // ── Offer ────────────────────────────────────────────────────────────────
-
-    @PatchMapping("/applications/{applicationId}/offer")
-    public ResponseEntity<ResEmployerApplicationDTO> updateOffer(
-            @PathVariable Long applicationId,
-            @Valid @RequestBody ReqOfferResultDTO request) {
-
-        Long userId = SecurityUtil.getCurrentUserId();
-        Long companyId = companyService.getCompanyIdByUserId(userId);
-
-        return ResponseEntity.ok(interviewService.updateOffer(applicationId, userId, companyId, request));
-    }
-
-    // ── Job interview phase ──────────────────────────────────────────────────
-
-    @GetMapping("/job-postings/{jobPostId}/interview-readiness")
-    public ResponseEntity<ResInterviewReadinessDTO> checkReadiness(
-            @PathVariable Long jobPostId) {
-
-        Long userId = SecurityUtil.getCurrentUserId();
-        Long companyId = companyService.getCompanyIdByUserId(userId);
-
-        return ResponseEntity.ok(interviewService.checkReadiness(jobPostId, companyId));
-    }
-
-    @PatchMapping("/job-postings/{jobPostId}/start-interviewing")
-    public ResponseEntity<Void> startInterviewing(
-            @PathVariable Long jobPostId) {
-
-        Long userId = SecurityUtil.getCurrentUserId();
-        Long companyId = companyService.getCompanyIdByUserId(userId);
-
-        interviewService.startInterviewing(jobPostId, userId, companyId);
-        return ResponseEntity.ok().build();
-    }
-
-    @PatchMapping("/job-postings/{jobPostId}/complete")
-    public ResponseEntity<Void> completeRecruitment(
-            @PathVariable Long jobPostId,
-            @Valid @RequestBody ReqCompleteRecruitmentDTO request) {
-
-        Long userId = SecurityUtil.getCurrentUserId();
-        Long companyId = companyService.getCompanyIdByUserId(userId);
-
-        interviewService.completeRecruitment(jobPostId, userId, companyId, request);
-        return ResponseEntity.ok().build();
+    @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN') and @adminSecurity.hasAnyRole(authentication, '"
+            + AdminRoleConstants.SUPER_ADMIN + "', '"
+            + AdminRoleConstants.FINANCE_ADMIN + "')")
+    public ResponseEntity<ResServicePackageDTO> updateServicePackage(
+            @PathVariable Long id,
+            @Valid @RequestBody ReqServicePackageDTO request) {
+        return ResponseEntity.ok(servicePackageService.updateServicePackage(id, request));
     }
 }
- trên là file controller
- dưới là file service
- package com.topviec.topviec_be.service.impl;
 
-import com.topviec.topviec_be.dto.request.*;
-import com.topviec.topviec_be.dto.response.*;
-import com.topviec.topviec_be.entity.*;
-import com.topviec.topviec_be.enums.application.ApplicationStatus;
-import com.topviec.topviec_be.enums.interview.*;
-import com.topviec.topviec_be.enums.jobs.JobPostStatus;
-import com.topviec.topviec_be.exception.AppException;
-import com.topviec.topviec_be.repository.*;
-import com.topviec.topviec_be.service.EmailService;
-import com.topviec.topviec_be.service.InterviewService;
-import com.topviec.topviec_be.service.TokenService;
+controler : EmployerPackageController
+
+các API :
+package com.topviec.topviec_be.controller;
+
+import com.topviec.topviec_be.dto.response.ResAddonServiceDTO;
+import com.topviec.topviec_be.dto.response.ResServicePackageDTO;
+import com.topviec.topviec_be.enums.services.ServiceCategory;
+import com.topviec.topviec_be.service.AddonServiceService;
+import com.topviec.topviec_be.service.ServicePackageService;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("/employer/packages")
+@RequiredArgsConstructor
+@PreAuthorize("hasRole('EMPLOYER')")
+public class EmployerPackageController {
+
+    private final ServicePackageService servicePackageService;
+    private final AddonServiceService addonServiceService;
+
+    @GetMapping("/services")
+    public ResponseEntity<List<ResServicePackageDTO>> getActiveServicePackages() {
+        return ResponseEntity.ok(servicePackageService.getPublicActivePackages());
+    }
+
+    @GetMapping("/addons")
+    public ResponseEntity<List<ResAddonServiceDTO>> getActiveAddonServices(
+            @RequestParam(required = false) ServiceCategory category) {
+        return ResponseEntity.ok(addonServiceService.getActiveAddonServices(category));
+    }
+}
+
+các req , res thay đổi :
+
+package com.topviec.topviec_be.dto.request;
+
+import com.topviec.topviec_be.enums.services.BillingCycle;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import lombok.Data;
+
+import java.math.BigDecimal;
+import java.util.List;
+
+@Data
+public class ReqServicePackageDTO {
+
+    @NotBlank(message = "Tên gói không được để trống")
+    private String name;
+
+    @NotBlank(message = "Mã gói không được để trống")
+    private String code;
+
+    @NotNull(message = "Chu kỳ thanh toán không được để trống")
+    private BillingCycle billingCycle;
+
+    @NotNull(message = "Giá không được để trống")
+    private BigDecimal price;
+
+    private String description;
+
+    private Boolean isActive;
+
+    private Integer sortOrder;
+
+    private List<DetailItem> details;
+
+    @Data
+    public static class DetailItem {
+        @NotNull(message = "ID dịch vụ không được để trống")
+        private Long serviceId;
+
+        @NotNull(message = "Số lượng không được để trống")
+        private Integer quantity;
+    }
+}
+package com.topviec.topviec_be.dto.response;
+
+import com.topviec.topviec_be.enums.services.ServiceCategory;
+import com.topviec.topviec_be.enums.services.SubscriptionStatus;
+import lombok.Builder;
+import lombok.Data;
+
+import java.time.LocalDateTime;
+
+@Data
+@Builder
+public class ResCompanyAddonDTO {
+    private Long id;
+    private Long addonServiceId;
+    private String addonName;
+    private String addonCode;
+    private Integer addonQuantity;
+    private Long serviceId;
+    private String serviceCode;
+    private String serviceName;
+    private ServiceCategory serviceCategory;
+    private String serviceCategoryName;
+    private SubscriptionStatus status;
+    private Integer quantityTotal;
+    private Integer quantityRemaining;
+    private LocalDateTime startedAt;
+    private LocalDateTime expiredAt;
+    private LocalDateTime createdAt;
+}
+
+package com.topviec.topviec_be.dto.response;
+
+import com.topviec.topviec_be.enums.services.BillingCycle;
+import com.topviec.topviec_be.enums.services.SubscriptionStatus;
+import lombok.Builder;
+import lombok.Data;
+
+import java.time.LocalDateTime;
+import java.util.List;
+
+@Data
+@Builder
+public class ResCompanySubscriptionDTO {
+    private Long id;
+    private Long servicePackageId;
+    private String packageName;
+    private String packageCode;
+    private BillingCycle billingCycle;
+    private SubscriptionStatus status;
+    private LocalDateTime startedAt;
+    private LocalDateTime expiredAt;
+    private LocalDateTime createdAt;
+    private List<ResSubscriptionUsageDTO> usages;
+
+    @Data
+    @Builder
+    public static class ResSubscriptionUsageDTO {
+        private Long id;
+        private String featureCode;
+        private String featureName;
+        private Integer quantityTotal;
+        private Integer quantityRemaining;
+        private LocalDateTime resetAt;
+    }
+}
+package com.topviec.topviec_be.dto.response;
+
+import com.topviec.topviec_be.enums.services.JobPostAddonStatus;
+import lombok.Builder;
+import lombok.Data;
+
+import java.time.LocalDateTime;
+
+@Data
+@Builder
+public class ResJobPostAddonDTO {
+    private Long id;
+    private Long jobPostingId;
+    private Long companyAddonId;
+    private Long addonServiceId;
+    private String addonName;
+    private JobPostAddonStatus status;
+    private LocalDateTime startedAt;
+    private LocalDateTime expiredAt;
+    private LocalDateTime createdAt;
+}
+package com.topviec.topviec_be.dto.response;
+
+import com.topviec.topviec_be.enums.services.BillingCycle;
+import com.topviec.topviec_be.enums.services.OrderItemType;
+import lombok.Builder;
+import lombok.Data;
+
+import java.math.BigDecimal;
+import java.util.List;
+
+@Data
+@Builder
+public class ResOrderItemDTO {
+    private Long id;
+    private OrderItemType itemType;
+    private Long servicePackageId;
+    private Long addonServiceId;
+    private Integer quantity;
+    private BigDecimal unitPrice;
+    private BigDecimal totalPrice;
+    private BillingCycle billingCycle;
+    private Integer durationDays;
+    private String packageName;
+    private List<ResServicePackageDetailDTO> details;
+}
+package com.topviec.topviec_be.dto.response;
+
+import com.topviec.topviec_be.enums.services.BillingCycle;
+import lombok.Builder;
+import lombok.Data;
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.List;
+
+@Data
+@Builder
+public class ResServicePackageDTO {
+    private Long id;
+    private String name;
+    private String code;
+    private BillingCycle billingCycle;
+    private BigDecimal price;
+    private String description;
+    private Boolean isActive;
+    private Integer sortOrder;
+    private List<ResServicePackageDetailDTO> details;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
+}
+
+
+
+các LOGIC code để bạn có thể hiểu thêm hơn về BE :
+
+package com.topviec.topviec_be.service.impl;
+
+import com.topviec.topviec_be.dto.request.ReqAddonServiceDTO;
+import com.topviec.topviec_be.dto.response.ResAddonServiceDTO;
+import com.topviec.topviec_be.dto.response.ResultPaginationDTO;
+import com.topviec.topviec_be.entity.AddonService;
+import com.topviec.topviec_be.entity.Services;
+import com.topviec.topviec_be.enums.services.ServiceCategory;
+import com.topviec.topviec_be.exception.AppException;
+import com.topviec.topviec_be.repository.AddonServiceRepository;
+import com.topviec.topviec_be.repository.ServiceRepository;
+import com.topviec.topviec_be.service.AddonServiceService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Duration;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-@Slf4j
-public class InterviewServiceImpl implements InterviewService {
+public class AddonServiceServiceImpl implements AddonServiceService {
 
-    private final InterviewRoundRepository roundRepository;
-    private final InterviewRoundInterviewerRepository interviewerRepository;
-    private final InterviewSlotRepository slotRepository;
-    private final InterviewRepository interviewRepository;
-    private final InterviewResultRepository resultRepository;
-    private final ApplicationRepository applicationRepository;
-    private final JobPostingRepository jobPostingRepository;
-    private final UserRepository userRepository;
-    private final CandidateProfileRepository candidateProfileRepository;
-    private final CvsRepository cvsRepository;
-    private final TokenService tokenService;
-    private final EmailService emailService;
-    private final CompanyRepository companyRepository;
+    private final AddonServiceRepository addonServiceRepository;
+    private final ServiceRepository serviceRepository;
 
-    @Value("${app.base-url}")
-    private String appBaseUrl;
+    @Override
+    @Transactional(readOnly = true)
+    public List<ResAddonServiceDTO> getActiveAddonServices(ServiceCategory category) {
+        List<AddonService> list = category != null
+                ? addonServiceRepository.findByIsActiveTrueAndServiceCategory(category)
+                : addonServiceRepository.findByIsActiveTrue();
+        return list.stream().map(this::mapToDTO).collect(Collectors.toList());
+    }
 
-    @Value("${app.confirm-interview-url}")
-    private String confirmInterviewUrl;
+    @Override
+    @Transactional(readOnly = true)
+    public ResultPaginationDTO getAllAddonServices(ServiceCategory category, String keyword, Pageable pageable) {
+        Page<AddonService> page = addonServiceRepository.searchAll(category, keyword, pageable);
 
-    @Value("${app.token.interview-update-ttl}")
-    private long interviewUpdateTtlDays;
+        ResultPaginationDTO.Meta meta = new ResultPaginationDTO.Meta();
+        meta.setPage(pageable.getPageNumber() + 1);
+        meta.setPageSize(pageable.getPageSize());
+        meta.setPages(page.getTotalPages());
+        meta.setTotals(page.getTotalElements());
 
-    // =========================================================================
-    // Vòng phỏng vấn
-    // =========================================================================
+        List<ResAddonServiceDTO> results = page.getContent().stream()
+                .map(this::mapToDTO)
+                .collect(Collectors.toList());
+
+        ResultPaginationDTO response = new ResultPaginationDTO();
+        response.setMeta(meta);
+        response.setResult(results);
+        return response;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public ResAddonServiceDTO getAddonServiceById(Long id) {
+        AddonService addonService = addonServiceRepository.findById(id)
+                .orElseThrow(() -> AppException.notFound("Không tìm thấy dịch vụ lẻ với ID: " + id));
+        return mapToDTO(addonService);
+    }
 
     @Override
     @Transactional
-    public ResInterviewRoundDTO createRound(Long jobPostId, Long userId, Long companyId,
-            ReqCreateInterviewRoundDTO request) {
-
-        JobPosting job = findJobAndValidateOwnership(jobPostId, companyId);
-
-        if (JobPostStatus.COMPLETED.getValue().equals(job.getStatus())) {
-            throw AppException.badRequest("Tin tuyển dụng đã hoàn thành, không thể tạo vòng phỏng vấn mới");
+    public ResAddonServiceDTO createAddonService(ReqAddonServiceDTO reqDTO) {
+        if (addonServiceRepository.existsByCode(reqDTO.getCode())) {
+            throw AppException.badRequest("Mã dịch vụ lẻ đã tồn tại, vui lòng chọn mã khác.");
         }
 
-        // boolean hasInterviewing = !applicationRepository
-        // .findByJobPostIdAndStatusAndDeletedAtIsNull(jobPostId,
-        // ApplicationStatus.INTERVIEWING.getValue())
-        // .isEmpty();
-        // if (hasInterviewing) {
-        // throw AppException.badRequest("Không thể tạo vòng mới khi đã có ứng viên đang
-        // phỏng vấn");
-        // }
+        Services service = serviceRepository.findById(reqDTO.getServiceId())
+                .orElseThrow(() -> AppException.notFound("Không tìm thấy dịch vụ với ID: " + reqDTO.getServiceId()));
 
-        int nextRoundNumber = roundRepository.findMaxRoundNumber(jobPostId) + 1;
+        AddonService addonService = AddonService.builder()
+                .serviceId(service.getId())
+                .name(reqDTO.getName())
+                .code(reqDTO.getCode())
+                .quantity(reqDTO.getQuantity())
+                .durationDays(reqDTO.getDurationDays())
+                .price(reqDTO.getPrice())
+                .description(reqDTO.getDescription())
+                .isActive(reqDTO.getIsActive() != null ? reqDTO.getIsActive() : true)
+                .build();
 
-        if (Boolean.TRUE.equals(request.getIsFinal())) {
-            List<InterviewRound> existingRounds = roundRepository
-                    .findByJobPostIdAndDeletedAtIsNullOrderByRoundNumberAsc(jobPostId);
-            for (InterviewRound r : existingRounds) {
-                if (Boolean.TRUE.equals(r.getIsFinal())) {
-                    r.setIsFinal(false);
-                    r.setUpdatedBy(userId);
-                    roundRepository.save(r);
+        return mapToDTO(addonServiceRepository.save(addonService));
+    }
+
+    @Override
+    @Transactional
+    public ResAddonServiceDTO updateAddonService(Long id, ReqAddonServiceDTO reqDTO) {
+        AddonService addonService = addonServiceRepository.findById(id)
+                .orElseThrow(() -> AppException.notFound("Không tìm thấy dịch vụ lẻ với ID: " + id));
+
+        if (addonServiceRepository.existsByCodeAndIdNot(reqDTO.getCode(), id)) {
+            throw AppException.badRequest("Mã dịch vụ lẻ đã tồn tại, vui lòng chọn mã khác.");
+        }
+
+        Services service = serviceRepository.findById(reqDTO.getServiceId())
+                .orElseThrow(() -> AppException.notFound("Không tìm thấy dịch vụ với ID: " + reqDTO.getServiceId()));
+
+        addonService.setServiceId(service.getId());
+        addonService.setName(reqDTO.getName());
+        addonService.setCode(reqDTO.getCode());
+        addonService.setQuantity(reqDTO.getQuantity());
+        addonService.setDurationDays(reqDTO.getDurationDays());
+        addonService.setPrice(reqDTO.getPrice());
+        addonService.setDescription(reqDTO.getDescription());
+        if (reqDTO.getIsActive() != null) {
+            addonService.setIsActive(reqDTO.getIsActive());
+        }
+
+        return mapToDTO(addonServiceRepository.save(addonService));
+    }
+
+    public ResAddonServiceDTO mapToDTO(AddonService entity) {
+        Services svc = entity.getService();
+        if (svc == null) {
+            svc = serviceRepository.findById(entity.getServiceId()).orElse(null);
+        }
+        return ResAddonServiceDTO.builder()
+                .id(entity.getId())
+                .serviceId(entity.getServiceId())
+                .serviceCode(svc != null ? svc.getCode() : null)
+                .serviceName(svc != null ? svc.getName() : null)
+                .serviceCategory(svc != null ? svc.getCategory() : null)
+                .serviceCategoryName(svc != null && svc.getCategory() != null ? svc.getCategory().getValue() : null)
+                .name(entity.getName())
+                .code(entity.getCode())
+                .quantity(entity.getQuantity())
+                .durationDays(entity.getDurationDays())
+                .price(entity.getPrice())
+                .description(entity.getDescription())
+                .isActive(entity.getIsActive())
+                .createdAt(entity.getCreatedAt())
+                .updatedAt(entity.getUpdatedAt())
+                .build();
+    }
+}
+package com.topviec.topviec_be.service.impl;
+
+import com.topviec.topviec_be.dto.request.ReqApplyAddonDTO;
+import com.topviec.topviec_be.dto.response.ResCompanyAddonDTO;
+import com.topviec.topviec_be.dto.response.ResCompanySubscriptionDTO;
+import com.topviec.topviec_be.dto.response.ResCompanySubscriptionDTO.ResSubscriptionUsageDTO;
+import com.topviec.topviec_be.dto.response.ResJobPostAddonDTO;
+import com.topviec.topviec_be.entity.AddonService;
+import com.topviec.topviec_be.entity.CompanyAddon;
+import com.topviec.topviec_be.entity.CompanySubscription;
+import com.topviec.topviec_be.entity.JobPostAddon;
+import com.topviec.topviec_be.entity.JobPosting;
+import com.topviec.topviec_be.entity.Services;
+import com.topviec.topviec_be.entity.ServicePackage;
+import com.topviec.topviec_be.entity.SubscriptionUsage;
+import com.topviec.topviec_be.enums.services.JobPostAddonStatus;
+import com.topviec.topviec_be.enums.services.SubscriptionStatus;
+import com.topviec.topviec_be.exception.AppException;
+import com.topviec.topviec_be.repository.AddonServiceRepository;
+import com.topviec.topviec_be.repository.CompanyAddonRepository;
+import com.topviec.topviec_be.repository.CompanySubscriptionRepository;
+import com.topviec.topviec_be.repository.JobPostAddonRepository;
+import com.topviec.topviec_be.repository.JobPostingRepository;
+import com.topviec.topviec_be.repository.ServicePackageRepository;
+import com.topviec.topviec_be.repository.ServiceRepository;
+import com.topviec.topviec_be.repository.SubscriptionUsageRepository;
+import com.topviec.topviec_be.service.CompanyService;
+import com.topviec.topviec_be.service.EmployerServiceManagementService;
+import lombok.RequiredArgsConstructor;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.stream.Collectors;
+
+@Service
+@RequiredArgsConstructor
+public class EmployerServiceManagementServiceImpl implements EmployerServiceManagementService {
+
+        private final CompanyService companyService;
+        private final CompanySubscriptionRepository companySubscriptionRepository;
+        private final SubscriptionUsageRepository subscriptionUsageRepository;
+        private final CompanyAddonRepository companyAddonRepository;
+        private final AddonServiceRepository addonServiceRepository;
+        private final ServiceRepository serviceRepository;
+        private final ServicePackageRepository servicePackageRepository;
+        private final JobPostingRepository jobPostingRepository;
+        private final JobPostAddonRepository jobPostAddonRepository;
+
+        @Override
+        @Transactional(readOnly = true)
+        public ResCompanySubscriptionDTO getMySubscription(Long userId) {
+                Long companyId = getCompanyId(userId);
+
+                CompanySubscription subscription = companySubscriptionRepository
+                                .findFirstByCompanyIdAndStatusOrderByCreatedAtDesc(companyId, SubscriptionStatus.ACTIVE)
+                                .orElseThrow(() -> AppException.notFound("Công ty chưa đăng ký gói dịch vụ nào."));
+
+                ServicePackage servicePackage = servicePackageRepository.findById(subscription.getServicePackageId())
+                                .orElse(null);
+
+                List<SubscriptionUsage> usages = subscriptionUsageRepository
+                                .findByCompanySubscriptionId(subscription.getId());
+
+                List<ResSubscriptionUsageDTO> usageDTOs = usages.stream()
+                                .map(u -> {
+                                        Services svc = serviceRepository.findByCode(u.getFeatureCode()).orElse(null);
+                                        return ResSubscriptionUsageDTO.builder()
+                                                        .id(u.getId())
+                                                        .featureCode(u.getFeatureCode())
+                                                        .featureName(svc != null ? svc.getName() : null)
+                                                        .quantityTotal(u.getQuantityTotal())
+                                                        .quantityRemaining(u.getQuantityRemaining())
+                                                        .resetAt(u.getResetAt())
+                                                        .build();
+                                })
+                                .collect(Collectors.toList());
+
+                return ResCompanySubscriptionDTO.builder()
+                                .id(subscription.getId())
+                                .servicePackageId(subscription.getServicePackageId())
+                                .packageName(servicePackage != null ? servicePackage.getName() : null)
+                                .packageCode(servicePackage != null ? servicePackage.getCode() : null)
+                                .billingCycle(subscription.getBillingCycle())
+                                .status(subscription.getStatus())
+                                .startedAt(subscription.getStartedAt())
+                                .expiredAt(subscription.getExpiredAt())
+                                .createdAt(subscription.getCreatedAt())
+                                .usages(usageDTOs)
+                                .build();
+        }
+
+        @Override
+        @Transactional(readOnly = true)
+        public List<ResCompanyAddonDTO> getMyAddons(Long userId) {
+                Long companyId = getCompanyId(userId);
+
+                List<CompanyAddon> addons = companyAddonRepository
+                                .findByCompanyIdOrderByCreatedAtDesc(companyId);
+
+                return addons.stream().map(addon -> {
+                        AddonService addonSvc = addonServiceRepository.findById(addon.getAddonServiceId()).orElse(null);
+                        Services svc = addonSvc != null
+                                        ? serviceRepository.findById(addonSvc.getServiceId()).orElse(null)
+                                        : null;
+
+                        return ResCompanyAddonDTO.builder()
+                                        .id(addon.getId())
+                                        .addonServiceId(addon.getAddonServiceId())
+                                        .addonName(addonSvc != null ? addonSvc.getName() : null)
+                                        .addonCode(addonSvc != null ? addonSvc.getCode() : null)
+                                        .addonQuantity(addonSvc != null ? addonSvc.getQuantity() : null)
+                                        .serviceId(svc != null ? svc.getId() : null)
+                                        .serviceCode(svc != null ? svc.getCode() : null)
+                                        .serviceName(svc != null ? svc.getName() : null)
+                                        .serviceCategory(svc != null ? svc.getCategory() : null)
+                                        .serviceCategoryName(svc != null && svc.getCategory() != null
+                                                        ? svc.getCategory().getValue()
+                                                        : null)
+                                        .status(addon.getStatus())
+                                        .quantityTotal(addon.getQuantityTotal())
+                                        .quantityRemaining(addon.getQuantityRemaining())
+                                        .startedAt(addon.getStartedAt())
+                                        .expiredAt(addon.getExpiredAt())
+                                        .createdAt(addon.getCreatedAt())
+                                        .build();
+                }).collect(Collectors.toList());
+        }
+
+        @Override
+        @Transactional
+        public ResJobPostAddonDTO applyAddonToJobPost(Long userId, Long jobPostingId, ReqApplyAddonDTO request) {
+                Long companyId = getCompanyId(userId);
+
+                JobPosting jobPosting = jobPostingRepository.findByIdAndDeletedAtIsNull(jobPostingId)
+                                .orElseThrow(() -> AppException.notFound("Không tìm thấy tin tuyển dụng."));
+
+                if (!jobPosting.getCompanyId().equals(companyId)) {
+                        throw AppException.forbidden("Bạn không có quyền thao tác trên tin tuyển dụng này.");
                 }
-            }
+
+                CompanyAddon companyAddon = companyAddonRepository.findById(request.getCompanyAddonId())
+                                .orElseThrow(() -> AppException.notFound("Không tìm thấy dịch vụ lẻ."));
+
+                if (!companyAddon.getCompanyId().equals(companyId)) {
+                        throw AppException.forbidden("Dịch vụ lẻ này không thuộc công ty của bạn.");
+                }
+
+                if (companyAddon.getStatus() != SubscriptionStatus.ACTIVE) {
+                        throw AppException.badRequest("Dịch vụ lẻ này đã hết hiệu lực.");
+                }
+
+                if (companyAddon.getExpiredAt() != null && companyAddon.getExpiredAt().isBefore(LocalDateTime.now())) {
+                        throw AppException.badRequest("Dịch vụ lẻ này đã hết hạn sử dụng.");
+                }
+
+                if (companyAddon.getQuantityRemaining() <= 0) {
+                        throw AppException.badRequest("Dịch vụ lẻ này đã hết số lượng sử dụng.");
+                }
+
+                AddonService addonService = addonServiceRepository.findById(companyAddon.getAddonServiceId())
+                                .orElseThrow(() -> AppException.notFound("Không tìm thấy thông tin dịch vụ lẻ."));
+
+                LocalDateTime now = LocalDateTime.now();
+                LocalDateTime expiredAt = addonService.getDurationDays() != null
+                                ? now.plusDays(addonService.getDurationDays())
+                                : null;
+
+                JobPostAddon jobPostAddon = JobPostAddon.builder()
+                                .jobPostingId(jobPostingId)
+                                .companyAddonId(companyAddon.getId())
+                                .addonServiceId(addonService.getId())
+                                .startedAt(now)
+                                .expiredAt(expiredAt)
+                                .status(JobPostAddonStatus.ACTIVE)
+                                .build();
+
+                JobPostAddon saved = jobPostAddonRepository.save(jobPostAddon);
+
+                companyAddon.setQuantityRemaining(companyAddon.getQuantityRemaining() - 1);
+                companyAddonRepository.save(companyAddon);
+
+                return ResJobPostAddonDTO.builder()
+                                .id(saved.getId())
+                                .jobPostingId(saved.getJobPostingId())
+                                .companyAddonId(saved.getCompanyAddonId())
+                                .addonServiceId(saved.getAddonServiceId())
+                                .addonName(addonService.getName())
+                                .status(saved.getStatus())
+                                .startedAt(saved.getStartedAt())
+                                .expiredAt(saved.getExpiredAt())
+                                .createdAt(saved.getCreatedAt())
+                                .build();
         }
 
-        InterviewRound round = InterviewRound.builder()
-                .jobPostId(jobPostId)
-                .roundNumber(nextRoundNumber)
-                .roundName(request.getRoundName())
-                .description(request.getDescription())
-                .expectedDuration(request.getExpectedDuration())
-                .isFinal(request.getIsFinal() != null ? request.getIsFinal() : false)
+        private Long getCompanyId(Long userId) {
+                Long companyId = companyService.getCompanyIdByUserId(userId);
+                if (companyId == null) {
+                        throw AppException.badRequest("Chưa có hồ sơ công ty.");
+                }
+                return companyId;
+        }
+}
+package com.topviec.topviec_be.service.impl;
+
+import com.topviec.topviec_be.dto.request.ReqCreateOrderDTO;
+import com.topviec.topviec_be.dto.request.ReqUpdateOrderStatusDTO;
+import com.topviec.topviec_be.dto.response.ResCompanyDTO;
+import com.topviec.topviec_be.dto.response.ResOrderDTO;
+import com.topviec.topviec_be.dto.response.ResOrderItemDTO;
+import com.topviec.topviec_be.dto.response.ResServicePackageDetailDTO;
+import com.topviec.topviec_be.dto.response.ResultPaginationDTO;
+import com.topviec.topviec_be.entity.AddonService;
+import com.topviec.topviec_be.entity.Order;
+import com.topviec.topviec_be.entity.OrderItem;
+import com.topviec.topviec_be.entity.Services;
+import com.topviec.topviec_be.entity.ServicePackage;
+import com.topviec.topviec_be.entity.ServicePackageDetail;
+import com.topviec.topviec_be.entity.CompanySubscription;
+import com.topviec.topviec_be.entity.SubscriptionUsage;
+import com.topviec.topviec_be.entity.CompanyAddon;
+import com.topviec.topviec_be.enums.services.BillingCycle;
+import com.topviec.topviec_be.enums.services.SubscriptionStatus;
+import com.topviec.topviec_be.enums.services.OrderItemType;
+import com.topviec.topviec_be.enums.services.OrderStatus;
+import com.topviec.topviec_be.enums.services.OrderType;
+import com.topviec.topviec_be.exception.AppException;
+import com.topviec.topviec_be.repository.AddonServiceRepository;
+import com.topviec.topviec_be.repository.OrderRepository;
+import com.topviec.topviec_be.repository.ServicePackageRepository;
+import com.topviec.topviec_be.repository.ServicePackageDetailRepository;
+import com.topviec.topviec_be.repository.ServiceRepository;
+import com.topviec.topviec_be.repository.CompanySubscriptionRepository;
+import com.topviec.topviec_be.repository.SubscriptionUsageRepository;
+import com.topviec.topviec_be.repository.CompanyAddonRepository;
+import com.topviec.topviec_be.service.CompanyService;
+import com.topviec.topviec_be.service.OrderService;
+import com.topviec.topviec_be.specification.OrderSpecification;
+
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
+
+@Service
+@RequiredArgsConstructor
+public class OrderServiceImpl implements OrderService {
+
+    private final OrderRepository orderRepository;
+    private final ServicePackageRepository servicePackageRepository;
+    private final ServicePackageDetailRepository servicePackageDetailRepository;
+    private final ServiceRepository serviceRepository;
+    private final AddonServiceRepository addonServiceRepository;
+    private final CompanyService companyService;
+    private final CompanySubscriptionRepository companySubscriptionRepository;
+    private final SubscriptionUsageRepository subscriptionUsageRepository;
+    private final CompanyAddonRepository companyAddonRepository;
+
+    @Override
+    @Transactional
+    public ResOrderDTO createOrder(Long userId, ReqCreateOrderDTO request) {
+        Long companyId = companyService.getCompanyIdByUserId(userId);
+        if (companyId == null) {
+            throw AppException.badRequest("Chưa có hồ sơ công ty. Không thể thực hiện mua hàng.");
+        }
+
+        BigDecimal unitPrice = BigDecimal.ZERO;
+        ServicePackage servicePackage = null;
+        AddonService addonService = null;
+        OrderItemType itemType;
+
+        if (request.getType() == OrderType.SUBSCRIPTION) {
+            itemType = OrderItemType.SUBSCRIPTION;
+            servicePackage = servicePackageRepository.findById(request.getPackageId())
+                    .orElseThrow(() -> AppException.notFound("Không tìm thấy gói dịch vụ."));
+            if (servicePackage.getIsActive() == null || !servicePackage.getIsActive()) {
+                throw AppException.badRequest("Gói dịch vụ này không còn hoạt động.");
+            }
+            unitPrice = servicePackage.getPrice();
+        } else {
+            itemType = OrderItemType.ADDON;
+            addonService = addonServiceRepository.findById(request.getPackageId())
+                    .orElseThrow(() -> AppException.notFound("Không tìm thấy dịch vụ lẻ."));
+            if (addonService.getIsActive() == null || !addonService.getIsActive()) {
+                throw AppException.badRequest("Dịch vụ lẻ này không còn hoạt động.");
+            }
+            unitPrice = addonService.getPrice();
+        }
+
+        BigDecimal totalAmount = unitPrice.multiply(BigDecimal.valueOf(request.getQuantity()));
+
+        Order order = Order.builder()
+                .companyId(companyId)
+                .orderCode("ORD-" + System.currentTimeMillis())
+                .type(request.getType())
+                .totalAmount(totalAmount)
+                .status(OrderStatus.PAID)
+                .paymentMethod(request.getPaymentMethod())
+                .paidAt(LocalDateTime.now())
                 .createdBy(userId)
                 .build();
 
-        round = roundRepository.save(round);
+        Order savedOrder = orderRepository.save(order);
 
-        if (request.getInterviewers() != null) {
-            for (ReqCreateInterviewRoundDTO.InterviewerDTO dto : request.getInterviewers()) {
-                InterviewRoundInterviewer interviewer = InterviewRoundInterviewer.builder()
-                        .roundId(round.getId())
-                        .interviewerName(dto.getName())
-                        .interviewerEmail(dto.getEmail())
-                        .interviewerPhone(dto.getPhone())
-                        .createdBy(userId)
-                        .build();
-                interviewerRepository.save(interviewer);
-            }
-        }
-
-        return toRoundResponse(round);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<ResInterviewRoundDTO> getRounds(Long jobPostId, Long companyId) {
-        findJobAndValidateOwnership(jobPostId, companyId);
-
-        List<InterviewRound> rounds = roundRepository
-                .findByJobPostIdAndDeletedAtIsNullOrderByRoundNumberAsc(jobPostId);
-
-        return rounds.stream().map(this::toRoundResponse).toList();
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public ResInterviewRoundDTO getRoundDetail(Long roundId) {
-        InterviewRound round = roundRepository.findByIdAndDeletedAtIsNull(roundId)
-                .orElseThrow(() -> AppException.notFound("Không tìm thấy vòng phỏng vấn"));
-
-        return toRoundResponse(round);
-    }
-
-    @Override
-    @Transactional
-    public ResInterviewRoundDTO updateRound(Long roundId, Long userId, Long companyId,
-            ReqUpdateInterviewRoundDTO request) {
-
-        InterviewRound round = roundRepository.findByIdAndDeletedAtIsNull(roundId)
-                .orElseThrow(() -> AppException.notFound("Không tìm thấy vòng phỏng vấn"));
-
-        findJobAndValidateOwnership(round.getJobPostId(), companyId);
-
-        if (interviewRepository.findByApplicationIdAndRoundIdAndDeletedAtIsNull(null, roundId).isPresent()) {
-            List<Interview> existingInterviews = interviewRepository
-                    .findByJobPostId(round.getJobPostId(), roundId, null);
-            if (!existingInterviews.isEmpty()) {
-                throw AppException.badRequest("Không thể sửa vòng phỏng vấn đã có ứng viên tham gia");
-            }
-        }
-
-        if (request.getRoundName() != null) {
-            round.setRoundName(request.getRoundName());
-        }
-        if (request.getDescription() != null) {
-            round.setDescription(request.getDescription());
-        }
-        if (request.getExpectedDuration() != null) {
-            round.setExpectedDuration(request.getExpectedDuration());
-        }
-        if (request.getIsFinal() != null) {
-            if (Boolean.TRUE.equals(request.getIsFinal())) {
-                List<InterviewRound> existingRounds = roundRepository
-                        .findByJobPostIdAndDeletedAtIsNullOrderByRoundNumberAsc(round.getJobPostId());
-                for (InterviewRound r : existingRounds) {
-                    if (Boolean.TRUE.equals(r.getIsFinal()) && !r.getId().equals(roundId)) {
-                        r.setIsFinal(false);
-                        r.setUpdatedBy(userId);
-                        roundRepository.save(r);
-                    }
-                }
-            }
-            round.setIsFinal(request.getIsFinal());
-        }
-
-        round.setUpdatedBy(userId);
-        round = roundRepository.save(round);
-
-        if (request.getInterviewers() != null && !request.getInterviewers().isEmpty()) {
-            interviewerRepository.deleteByRoundId(roundId);
-            interviewerRepository.flush(); // Ép flush xuống DB trước khi insert
-            for (ReqCreateInterviewRoundDTO.InterviewerDTO dto : request.getInterviewers()) {
-                InterviewRoundInterviewer interviewer = InterviewRoundInterviewer.builder()
-                        .roundId(round.getId())
-                        .interviewerName(dto.getName())
-                        .interviewerEmail(dto.getEmail())
-                        .interviewerPhone(dto.getPhone())
-                        .createdBy(userId)
-                        .build();
-                interviewerRepository.save(interviewer);
-            }
-        }
-
-        return toRoundResponse(round);
-    }
-
-    @Override
-    @Transactional
-    public void deleteRound(Long roundId, Long userId, Long companyId) {
-        InterviewRound round = roundRepository.findByIdAndDeletedAtIsNull(roundId)
-                .orElseThrow(() -> AppException.notFound("Không tìm thấy vòng phỏng vấn"));
-
-        findJobAndValidateOwnership(round.getJobPostId(), companyId);
-
-        List<Interview> existingInterviews = interviewRepository
-                .findByJobPostId(round.getJobPostId(), roundId, null);
-        if (!existingInterviews.isEmpty()) {
-            throw AppException.badRequest("Không thể xóa vòng phỏng vấn đã có ứng viên tham gia");
-        }
-
-        // Xóa dữ liệu liên quan theo thứ tự để tránh vi phạm FK
-        interviewerRepository.deleteByRoundId(roundId); // xóa danh sách interviewer
-        slotRepository.deleteByRoundId(roundId); // xóa các slot đề xuất
-        roundRepository.delete(round); // xóa thật vòng phỏng vấn
-        roundRepository.flush(); // Đẩy database state ngay lập tức
-
-        // Sắp xếp lại thứ tự vòng phỏng vấn
-        List<InterviewRound> remainingRounds = roundRepository
-                .findByJobPostIdAndDeletedAtIsNullOrderByRoundNumberAsc(round.getJobPostId());
-        int newNumber = 1;
-        for (InterviewRound r : remainingRounds) {
-            r.setRoundNumber(newNumber++);
-            roundRepository.save(r);
-        }
-    }
-
-    // =========================================================================
-    // Lịch phỏng vấn — Cách 1: NTT đặt lịch thủ công
-    // =========================================================================
-
-    @Override
-    @Transactional
-    public ResInterviewScheduleDTO createSchedule(Long roundId, Long userId, Long companyId,
-            ReqCreateInterviewScheduleDTO request) {
-
-        InterviewRound round = roundRepository.findByIdAndDeletedAtIsNull(roundId)
-                .orElseThrow(() -> AppException.notFound("Không tìm thấy vòng phỏng vấn"));
-
-        findJobAndValidateOwnership(round.getJobPostId(), companyId);
-
-        Application application = applicationRepository.findById(request.getApplicationId())
-                .orElseThrow(() -> AppException.notFound("Không tìm thấy đơn ứng tuyển"));
-
-        if (!ApplicationStatus.INTERVIEWING.getValue().equals(application.getStatus())) {
-            throw AppException.badRequest("Ứng viên không ở trạng thái INTERVIEWING");
-        }
-
-        softDeleteExistingInterview(application.getId(), roundId, userId);
-
-        Interview interview = Interview.builder()
-                .applicationId(application.getId())
-                .roundId(roundId)
-                .scheduledAt(request.getScheduledAt())
-                .durationMinutes(request.getDurationMinutes())
-                .interviewType(request.getInterviewType())
-                .location(request.getLocation())
-                .meetingLink(request.getMeetingLink())
-                .interviewerNote(request.getInterviewerNote())
-                .status(InterviewStatus.SCHEDULED.getValue())
-                .confirmedByCandidate(false)
-                .scheduledBy(userId)
+        OrderItem item = OrderItem.builder()
+                .orderId(savedOrder.getId())
+                .itemType(itemType)
+                .servicePackageId(servicePackage != null ? servicePackage.getId() : null)
+                .addonServiceId(addonService != null ? addonService.getId() : null)
+                .quantity(request.getQuantity())
+                .unitPrice(unitPrice)
+                .totalPrice(totalAmount)
+                .billingCycle(servicePackage != null ? servicePackage.getBillingCycle() : null)
+                .durationDays(addonService != null ? addonService.getDurationDays() : null)
                 .build();
 
-        interview = interviewRepository.save(interview);
+        List<OrderItem> items = new ArrayList<>();
+        items.add(item);
+        savedOrder.setOrderItems(items);
 
-        log.info("📧 [TODO] Gửi email xác nhận lịch PV cho application={}, round={}", application.getId(), roundId);
+        // TODO: Sẽ có phần Gateway thanh toán (VNPAY/MOMO) ở đây để nhận callback
+        // Tạm thời giả lập thanh toán thành công và kích hoạt ngay
+        if (itemType == OrderItemType.SUBSCRIPTION && servicePackage != null) {
+            activateSubscription(companyId, savedOrder.getId(), servicePackage);
+        } else if (itemType == OrderItemType.ADDON && addonService != null) {
+            activateAddon(companyId, savedOrder.getId(), addonService, request.getQuantity());
+        }
 
-        return toScheduleResponse(interview, round, application);
+        return mapToDTO(savedOrder);
     }
 
-    // =========================================================================
-    // Lịch phỏng vấn — Cách 2: Tạo slot cho UV chọn
-    // =========================================================================
+    private void activateSubscription(Long companyId, Long orderId, ServicePackage servicePackage) {
+        CompanySubscription sub = CompanySubscription.builder()
+                .companyId(companyId)
+                .servicePackageId(servicePackage.getId())
+                .orderId(orderId)
+                .status(SubscriptionStatus.ACTIVE)
+                .billingCycle(servicePackage.getBillingCycle())
+                .startedAt(LocalDateTime.now())
+                .expiredAt(servicePackage.getBillingCycle() == BillingCycle.MONTHLY
+                        ? LocalDateTime.now().plusMonths(1)
+                        : LocalDateTime.now().plusYears(1))
+                .build();
 
-    @Override
-    @Transactional
-    public void createSlots(Long roundId, Long userId, Long companyId,
-            ReqCreateInterviewSlotsDTO request) {
+        CompanySubscription savedSub = companySubscriptionRepository.save(sub);
 
-        InterviewRound round = roundRepository.findByIdAndDeletedAtIsNull(roundId)
-                .orElseThrow(() -> AppException.notFound("Không tìm thấy vòng phỏng vấn"));
+        // Tạo SubscriptionUsage từ ServicePackageDetails (thay thế JSON features cũ)
+        List<ServicePackageDetail> details = servicePackageDetailRepository
+                .findByServicePackageId(servicePackage.getId());
 
-        findJobAndValidateOwnership(round.getJobPostId(), companyId);
+        for (ServicePackageDetail detail : details) {
+            Services svc = serviceRepository.findById(detail.getServiceId()).orElse(null);
+            if (svc == null) continue;
 
-        if (request.getDeadline().isBefore(LocalDateTime.now())) {
-            throw AppException.badRequest("Deadline phải là thời gian trong tương lai");
-        }
-
-        // Check duplicate: slot đã tồn tại cho round này chưa
-        boolean alreadyHasSlots = slotRepository.existsByRoundId(roundId);
-        if (alreadyHasSlots) {
-            throw AppException.badRequest("Vòng phỏng vấn này đã có slot rồi");
-        }
-
-        // Tạo slots 1 lần cho round — không còn loop theo UV
-        for (ReqCreateInterviewSlotsDTO.SlotDTO slotDto : request.getSlots()) {
-            if (slotDto.getEndTime().isBefore(slotDto.getStartTime()) ||
-                    slotDto.getEndTime().isEqual(slotDto.getStartTime())) {
-                throw AppException.badRequest("Giờ kết thúc phải sau giờ bắt đầu");
-            }
-            InterviewSlot slot = InterviewSlot.builder()
-                    .roundId(roundId)
-                    .startTime(slotDto.getStartTime())
-                    .endTime(slotDto.getEndTime())
-                    .interviewType(slotDto.getInterviewType())
-                    .location(slotDto.getLocation())
-                    .meetingLink(slotDto.getMeetingLink())
-                    .maxCandidates(slotDto.getMaxCandidates())
-                    .interviewerName(slotDto.getInterviewerName())
+            SubscriptionUsage usage = SubscriptionUsage.builder()
+                    .companySubscriptionId(savedSub.getId())
+                    .companyId(companyId)
+                    .featureCode(svc.getCode())
+                    .quantityTotal(detail.getQuantity())
+                    .quantityRemaining(detail.getQuantity())
+                    .resetAt(savedSub.getExpiredAt())
                     .build();
-            slotRepository.save(slot);
-        }
 
-        Duration ttl = Duration.between(LocalDateTime.now(), request.getDeadline());
-
-        // Loop UV chỉ để: validate, lưu reminder Redis, generate token, đổi status
-        for (Long applicationId : request.getApplicationIds()) {
-            Application application = applicationRepository.findById(applicationId)
-                    .orElseThrow(() -> AppException.notFound("Không tìm thấy đơn ứng tuyển: " + applicationId));
-
-            if (!ApplicationStatus.INTERVIEWING.getValue().equals(application.getStatus())) {
-                throw AppException.badRequest("Ứng viên " + applicationId + " không ở trạng thái INTERVIEWING");
-            }
-
-            // Lưu reminder info vào Redis thay vì lưu trong Interview entity
-            tokenService.storeReminderInfo(applicationId, roundId, request.getDeadline(), ttl);
-
-            String token = tokenService.generateInterviewSlotToken(applicationId, roundId, ttl);
-            application.setStatus(ApplicationStatus.SCHEDULE_PENDING.getValue());
-            applicationRepository.save(application);
-
-            log.info("📧 [TODO] Gửi email slot cho application={}, round={}, token={}", applicationId, roundId, token);
+            subscriptionUsageRepository.save(usage);
         }
     }
 
-    // =========================================================================
-    // UV chọn slot (public, không cần auth)
-    // =========================================================================
-
-    @Override
-    @Transactional
-    public String confirmSlot(String token, Long slotId) {
-        String payload = tokenService.verifyInterviewSlotToken(token);
-        String[] parts = payload.split(":");
-        Long tokenApplicationId = Long.parseLong(parts[0]);
-        Long tokenRoundId = Long.parseLong(parts[1]);
-
-        InterviewSlot slot = slotRepository.findById(slotId)
-                .orElseThrow(() -> AppException.notFound("Không tìm thấy ca phỏng vấn"));
-
-        // Chỉ validate slot thuộc đúng round (không còn applicationId trong slot)
-        if (!slot.getRoundId().equals(tokenRoundId)) {
-            throw AppException.badRequest("Ca phỏng vấn không thuộc vòng phỏng vấn này");
-        }
-
-        // Check UV đã chọn slot cho round này chưa (thay vì check isSelected trên
-        // slot)
-        boolean alreadySelected = interviewRepository
-                .existsByApplicationIdAndRoundIdAndDeletedAtIsNull(tokenApplicationId, tokenRoundId);
-        if (alreadySelected) {
-            throw AppException.badRequest("Bạn đã chọn lịch phỏng vấn cho vòng này rồi");
-        }
-
-        // Kiểm tra slot còn chỗ không
-        if (slot.getRegisteredCount() >= slot.getMaxCandidates()) {
-            throw AppException.badRequest("Ca phỏng vấn này đã đủ số lượng ứng viên");
-        }
-
-        // Tạo Interview record — bỏ reminderCount, không còn update isSelected trên
-        // slot
-        Interview interview = Interview.builder()
-                .applicationId(tokenApplicationId)
-                .roundId(tokenRoundId)
-                .slotId(slot.getId())
-                .scheduledAt(slot.getStartTime())
-                .interviewType(slot.getInterviewType())
-                .location(slot.getLocation())
-                .meetingLink(slot.getMeetingLink())
-                .status(InterviewStatus.CONFIRMED.getValue())
-                .confirmedByCandidate(true)
-                .scheduledBy(0L)
+    private void activateAddon(Long companyId, Long orderId, AddonService addonService, int quantity) {
+        CompanyAddon companyAddon = CompanyAddon.builder()
+                .companyId(companyId)
+                .addonServiceId(addonService.getId())
+                .orderId(orderId)
+                .status(SubscriptionStatus.ACTIVE)
+                .quantityTotal(quantity * addonService.getQuantity())
+                .quantityRemaining(quantity * addonService.getQuantity())
+                .startedAt(LocalDateTime.now())
+                .expiredAt(addonService.getDurationDays() != null
+                        ? LocalDateTime.now().plusDays(addonService.getDurationDays())
+                        : null)
                 .build();
-
-        interviewRepository.save(interview);
-
-        // Tăng registeredCount của slot
-        slot.setRegisteredCount(slot.getRegisteredCount() + 1);
-        slotRepository.save(slot);
-
-        Application application = applicationRepository.findById(tokenApplicationId).orElse(null);
-        if (application != null) {
-            application.setStatus(ApplicationStatus.INTERVIEWING.getValue());
-            applicationRepository.save(application);
-        }
-
-        // Xóa token + reminder info khỏi Redis sau khi UV chọn slot thành công
-        tokenService.invalidateInterviewSlotToken(token);
-        tokenService.deleteReminderInfo(tokenApplicationId, tokenRoundId);
-
-        log.info("📧 [TODO] Gửi email xác nhận slot cho application={}, round={}", tokenApplicationId, tokenRoundId);
-
-        return "Xác nhận lịch phỏng vấn thành công!";
-    }
-
-    @Override
-    @Transactional
-    public String confirmScheduleByCandidate(Long scheduleId, Long userId) {
-        Interview interview = interviewRepository.findByIdAndDeletedAtIsNull(scheduleId)
-                .orElseThrow(() -> AppException.notFound("Không tìm thấy lịch phỏng vấn"));
-
-        applicationRepository.findByIdAndCandidateUserId(interview.getApplicationId(), userId)
-                .orElseThrow(() -> AppException.forbidden("Bạn không có quyền xác nhận lịch phỏng vấn này"));
-
-        if (!InterviewStatus.SCHEDULED.getValue().equals(interview.getStatus())) {
-            throw AppException.badRequest("Lịch phỏng vấn đang không ở trạng thái chờ xác nhận");
-        }
-
-        interview.setStatus(InterviewStatus.CONFIRMED.getValue());
-        interview.setConfirmedByCandidate(true);
-        interviewRepository.save(interview);
-
-        return "Xác nhận lịch phỏng vấn thành công!";
+        companyAddonRepository.save(companyAddon);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public ResConfirmUpdateInfoDTO getConfirmUpdateInfo(String token) {
-        String scheduleIdStr = tokenService.verifyInterviewUpdateToken(token);
-        Long scheduleId = Long.parseLong(scheduleIdStr);
-
-        Interview interview = interviewRepository.findByIdAndDeletedAtIsNull(scheduleId)
-                .orElseThrow(() -> AppException.notFound("Không tìm thấy lịch phỏng vấn"));
-
-        InterviewRound round = interview.getRound();
-
-        String jobTitle = "Vị trí ứng tuyển";
-        String companyName = "Nhà tuyển dụng";
-        if (round != null) {
-            JobPosting jobPosting = jobPostingRepository.findById(round.getJobPostId()).orElse(null);
-            if (jobPosting != null) {
-                jobTitle = jobPosting.getTitle();
-                Company company = companyRepository.findById(jobPosting.getCompanyId()).orElse(null);
-                if (company != null) {
-                    companyName = company.getName();
-                }
-            }
+    public ResultPaginationDTO getMyOrders(
+            Long userId,
+            String keyword, OrderType type, OrderStatus status,
+            String dateFilter, String startDate, String endDate,
+            Pageable pageable) {
+        Long companyId = companyService.getCompanyIdByUserId(userId);
+        if (companyId == null) {
+            throw AppException.badRequest("Chưa có hồ sơ công ty.");
         }
 
-        return ResConfirmUpdateInfoDTO.builder()
-                .scheduleId(interview.getId())
-                .companyName(companyName)
-                .jobTitle(jobTitle)
-                .roundNumber(round != null ? round.getRoundNumber() : null)
-                .roundName(round != null ? round.getRoundName() : null)
-                .scheduledAt(interview.getScheduledAt())
-                .durationMinutes(interview.getDurationMinutes())
-                .interviewType(interview.getInterviewType())
-                .location(interview.getLocation())
-                .meetingLink(interview.getMeetingLink())
-                .status(interview.getStatus())
-                .confirmedByCandidate(interview.getConfirmedByCandidate())
-                .build();
-    }
+        LocalDateTime startDt = parseDateFilter(dateFilter, startDate, true);
+        LocalDateTime endDt = parseDateFilter(dateFilter, endDate, false);
 
-    @Override
-    @Transactional
-    public String confirmUpdatedSchedule(String token) {
-        String scheduleIdStr = tokenService.verifyInterviewUpdateToken(token);
-        Long scheduleId = Long.parseLong(scheduleIdStr);
+        Specification<Order> spec = OrderSpecification.withFilter(keyword, type, status, startDt, endDt)
+                .and(OrderSpecification.hasCompanyId(companyId));
 
-        Interview interview = interviewRepository.findByIdAndDeletedAtIsNull(scheduleId)
-                .orElseThrow(() -> AppException.notFound("Không tìm thấy lịch phỏng vấn"));
-
-        if (!InterviewStatus.SCHEDULED.getValue().equals(interview.getStatus())) {
-            throw AppException.badRequest("Lịch phỏng vấn đang không ở trạng thái chờ xác nhận");
-        }
-
-        interview.setStatus(InterviewStatus.CONFIRMED.getValue());
-        interview.setConfirmedByCandidate(true);
-        interviewRepository.save(interview);
-
-        tokenService.invalidateInterviewUpdateToken(token);
-
-        return "Xác nhận lịch phỏng vấn thành công!";
-    }
-
-    // =========================================================================
-    // Danh sách lịch PV
-    // =========================================================================
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<ResInterviewScheduleDTO> getSchedules(Long jobPostId, Long companyId,
-            Long roundId, String status, String search) {
-        findJobAndValidateOwnership(jobPostId, companyId);
-
-        List<Interview> interviews = interviewRepository.findByJobPostId(jobPostId, roundId, status);
-
-        List<ResInterviewScheduleDTO> result = interviews.stream().map(i -> {
-            InterviewRound round = i.getRound();
-            Application application = i.getApplication();
-            return toScheduleResponse(i, round, application);
-        }).toList();
-
-        if (search != null && !search.isBlank()) {
-            String keyword = search.toLowerCase().trim();
-            result = result.stream()
-                    .filter(dto -> dto.getCandidateName() != null
-                            && dto.getCandidateName().toLowerCase().contains(keyword))
-                    .toList();
-        }
-
-        return result;
+        Page<Order> page = orderRepository.findAll(spec, pageable);
+        return buildPaginationResult(page, pageable);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<ResInterviewScheduleDTO> getMyInterviews(Long userId, Long applicationId) {
-        Application application = applicationRepository.findByIdAndCandidateUserId(applicationId, userId)
-                .orElseThrow(() -> AppException.notFound("Không tìm thấy đơn ứng tuyển của bạn"));
+    public ResOrderDTO getMyOrderById(Long userId, Long orderId) {
+        Long companyId = companyService.getCompanyIdByUserId(userId);
+        if (companyId == null) {
+            throw AppException.badRequest("Chưa có hồ sơ công ty.");
+        }
 
-        List<Interview> interviews = interviewRepository
-                .findByApplicationIdAndDeletedAtIsNullOrderByRoundId(application.getId());
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> AppException.notFound("Không tìm thấy đơn hàng."));
 
-        return interviews.stream().map(i -> {
-            InterviewRound round = i.getRound();
-            return toScheduleResponse(i, round, application);
-        }).toList();
+        if (!order.getCompanyId().equals(companyId)) {
+            throw AppException.badRequest("Bạn không có quyền truy cập đơn hàng này.");
+        }
+
+        return mapToDTO(order);
     }
 
     @Override
     @Transactional
-    public ResInterviewScheduleDTO updateSchedule(Long scheduleId, Long userId, Long companyId,
-            ReqUpdateInterviewScheduleDTO request) {
-
-        Interview interview = interviewRepository.findByIdAndDeletedAtIsNull(scheduleId)
-                .orElseThrow(() -> AppException.notFound("Không tìm thấy lịch phỏng vấn"));
-
-        InterviewRound round = interview.getRound();
-        findJobAndValidateOwnership(round.getJobPostId(), companyId);
-
-        if (InterviewStatus.COMPLETED.getValue().equals(interview.getStatus())) {
-            throw AppException.badRequest("Buổi phỏng vấn đã diễn ra, không thể sửa");
+    public ResOrderDTO cancelOrder(Long userId, Long orderId) {
+        Long companyId = companyService.getCompanyIdByUserId(userId);
+        if (companyId == null) {
+            throw AppException.badRequest("Chưa có hồ sơ công ty.");
         }
 
-        LocalDateTime oldScheduledAt = interview.getScheduledAt();
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> AppException.notFound("Không tìm thấy đơn hàng."));
 
-        if (request.getScheduledAt() != null) {
-            interview.setScheduledAt(request.getScheduledAt());
-        }
-        if (request.getInterviewType() != null) {
-            interview.setInterviewType(request.getInterviewType());
-        }
-        if (request.getLocation() != null) {
-            interview.setLocation(request.getLocation());
-        }
-        if (request.getMeetingLink() != null) {
-            interview.setMeetingLink(request.getMeetingLink());
-        }
-        if (request.getInterviewerNote() != null) {
-            interview.setInterviewerNote(request.getInterviewerNote());
+        if (!order.getCompanyId().equals(companyId)) {
+            throw AppException.badRequest("Bạn không có quyền thao tác trên đơn hàng này.");
         }
 
-        // Khi lên lịch mới (từ PENDING) hoặc đổi lịch đã có (SCHEDULED/CONFIRMED) →
-        // chuyển về SCHEDULED
-        // để UV xác nhận lại
-        String currentStatus = interview.getStatus();
-        if (InterviewStatus.PENDING.getValue().equals(currentStatus)
-                || InterviewStatus.SCHEDULED.getValue().equals(currentStatus)
-                || InterviewStatus.CONFIRMED.getValue().equals(currentStatus)) {
-            interview.setStatus(InterviewStatus.SCHEDULED.getValue());
-            interview.setConfirmedByCandidate(false);
+        if (order.getStatus() != OrderStatus.PENDING) {
+            throw AppException.badRequest("Chỉ có thể hủy đơn hàng đang trong trạng thái chờ thanh toán (PENDING).");
         }
 
-        interview.setUpdatedBy(userId);
-        interview = interviewRepository.save(interview);
-
-        log.info("📧 Gửi email thông báo thay đổi lịch PV schedule={}", scheduleId);
-
-        try {
-            Application application = interview.getApplication();
-            User candidateUser = userRepository.findById(application.getCandidateUserId()).orElse(null);
-
-            if (candidateUser != null) {
-                String candidateName = getCandidateName(application.getCandidateUserId());
-                String candidateEmail = candidateUser.getEmail();
-
-                JobPosting jobPosting = jobPostingRepository.findById(round.getJobPostId()).orElse(null);
-                String jobTitle = jobPosting != null ? jobPosting.getTitle() : "Vị trí ứng tuyển";
-
-                String companyName = "Nhà tuyển dụng";
-                if (jobPosting != null) {
-                    Company company = companyRepository.findById(jobPosting.getCompanyId()).orElse(null);
-                    if (company != null) {
-                        companyName = company.getName();
-                    }
-                }
-
-                DateTimeFormatter oldFormatter = DateTimeFormatter.ofPattern("HH:mm, dd/MM/yyyy");
-                String oldScheduleStr = oldScheduledAt != null ? oldScheduledAt.format(oldFormatter) : "";
-
-                DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm");
-                String newScheduleTimeStr = interview.getScheduledAt() != null
-                        ? interview.getScheduledAt().format(timeFormatter)
-                        : "";
-
-                DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-                String dow = "";
-                if (interview.getScheduledAt() != null) {
-                    int dowValue = interview.getScheduledAt().getDayOfWeek().getValue();
-                    dow = dowValue == 7 ? "Chủ Nhật" : "Thứ " + (dowValue + 1);
-                }
-                String newScheduleDateStr = dow + ", "
-                        + (interview.getScheduledAt() != null ? interview.getScheduledAt().format(dateFormatter) : "");
-
-                String interviewTypeStr = "Phỏng vấn";
-                if (interview.getInterviewType() != null) {
-                    try {
-                        interviewTypeStr = InterviewType.fromValue(interview.getInterviewType()).name(); // or
-                                                                                                         // predefined
-                                                                                                         // mapping
-                    } catch (Exception ignored) {
-                    }
-                }
-
-                String interviewLocation = interviewTypeStr
-                        + (interview.getLocation() != null ? " - " + interview.getLocation() : "");
-
-                String interviewerName = interview.getInterviewerNote();
-                if (interviewerName == null || interviewerName.isBlank()) {
-                    interviewerName = "Ban Tuyển Dụng";
-                }
-
-                String token = tokenService.generateInterviewUpdateToken(interview.getId(),
-                        Duration.ofDays(interviewUpdateTtlDays));
-
-                String confirmLink = confirmInterviewUrl + "?token=" + token;
-
-                emailService.sendUpdateScheduleEmail(candidateEmail, candidateName, companyName, jobTitle,
-                        oldScheduleStr, newScheduleTimeStr, newScheduleDateStr, interviewLocation, interviewerName,
-                        confirmLink);
-            }
-        } catch (Exception e) {
-            log.error("Lỗi khi gửi email thông báo cập nhật lịch PV cho schedule={}", scheduleId, e);
-        }
-
-        return toScheduleResponse(interview, round, interview.getApplication());
-    }
-
-    @Override
-    @Transactional
-    public void deleteSchedule(Long scheduleId, Long userId, Long companyId) {
-        Interview interview = interviewRepository.findByIdAndDeletedAtIsNull(scheduleId)
-                .orElseThrow(() -> AppException.notFound("Không tìm thấy lịch phỏng vấn"));
-
-        InterviewRound round = interview.getRound();
-        findJobAndValidateOwnership(round.getJobPostId(), companyId);
-
-        if (InterviewStatus.COMPLETED.getValue().equals(interview.getStatus())) {
-            throw AppException.badRequest("Buổi phỏng vấn đã diễn ra, không thể hủy");
-        }
-
-        interview.setStatus(InterviewStatus.CANCELLED.getValue());
-        // Không set deletedAt khi hủy lịch — chỉ đổi status để lịch vẫn hiển thị trong
-        // danh sách
-        // deletedAt chỉ dùng khi xóa hẳn khỏi hệ thống
-        interview.setUpdatedBy(userId);
-        interviewRepository.save(interview);
-
-        log.info("📧 Gửi email thông báo hủy lịch PV schedule={}", scheduleId);
-
-        try {
-            Application application = interview.getApplication();
-            User candidateUser = userRepository.findById(application.getCandidateUserId()).orElse(null);
-
-            if (candidateUser != null) {
-                String candidateName = getCandidateName(application.getCandidateUserId());
-                String candidateEmail = candidateUser.getEmail();
-
-                JobPosting jobPosting = jobPostingRepository.findById(round.getJobPostId()).orElse(null);
-                String jobTitle = jobPosting != null ? jobPosting.getTitle() : "Vị trí ứng tuyển";
-
-                String companyName = "Nhà tuyển dụng";
-                if (jobPosting != null) {
-                    Company company = companyRepository.findById(jobPosting.getCompanyId()).orElse(null);
-                    if (company != null)
-                        companyName = company.getName();
-                }
-
-                DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm");
-                String scheduledTime = interview.getScheduledAt() != null
-                        ? interview.getScheduledAt().format(timeFormatter)
-                        : "";
-
-                DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-                String dow = "";
-                if (interview.getScheduledAt() != null) {
-                    int dowValue = interview.getScheduledAt().getDayOfWeek().getValue();
-                    dow = dowValue == 7 ? "Chủ Nhật" : "Thứ " + (dowValue + 1);
-                }
-                String scheduledDate = dow + ", "
-                        + (interview.getScheduledAt() != null ? interview.getScheduledAt().format(dateFormatter) : "");
-
-                String roundName = round != null
-                        ? "Vòng " + round.getRoundNumber()
-                                + (round.getRoundName() != null ? " - " + round.getRoundName() : "")
-                        : "Vòng phỏng vấn";
-
-                emailService.sendCancelScheduleEmail(candidateEmail, candidateName, companyName, jobTitle,
-                        scheduledTime, scheduledDate, roundName);
-            }
-        } catch (Exception e) {
-            log.error("Lỗi khi gửi email thông báo hủy lịch PV cho schedule={}", scheduleId, e);
-        }
-    }
-
-    // =========================================================================
-    // Kết quả phỏng vấn
-    // =========================================================================
-
-    @Override
-    @Transactional
-    public ResInterviewResultDTO createResult(Long scheduleId, Long userId, Long companyId,
-            ReqInterviewResultDTO request) {
-
-        Interview interview = interviewRepository.findByIdAndDeletedAtIsNull(scheduleId)
-                .orElseThrow(() -> AppException.notFound("Không tìm thấy lịch phỏng vấn"));
-
-        InterviewRound round = interview.getRound();
-        findJobAndValidateOwnership(round.getJobPostId(), companyId);
-
-        if (interview.getScheduledAt().isAfter(LocalDateTime.now())) {
-            throw AppException.badRequest("Buổi phỏng vấn chưa diễn ra");
-        }
-
-        if (resultRepository.existsByInterviewId(scheduleId)) {
-            throw AppException.badRequest("Đã có kết quả cho buổi phỏng vấn này");
-        }
-
-        interview.setStatus(InterviewStatus.COMPLETED.getValue());
-        interview.setUpdatedBy(userId);
-        interviewRepository.save(interview);
-
-        InterviewResultStatus resultStatus = InterviewResultStatus.fromValue(request.getResult());
-
-        InterviewResult result = InterviewResult.builder()
-                .interviewId(scheduleId)
-                .result(resultStatus.getValue())
-                .rating(request.getRating())
-                .note(request.getNote())
-                .notifyCandidate(request.getNotifyCandidate() != null ? request.getNotifyCandidate() : false)
-                .evaluatedBy(userId)
-                .evaluatedAt(LocalDateTime.now())
-                .build();
-
-        result = resultRepository.save(result);
-
-        Application application = applicationRepository.findById(interview.getApplicationId()).orElse(null);
-        if (application != null) {
-            handlePostResult(application, round, resultStatus, Boolean.TRUE.equals(request.getNotifyCandidate()),
-                    userId, request.getRating(), request.getNote());
-        }
-
-        return toResultResponse(result);
+        order.setStatus(OrderStatus.CANCELLED);
+        return mapToDTO(orderRepository.save(order));
     }
 
     @Override
     @Transactional(readOnly = true)
-    public ResInterviewResultDTO getResult(Long scheduleId, Long companyId) {
-        Interview interview = interviewRepository.findByIdAndDeletedAtIsNull(scheduleId)
-                .orElseThrow(() -> AppException.notFound("Không tìm thấy lịch phỏng vấn"));
+    public ResultPaginationDTO getAllOrders(
+            String keyword, OrderType type, OrderStatus status,
+            String dateFilter, String startDate, String endDate,
+            Pageable pageable) {
 
-        findJobAndValidateOwnership(interview.getRound().getJobPostId(), companyId);
+        LocalDateTime startDt = parseDateFilter(dateFilter, startDate, true);
+        LocalDateTime endDt = parseDateFilter(dateFilter, endDate, false);
 
-        InterviewResult result = resultRepository.findByInterviewId(scheduleId)
-                .orElseThrow(() -> AppException.notFound("Chưa có kết quả cho buổi phỏng vấn này"));
-
-        return toResultResponse(result);
-    }
-
-    // =========================================================================
-    // Lịch sử PV
-    // =========================================================================
-
-    @Override
-    @Transactional(readOnly = true)
-    public ResInterviewHistoryDTO getInterviewHistory(Long applicationId, Long companyId) {
-        Application application = applicationRepository.findById(applicationId)
-                .orElseThrow(() -> AppException.notFound("Không tìm thấy đơn ứng tuyển"));
-
-        findJobAndValidateOwnership(application.getJobPostId(), companyId);
-
-        List<InterviewRound> rounds = roundRepository
-                .findByJobPostIdAndDeletedAtIsNullOrderByRoundNumberAsc(application.getJobPostId());
-
-        List<Interview> interviews = interviewRepository
-                .findByApplicationIdAndDeletedAtIsNullOrderByRoundId(applicationId);
-
-        List<ResInterviewHistoryDTO.RoundHistory> roundHistories = new ArrayList<>();
-        for (InterviewRound round : rounds) {
-            ResInterviewHistoryDTO.RoundHistory.RoundHistoryBuilder builder = ResInterviewHistoryDTO.RoundHistory
-                    .builder()
-                    .roundNumber(round.getRoundNumber())
-                    .roundName(round.getRoundName())
-                    .isFinal(round.getIsFinal());
-
-            Interview interview = interviews.stream()
-                    .filter(i -> i.getRoundId().equals(round.getId()))
-                    .findFirst().orElse(null);
-
-            if (interview != null) {
-                builder.scheduleId(interview.getId())
-                        .scheduledAt(interview.getScheduledAt())
-                        .interviewType(interview.getInterviewType())
-                        .scheduleStatus(interview.getStatus());
-
-                resultRepository.findByInterviewId(interview.getId()).ifPresent(result -> {
-                    builder.result(result.getResult())
-                            .rating(result.getRating())
-                            .note(result.getNote())
-                            .evaluatedAt(result.getEvaluatedAt());
-                });
-            }
-
-            roundHistories.add(builder.build());
-        }
-
-        String candidateName = getCandidateName(application.getCandidateUserId());
-
-        String cvUrl = cvsRepository.findById(application.getCvId())
-                .map(cv -> cv.getFileUrl() != null ? cv.getFileUrl() : cv.getPdfUrl())
-                .orElse(null);
-
-        return ResInterviewHistoryDTO.builder()
-                .applicationId(applicationId)
-                .candidateName(candidateName)
-                .currentStatus(application.getStatus())
-                .cvUrl(cvUrl)
-                .rounds(roundHistories)
-                .build();
+        Specification<Order> spec = OrderSpecification.withFilter(keyword, type, status, startDt, endDt);
+        Page<Order> page = orderRepository.findAll(spec, pageable);
+        return buildPaginationResult(page, pageable);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public ResInterviewHistoryDTO getMyInterviewHistory(Long userId, Long applicationId) {
-        Application application = applicationRepository.findByIdAndCandidateUserId(applicationId, userId)
-                .orElseThrow(() -> AppException.notFound("Không tìm thấy đơn ứng tuyển của bạn"));
-
-        List<InterviewRound> rounds = roundRepository
-                .findByJobPostIdAndDeletedAtIsNullOrderByRoundNumberAsc(application.getJobPostId());
-
-        List<Interview> interviews = interviewRepository
-                .findByApplicationIdAndDeletedAtIsNullOrderByRoundId(applicationId);
-
-        List<ResInterviewHistoryDTO.RoundHistory> roundHistories = new ArrayList<>();
-        for (InterviewRound round : rounds) {
-            ResInterviewHistoryDTO.RoundHistory.RoundHistoryBuilder builder = ResInterviewHistoryDTO.RoundHistory
-                    .builder()
-                    .roundNumber(round.getRoundNumber())
-                    .roundName(round.getRoundName())
-                    .isFinal(round.getIsFinal());
-
-            Interview interview = interviews.stream()
-                    .filter(i -> i.getRoundId().equals(round.getId()))
-                    .findFirst().orElse(null);
-
-            if (interview != null) {
-                builder.scheduleId(interview.getId())
-                        .scheduledAt(interview.getScheduledAt())
-                        .interviewType(interview.getInterviewType())
-                        .scheduleStatus(interview.getStatus());
-
-                resultRepository.findByInterviewId(interview.getId()).ifPresent(result -> {
-                    builder.result(result.getResult())
-                            .rating(result.getRating())
-                            .note(result.getNote())
-                            .evaluatedAt(result.getEvaluatedAt());
-                });
-            }
-
-            roundHistories.add(builder.build());
-        }
-
-        String candidateName = getCandidateName(application.getCandidateUserId());
-
-        String cvUrl = cvsRepository.findById(application.getCvId())
-                .map(cv -> cv.getFileUrl() != null ? cv.getFileUrl() : cv.getPdfUrl())
-                .orElse(null);
-
-        return ResInterviewHistoryDTO.builder()
-                .applicationId(applicationId)
-                .candidateName(candidateName)
-                .currentStatus(application.getStatus())
-                .cvUrl(cvUrl)
-                .rounds(roundHistories)
-                .build();
-    }
-
-    // =========================================================================
-    // Overdue
-    // =========================================================================
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<ResOverdueApplicationDTO> getOverdueApplications(Long jobPostId, Long companyId) {
-        findJobAndValidateOwnership(jobPostId, companyId);
-
-        List<Application> overdueApps = applicationRepository
-                .findByJobPostIdAndStatusAndDeletedAtIsNull(jobPostId, ApplicationStatus.OVERDUE.getValue());
-
-        return overdueApps.stream().map(app -> {
-            String candidateName = getCandidateName(app.getCandidateUserId());
-            User user = userRepository.findById(app.getCandidateUserId()).orElse(null);
-            CandidateProfile profile = candidateProfileRepository
-                    .findByUserId(app.getCandidateUserId()).orElse(null);
-
-            // Tìm round hiện tại của UV để lấy reminder info từ Redis
-            List<InterviewRound> rounds = roundRepository
-                    .findByJobPostIdAndDeletedAtIsNullOrderByRoundNumberAsc(jobPostId);
-            InterviewRound currentRound = findCurrentRoundForApplication(app.getId(), rounds);
-
-            // Đọc reminder info từ Redis
-            ReminderInfo reminderInfo = currentRound != null
-                    ? tokenService.getReminderInfo(app.getId(), currentRound.getId())
-                    : null;
-
-            return ResOverdueApplicationDTO.builder()
-                    .applicationId(app.getId())
-                    .candidateUserId(app.getCandidateUserId())
-                    .candidateName(candidateName)
-                    .candidateEmail(user != null ? user.getEmail() : null)
-                    .candidatePhone(profile != null ? profile.getPhoneDisplay() : null)
-                    .reminderCount(reminderInfo != null ? reminderInfo.getReminderCount() : 0)
-                    .firstReminderAt(reminderInfo != null ? reminderInfo.getLastRemindedAt() : null)
-                    .reminderDeadline(reminderInfo != null ? reminderInfo.getDeadline() : null)
-                    .currentRoundName(currentRound != null ? currentRound.getRoundName() : null)
-                    .currentRoundNumber(currentRound != null ? currentRound.getRoundNumber() : null)
-                    .build();
-        }).toList();
+    public ResOrderDTO getOrderById(Long orderId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> AppException.notFound("Không tìm thấy đơn hàng."));
+        return mapToDTO(order);
     }
 
     @Override
     @Transactional
-    public void extendDeadline(Long applicationId, Long userId, Long companyId,
-            ReqExtendDeadlineDTO request) {
+    public ResOrderDTO updateOrderStatus(Long adminId, Long orderId, ReqUpdateOrderStatusDTO request) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> AppException.notFound("Không tìm thấy đơn hàng."));
 
-        Application application = applicationRepository.findById(applicationId)
-                .orElseThrow(() -> AppException.notFound("Không tìm thấy đơn ứng tuyển"));
-
-        findJobAndValidateOwnership(application.getJobPostId(), companyId);
-
-        if (!ApplicationStatus.OVERDUE.getValue().equals(application.getStatus())) {
-            throw AppException.badRequest("Chỉ có thể gia hạn cho ứng viên quá hạn");
+        if (request.getStatus() == OrderStatus.PAID && order.getStatus() != OrderStatus.PAID) {
+            order.setPaidAt(LocalDateTime.now());
         }
 
-        application.setStatus(ApplicationStatus.SCHEDULE_PENDING.getValue());
-        applicationRepository.save(application);
-
-        log.info("📧 [TODO] Gửi lại email slot cho application={}, gia hạn thêm {} ngày",
-                applicationId, request.getExtendDays());
+        order.setStatus(request.getStatus());
+        return mapToDTO(orderRepository.save(order));
     }
 
-    @Override
-    @Transactional
-    public ResInterviewScheduleDTO forceSchedule(Long applicationId, Long userId, Long companyId,
-            ReqForceScheduleDTO request) {
+    // ─── helpers ─────────────────────────────────────────────────────────────
 
-        Application application = applicationRepository.findById(applicationId)
-                .orElseThrow(() -> AppException.notFound("Không tìm thấy đơn ứng tuyển"));
-
-        findJobAndValidateOwnership(application.getJobPostId(), companyId);
-
-        if (!ApplicationStatus.OVERDUE.getValue().equals(application.getStatus())) {
-            throw AppException.badRequest("Chỉ có thể đặt lịch hộ cho ứng viên quá hạn");
-        }
-
-        List<InterviewRound> rounds = roundRepository
-                .findByJobPostIdAndDeletedAtIsNullOrderByRoundNumberAsc(application.getJobPostId());
-        InterviewRound currentRound = findCurrentRoundForApplication(application.getId(), rounds);
-
-        if (currentRound == null) {
-            throw AppException.badRequest("Không tìm thấy vòng phỏng vấn phù hợp");
-        }
-
-        softDeleteExistingInterview(application.getId(), currentRound.getId(), userId);
-
-        Interview interview = Interview.builder()
-                .applicationId(application.getId())
-                .roundId(currentRound.getId())
-                .scheduledAt(request.getScheduledAt())
-                .interviewType(request.getInterviewType())
-                .location(request.getLocation())
-                .meetingLink(request.getMeetingLink())
-                .status(InterviewStatus.SCHEDULED.getValue())
-                .confirmedByCandidate(false)
-                .scheduledBy(userId)
-                .build();
-
-        interview = interviewRepository.save(interview);
-
-        application.setStatus(ApplicationStatus.INTERVIEWING.getValue());
-        applicationRepository.save(application);
-
-        log.info("📧 [TODO] Gửi email xác nhận lịch PV (force) cho application={}", applicationId);
-
-        return toScheduleResponse(interview, currentRound, application);
-    }
-
-    // =========================================================================
-    // Offer
-    // =========================================================================
-
-    @Override
-    @Transactional
-    public ResEmployerApplicationDTO updateOffer(Long applicationId, Long userId, Long companyId,
-            ReqOfferResultDTO request) {
-
-        Application application = applicationRepository.findById(applicationId)
-                .orElseThrow(() -> AppException.notFound("Không tìm thấy đơn ứng tuyển"));
-
-        findJobAndValidateOwnership(application.getJobPostId(), companyId);
-
-        // if (!ApplicationStatus.OFFERED.getValue().equals(application.getStatus())) {
-        // throw AppException.badRequest("Ứng viên không ở trạng thái OFFERED");
-        // }
-
-        if (request.getResult() == OfferResult.ACCEPTED) {
-            application.setStatus(ApplicationStatus.OFFERED.getValue());
-        } else if (request.getResult() == OfferResult.DECLINED) {
-            application.setStatus(ApplicationStatus.REJECTED.getValue());
-            application.setRejectedAt(LocalDateTime.now());
-            application.setRejectionReason("Ứng viên từ chối offer");
-        }
-
-        applicationRepository.save(application);
-
-        return toOfferResponse(application);
-    }
-
-    // =========================================================================
-    // Job Posting interview phase
-    // =========================================================================
-
-    @Override
-    @Transactional(readOnly = true)
-    public ResInterviewReadinessDTO checkReadiness(Long jobPostId, Long companyId) {
-        JobPosting job = findJobAndValidateOwnership(jobPostId, companyId);
-
-        boolean isJobClosed = JobPostStatus.CLOSED.getValue().equals(job.getStatus());
-        boolean hasRounds = roundRepository.countByJobPostIdActive(jobPostId) > 0;
-        boolean hasCvPassed = !applicationRepository
-                .findByJobPostIdAndStatusAndDeletedAtIsNull(jobPostId, ApplicationStatus.CV_PASSED.getValue())
-                .isEmpty();
-
-        return ResInterviewReadinessDTO.builder()
-                .isJobClosed(isJobClosed)
-                .hasRounds(hasRounds)
-                .hasCvPassed(hasCvPassed)
-                .ready(isJobClosed && hasCvPassed)
-                .build();
-    }
-
-    @Override
-    @Transactional
-    public void startInterviewing(Long jobPostId, Long userId, Long companyId) {
-        JobPosting job = findJobAndValidateOwnership(jobPostId, companyId);
-
-        List<Application> cvPassedApps = applicationRepository
-                .findByJobPostIdAndStatusAndDeletedAtIsNull(jobPostId, ApplicationStatus.CV_PASSED.getValue());
-        if (cvPassedApps.isEmpty()) {
-            throw AppException.badRequest("Không có ứng viên nào ở trạng thái CV_PASSED");
-        }
-
-        // Tạo vòng 1 mặc định nếu chưa có
-        InterviewRound round1 = roundRepository
-                .findByJobPostIdAndRoundNumberAndDeletedAtIsNull(jobPostId, 1)
-                .orElseGet(() -> {
-                    InterviewRound defaultRound = InterviewRound.builder()
-                            .jobPostId(jobPostId)
-                            .roundNumber(1)
-                            .roundName("Vòng 1")
-                            .isFinal(false)
-                            .createdBy(userId)
-                            .updatedBy(userId)
-                            .build();
-                    return roundRepository.save(defaultRound);
-                });
-
-        // Tạo Interview record PENDING cho từng UV cv_passed vào vòng 1
-        for (Application app : cvPassedApps) {
-            boolean alreadyExists = interviewRepository
-                    .existsByApplicationIdAndRoundIdAndDeletedAtIsNull(app.getId(), round1.getId());
-            if (!alreadyExists) {
-                Interview interview = Interview.builder()
-                        .applicationId(app.getId())
-                        .roundId(round1.getId())
-                        .status(InterviewStatus.PENDING.getValue())
-                        .scheduledBy(userId)
-                        .build();
-                interviewRepository.save(interview);
+    private LocalDateTime parseDateFilter(String dateFilter, String rawDate, boolean isStart) {
+        if (dateFilter != null && !dateFilter.isBlank()) {
+            LocalDateTime now = LocalDateTime.now();
+            switch (dateFilter.toLowerCase()) {
+                case "today":
+                    return isStart ? now.toLocalDate().atStartOfDay() : now.toLocalDate().atTime(23, 59, 59);
+                case "last7days":
+                    return isStart ? now.minusDays(7).toLocalDate().atStartOfDay() : now.toLocalDate().atTime(23, 59, 59);
+                case "thismonth":
+                    return isStart ? now.withDayOfMonth(1).toLocalDate().atStartOfDay() : now.toLocalDate().atTime(23, 59, 59);
             }
         }
-
-        // Chuyển tất cả UV cv_passed sang interviewing
-        applicationRepository.bulkUpdateStatus(jobPostId,
-                ApplicationStatus.CV_PASSED.getValue(),
-                ApplicationStatus.INTERVIEWING.getValue());
-
-        job.setStatus(JobPostStatus.INTERVIEWING.getValue());
-        job.setUpdatedBy(userId);
-        jobPostingRepository.save(job);
-    }
-
-    @Override
-    @Transactional
-    public void completeRecruitment(Long jobPostId, Long userId, Long companyId,
-            ReqCompleteRecruitmentDTO request) {
-
-        JobPosting job = findJobAndValidateOwnership(jobPostId, companyId);
-
-        if (!JobPostStatus.INTERVIEWING.getValue().equals(job.getStatus())) {
-            throw AppException.badRequest("Tin tuyển dụng phải ở trạng thái INTERVIEWING");
-        }
-
-        List<Application> offeredApps = applicationRepository
-                .findByJobPostIdAndStatusAndDeletedAtIsNull(jobPostId, ApplicationStatus.OFFERED.getValue());
-        if (offeredApps.isEmpty()) {
-            throw AppException.badRequest("Cần có ít nhất 1 ứng viên ở trạng thái OFFERED");
-        }
-
-        for (Long appId : request.getApplicationIds()) {
-            Application app = applicationRepository.findById(appId)
-                    .orElseThrow(() -> AppException.notFound("Không tìm thấy đơn ứng tuyển: " + appId));
-            if (!ApplicationStatus.OFFERED.getValue().equals(app.getStatus())) {
-                throw AppException.badRequest("Ứng viên " + appId + " không ở trạng thái OFFERED");
-            }
-            if (!app.getJobPostId().equals(jobPostId)) {
-                throw AppException.badRequest("Ứng viên " + appId + " không thuộc tin tuyển dụng này");
-            }
-        }
-
-        for (Long appId : request.getApplicationIds()) {
-            Application app = applicationRepository.findById(appId).orElseThrow();
-            app.setStatus(ApplicationStatus.HIRED.getValue());
-            app.setHiredAt(LocalDateTime.now());
-            applicationRepository.save(app);
-        }
-
-        applicationRepository.bulkRejectExcluding(jobPostId, request.getApplicationIds());
-
-        job.setStatus(JobPostStatus.COMPLETED.getValue());
-        job.setUpdatedBy(userId);
-        jobPostingRepository.save(job);
-    }
-
-    // =========================================================================
-    // Private helpers
-    // =========================================================================
-
-    private JobPosting findJobAndValidateOwnership(Long jobPostId, Long companyId) {
-        JobPosting job = jobPostingRepository.findByIdAndDeletedAtIsNull(jobPostId)
-                .orElseThrow(() -> AppException.notFound("Không tìm thấy tin tuyển dụng"));
-
-        if (!job.getCompanyId().equals(companyId)) {
-            throw AppException.forbidden("Bạn không có quyền truy cập tin tuyển dụng này");
-        }
-
-        return job;
-    }
-
-    private void softDeleteExistingInterview(Long applicationId, Long roundId, Long userId) {
-        interviewRepository.findByApplicationIdAndRoundIdAndDeletedAtIsNull(applicationId, roundId)
-                .ifPresent(existing -> {
-                    existing.setDeletedAt(LocalDateTime.now());
-                    existing.setUpdatedBy(userId);
-                    interviewRepository.save(existing);
-                });
-    }
-
-    private void handlePostResult(Application application, InterviewRound round,
-            InterviewResultStatus resultStatus, boolean notifyCandidate, long userId,
-            Integer rating, String note) {
-
-        boolean passed = resultStatus == InterviewResultStatus.PASS;
-        String roundName = "Vòng " + round.getRoundNumber()
-                + (round.getRoundName() != null ? " - " + round.getRoundName() : "");
-
-        // Gửi email kết quả nếu NTT chọn thông báo UV
-        if (notifyCandidate) {
-            log.info("📧 Gửi email kết quả PV ({}) cho application={}", passed ? "PASS" : "FAIL", application.getId());
+        if (rawDate != null && !rawDate.isBlank()) {
             try {
-                User candidateUser = userRepository.findById(application.getCandidateUserId()).orElse(null);
-                if (candidateUser != null) {
-                    String candidateName = getCandidateName(application.getCandidateUserId());
-                    JobPosting jobPosting = jobPostingRepository.findById(application.getJobPostId()).orElse(null);
-                    String jobTitle = jobPosting != null ? jobPosting.getTitle() : "Vị trí ứng tuyển";
-                    String companyName = "Nhà tuyển dụng";
-                    if (jobPosting != null) {
-                        Company company = companyRepository.findById(jobPosting.getCompanyId()).orElse(null);
-                        if (company != null)
-                            companyName = company.getName();
-                    }
-                    emailService.sendInterviewResultEmail(candidateUser.getEmail(), candidateName,
-                            companyName, jobTitle, roundName, passed, rating, note);
-                }
+                return LocalDateTime.parse(rawDate);
             } catch (Exception e) {
-                log.error("Lỗi khi gửi email kết quả PV cho application={}", application.getId(), e);
-            }
-        }
-
-        if (!passed) {
-            application.setStatus(ApplicationStatus.REJECTED.getValue());
-            application.setRejectedAt(LocalDateTime.now());
-            applicationRepository.save(application);
-        } else {
-            if (Boolean.TRUE.equals(round.getIsFinal())) {
-                // application.setStatus(ApplicationStatus.OFFERED.getValue());
-                // applicationRepository.save(application);
-                log.info("🎉 Application {} pass vòng cuối, chuyển OFFERED", application.getId());
-            } else {
-                roundRepository.findNextRound(round.getJobPostId(), round.getRoundNumber())
-                        .ifPresent(nextRound -> {
-                            log.info("➡️ Application {} pass vòng {}, tiếp tục vòng {}",
-                                    application.getId(), round.getRoundNumber(), nextRound.getRoundNumber());
-
-                            boolean alreadyExists = interviewRepository
-                                    .existsByApplicationIdAndRoundIdAndDeletedAtIsNull(
-                                            application.getId(), nextRound.getId());
-                            if (!alreadyExists) {
-                                Interview interview = Interview.builder()
-                                        .applicationId(application.getId())
-                                        .roundId(nextRound.getId())
-                                        .status(InterviewStatus.PENDING.getValue())
-                                        .scheduledBy(userId)
-                                        .build();
-                                interviewRepository.save(interview);
-                            }
-
-                            application.setStatus(ApplicationStatus.INTERVIEWING.getValue());
-                            applicationRepository.save(application);
-                        });
-            }
-        }
-    }
-
-    private InterviewRound findCurrentRoundForApplication(Long applicationId, List<InterviewRound> rounds) {
-        List<Interview> interviews = interviewRepository
-                .findByApplicationIdAndDeletedAtIsNullOrderByRoundId(applicationId);
-
-        for (InterviewRound round : rounds) {
-            boolean hasPassedThisRound = interviews.stream()
-                    .filter(i -> i.getRoundId().equals(round.getId()))
-                    .anyMatch(i -> {
-                        InterviewResult result = resultRepository.findByInterviewId(i.getId()).orElse(null);
-                        return result != null
-                                && InterviewResultStatus.PASS.getValue().equals(result.getResult());
-                    });
-            if (!hasPassedThisRound) {
-                return round;
+                try {
+                    return isStart
+                            ? java.time.LocalDate.parse(rawDate).atStartOfDay()
+                            : java.time.LocalDate.parse(rawDate).atTime(23, 59, 59);
+                } catch (Exception ex) {}
             }
         }
         return null;
     }
 
-    private String getCandidateName(Long candidateUserId) {
-        CandidateProfile profile = candidateProfileRepository.findByUserId(candidateUserId).orElse(null);
-        if (profile != null && profile.getFullName() != null) {
-            return profile.getFullName();
+    private ResultPaginationDTO buildPaginationResult(Page<Order> page, Pageable pageable) {
+        ResultPaginationDTO.Meta meta = new ResultPaginationDTO.Meta();
+        meta.setPage(pageable.getPageNumber() + 1);
+        meta.setPageSize(pageable.getPageSize());
+        meta.setPages(page.getTotalPages());
+        meta.setTotals(page.getTotalElements());
+
+        List<ResOrderDTO> results = page.getContent().stream()
+                .map(this::mapToDTO).collect(Collectors.toList());
+
+        ResultPaginationDTO response = new ResultPaginationDTO();
+        response.setMeta(meta);
+        response.setResult(results);
+        return response;
+    }
+
+    private ResOrderDTO mapToDTO(Order entity) {
+        List<ResOrderItemDTO> itemDTOs = new ArrayList<>();
+        if (entity.getOrderItems() != null) {
+            itemDTOs = entity.getOrderItems().stream().map(item -> {
+                String packageName = null;
+                List<ResServicePackageDetailDTO> detailDTOs = new ArrayList<>();
+
+                if (item.getServicePackageId() != null) {
+                    ServicePackage sp = item.getServicePackage();
+                    if (sp == null) {
+                        sp = servicePackageRepository.findById(item.getServicePackageId()).orElse(null);
+                    }
+                    if (sp != null) {
+                        packageName = sp.getName();
+                        final ServicePackage finalSp = sp;
+                        List<ServicePackageDetail> details = finalSp.getDetails();
+                        if (details == null || details.isEmpty()) {
+                            details = servicePackageDetailRepository.findByServicePackageId(finalSp.getId());
+                        }
+                        detailDTOs = details.stream().map(d -> {
+                            Services svc = serviceRepository.findById(d.getServiceId()).orElse(null);
+                            return ResServicePackageDetailDTO.builder()
+                                    .id(d.getId())
+                                    .serviceId(d.getServiceId())
+                                    .serviceCode(svc != null ? svc.getCode() : null)
+                                    .serviceName(svc != null ? svc.getName() : null)
+                                    .serviceCategory(svc != null ? svc.getCategory() : null)
+                                    .serviceCategoryName(svc != null && svc.getCategory() != null ? svc.getCategory().getValue() : null)
+                                    .serviceUnit(svc != null ? svc.getUnit() : null)
+                                    .quantity(d.getQuantity())
+                                    .build();
+                        }).collect(Collectors.toList());
+                    }
+                }
+
+                if (packageName == null && item.getAddonServiceId() != null) {
+                    AddonService addon = item.getAddonService();
+                    if (addon == null) {
+                        addon = addonServiceRepository.findById(item.getAddonServiceId()).orElse(null);
+                    }
+                    if (addon != null) {
+                        packageName = addon.getName();
+                    }
+                }
+
+                return ResOrderItemDTO.builder()
+                        .id(item.getId())
+                        .itemType(item.getItemType())
+                        .servicePackageId(item.getServicePackageId())
+                        .addonServiceId(item.getAddonServiceId())
+                        .packageName(packageName)
+                        .details(detailDTOs)
+                        .quantity(item.getQuantity())
+                        .unitPrice(item.getUnitPrice())
+                        .totalPrice(item.getTotalPrice())
+                        .billingCycle(item.getBillingCycle())
+                        .durationDays(item.getDurationDays())
+                        .build();
+            }).collect(Collectors.toList());
         }
-        User user = userRepository.findById(candidateUserId).orElse(null);
-        return user != null ? "User " + user.getId() : "Unknown";
-    }
 
-    // ── Mappers ──────────────────────────────────────────────────────────────
+        ResOrderDTO.CompanyInfo companyInfo = null;
+        if (entity.getCompany() != null) {
+            companyInfo = ResOrderDTO.CompanyInfo.builder()
+                    .name(entity.getCompany().getName())
+                    .logoUrl(entity.getCompany().getLogoUrl())
+                    .email(entity.getCompany().getEmail())
+                    .phone(entity.getCompany().getPhone())
+                    .build();
+        } else if (entity.getCompanyId() != null) {
+            try {
+                ResCompanyDTO dto = companyService.getById(entity.getCompanyId());
+                companyInfo = ResOrderDTO.CompanyInfo.builder()
+                        .name(dto.getName())
+                        .logoUrl(dto.getLogoUrl())
+                        .email(dto.getEmail())
+                        .phone(dto.getPhone())
+                        .build();
+            } catch (Exception e) {
+                // Ignore if not found
+            }
+        }
 
-    private ResInterviewRoundDTO toRoundResponse(InterviewRound round) {
-        List<InterviewRoundInterviewer> interviewers = interviewerRepository.findByRoundId(round.getId());
-
-        return ResInterviewRoundDTO.builder()
-                .id(round.getId())
-                .jobPostId(round.getJobPostId())
-                .roundNumber(round.getRoundNumber())
-                .roundName(round.getRoundName())
-                .description(round.getDescription())
-                .expectedDuration(round.getExpectedDuration())
-                .isFinal(round.getIsFinal())
-                .interviewers(interviewers.stream()
-                        .map(i -> ResInterviewRoundDTO.InterviewerInfo.builder()
-                                .id(i.getId())
-                                .name(i.getInterviewerName())
-                                .email(i.getInterviewerEmail())
-                                .phone(i.getInterviewerPhone())
-                                .build())
-                        .toList())
-                .createdAt(round.getCreatedAt())
-                .build();
-    }
-
-    private ResInterviewScheduleDTO toScheduleResponse(Interview interview, InterviewRound round,
-            Application application) {
-        String candidateName = getCandidateName(application.getCandidateUserId());
-        User user = userRepository.findById(application.getCandidateUserId()).orElse(null);
-        CandidateProfile profile = candidateProfileRepository.findByUserId(application.getCandidateUserId())
-                .orElse(null);
-
-        return ResInterviewScheduleDTO.builder()
-                .id(interview.getId())
-                .applicationId(interview.getApplicationId())
-                .roundId(interview.getRoundId())
-                .roundNumber(round != null ? round.getRoundNumber() : null)
-                .roundName(round != null ? round.getRoundName() : null)
-                .candidateName(candidateName)
-                .candidateEmail(user != null ? user.getEmail() : null)
-                .candidatePhone(profile != null ? profile.getPhoneDisplay() : null)
-                .scheduledAt(interview.getScheduledAt())
-                .durationMinutes(interview.getDurationMinutes())
-                .interviewType(interview.getInterviewType())
-                .location(interview.getLocation())
-                .meetingLink(interview.getMeetingLink())
-                .status(interview.getStatus())
-                .confirmedByCandidate(interview.getConfirmedByCandidate())
-                .interviewerNote(interview.getInterviewerNote())
-                .applicationStatus(application.getStatus())
-                .createdAt(interview.getCreatedAt())
-                .updatedAt(interview.getUpdatedAt())
-                .build();
-    }
-
-    private ResInterviewResultDTO toResultResponse(InterviewResult result) {
-        return ResInterviewResultDTO.builder()
-                .id(result.getId())
-                .interviewId(result.getInterviewId())
-                .result(result.getResult())
-                .rating(result.getRating())
-                .note(result.getNote())
-                .notifyCandidate(result.getNotifyCandidate())
-                .evaluatedBy(result.getEvaluatedBy())
-                .evaluatedAt(result.getEvaluatedAt())
-                .build();
-    }
-
-    private ResEmployerApplicationDTO toOfferResponse(Application a) {
-        User user = userRepository.findById(a.getCandidateUserId()).orElse(null);
-        CandidateProfile profile = candidateProfileRepository.findByUserId(a.getCandidateUserId()).orElse(null);
-        JobPosting job = a.getJobPosting();
-
-        return ResEmployerApplicationDTO.builder()
-                .id(a.getId())
-                .jobPostId(a.getJobPostId())
-                .jobTitle(job != null ? job.getTitle() : null)
-                .candidateUserId(a.getCandidateUserId())
-                .candidateName(
-                        profile != null ? profile.getFullName() : (user != null ? "User " + user.getId() : "Unknown"))
-                .candidateEmail(user != null ? user.getEmail() : null)
-                .candidatePhone(profile != null ? profile.getPhoneDisplay() : null)
-                .status(a.getStatus())
-                .applyMethod(a.getApplyMethod())
-                .createdAt(a.getCreatedAt())
-                .updatedAt(a.getUpdatedAt())
+        return ResOrderDTO.builder()
+                .id(entity.getId())
+                .orderCode(entity.getOrderCode())
+                .type(entity.getType())
+                .totalAmount(entity.getTotalAmount())
+                .status(entity.getStatus())
+                .paymentMethod(entity.getPaymentMethod())
+                .paymentTransactionId(entity.getPaymentTransactionId())
+                .paidAt(entity.getPaidAt())
+                .note(entity.getNote())
+                .createdAt(entity.getCreatedAt())
+                .items(itemDTOs)
+                .company(companyInfo)
                 .build();
     }
 }
-bạn hãy đọc lại lại toan bộ controller và service này sau đó đọc lại service của Fe và hãy gắn API cho tôi nhé gắn vào giao diện đặt lịch thông minh nha
+
+package com.topviec.topviec_be.service.impl;
+
+import com.topviec.topviec_be.dto.request.ReqServicePackageDTO;
+import com.topviec.topviec_be.dto.response.ResServicePackageDTO;
+import com.topviec.topviec_be.dto.response.ResServicePackageDetailDTO;
+import com.topviec.topviec_be.dto.response.ResultPaginationDTO;
+import com.topviec.topviec_be.entity.ServicePackage;
+import com.topviec.topviec_be.entity.ServicePackageDetail;
+import com.topviec.topviec_be.entity.Services;
+import com.topviec.topviec_be.exception.AppException;
+import com.topviec.topviec_be.repository.ServicePackageDetailRepository;
+import com.topviec.topviec_be.repository.ServicePackageRepository;
+import com.topviec.topviec_be.repository.ServiceRepository;
+import com.topviec.topviec_be.service.ServicePackageService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+import java.util.stream.Collectors;
+
+@org.springframework.stereotype.Service
+@RequiredArgsConstructor
+public class ServicePackageServiceImpl implements ServicePackageService {
+
+    private final ServicePackageRepository servicePackageRepository;
+    private final ServicePackageDetailRepository servicePackageDetailRepository;
+    private final ServiceRepository serviceRepository;
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<ResServicePackageDTO> getPublicActivePackages() {
+        return servicePackageRepository.findByIsActiveTrueOrderBySortOrderAsc().stream()
+                .map(this::mapToDTO).collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public ResultPaginationDTO getAllServicePackages(String keyword, Pageable pageable) {
+        Page<ServicePackage> page = servicePackageRepository.searchAll(keyword, pageable);
+
+        ResultPaginationDTO.Meta meta = new ResultPaginationDTO.Meta();
+        meta.setPage(pageable.getPageNumber() + 1);
+        meta.setPageSize(pageable.getPageSize());
+        meta.setPages(page.getTotalPages());
+        meta.setTotals(page.getTotalElements());
+
+        List<ResServicePackageDTO> results = page.getContent().stream()
+                .map(this::mapToDTO)
+                .collect(Collectors.toList());
+
+        ResultPaginationDTO response = new ResultPaginationDTO();
+        response.setMeta(meta);
+        response.setResult(results);
+        return response;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public ResServicePackageDTO getServicePackageById(Long id) {
+        ServicePackage servicePackage = servicePackageRepository.findById(id)
+                .orElseThrow(() -> AppException.notFound("Không tìm thấy gói dịch vụ với ID: " + id));
+        return mapToDTO(servicePackage);
+    }
+
+    @Override
+    @Transactional
+    public ResServicePackageDTO createServicePackage(ReqServicePackageDTO reqDTO) {
+        if (servicePackageRepository.existsByCode(reqDTO.getCode())) {
+            throw AppException.badRequest("Mã gói dịch vụ đã tồn tại, vui lòng chọn mã khác.");
+        }
+
+        ServicePackage servicePackage = ServicePackage.builder()
+                .name(reqDTO.getName())
+                .code(reqDTO.getCode())
+                .billingCycle(reqDTO.getBillingCycle())
+                .price(reqDTO.getPrice())
+                .description(reqDTO.getDescription())
+                .isActive(reqDTO.getIsActive() != null ? reqDTO.getIsActive() : true)
+                .sortOrder(reqDTO.getSortOrder())
+                .build();
+
+        ServicePackage saved = servicePackageRepository.save(servicePackage);
+
+        if (reqDTO.getDetails() != null && !reqDTO.getDetails().isEmpty()) {
+            saveDetails(saved, reqDTO.getDetails());
+        }
+
+        return mapToDTO(servicePackageRepository.findById(saved.getId()).orElse(saved));
+    }
+
+    @Override
+    @Transactional
+    public ResServicePackageDTO updateServicePackage(Long id, ReqServicePackageDTO reqDTO) {
+        ServicePackage servicePackage = servicePackageRepository.findById(id)
+                .orElseThrow(() -> AppException.notFound("Không tìm thấy gói dịch vụ với ID: " + id));
+
+        if (servicePackageRepository.existsByCodeAndIdNot(reqDTO.getCode(), id)) {
+            throw AppException.badRequest("Mã gói dịch vụ đã tồn tại, vui lòng chọn mã khác.");
+        }
+
+        servicePackage.setName(reqDTO.getName());
+        servicePackage.setCode(reqDTO.getCode());
+        servicePackage.setBillingCycle(reqDTO.getBillingCycle());
+        servicePackage.setPrice(reqDTO.getPrice());
+        servicePackage.setDescription(reqDTO.getDescription());
+        if (reqDTO.getIsActive() != null) {
+            servicePackage.setIsActive(reqDTO.getIsActive());
+        }
+        if (reqDTO.getSortOrder() != null) {
+            servicePackage.setSortOrder(reqDTO.getSortOrder());
+        }
+
+        ServicePackage saved = servicePackageRepository.save(servicePackage);
+
+        if (reqDTO.getDetails() != null) {
+            if (saved.getDetails() != null) {
+                saved.getDetails().clear();
+            }
+            servicePackageDetailRepository.deleteByServicePackageId(saved.getId());
+            servicePackageDetailRepository.flush();
+            
+            if (!reqDTO.getDetails().isEmpty()) {
+                saveDetails(saved, reqDTO.getDetails());
+            }
+        }
+
+        return mapToDTO(servicePackageRepository.findById(saved.getId()).orElse(saved));
+    }
+
+    private void saveDetails(ServicePackage pkg, List<ReqServicePackageDTO.DetailItem> items) {
+        for (ReqServicePackageDTO.DetailItem item : items) {
+            Services service = serviceRepository.findById(item.getServiceId())
+                    .orElseThrow(() -> AppException.notFound("Không tìm thấy dịch vụ với ID: " + item.getServiceId()));
+
+            ServicePackageDetail detail = ServicePackageDetail.builder()
+                    .servicePackageId(pkg.getId())
+                    .serviceId(service.getId())
+                    .quantity(item.getQuantity())
+                    .build();
+
+            servicePackageDetailRepository.save(detail);
+        }
+    }
+
+    private ResServicePackageDTO mapToDTO(ServicePackage entity) {
+        List<ServicePackageDetail> rawDetails = entity.getDetails();
+        if (rawDetails == null) {
+            rawDetails = servicePackageDetailRepository.findByServicePackageId(entity.getId());
+        }
+
+        List<ResServicePackageDetailDTO> detailDTOs = rawDetails.stream()
+                .map(d -> {
+                    Services svc = d.getService();
+                    if (svc == null) {
+                        svc = serviceRepository.findById(d.getServiceId()).orElse(null);
+                    }
+                    return ResServicePackageDetailDTO.builder()
+                            .id(d.getId())
+                            .serviceId(d.getServiceId())
+                            .serviceCode(svc != null ? svc.getCode() : null)
+                            .serviceName(svc != null ? svc.getName() : null)
+                            .serviceCategory(svc != null ? svc.getCategory() : null)
+                            .serviceCategoryName(svc != null && svc.getCategory() != null ? svc.getCategory().getValue() : null)
+                            .serviceUnit(svc != null ? svc.getUnit() : null)
+                            .quantity(d.getQuantity())
+                            .build();
+                })
+                .collect(Collectors.toList());
+
+        return ResServicePackageDTO.builder()
+                .id(entity.getId())
+                .name(entity.getName())
+                .code(entity.getCode())
+                .billingCycle(entity.getBillingCycle())
+                .price(entity.getPrice())
+                .description(entity.getDescription())
+                .isActive(entity.getIsActive())
+                .sortOrder(entity.getSortOrder())
+                .details(detailDTOs)
+                .createdAt(entity.getCreatedAt())
+                .updatedAt(entity.getUpdatedAt())
+                .build();
+    }
+}
+

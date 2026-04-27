@@ -25,14 +25,29 @@
 
             <!-- Info -->
             <td class="px-6 py-4">
-              <div class="font-bold text-slate-900 dark:text-slate-100 text-sm max-w-sm truncate" :title="job.title">
-                {{ job.title }}
+              <div class="flex items-center gap-2 flex-wrap">
+                <span class="font-bold text-slate-900 dark:text-slate-100 text-sm max-w-sm truncate" :title="job.title">
+                  {{ job.title }}
+                </span>
+                <span
+                  v-if="job.isUrgent"
+                  class="text-[10px] font-extrabold uppercase tracking-wide text-amber-700 bg-amber-50 border border-amber-300 px-2 py-0.5 rounded-full whitespace-nowrap"
+                >
+                  TUYỂN GẤP
+                </span>
+                <span
+                  v-if="job.isFeatured"
+                  class="text-[10px] font-extrabold uppercase tracking-wide text-blue-700 bg-blue-50 border border-blue-300 px-2 py-0.5 rounded-full whitespace-nowrap"
+                >
+                  Nổi bật
+                </span>
+                <span
+                  v-if="job.isHot"
+                  class="text-[10px] font-extrabold uppercase tracking-wide text-red-700 bg-red-50 border border-red-300 px-2 py-0.5 rounded-full whitespace-nowrap"
+                >
+                  HOT
+                </span>
               </div>
-              <!-- <div class="text-xs text-slate-500 mt-1 flex gap-2">
-                <span>SL: {{ job.headcount }}</span>
-                <span>•</span>
-                <span class="text-[#963131]">{{ job.isUrgent ? 'Tuyển gấp' : '' }}</span>
-              </div> -->
             </td>
 
             <!-- WorkType -->

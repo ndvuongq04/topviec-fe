@@ -27,6 +27,7 @@ export interface ResCompanyInfo {
   id: number;
   name: string;
   logoUrl: string;
+  isBrandVerified?: boolean | null;
 }
 
 export interface ResJobInfo {

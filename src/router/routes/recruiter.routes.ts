@@ -2,6 +2,12 @@ import type { RouteRecordRaw } from 'vue-router'
 
 export const recruiterRoutes: RouteRecordRaw[] = [
   {
+    path: '/recruiter/checkout',
+    name: 'recruiter-checkout',
+    component: () => import('@/pages/recruiter/CheckoutPage.vue'),
+    meta: { requiresAuth: true, role: 'EMPLOYER' },
+  },
+  {
     path: '/recruiter',
     component: () => import('@/layouts/recruiter/RecruiterLayout.vue'),
     meta: { requiresAuth: true, role: 'EMPLOYER' },
@@ -20,6 +26,16 @@ export const recruiterRoutes: RouteRecordRaw[] = [
         path: 'team',
         name: 'recruiter-team',
         component: () => import('@/pages/recruiter/TeamPage.vue'),
+      },
+      {
+        path: 'permissions',
+        name: 'recruiter-permissions',
+        component: () => import('@/pages/recruiter/PermissionConfigPage.vue'),
+      },
+      {
+        path: 'permissions/log',
+        name: 'recruiter-permissions-log',
+        component: () => import('@/pages/recruiter/PermissionLogPage.vue'),
       },
       {
         path: 'jobs',
@@ -97,6 +113,26 @@ export const recruiterRoutes: RouteRecordRaw[] = [
         component: () => import('@/pages/recruiter/InterviewOverduePage.vue'),
       },
       {
+        path: 'services',
+        name: 'recruiter-services',
+        component: () => import('@/pages/recruiter/ServicesPage.vue'),
+      },
+      {
+        path: 'services/shop',
+        name: 'recruiter-service-shop',
+        component: () => import('@/pages/recruiter/ServiceShopPage.vue'),
+      },
+      {
+        path: 'pricing',
+        name: 'recruiter-pricing',
+        component: () => import('@/pages/recruiter/PricingPage.vue'),
+      },
+      {
+        path: 'billing',
+        name: 'recruiter-billing',
+        component: () => import('@/pages/recruiter/BillingHistoryPage.vue'),
+      },
+      {
         path: 'offers',
         name: 'recruiter-offers',
         component: () => import('@/pages/recruiter/OfferManagementPage.vue'),
@@ -105,6 +141,17 @@ export const recruiterRoutes: RouteRecordRaw[] = [
         path: 'jobs/:id/offers',
         name: 'recruiter-job-offers',
         component: () => import('@/pages/recruiter/OfferManagementPage.vue'),
+      },
+      {
+        path: 'talent-pool',
+        name: 'recruiter-talent-pool',
+        component: () => import('@/pages/recruiter/TalentPoolPage.vue'),
+      },
+      {
+        path: 'messages',
+        name: 'recruiter-messages',
+        component: () => import('@/pages/recruiter/MessagesPage.vue'),
+        meta: { fullPage: true },
       },
     ],
   },

@@ -110,4 +110,5 @@ export interface JobPostingRow {
   editCount?: number
   isUrgent?: boolean
   isFeatured?: boolean
+  isHot?: boolean
 }

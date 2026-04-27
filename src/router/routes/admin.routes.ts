@@ -46,6 +46,41 @@ export const adminRoutes: RouteRecordRaw[] = [
                 name: 'admin-job-posting-detail',
                 component: () => import('@/pages/admin/AdminJobPostingDetailPage.vue'),
             },
+            {
+                path: 'service-packages',
+                name: 'admin-service-packages',
+                component: () => import('@/pages/admin/AdminPackagesPage.vue'),
+            },
+            {
+                path: 'individual-services',
+                name: 'admin-individual-services',
+                component: () => import('@/pages/admin/RetailServicesPage.vue'),
+            },
+            {
+                path: 'services/create',
+                name: 'admin-service-create',
+                component: () => import('@/pages/admin/ServiceCreatePage.vue'),
+            },
+            {
+                path: 'orders',
+                name: 'admin-orders',
+                component: () => import('@/pages/admin/OrdersPage.vue'),
+            },
+            {
+                path: 'orders/:id',
+                name: 'admin-order-detail',
+                component: () => import('@/pages/admin/OrderDetailPage.vue'),
+            },
+            {
+                path: 'employer-monitor',
+                name: 'admin-employer-monitor',
+                component: () => import('@/pages/admin/SubscriberDetailPage.vue'),
+            },
+            {
+                path: 'settings/permissions',
+                name: 'admin-settings-permissions',
+                component: () => import('@/pages/admin/PermissionConfigPage.vue'),
+            },
         ],
     },
 ]

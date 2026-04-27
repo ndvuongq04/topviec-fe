@@ -100,6 +100,8 @@ export interface ResCompanyDTO {
     coverUrl: string | null
     description: string
     industryId: number | null
+    industryName: string | null
+    jobCount: number | null
     companySize: CompanySize | null
     foundedYear: number | null
 
@@ -116,6 +118,11 @@ export interface ResCompanyDTO {
     benefits: string | null
     socialLinks: string | null
 
+
+    // Dịch vụ Branding đang active
+    isBanner: boolean | null
+    isTopEmployer: boolean | null
+    isBrandVerified: boolean | null
 
     verificationStatus: VerificationStatus
     verifiedAt: string | null

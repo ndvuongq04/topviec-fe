@@ -10,6 +10,7 @@ import { useToast } from "@/composables/useToast";
 import ApplyJobModal from "@/components/candidate/job/ApplyJobModal.vue";
 import { useQuickApply } from "@/composables/useQuickApply";
 import { APPLY_METHOD } from "@/constants/application.constants";
+import { formatSalary, formatWorkType } from "@/types/jobPosting.types";
 
 interface Props {
   id: number | string;
@@ -58,32 +59,28 @@ function getLogoUrl(url?: string | null) {
   return `${baseUrl}${cleanUrl}`;
 }
 
-// Helper to format salary
-const formattedSalary = computed(() => {
-  if (!job.value) return "";
-  if (job.value.salaryNegotiable) return "Thỏa thuận";
-  return `$${job.value.salaryMin?.toLocaleString()} - $${job.value.salaryMax?.toLocaleString()} / tháng`;
-});
+const formattedSalary = computed(() => job.value ? formatSalary(job.value) : '');
 
-// Helper to format location
 const formattedLocation = computed(() => {
-  if (!job.value || !job.value.locations?.length) return "Vietnam";
+  if (!job.value?.locations?.length) return '';
   return job.value.locations
-    .map((l) => (l.isRemote ? "Remote" : "Vietnam")) // BE currently only has provinceId, mapping to Vietnam for now
-    .join(", ");
+    .map(l => l.isRemote ? 'Remote' : l.name)
+    .filter(Boolean)
+    .join(', ');
 });
 
-// Relative time formatter
 function formatRelativeTime(dateStr?: string) {
-  if (!dateStr) return "";
+  if (!dateStr) return '';
   const date = new Date(dateStr);
   const now = new Date();
-  const diffInMs = now.getTime() - date.getTime();
-  const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
+  const dateOnly = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const todayOnly = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const diffDays = Math.round((todayOnly.getTime() - dateOnly.getTime()) / 86_400_000);
 
-  if (diffInDays === 0) return "Hôm nay";
-  if (diffInDays === 1) return "Hôm qua";
-  return `${diffInDays} ngày trước`;
+  if (diffDays === 0) return 'Hôm nay';
+  if (diffDays === 1) return 'Hôm qua';
+  if (diffDays < 30) return `${diffDays} ngày trước`;
+  return date.toLocaleDateString('vi-VN');
 }
 
 const postedAt = computed(() => formatRelativeTime(job.value?.publishedAt || job.value?.createdAt));
@@ -210,9 +207,16 @@ async function toggleCompanyFollow() {
             <div
               class="flex flex-wrap items-center gap-y-1.5 gap-x-4 text-text-secondary text-base"
             >
-              <span class="font-bold text-text-main text-lg">{{
-                job.company.name
-              }}</span>
+              <span class="flex items-center gap-1">
+                <span class="font-bold text-text-main text-lg">{{ job.company.name }}</span>
+                <div v-if="job.company.isBrandVerified" class="relative flex items-center group/verified">
+                  <span class="material-symbols-outlined text-blue-600 text-[18px] cursor-default" style="font-variation-settings:'FILL' 1">verified</span>
+                  <span class="pointer-events-none absolute bottom-[calc(100%+6px)] left-1/2 -translate-x-1/2 bg-blue-800 text-white text-[11px] font-medium whitespace-nowrap px-2.5 py-1 rounded-md opacity-0 group-hover/verified:opacity-100 transition-opacity z-10">
+                    Công ty đã xác minh
+                    <span class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-blue-800"></span>
+                  </span>
+                </div>
+              </span>
               <span class="w-1 h-1 bg-slate-300 rounded-full hidden sm:block" />
               <div class="flex items-center gap-1">
                 <span class="material-symbols-outlined text-[18px]"
@@ -271,7 +275,7 @@ async function toggleCompanyFollow() {
           <span class="material-symbols-outlined text-primary text-[20px]"
             >work</span
           >
-          {{ job.workType }}
+          {{ formatWorkType(job.workType) }}
         </div>
         <div
           class="px-4 py-2 bg-slate-50 rounded-lg text-base font-medium text-text-secondary flex items-center gap-2"
@@ -375,7 +379,16 @@ async function toggleCompanyFollow() {
                 class="w-12 h-12 rounded-lg object-contain border border-slate-100 p-1"
               />
               <div>
-                <h4 class="text-lg font-bold text-text-main">{{ job.company.name }}</h4>
+                <div class="flex items-center gap-1">
+                  <h4 class="text-lg font-bold text-text-main">{{ job.company.name }}</h4>
+                  <div v-if="job.company.isBrandVerified" class="relative flex items-center group/verified2">
+                    <span class="material-symbols-outlined text-blue-600 text-[16px] cursor-default" style="font-variation-settings:'FILL' 1">verified</span>
+                    <span class="pointer-events-none absolute bottom-[calc(100%+6px)] left-1/2 -translate-x-1/2 bg-blue-800 text-white text-[11px] font-medium whitespace-nowrap px-2.5 py-1 rounded-md opacity-0 group-hover/verified2:opacity-100 transition-opacity z-10">
+                      Công ty đã xác minh
+                      <span class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-blue-800"></span>
+                    </span>
+                  </div>
+                </div>
                 <RouterLink
                   v-if="job.company.slug"
                   :to="`/companies/${job.company.slug}`"
@@ -411,7 +424,7 @@ async function toggleCompanyFollow() {
             >
               <span class="text-text-secondary text-sm">Trụ sở</span>
               <span class="font-medium text-text-main text-sm truncate ml-4">{{
-                job.company.address || "Vietnam"
+                formattedLocation || 'Chưa cập nhật'
               }}</span>
             </div>
           </div>

@@ -138,6 +138,7 @@
       @schedule="handleSchedule"
       @evaluate="handleEvaluate"
       @offer="handleOffer"
+      @save-talent-pool="handleSaveTalentPool"
       @page-change="currentPage = $event - 1"
     />
 
@@ -191,11 +192,8 @@
       title="Đánh giá phỏng vấn"
       :subtitle="evaluateCandidate?.name"
       icon="rate_review"
-      confirm-text="Lưu đánh giá"
-      confirm-icon="save"
       :loading="isEvaluateLoading"
       @close="isEvaluateVisible = false"
-      @confirm="confirmEvaluate"
     >
       <div class="reschedule-form">
         <!-- Kết quả -->
@@ -262,7 +260,45 @@
           </label>
         </div>
       </div>
+
+      <template #footer>
+        <button
+          class="modal-btn modal-btn--cancel"
+          type="button"
+          @click="isEvaluateVisible = false"
+        >
+          Hủy bỏ
+        </button>
+        <button
+          class="modal-btn modal-btn--talent-pool"
+          type="button"
+          :disabled="isEvaluateLoading"
+          @click="handleSaveTalentPoolFromModal(); isEvaluateVisible = false"
+        >
+          <span class="material-symbols-outlined">group_add</span>
+          Lưu vào TalentPool
+        </button>
+        <button
+          class="modal-btn modal-btn--primary"
+          type="button"
+          :disabled="isEvaluateLoading"
+          @click="confirmEvaluate"
+        >
+          <span v-if="isEvaluateLoading" class="material-symbols-outlined animate-spin">progress_activity</span>
+          <span v-else class="material-symbols-outlined">save</span>
+          {{ isEvaluateLoading ? 'Đang xử lý...' : 'Lưu đánh giá' }}
+        </button>
+      </template>
     </GlobalModal>
+
+    <!-- Talent Pool Modal -->
+    <SaveToTalentPoolModal
+      :visible="showTalentPoolModal"
+      :candidate-name="talentPoolCandidate?.name"
+      :loading="savingToPool"
+      @close="showTalentPoolModal = false"
+      @confirm="confirmSaveToTalentPool"
+    />
   </div>
 </template>
 
@@ -272,6 +308,8 @@ import { useRoute, useRouter } from 'vue-router'
 import InterviewStageCards from '@/components/recruiter/interviews/InterviewStageCards.vue'
 import InterviewCandidateTable from '@/components/recruiter/interviews/InterviewCandidateTable.vue'
 import employerInterviewService from '@/services/employerInterview.service'
+import employerTalentPoolService from '@/services/employerTalentPool.service'
+import SaveToTalentPoolModal from '@/components/recruiter/talent-pool/SaveToTalentPoolModal.vue'
 import type { ResInterviewRoundDTO, ResInterviewScheduleDTO } from '@/types/interview.types'
 import { INTERVIEW_STATUS, INTERVIEW_TYPE, OFFER_RESULT } from '@/constants/interview.constants'
 import { useToast } from '@/composables/useToast'
@@ -307,7 +345,7 @@ const statusFilter  = ref('all')
 const isEvaluateVisible  = ref(false)
 const isEvaluateLoading  = ref(false)
 const evaluateScheduleId = ref<number | null>(null)
-const evaluateCandidate  = ref<{ name: string } | null>(null)
+const evaluateCandidate  = ref<{ name: string; candidateUserId: number } | null>(null)
 const evaluateForm = ref({
   result:          '' as 'PASS' | 'FAIL' | '',
   rating:          null as number | null,
@@ -618,7 +656,7 @@ function handleEvaluate(applicationId: number) {
   if (!schedule) return
 
   evaluateScheduleId.value = schedule.id
-  evaluateCandidate.value  = { name: schedule.candidateName }
+  evaluateCandidate.value  = { name: schedule.candidateName, candidateUserId: schedule.candidateUserId }
   evaluateForm.value = { result: '', rating: null, note: '', notifyCandidate: true }
   evaluateErrors.value = {}
   isEvaluateVisible.value = true
@@ -721,6 +759,43 @@ async function handleDeleteStage(stageId: number) {
     toast.success('Đã xóa!', `Vòng phỏng vấn "${deleted?.roundName ?? ''}" đã được xóa.`)
   } catch (err: any) {
     toast.error('Lỗi', err?.response?.data?.message ?? 'Không thể xóa vòng. Vui lòng thử lại.')
+  }
+}
+
+// ── Talent Pool Modal ────────────────────────────────────────────────────────
+const showTalentPoolModal    = ref(false)
+const savingToPool           = ref(false)
+const talentPoolCandidate    = ref<{ userId: number; name: string } | null>(null)
+
+function handleSaveTalentPool(applicationId: number) {
+  const schedule = roundSchedules.value.find(s => s.applicationId === applicationId)
+  if (!schedule?.candidateUserId) return
+  talentPoolCandidate.value = { userId: schedule.candidateUserId, name: schedule.candidateName }
+  showTalentPoolModal.value = true
+}
+
+function handleSaveTalentPoolFromModal() {
+  if (!evaluateCandidate.value?.candidateUserId) return
+  talentPoolCandidate.value = { userId: evaluateCandidate.value.candidateUserId, name: evaluateCandidate.value.name }
+  showTalentPoolModal.value = true
+}
+
+async function confirmSaveToTalentPool(note: string) {
+  if (!talentPoolCandidate.value) return
+  savingToPool.value = true
+  try {
+    await employerTalentPoolService.addToTalentPool({
+      candidateUserId: talentPoolCandidate.value.userId,
+      source: 'INTERVIEW',
+      note: note || undefined,
+    })
+    showTalentPoolModal.value = false
+    toast.success('Đã lưu vào Talent Pool!', `Ứng viên ${talentPoolCandidate.value.name} đã được thêm vào Talent Pool.`)
+  } catch (err: any) {
+    const msg = err?.response?.data?.message ?? 'Không thể lưu vào Talent Pool. Vui lòng thử lại.'
+    toast.error('Lỗi', typeof msg === 'string' ? msg : msg?.[0])
+  } finally {
+    savingToPool.value = false
   }
 }
 
@@ -879,4 +954,42 @@ function goToOverduePage() {
   line-height: 1.4;
 }
 .offer-tip .material-symbols-outlined { font-size: 1.1rem; color: #0ea5e9; }
+
+/* ── Modal footer buttons ── */
+.modal-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.625rem 1.25rem;
+  border-radius: 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, transform 0.1s;
+}
+.modal-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.modal-btn .material-symbols-outlined { font-size: 1.1rem; }
+
+.modal-btn--cancel {
+  background: #fff;
+  color: #64748b;
+  border: 1px solid #e2e8f0;
+}
+.modal-btn--cancel:hover { background: #f8fafc; }
+
+.modal-btn--talent-pool {
+  background: #fff;
+  color: #059669;
+  border: 2px solid #d1fae5;
+}
+.modal-btn--talent-pool:hover:not(:disabled) { background: #059669; color: #fff; border-color: #059669; }
+
+.modal-btn--primary {
+  background: #4b9af6;
+  color: #fff;
+  border: none;
+  box-shadow: 0 2px 8px rgba(75, 154, 246, 0.25);
+}
+.modal-btn--primary:hover:not(:disabled) { background: #2563eb; transform: scale(1.02); }
 </style>

@@ -13,7 +13,7 @@
           <span class="text-sm font-bold text-primary">{{ alerts.length }}/5</span>
         </div>
         <button
-          class="flex items-center gap-2 bg-primary hover:bg-primary-hover text-white px-5 py-2.5 rounded-2xl font-bold text-sm shadow-lg shadow-blue-500/30 transition-colors"
+          class="flex items-center gap-2 bg-primary hover:bg-primary-hover text-white px-5 py-2.5 rounded-2xl font-bold text-sm shadow-lg shadow-blue-500/30 transition-colors cursor-pointer"
           @click="openCreate"
         >
           <span class="material-symbols-outlined text-[20px]">add_alert</span>
@@ -70,24 +70,15 @@
             <!-- Toggle -->
             <div class="flex items-center gap-3 w-full justify-between md:justify-end">
               <span class="text-xs font-bold text-text-muted uppercase tracking-wider md:hidden">Trạng thái</span>
-              <button
-                class="relative w-11 h-6 rounded-full transition-colors duration-200 focus:outline-none"
-                :class="alert.active ? 'bg-primary' : 'bg-slate-200 dark:bg-slate-700'"
-                @click="alert.active = !alert.active"
-              >
-                <span
-                  class="absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform duration-200"
-                  :class="alert.active ? 'translate-x-6' : 'translate-x-1'"
-                ></span>
-              </button>
+              <ToggleSwitch v-model="alert.active" />
             </div>
 
             <!-- Edit / Delete (desktop) -->
             <div class="hidden md:flex items-center gap-2 w-full justify-end">
-              <button class="flex-1 flex items-center justify-center gap-1 px-3 py-2 text-sm font-medium text-text-muted bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl hover:text-primary hover:border-primary transition-all">
+              <button class="flex-1 flex items-center justify-center gap-1 px-3 py-2 text-sm font-medium text-text-muted bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl hover:text-primary hover:border-primary transition-all cursor-pointer">
                 Sửa
               </button>
-              <button class="p-2 text-text-muted hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-xl transition-colors">
+              <button class="p-2 text-text-muted hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-xl transition-colors cursor-pointer">
                 <span class="material-symbols-outlined text-[20px]">delete</span>
               </button>
             </div>
@@ -96,10 +87,10 @@
 
         <!-- Edit / Delete (mobile) -->
         <div class="flex md:hidden items-center gap-3 mt-4 pt-4 border-t border-slate-100 dark:border-slate-800">
-          <button class="flex-1 py-2 text-sm font-medium text-text-muted bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl hover:bg-slate-50">
+          <button class="flex-1 py-2 text-sm font-medium text-text-muted bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl hover:bg-slate-50 cursor-pointer">
             Sửa thông báo
           </button>
-          <button class="p-2 text-text-muted hover:text-red-500 hover:bg-red-50 rounded-xl transition-colors">
+          <button class="p-2 text-text-muted hover:text-red-500 hover:bg-red-50 rounded-xl transition-colors cursor-pointer">
             <span class="material-symbols-outlined text-[20px]">delete</span>
           </button>
         </div>
@@ -113,7 +104,7 @@
       </div>
       <h3 class="text-lg font-bold text-text-main dark:text-white mb-2">Chưa có thông báo nào</h3>
       <p class="text-text-muted text-sm mb-6">Tạo thông báo để nhận tin tuyển dụng phù hợp.</p>
-      <button class="flex items-center gap-2 bg-primary hover:bg-primary-hover text-white px-5 py-2.5 rounded-2xl font-bold text-sm shadow-lg shadow-blue-500/30 transition-colors">
+      <button class="flex items-center gap-2 bg-primary hover:bg-primary-hover text-white px-5 py-2.5 rounded-2xl font-bold text-sm shadow-lg shadow-blue-500/30 transition-colors cursor-pointer">
         <span class="material-symbols-outlined text-[20px]">add_alert</span>
         Tạo thông báo đầu tiên
       </button>
@@ -124,6 +115,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import ToggleSwitch from '@/components/common/ToggleSwitch.vue'
 
 interface JobAlert {
   id: number

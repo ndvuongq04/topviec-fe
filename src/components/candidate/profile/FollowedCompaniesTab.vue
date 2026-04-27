@@ -93,7 +93,7 @@
          <button 
            v-for="p in totalPages" 
            :key="p"
-           class="w-10 h-10 rounded-xl text-sm font-bold transition-all shrink-0"
+           class="w-10 h-10 rounded-xl text-sm font-bold transition-all shrink-0 cursor-pointer"
            :class="currentPage === p-1 
              ? 'bg-primary text-white shadow-lg shadow-primary/20' 
              : 'text-text-muted hover:bg-slate-50 dark:hover:bg-slate-800'"

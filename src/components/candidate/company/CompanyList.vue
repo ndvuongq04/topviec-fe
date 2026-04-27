@@ -11,7 +11,7 @@ const followStore = useCandidateCompanyFollowStore();
 const toast = useToast();
 
 onMounted(() => {
-  companyStore.fetchPublicCompanies({ size: 10 });
+  companyStore.fetchPublicCompanies({ size: 10, isBanner: true });
 });
 
 watch(

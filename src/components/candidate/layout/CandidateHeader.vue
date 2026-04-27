@@ -23,6 +23,16 @@ const avatarInitial = computed(() => {
   return displayName.value.charAt(0).toUpperCase();
 });
 
+const ROLE_LABELS: Record<string, string> = {
+  CANDIDATE: 'Ứng viên',
+  EMPLOYER:  'Nhà tuyển dụng',
+  ADMIN:     'Quản trị viên',
+}
+
+const roleLabel = computed(() =>
+  authStore.user?.role ? (ROLE_LABELS[authStore.user.role] ?? authStore.user.role) : 'Ứng viên'
+)
+
 function toggleDropdown() {
   isDropdownOpen.value = !isDropdownOpen.value;
 }
@@ -52,11 +62,8 @@ async function handleLogout() {
     :class="props.unfixed ? 'relative z-50' : 'fixed top-0 left-0 right-0 z-50'"
   >
     <!-- Logo -->
-    <router-link to="/" class="flex items-center gap-2 text-primary">
-      <span class="material-symbols-outlined text-3xl">work_history</span>
-      <h2 class="text-text-main dark:text-white text-2xl font-bold leading-tight tracking-tight">
-        TopViec
-      </h2>
+    <router-link to="/" class="flex items-center">
+      <img src="@/assets/images/logo.png" alt="TopViec" class="h-14 w-auto object-contain" />
     </router-link>
 
     <!-- Right side -->
@@ -129,7 +136,7 @@ async function handleLogout() {
                 {{ displayName }}
               </span>
               <span class="text-xs text-slate-400 dark:text-slate-500 uppercase tracking-wide">
-                Ứng viên
+                {{ roleLabel }}
               </span>
             </div>
 
@@ -216,6 +223,15 @@ async function handleLogout() {
                 >
                   <span class="material-symbols-outlined text-lg opacity-70">chat_bubble</span>
                   Lịch phỏng vấn
+                </router-link>
+
+                <router-link
+                  to="/messages"
+                  class="flex items-center gap-3 px-4 py-2 text-base text-text-main dark:text-gray-200 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer"
+                  @click="closeDropdown"
+                >
+                  <span class="material-symbols-outlined text-lg opacity-70">chat</span>
+                  Tin nhắn
                 </router-link>
               </div>
 

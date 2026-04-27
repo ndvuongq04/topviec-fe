@@ -1,28 +1,26 @@
 <template>
   <div class="space-y-5">
-    <!-- Header Card: Title + Actions merged -->
-    <div class="bg-white dark:bg-surface-dark rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
-      <div class="p-5 sm:p-6">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <h2 class="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">Việc làm đã lưu</h2>
-            <p class="text-slate-500 dark:text-gray-400 text-base mt-1">Xem và quản lý các công việc bạn đã lưu.</p>
-          </div>
-          <div v-if="savedJobStore.meta.totals > 0" class="flex items-center gap-2">
-            <span class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-base font-bold bg-primary/10 text-primary border border-primary/20">
-              <span class="material-symbols-outlined text-[18px]">bookmark</span>
-              {{ savedJobStore.meta.totals }} đã lưu
-            </span>
-          </div>
+    <!-- Header: Title + Actions -->
+    <div class="pt-4">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4">
+        <div>
+          <h2 class="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">Việc làm đã lưu</h2>
+          <p class="text-slate-500 dark:text-gray-400 text-base mt-1">Xem và quản lý các công việc bạn đã lưu.</p>
+        </div>
+        <div v-if="savedJobStore.meta.totals > 0" class="flex items-center gap-2">
+          <span class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-base font-bold bg-primary/10 text-primary border border-primary/20">
+            <span class="material-symbols-outlined text-[18px]">bookmark</span>
+            {{ savedJobStore.meta.totals }} đã lưu
+          </span>
         </div>
       </div>
       <!-- Select All (only when has items) -->
-      <div v-if="mappedJobs.length > 0" class="px-5 sm:px-6 py-3 bg-slate-50/50 dark:bg-slate-800/30 border-t border-slate-100 dark:border-slate-800 flex items-center gap-3">
-        <div 
+      <div v-if="mappedJobs.length > 0" class="flex items-center gap-3">
+        <div
           @click="toggleSelectAll"
           class="w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all cursor-pointer shrink-0"
-          :class="isAllSelected 
-            ? 'bg-primary border-primary text-white' 
+          :class="isAllSelected
+            ? 'bg-primary border-primary text-white'
             : 'bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 hover:border-primary'"
         >
           <span v-if="isAllSelected" class="material-symbols-outlined text-xs font-bold">check</span>
@@ -83,14 +81,14 @@
         <div class="flex items-center gap-2 ml-auto shrink-0">
           <button 
             @click="selectedIds = []"
-            class="text-sm font-bold text-slate-400 dark:text-slate-500 hover:text-white dark:hover:text-slate-900 px-3 py-2 transition-colors"
+            class="text-sm font-bold text-slate-400 dark:text-slate-500 hover:text-white dark:hover:text-slate-900 px-3 py-2 transition-colors cursor-pointer"
           >
             Hủy
           </button>
           <button 
             @click="handleBatchApply"
             :disabled="selectedIds.length > 10"
-            class="bg-primary hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed text-white px-5 py-2.5 rounded-xl font-bold text-sm transition-all flex items-center gap-2"
+            class="bg-primary hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer text-white px-5 py-2.5 rounded-xl font-bold text-sm transition-all flex items-center gap-2"
           >
             <span class="material-symbols-outlined text-[18px]">send</span>
             <span class="hidden sm:inline">Ứng tuyển</span>
@@ -105,7 +103,7 @@
         <div class="bg-white dark:bg-surface-dark w-full max-w-lg rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden">
           <div class="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
             <h3 class="text-lg font-bold text-slate-900 dark:text-white">Ứng tuyển hàng loạt</h3>
-            <button @click="showBatchApplyModal = false" class="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors">
+            <button @click="showBatchApplyModal = false" class="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors cursor-pointer">
               <span class="material-symbols-outlined text-[20px]">close</span>
             </button>
           </div>
@@ -147,13 +145,13 @@
           <div class="p-5 bg-slate-50 dark:bg-slate-800/30 border-t border-slate-100 dark:border-slate-800 flex items-center gap-3">
             <button 
               @click="showBatchApplyModal = false"
-              class="flex-1 px-4 py-2.5 rounded-xl font-bold text-sm text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 transition-all"
+              class="flex-1 px-4 py-2.5 rounded-xl font-bold text-sm text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 transition-all cursor-pointer"
             >
               Hủy bỏ
             </button>
             <button 
               @click="confirmBatchApply"
-              class="flex-1 bg-primary hover:bg-primary-hover text-white px-4 py-2.5 rounded-xl font-bold text-sm shadow-lg shadow-primary/20 transition-all flex items-center justify-center gap-2"
+              class="flex-1 bg-primary hover:bg-primary-hover text-white px-4 py-2.5 rounded-xl font-bold text-sm shadow-lg shadow-primary/20 transition-all flex items-center justify-center gap-2 cursor-pointer"
             >
               <span class="material-symbols-outlined text-[16px]">send</span>
               Gửi đơn ngay
@@ -166,7 +164,7 @@
     <!-- Pagination -->
     <div v-if="totalPages > 1" class="flex items-center justify-center gap-1.5 pt-4 pb-10">
       <button
-        class="p-2 rounded-lg text-slate-400 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-600 transition-colors"
+        class="p-2 rounded-lg text-slate-400 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-600 transition-colors cursor-pointer"
         :disabled="currentPage === 0"
         @click="changePage(currentPage - 1)"
       >
@@ -175,7 +173,7 @@
       <button 
         v-for="p in totalPages" 
         :key="p"
-        class="w-9 h-9 rounded-lg text-sm font-bold transition-all"
+        class="w-9 h-9 rounded-lg text-sm font-bold transition-all cursor-pointer"
         :class="currentPage === p-1 
           ? 'bg-primary text-white shadow-md shadow-primary/20' 
           : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800'"
@@ -184,7 +182,7 @@
         {{ p }}
       </button>
       <button
-        class="p-2 rounded-lg text-slate-400 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-600 transition-colors"
+        class="p-2 rounded-lg text-slate-400 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-600 transition-colors cursor-pointer"
         :disabled="currentPage === totalPages - 1"
         @click="changePage(currentPage + 1)"
       >
@@ -203,6 +201,7 @@ import { useToast } from '@/composables/useToast'
 import { useConfirm } from '@/composables/useConfirm'
 import { useQuickApply } from '@/composables/useQuickApply'
 import JobCard from '@/components/candidate/job/JobCard.vue'
+import { formatSalary, formatWorkType } from '@/types/jobPosting.types'
 import dayjs from 'dayjs'
 
 const savedJobStore = useSavedJobStore()
@@ -289,23 +288,24 @@ async function confirmBatchApply() {
 const mappedJobs = computed(() => {
   return savedJobStore.savedJobs.map((item) => {
     const job = item.jobPosting;
+    const locationNames = job.locations?.length
+      ? [...new Set(job.locations.map(l => l.isRemote ? 'Remote' : l.name))].join(', ')
+      : 'Việt Nam';
     return {
       id: job.id,
       title: job.title,
       company: job.company.name,
+      isBrandVerified: job.company.isBrandVerified,
       logoUrl: job.company.logoUrl || "/default-company.png",
       logoBg: "bg-blue-50",
       logoBorder: "border-blue-100",
-      tags: [job.workType, job.level.name],
-      salaryMin: job.salaryNegotiable
-        ? "Thỏa thuận"
-        : `${((job.salaryMin ?? 0) / 1_000_000).toFixed(0)}tr`,
-      salaryMax: job.salaryNegotiable 
-        ? "" 
-        : job.salaryMax ? `${(job.salaryMax / 1_000_000).toFixed(0)}tr` : "",
-      location: "Vietnam",
+      tags: [formatWorkType(job.workType), job.level.name],
+      salaryMin: formatSalary(job),
+      salaryMax: "",
+      location: locationNames,
       postedAt: formatDate(job.publishedAt || job.createdAt),
-      isHot: job.isFeatured || job.isUrgent,
+      isHot: job.isHot,
+      isUrgent: job.isUrgent,
       isSaved: true,
     };
   });

@@ -258,6 +258,7 @@ function mapToRow(job: ResJobPostingDetail): JobPostingRow {
     editCount:  job.editCount,
     isUrgent:   job.isUrgent,
     isFeatured: job.isFeatured,
+    isHot:      job.isHot,
   }
 }
 
@@ -564,7 +565,7 @@ const confirmStartInterviewing = async () => {
   flex-direction: column;
   gap: 2rem;
   min-height: 100vh;
-  background-color: #f8fafc;
+ 
   font-family: 'Manrope', sans-serif;
 }
 

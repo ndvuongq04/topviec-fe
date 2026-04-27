@@ -9,10 +9,12 @@
           <span class="material-symbols-outlined text-[#963131]">description</span>
           Mô tả công ty
         </h3>
-        <div class="text-slate-600 dark:text-slate-400 text-sm leading-relaxed space-y-4">
-          <p v-if="company.description">{{ company.description }}</p>
-          <p v-else class="italic text-slate-400">Chưa cập nhật mô tả công ty.</p>
-        </div>
+        <div
+          v-if="company.description"
+          class="prose prose-slate dark:prose-invert max-w-none text-sm leading-relaxed tiptap-content"
+          v-html="company.description"
+        />
+        <p v-else class="italic text-slate-400 text-sm">Chưa cập nhật mô tả công ty.</p>
       </section>
 
       <!-- Cover Image -->
@@ -40,10 +42,12 @@
           <span class="material-symbols-outlined text-[#963131]">diversity_3</span>
           Văn hóa & Môi trường làm việc
         </h3>
-        <div class="text-slate-600 dark:text-slate-400 text-sm leading-relaxed space-y-4">
-          <p v-if="company.culture">{{ company.culture }}</p>
-          <p v-else class="italic text-slate-400">Chưa cập nhật thông tin văn hóa doanh nghiệp.</p>
-        </div>
+        <div
+          v-if="company.culture"
+          class="prose prose-slate dark:prose-invert max-w-none text-sm leading-relaxed tiptap-content"
+          v-html="company.culture"
+        />
+        <p v-else class="italic text-slate-400 text-sm">Chưa cập nhật thông tin văn hóa doanh nghiệp.</p>
       </section>
 
       <!-- Social Links (Optional if placed here) -->

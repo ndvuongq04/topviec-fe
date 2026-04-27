@@ -113,6 +113,9 @@ const publicCompanyService = {
         keyword?: string
         provinceId?: number
         industryId?: number
+        isBanner?: boolean
+        isTopEmployer?: boolean
+        isBrandVerified?: boolean
         page?: number
         size?: number
         sort?: string

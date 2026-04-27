@@ -1,6 +1,6 @@
 <template>
   <main class="flex flex-col flex-1 gap-6 min-w-0 pb-20 max-w-[1440px] mx-auto w-full px-4 md:px-10 py-6">
-    <header class="interviews-page__header">
+    <header class="interviews-page__header mt-2">
       <h1 class="interviews-page__title">Lịch trình phỏng vấn</h1>
       <p class="interviews-page__subtitle">
         Theo dõi các buổi phỏng vấn sắp tới và xem lại lịch sử.
@@ -107,6 +107,7 @@ const processes = computed(() =>
     jobTitle: app.jobPosting?.title ?? 'Không rõ vị trí',
     companyName: app.jobPosting?.company.name ?? 'Không rõ công ty',
     companyLogo: app.jobPosting?.company.logoUrl,
+    isBrandVerified: app.jobPosting?.company.isBrandVerified ?? false,
     status: app.status,
     rounds: interviewsMap.value[app.id] ?? [],
   }))

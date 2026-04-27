@@ -31,16 +31,16 @@
     <div class="p-4 border-t border-slate-200 dark:border-slate-800">
       <div class="flex items-center gap-3 p-2 rounded-xl bg-slate-50 dark:bg-slate-800/50">
         <div
-          class="size-10 rounded-full bg-cover bg-center bg-slate-200"
-          :style="user?.avatarUrl ? `background-image: url('${user.avatarUrl}')` : ''"
+          class="size-10 rounded-full bg-cover bg-center bg-slate-200 shrink-0"
+          :style="profile?.companyLogoUrl ? `background-image: url('${profile.companyLogoUrl}')` : ''"
         >
-          <div v-if="!user?.avatarUrl" class="w-full h-full flex items-center justify-center">
-            <span class="material-symbols-outlined text-slate-400">person</span>
+          <div v-if="!profile?.companyLogoUrl" class="w-full h-full flex items-center justify-center rounded-full bg-primary/10">
+            <span class="text-sm font-bold text-primary uppercase">{{ avatarInitial }}</span>
           </div>
         </div>
         <div class="flex-1 min-w-0">
-          <p class="text-sm font-bold truncate">{{ user?.name || 'Recruiter' }}</p>
-          <p class="text-xs text-slate-500 truncate">{{ user?.title || 'HR Manager' }}</p>
+          <p class="text-sm font-bold truncate">{{ displayName }}</p>
+          <p class="text-xs text-slate-500 truncate">{{ roleLabel }}</p>
         </div>
         <GlobalDropdown align="left" direction="up" :offset="12">
           <template #trigger="{ toggle, isOpen }">
@@ -56,45 +56,90 @@
           <template #default="{ close }">
             <GlobalDropdownItem
               icon="person_outline"
-              label="Cài đặt tài khoản"
-              @click="close"
+              label="Thông tin cá nhân"
+              @click="() => { close(); showProfileModal = true }"
             />
-            <GlobalDropdownItem
-              icon="business"
-              label="Thông tin công ty"
-              @click="close"
-            />
+
             <GlobalDropdownItem
               icon="lock_open"
               label="Đổi mật khẩu"
-              @click="close"
+              @click="() => { close(); showPasswordModal = true }"
             />
             <div class="h-px bg-slate-100 my-1 mx-2"></div>
             <GlobalDropdownItem
               icon="logout"
               label="Đăng xuất"
               danger
-              @click="close"
+              @click="() => { close(); authStore.logout() }"
             />
           </template>
         </GlobalDropdown>
       </div>
     </div>
   </aside>
+
+  <EmployerProfileModal :visible="showProfileModal" @close="showProfileModal = false" />
+  <ChangePasswordModal :visible="showPasswordModal" @close="showPasswordModal = false" />
 </template>
 
 <script setup lang="ts">
+import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
+import EmployerProfileModal from '@/components/recruiter/profile/EmployerProfileModal.vue'
+import ChangePasswordModal from '@/components/recruiter/profile/ChangePasswordModal.vue'
 import GlobalDropdown from '@/components/ui/GlobalDropdown.vue'
 import GlobalDropdownItem from '@/components/ui/GlobalDropdownItem.vue'
+import { MEMBER_ROLE } from '@/constants/companyMember.constants'
+import { employerProfileService } from '@/services/employerProfile.service'
+import { useAuthStore } from '@/stores/auth.store'
+import type { ResEmployerProfileDTO } from '@/types/companyMember.types'
 
 const route = useRoute()
+const authStore = useAuthStore()
+const showProfileModal = ref(false)
+const showPasswordModal = ref(false)
 
-// Routes nằm dưới /recruiter/jobs/* nhưng thuộc nhóm Phỏng vấn
+const profile = ref<ResEmployerProfileDTO | null>(null)
+
+const ROLE_LABELS: Record<string, string> = {
+  [MEMBER_ROLE.OWNER]: 'Chủ sở hữu',
+  [MEMBER_ROLE.MANAGER]: 'Quản lý',
+  [MEMBER_ROLE.RECRUITER]: 'Tuyển dụng',
+  [MEMBER_ROLE.VIEWER]: 'Xem',
+}
+
+const displayName = computed(() => {
+  if (!profile.value?.email) return 'Recruiter'
+  return profile.value.email.split('@')[0]
+})
+
+const roleLabel = computed(() =>
+  profile.value ? (ROLE_LABELS[profile.value.roleName] ?? profile.value.roleName) : 'HR Manager',
+)
+
+const avatarInitial = computed(() => displayName.value.charAt(0).toUpperCase())
+
+onMounted(async () => {
+  try {
+    profile.value = await employerProfileService.getMyProfile()
+  } catch {
+    // Keep fallback values when profile API fails.
+  }
+})
+
+// Routes nằm dưới /recruiter/jobs/* nhưng thuộc nhóm Phỏng vấn.
 const interviewJobRouteNames = new Set(['recruiter-job-interview-setup'])
 
 function isActive(to: string): boolean {
   if (to === '/recruiter') return route.path === '/recruiter'
+
+  if (to === '/recruiter/permissions') {
+    return route.path === '/recruiter/permissions'
+  }
+
+  if (to === '/recruiter/permissions/log') {
+    return route.path.startsWith('/recruiter/permissions/log')
+  }
 
   if (to === '/recruiter/interviews') {
     return route.path.startsWith('/recruiter/interviews') ||
@@ -110,21 +155,20 @@ function isActive(to: string): boolean {
 }
 
 const navItems = [
-  { to: '/recruiter',           icon: 'dashboard',        label: 'Dashboard' },
-  { to: '/recruiter/jobs',      icon: 'work',             label: 'Tin tuyển dụng' },
-  // { to: '/recruiter/candidates',icon: 'group',            label: 'Ứng viên' },
-  { to: '/recruiter/interviews', icon: 'event',    label: 'Phỏng vấn' },
-  // { to: '/recruiter/offers',     icon: 'handshake', label: 'Mời làm việc' },
-  // { to: '/recruiter/search-cv', icon: 'person_search',    label: 'Tìm CV' },
-  // { to: '/recruiter/reports',   icon: 'bar_chart',        label: 'Báo cáo' },
-  { to: '/recruiter/team',      icon: 'manage_accounts',  label: 'Quản lý nhóm' },
-  { to: '/recruiter/company-profile', icon: 'business',     label: 'Thông tin công ty' },
+  { to: '/recruiter', icon: 'dashboard', label: 'Dashboard' },
+  { to: '/recruiter/jobs', icon: 'work', label: 'Tin tuyển dụng' },
+  // { to: '/recruiter/candidates', icon: 'group', label: 'Ứng viên' },
+  { to: '/recruiter/interviews', icon: 'event', label: 'Phỏng vấn' },
+  { to: '/recruiter/talent-pool', icon: 'person_search', label: 'Ứng viên tiềm năng' },
+  // { to: '/recruiter/offers', icon: 'handshake', label: 'Mời làm việc' },
+  // { to: '/recruiter/search-cv', icon: 'person_search', label: 'Tìm CV' },
+  // { to: '/recruiter/reports', icon: 'bar_chart', label: 'Báo cáo' },
+  { to: '/recruiter/team', icon: 'manage_accounts', label: 'Quản lý nhóm' },
+  { to: '/recruiter/permissions', icon: 'admin_panel_settings', label: 'Phân quyền' },
+  { to: '/recruiter/permissions/log', icon: 'history', label: 'Lịch sử phân quyền' },
+  { to: '/recruiter/company-profile', icon: 'business', label: 'Thông tin công ty' },
+  { to: '/recruiter/messages', icon: 'chat', label: 'Tin nhắn' },
+  { to: '/recruiter/services', icon: 'diamond', label: 'Dịch vụ' },
+  { to: '/recruiter/billing', icon: 'receipt_long', label: 'Lịch sử đơn hàng' },
 ]
-
-// TODO: lấy từ auth store khi có employer profile
-const user = {
-  name: 'Hồng Nhung',
-  title: 'HR Manager',
-  avatarUrl: '',
-}
 </script>
