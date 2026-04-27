@@ -30,6 +30,10 @@ export interface ReqProcessReport {
   resolutionNote?: string;
 }
 
+export interface ReqConfirmReport {
+  approved: boolean;
+}
+
 export interface ReqGetAdminReports {
   search?: string;
   status?: ComplaintStatus;
@@ -136,6 +140,9 @@ export interface ResReportSummary {
   remainingProcessingHours: number | null;
   totalAllowedProcessingHours: number | null;
   assignedAdminName: string | null;
+  jobPosting?: ResJobInfo;
+  jobPost?: ResJobInfo;
+  company?: ResCompanyInfo;
 }
 
 export interface ResViolationReason {

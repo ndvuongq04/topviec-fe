@@ -88,10 +88,6 @@
                     <div class="min-w-0">
                       <div class="flex items-center gap-2 flex-wrap">
                         <span class="text-sm font-semibold text-slate-900">{{ opt.name }}</span>
-                        <span
-                          class="text-[10px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wide"
-                          :class="opt.group === 'B' ? 'bg-red-100 text-red-600' : 'bg-slate-200 text-slate-600'"
-                        >Nhóm {{ opt.group }}</span>
                         <span v-if="opt.requiresEvidence" class="text-[10px] font-bold text-red-500 flex items-center gap-0.5">
                           <span class="material-symbols-outlined text-[12px]">warning</span> Yêu cầu bằng chứng
                         </span>

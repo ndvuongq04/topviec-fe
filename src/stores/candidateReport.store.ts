@@ -29,6 +29,19 @@ export const useCandidateReportStore = defineStore('candidateReport', () => {
     }
   }
 
+  function normalizeReportSummary(item: ResReportSummary): ResReportSummary {
+    const jobPosting = item.jobPosting ?? item.jobPost;
+    const company = item.company ?? jobPosting?.company;
+
+    return {
+      ...item,
+      jobPostId: item.jobPostId ?? jobPosting?.id ?? 0,
+      jobPostTitle: item.jobPostTitle ?? jobPosting?.title ?? '',
+      companyId: item.companyId ?? company?.id ?? 0,
+      companyName: item.companyName ?? company?.name ?? '',
+    };
+  }
+
   // ─── Actions ────────────────────────────────────────────────────────────────
 
   async function fetchMyReports(params: ReqGetMyReports) {
@@ -36,7 +49,7 @@ export const useCandidateReportStore = defineStore('candidateReport', () => {
     error.value = null;
     try {
       const data = await candidateReportService.getMyReports(params);
-      reports.value = data.result;
+      reports.value = data.result.map(normalizeReportSummary);
       meta.value = data.meta;
     } catch (err) {
       setError(err);

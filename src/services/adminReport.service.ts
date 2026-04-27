@@ -1,6 +1,7 @@
 import axiosInstance from './axios';
 import type { RestResponse } from '@/types/common.types';
 import type {
+  ReqConfirmReport,
   ReqGetAdminReports,
   ReqProcessReport,
   ResReportDetail,
@@ -23,6 +24,14 @@ const adminReportService = {
   async process(id: number, data: ReqProcessReport): Promise<ResReportDetail> {
     const res = await axiosInstance.patch<RestResponse<ResReportDetail>>(
       `${BASE_URL}/${id}/process`,
+      data,
+    );
+    return res.data.data;
+  },
+
+  async confirm(id: number, data: ReqConfirmReport): Promise<ResReportDetail> {
+    const res = await axiosInstance.patch<RestResponse<ResReportDetail>>(
+      `${BASE_URL}/${id}/confirm`,
       data,
     );
     return res.data.data;

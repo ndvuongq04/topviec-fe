@@ -19,9 +19,6 @@
       <button class="cd-header__btn cd-header__btn--ghost" @click="$emit('reject')">
         Từ chối
       </button>
-      <button class="cd-header__btn cd-header__btn--ghost" @click="$emit('request-info')">
-        Yêu cầu bổ sung
-      </button>
       <button class="cd-header__btn cd-header__btn--primary" @click="$emit('confirm')">
         Xác nhận vi phạm
       </button>
@@ -41,7 +38,7 @@ const props = defineProps<{
   }
 }>()
 
-defineEmits(['reject', 'request-info', 'confirm'])
+defineEmits(['reject', 'confirm'])
 
 const breadcrumbItems = computed(() => [
   { label: 'Khiếu nại', to: '/admin/reports' },

@@ -11,10 +11,10 @@
     </div>
 
     <div class="ccc-body">
-      <h3 class="ccc-job-title">{{ complaint.jobPostTitle }}</h3>
+      <h3 class="ccc-job-title">{{ getJobTitle(props.complaint) }}</h3>
       <p class="ccc-company">
         <span class="material-symbols-outlined">business</span>
-        {{ complaint.companyName }}
+        {{ getCompanyName(props.complaint) }}
       </p>
     </div>
 
@@ -34,13 +34,25 @@
 <script setup lang="ts">
 import type { ResReportSummary } from '@/types/report.types'
 
-defineProps<{ complaint: ResReportSummary }>()
+const props = defineProps<{ complaint: ResReportSummary }>()
 defineEmits<{ view: [ResReportSummary] }>()
 
 function isDimmed(status: string) { return status === 'auto_closed' || status === 'rejected' }
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })
+}
+
+function getJobTitle(complaint: ResReportSummary) {
+  return complaint.jobPostTitle || complaint.jobPosting?.title || complaint.jobPost?.title || 'Tin tuyển dụng'
+}
+
+function getCompanyName(complaint: ResReportSummary) {
+  return complaint.companyName
+    || complaint.company?.name
+    || complaint.jobPosting?.company?.name
+    || complaint.jobPost?.company?.name
+    || 'Công ty chưa cập nhật'
 }
 
 const statusLabel: Record<string, string> = {

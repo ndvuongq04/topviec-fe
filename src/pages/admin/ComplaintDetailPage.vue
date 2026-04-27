@@ -5,16 +5,10 @@
       <p>Đang tải chi tiết khiếu nại...</p>
     </div>
 
-    <div v-else-if="store.error" class="complaint-detail__state complaint-detail__state--error">
-      <span class="material-symbols-outlined">error</span>
-      <p>{{ store.error }}</p>
-    </div>
-
     <div v-else-if="complaint" class="complaint-detail__content">
       <ComplaintDetailHeader
         :complaint="complaint"
         @reject="onReject"
-        @request-info="onRequestInfo"
         @confirm="onConfirm"
       />
 
@@ -60,14 +54,36 @@ import ComplaintDetailJobInfo from '@/components/admin/complaints/complaint-deta
 import ComplaintDetailOverview from '@/components/admin/complaints/complaint-detail/ComplaintDetailOverview.vue'
 import ComplaintDetailReporter from '@/components/admin/complaints/complaint-detail/ComplaintDetailReporter.vue'
 import ComplaintDetailWarnings from '@/components/admin/complaints/complaint-detail/ComplaintDetailWarnings.vue'
+import { useToast } from '@/composables/useToast'
 import { useAdminReportStore } from '@/stores/adminReport.store'
+import type { ReqConfirmReport } from '@/types/report.types'
 
 const route = useRoute()
 const store = useAdminReportStore()
+const toast = useToast()
 
-const onReject = () => {}
-const onRequestInfo = () => {}
-const onConfirm = () => {}
+async function submitHeaderDecision(approved: boolean) {
+  const id = Number(route.params.id)
+  if (!id) {
+    toast.error('Lỗi', 'Không xác định được mã khiếu nại.')
+    return
+  }
+
+  const payload: ReqConfirmReport = { approved }
+
+  try {
+    await store.confirmReport(id, payload)
+    toast.success(
+      'Thành công',
+      approved ? 'Đã xác nhận vi phạm.' : 'Đã từ chối khiếu nại.',
+    )
+  } catch {
+    toast.error('Lỗi', store.error ?? 'Không thể xử lý khiếu nại.')
+  }
+}
+
+const onReject = () => submitHeaderDecision(false)
+const onConfirm = () => submitHeaderDecision(true)
 
 const complaintTypeLabelMap = Object.fromEntries(COMPLAINT_TYPE_OPTIONS.map((item) => [item.value, item.label])) as Record<string, string>
 const complaintStatusLabelMap = Object.fromEntries(COMPLAINT_STATUS_OPTIONS.map((item) => [item.value, item.label])) as Record<string, string>
@@ -226,7 +242,12 @@ async function ensureDetailLoaded() {
   const id = Number(route.params.id)
   if (!id) return
   if (store.currentReport?.id === id) return
-  await store.fetchById(id)
+
+  try {
+    await store.fetchById(id)
+  } catch {
+    toast.error('Lỗi', store.error ?? 'Không thể tải chi tiết khiếu nại.')
+  }
 }
 
 onMounted(() => {
