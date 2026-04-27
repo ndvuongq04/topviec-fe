@@ -4,15 +4,15 @@
       Hiển thị <strong>{{ from }}-{{ to }}</strong> / <strong>{{ total }}</strong> kết quả
     </span>
     <div class="cp-controls">
-      <button class="cp-nav-btn" :disabled="current === 1" @click="$emit('change', current - 1)">
+      <button class="cp-nav-btn" :disabled="!canGoPrev" @click="$emit('change', currentPage - 1)">
         <span class="material-symbols-outlined">chevron_left</span>
       </button>
       <template v-for="p in displayedPages" :key="p">
-        <span v-if="p === '...'" class="cp-ellipsis">...</span>
-        <button v-else :class="['cp-page-btn', p === current ? 'active' : '']"
-          @click="$emit('change', Number(p))">{{ p }}</button>
+        <span v-if="p === '...'" class="cp-ellipsis">…</span>
+        <button v-else :class="['cp-page-btn', p === currentPage ? 'active' : '']"
+          @click="$emit('change', Number(p))">{{ Number(p) + 1 }}</button>
       </template>
-      <button class="cp-nav-btn" :disabled="current === totalPages" @click="$emit('change', current + 1)">
+      <button class="cp-nav-btn" :disabled="!canGoNext" @click="$emit('change', currentPage + 1)">
         <span class="material-symbols-outlined">chevron_right</span>
       </button>
     </div>
@@ -22,21 +22,34 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-const props = defineProps<{ current: number; total: number; perPage?: number }>()
+const props = defineProps<{ currentPage: number; total: number; perPage?: number }>()
 defineEmits<{ change: [number] }>()
 
-const perPage = computed(() => props.perPage ?? 10)
+const perPage    = computed(() => props.perPage ?? 10)
 const totalPages = computed(() => Math.ceil(props.total / perPage.value))
-const from = computed(() => (props.current - 1) * perPage.value + 1)
-const to   = computed(() => Math.min(props.current * perPage.value, props.total))
+
+const canGoPrev = computed(() => props.currentPage > 0)
+const canGoNext = computed(() => props.currentPage < totalPages.value - 1)
+
+const from = computed(() => props.total > 0 ? props.currentPage * perPage.value + 1 : 0)
+const to   = computed(() => Math.min((props.currentPage + 1) * perPage.value, props.total))
 
 const displayedPages = computed(() => {
   const pages: (number | string)[] = []
-  if (totalPages.value <= 5) {
-    for (let i = 1; i <= totalPages.value; i++) pages.push(i)
-  } else {
-    pages.push(1, 2, 3, '...', totalPages.value)
+  if (totalPages.value <= 7) {
+    for (let i = 0; i < totalPages.value; i++) pages.push(i)
+    return pages
   }
+  const cur  = props.currentPage
+  const last = totalPages.value - 1
+  const set  = new Set<number>(
+    [0, cur - 1, cur, cur + 1, last].filter(i => i >= 0 && i <= last),
+  )
+  const sorted = Array.from(set).sort((a, b) => a - b)
+  sorted.forEach((p, i) => {
+    if (i > 0 && p - sorted[i - 1] > 1) pages.push('...')
+    pages.push(p)
+  })
   return pages
 })
 </script>

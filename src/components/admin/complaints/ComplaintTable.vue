@@ -9,7 +9,6 @@
           <th class="ct-th">Loại vi phạm</th>
           <th class="ct-th">Nhóm</th>
           <th class="ct-th">SLA</th>
-          <th class="ct-th ct-th--center">Bằng chứng</th>
           <th class="ct-th">Trạng thái</th>
           <th class="ct-th ct-th--right">Thao tác</th>
         </tr>
@@ -22,69 +21,54 @@
           @click="$emit('select', row)"
         >
           <td class="ct-td">
-            <span :class="['ct-id', row.highlighted ? 'ct-id--active' : '']">{{ row.id }}</span>
-            <div class="ct-date">{{ row.date }}</div>
+            <span :class="['ct-id', isUrgent(row) ? 'ct-id--active' : '']">{{ row.reportCode }}</span>
+            <div class="ct-date">{{ formatDate(row.createdAt) }}</div>
           </td>
 
           <td class="ct-td">
             <div class="ct-sender">
-              <img
-                v-if="row.reporter.avatar"
-                :src="row.reporter.avatar"
-                :alt="row.reporter.name"
-                class="ct-avatar"
-              />
-              <div
-                v-else
-                class="ct-avatar-initials"
-                :style="{ background: row.reporter.initials_bg }"
-              >
-                {{ row.reporter.initials }}
+              <div class="ct-avatar-initials" :style="{ background: avatarColor(row.reporterName) }">
+                {{ initials(row.reporterName) }}
               </div>
-              <span class="ct-sender-name">{{ row.reporter.name }}</span>
+              <span class="ct-sender-name">{{ row.reporterName }}</span>
             </div>
           </td>
 
           <td class="ct-td">
-            <div class="ct-job-title">{{ row.target.jobTitle }}</div>
-            <div class="ct-employer-name">{{ row.target.employerName }}</div>
+            <div class="ct-job-title">{{ row.jobPostTitle }}</div>
+            <div class="ct-employer-name">{{ row.companyName }}</div>
           </td>
 
           <td class="ct-td">
-            <span class="ct-category">{{ categoryLabel[row.category] }}</span>
+            <span class="ct-category">{{ typeLabel[row.complaintType] ?? row.complaintType }}</span>
           </td>
 
           <td class="ct-td">
-            <span :class="['ct-group-badge', `group-${row.group.toLowerCase()}`]">
-              Nhóm {{ row.group }}
+            <span v-if="row.violationGroup" :class="['ct-group-badge', `group-${row.violationGroup.toLowerCase()}`]">
+              Nhóm {{ row.violationGroup }}
             </span>
+            <span v-else class="ct-no-evidence">-</span>
           </td>
 
           <td class="ct-td">
             <template v-if="resolvedStatuses.includes(row.status)">
               <span class="ct-sla-done">-</span>
             </template>
-            <template v-else-if="row.deadlineHours > 0">
-              <span :class="['ct-sla', slaClass(row.deadlineHours)]">Còn {{ row.deadlineHours }}h</span>
+            <template v-else-if="row.remainingProcessingHours !== null && row.remainingProcessingHours > 0">
+              <span :class="['ct-sla', slaClass(row.remainingProcessingHours)]">
+                Còn {{ row.remainingProcessingHours }}h
+              </span>
+            </template>
+            <template v-else-if="row.remainingProcessingHours !== null">
+              <span class="ct-sla sla-overdue">Quá hạn {{ Math.abs(row.remainingProcessingHours) }}h</span>
             </template>
             <template v-else>
-              <span class="ct-sla sla-overdue">Quá hạn {{ Math.abs(row.deadlineHours) }}h</span>
+              <span class="ct-sla-done">-</span>
             </template>
-          </td>
-
-          <td class="ct-td ct-td--center">
-            <span
-              v-if="row.hasEvidence"
-              class="material-symbols-outlined ct-evidence-icon"
-              title="Có bằng chứng"
-            >
-              attach_file
-            </span>
-            <span v-else class="ct-no-evidence">-</span>
           </td>
 
           <td class="ct-td">
-            <span :class="['ct-badge', `status-${row.status}`]">{{ statusLabel[row.status] }}</span>
+            <span :class="['ct-badge', statusCss(row.status)]">{{ statusLabel[row.status] ?? row.status }}</span>
           </td>
 
           <td class="ct-td ct-td--right">
@@ -106,73 +90,72 @@
 
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
+import type { ResReportSummary } from '@/types/report.types'
 
-export interface ComplaintReporter {
-  name: string
-  avatar?: string
-  initials?: string
-  initials_bg?: string
-}
-
-export interface ComplaintTarget {
-  jobTitle: string
-  employerName: string
-}
-
-export type ComplaintCategory =
-  | 'missing-info'
-  | 'duplicate'
-  | 'company-mismatch'
-  | 'fee-abuse'
-  | 'fraud'
-
-export interface Complaint {
-  id: string
-  reporter: ComplaintReporter
-  target: ComplaintTarget
-  category: ComplaintCategory
-  group: 'A' | 'B'
-  status: 'pending' | 'processing' | 'resolved' | 'auto-closed' | 'hidden'
-  date: string
-  deadlineHours: number
-  hasEvidence: boolean
-  highlighted?: boolean
-}
-
-defineProps<{ complaints: Complaint[] }>()
-defineEmits<{ select: [Complaint] }>()
+defineProps<{ complaints: ResReportSummary[] }>()
+defineEmits<{ select: [ResReportSummary] }>()
 
 const router = useRouter()
 
-const resolvedStatuses: Complaint['status'][] = ['resolved', 'auto-closed', 'hidden']
+const resolvedStatuses = ['resolved', 'auto_closed', 'rejected']
 
-const categoryLabel: Record<ComplaintCategory, string> = {
-  'missing-info': 'Tin thiếu thông tin',
-  duplicate: 'Tin trùng lặp / spam',
-  'company-mismatch': 'Thông tin công ty sai',
-  'fee-abuse': 'Yêu cầu phí bất hợp lý',
-  fraud: 'Lừa đảo có bằng chứng',
+const typeLabel: Record<string, string> = {
+  fraudulent:    'Lừa đảo',
+  spam:          'Spam / Trùng lặp',
+  wrong_info:    'Thông tin sai lệch',
+  inappropriate: 'Nội dung không phù hợp',
+  payment_issue: 'Yêu cầu phí bất hợp lý',
+  other:         'Khác',
 }
 
-const statusLabel: Record<Complaint['status'], string> = {
-  pending: 'Chờ xử lý',
-  processing: 'Đang xử lý',
-  resolved: 'Đã giải quyết',
-  'auto-closed': 'Tự động đóng',
-  hidden: 'Đã ẩn tin',
+const statusLabel: Record<string, string> = {
+  pending:          'Chờ xử lý',
+  processing:       'Đang xử lý',
+  waiting_employer: 'Chờ NTD',
+  resolved:         'Đã giải quyết',
+  rejected:         'Từ chối',
+  auto_closed:      'Tự động đóng',
+}
+
+const statusCssMap: Record<string, string> = {
+  pending:          'status-pending',
+  processing:       'status-processing',
+  waiting_employer: 'status-waiting',
+  resolved:         'status-resolved',
+  rejected:         'status-rejected',
+  auto_closed:      'status-auto-closed',
+}
+
+function statusCss(s: string) { return statusCssMap[s] ?? '' }
+
+function isUrgent(row: ResReportSummary) {
+  return row.priority === 'urgent' || (row.remainingProcessingHours !== null && row.remainingProcessingHours <= 4)
+}
+
+function formatDate(iso: string) {
+  return new Date(iso).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })
+}
+
+const AVATAR_COLORS = ['#963131', '#1e5e4e', '#2c4a8e', '#633806', '#4a2c8e', '#1a6b6b']
+function avatarColor(name: string) {
+  return AVATAR_COLORS[name.charCodeAt(0) % AVATAR_COLORS.length]
+}
+
+function initials(name: string) {
+  const parts = name.trim().split(' ')
+  return parts.length >= 2
+    ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+    : name.slice(0, 2).toUpperCase()
 }
 
 function slaClass(hours: number): string {
-  if (hours <= 4) return 'sla-critical'
+  if (hours <= 4)  return 'sla-critical'
   if (hours <= 24) return 'sla-warning'
   return 'sla-ok'
 }
 
-function goToDetail(id: string) {
-  router.push({
-    name: 'admin-complaint-detail',
-    params: { id: id.replace('#', '') },
-  })
+function goToDetail(id: number) {
+  router.push({ name: 'admin-complaint-detail', params: { id } })
 }
 </script>
 
@@ -266,11 +249,12 @@ function goToDetail(id: string) {
   display: inline-block;
   white-space: nowrap;
 }
+.status-pending    { background: #e4e2dc; color: #574240; }
 .status-processing { background: #faeeda; color: #633806; }
-.status-pending { background: #e4e2dc; color: #574240; }
-.status-resolved { background: #e1f5ee; color: #085041; }
+.status-waiting    { background: #e8f0fe; color: #1a56db; }
+.status-resolved   { background: #e1f5ee; color: #085041; }
+.status-rejected   { background: #ffdad6; color: #ba1a1a; }
 .status-auto-closed { background: #e4e2dc; color: #574240; }
-.status-hidden { background: #ffdad6; color: #ba1a1a; }
 
 .ct-detail-btn {
   padding: 6px;

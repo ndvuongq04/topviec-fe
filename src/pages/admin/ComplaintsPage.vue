@@ -10,86 +10,72 @@
     <ComplaintFilters @filter="onFilter" />
 
     <div class="cop-card">
-      <ComplaintTable :complaints="filtered" @select="onSelect" />
-      <ComplaintPagination :current="page" :total="128" @change="page = $event" />
+      <!-- Loading skeleton -->
+      <div v-if="store.loading" class="flex flex-col gap-3 py-4">
+        <div v-for="i in 8" :key="i" class="h-14 rounded-lg bg-slate-100 animate-pulse" />
+      </div>
+
+      <!-- Empty state -->
+      <div v-else-if="!store.reports.length" class="flex flex-col items-center justify-center py-16 gap-3 text-center">
+        <span class="material-symbols-outlined text-slate-300 text-[56px]">inbox</span>
+        <p class="text-slate-500 font-medium">Không có khiếu nại nào phù hợp</p>
+      </div>
+
+      <!-- Table -->
+      <ComplaintTable v-else :complaints="store.reports" @select="onSelect" />
+
+      <ComplaintPagination
+        v-if="store.meta.totals > 0"
+        :current-page="currentPage"
+        :total="store.meta.totals"
+        :per-page="pageSize"
+        @change="onPageChange"
+      />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { useAdminReportStore } from '@/stores/adminReport.store'
 import ComplaintKpiCards   from '@/components/admin/complaints/ComplaintKpiCards.vue'
 import ComplaintFilters    from '@/components/admin/complaints/ComplaintFilters.vue'
-import ComplaintTable, { type Complaint } from '@/components/admin/complaints/ComplaintTable.vue'
+import ComplaintTable      from '@/components/admin/complaints/ComplaintTable.vue'
 import ComplaintPagination from '@/components/admin/complaints/ComplaintPagination.vue'
+import type { ResReportSummary } from '@/types/report.types'
+import type { ReqGetAdminReports } from '@/types/report.types'
 
-const router = useRouter()
-const page = ref(1)
-const filterState = ref({ search: '', category: '', group: '', status: '' })
+const router      = useRouter()
+const store       = useAdminReportStore()
+const currentPage = ref(0)
+const pageSize    = ref(10)
+const filterParams = ref<Omit<ReqGetAdminReports, 'page' | 'size' | 'sort'>>({})
 
-const allComplaints: Complaint[] = [
-  {
-    id: '#BC-2931', highlighted: true,
-    reporter: { name: 'Nguyễn Văn A', avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAElV9zpTLptafsPIcKeMYcnwpaqdvX6BjriNrAYyNc6q8Y0acdTALBUtj7rZYwGUuiLVKslWMZYJBPxWa7aqL-LdXjRzc13eIR8w1IgjDJHAXVHqbGbpJaeMbNGhFs3s4Y3y08dRb6T3Sg-rNWY7ocf9yHpIGTxaJXM97vU6y_aEghIC5ogsezJ51_2l0L8qn64sjvWuGN6l6DqHJUT0VjvN6IwKw4KJa-qg9okm1Na69wDuwOCKHEFvpNOoaKujey8LeQM-TAIwMy' },
-    target: { jobTitle: 'Senior Frontend Developer', employerName: 'Công ty ABC Tech' },
-    category: 'fraud', group: 'B',
-    status: 'processing', date: '24/10/2023', deadlineHours: 2, hasEvidence: true,
-  },
-  {
-    id: '#BC-2930',
-    reporter: { name: 'Trần Thị B', initials: 'TB', initials_bg: '#963131' },
-    target: { jobTitle: 'Kế toán tổng hợp', employerName: 'Công ty XYZ Finance' },
-    category: 'fee-abuse', group: 'B',
-    status: 'pending', date: '23/10/2023', deadlineHours: 18, hasEvidence: true,
-  },
-  {
-    id: '#BC-2929',
-    reporter: { name: 'Lê Văn C', initials: 'LC', initials_bg: '#1e5e4e' },
-    target: { jobTitle: 'Marketing Executive', employerName: 'Công ty DEF Media' },
-    category: 'missing-info', group: 'A',
-    status: 'pending', date: '22/10/2023', deadlineHours: 36, hasEvidence: false,
-  },
-  {
-    id: '#BC-2928',
-    reporter: { name: 'Phạm Thị D', initials: 'PD', initials_bg: '#633806' },
-    target: { jobTitle: 'Java Backend Developer', employerName: 'Công ty GHI Solutions' },
-    category: 'duplicate', group: 'A',
-    status: 'auto-closed', date: '21/10/2023', deadlineHours: 0, hasEvidence: false,
-  },
-  {
-    id: '#BC-2927',
-    reporter: { name: 'Hoàng Văn E', initials: 'HE', initials_bg: '#2c4a8e' },
-    target: { jobTitle: 'HR Manager', employerName: 'Công ty JKL Group' },
-    category: 'company-mismatch', group: 'A',
-    status: 'resolved', date: '20/10/2023', deadlineHours: 0, hasEvidence: false,
-  },
-  {
-    id: '#BC-2926',
-    reporter: { name: 'Vũ Thị F', initials: 'VF', initials_bg: '#4a2c8e' },
-    target: { jobTitle: 'Business Analyst', employerName: 'Công ty MNO Consulting' },
-    category: 'fraud', group: 'B',
-    status: 'pending', date: '19/10/2023', deadlineHours: -2, hasEvidence: true,
-  },
-]
-
-const filtered = computed(() => {
-  const { search, category, group, status } = filterState.value
-  return allComplaints.filter(c => {
-    const matchSearch   = !search   || c.id.includes(search) || c.reporter.name.toLowerCase().includes(search.toLowerCase()) || c.target.employerName.toLowerCase().includes(search.toLowerCase())
-    const matchCategory = !category || c.category === category
-    const matchGroup    = !group    || c.group === group
-    const matchStatus   = !status   || c.status === status
-    return matchSearch && matchCategory && matchGroup && matchStatus
+function fetchData() {
+  store.fetchAll({
+    ...filterParams.value,
+    page: currentPage.value,
+    size: pageSize.value,
+    sort: 'createdAt,desc',
   })
-})
+}
 
-const onFilter = (f: typeof filterState.value) => { filterState.value = f; page.value = 1 }
-const onSelect = (c: Complaint) => {
-  router.push({
-    name: 'admin-complaint-detail',
-    params: { id: c.id.replace('#', '') },
-  })
+onMounted(() => fetchData())
+
+function onFilter(params: Omit<ReqGetAdminReports, 'page' | 'size' | 'sort'>) {
+  filterParams.value = params
+  currentPage.value  = 0
+  fetchData()
+}
+
+function onPageChange(page: number) {
+  currentPage.value = page
+  fetchData()
+}
+
+function onSelect(row: ResReportSummary) {
+  router.push({ name: 'admin-complaint-detail', params: { id: row.id } })
 }
 </script>
 
