@@ -67,6 +67,12 @@ export const candidateRoutes: RouteRecordRaw[] = [
                 component: () => import('@/pages/candidate/ChangePasswordPage.vue'),
                 meta: { requiresAuth: true, role: 'CANDIDATE' },
             },
+            {
+                path: 'my-complaints',
+                name: 'CandidateComplaints',
+                component: () => import('@/pages/candidate/ComplaintsPage.vue'),
+                meta: { requiresAuth: true, role: 'CANDIDATE' },
+            },
         ],
     },
 ]

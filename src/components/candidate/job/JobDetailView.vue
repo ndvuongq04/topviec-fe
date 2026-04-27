@@ -8,6 +8,7 @@ import { useAuthStore } from "@/stores/auth.store";
 import { useApplicationStore } from "@/stores/application.store";
 import { useToast } from "@/composables/useToast";
 import ApplyJobModal from "@/components/candidate/job/ApplyJobModal.vue";
+import ComplaintModal from "@/components/candidate/job/ComplaintModal.vue";
 import { useQuickApply } from "@/composables/useQuickApply";
 import { APPLY_METHOD } from "@/constants/application.constants";
 import { formatSalary, formatWorkType } from "@/types/jobPosting.types";
@@ -26,7 +27,8 @@ const toast = useToast();
 const { handleQuickApply } = useQuickApply();
 
 const job = computed(() => jobStore.selectedJob);
-const showApplyModal = ref(false);
+const showApplyModal     = ref(false);
+const showComplaintModal = ref(false);
 
 const handleApplyConfirm = async (cvId: number) => {
   if (!authStore.isAuthenticated) {
@@ -246,6 +248,13 @@ async function toggleCompanyFollow() {
               >bookmark</span
             >
             <span>{{ isSaved ? "Đã lưu" : "Lưu" }}</span>
+          </button>
+          <button
+            class="flex-1 md:flex-none h-12 px-5 rounded-xl border border-primary/20 bg-white hover:bg-primary/5 text-primary font-bold text-base flex items-center justify-center gap-2 transition-all cursor-pointer"
+            @click="showComplaintModal = true"
+          >
+            <span class="material-symbols-outlined text-[20px]">flag</span>
+            <span>Khiếu nại</span>
           </button>
           <button
             @click="handleQuickApply(props.id, job.title)"
@@ -483,13 +492,23 @@ async function toggleCompanyFollow() {
     </div>
 
     <!-- Apply Modal -->
-    <ApplyJobModal 
+    <ApplyJobModal
       :show="showApplyModal"
       :job-title="job.title"
       :company-name="job.company.name"
       :company-logo="getLogoUrl(job.company.logoUrl)"
       @close="showApplyModal = false"
       @confirm="handleApplyConfirm"
+    />
+
+    <!-- Complaint Modal -->
+    <ComplaintModal
+      :show="showComplaintModal"
+      :job-title="job.title"
+      :company-name="job.company.name"
+      :company-logo="getLogoUrl(job.company.logoUrl)"
+      @close="showComplaintModal = false"
+      @submitted="showComplaintModal = false"
     />
     </div>
   </main>
