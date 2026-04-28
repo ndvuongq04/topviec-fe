@@ -15,7 +15,7 @@
       </div>
     </div>
 
-    <div class="cd-header__actions">
+    <div v-if="showActions" class="cd-header__actions">
       <button class="cd-header__btn cd-header__btn--ghost" @click="$emit('reject')">
         Từ chối
       </button>
@@ -36,6 +36,7 @@ const props = defineProps<{
     title: string
     tags: { label: string; variant: string; icon?: string }[]
   }
+  showActions?: boolean
 }>()
 
 defineEmits(['reject', 'confirm'])

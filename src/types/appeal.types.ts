@@ -1,8 +1,16 @@
 import type { AppealStatus, ComplaintType, ViolationGroup } from '@/constants/complaints.constants'
 
 export interface ReqCreateAppeal {
-  complaintId: number
   content: string
+}
+
+export interface ReqSubmitAppeal {
+  content: string
+}
+
+export interface ReqUnsuspendAppeal {
+  appealId: number
+  note?: string
 }
 
 export interface ResAppealAdminInfo {

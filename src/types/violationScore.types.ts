@@ -13,6 +13,11 @@ export interface ReqAdjustViolationScore {
   note: string
 }
 
+export interface ReqUnsuspendViolationScore {
+  appealId: number
+  note?: string
+}
+
 export interface ResViolationScoreCompanyInfo {
   id: number
   name: string

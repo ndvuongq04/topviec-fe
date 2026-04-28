@@ -8,6 +8,7 @@
     <div v-else-if="complaint" class="complaint-detail__content">
       <ComplaintDetailHeader
         :complaint="complaint"
+        :show-actions="true"
         @reject="onReject"
         @confirm="onConfirm"
       />
@@ -21,6 +22,14 @@
           </div>
           <ComplaintDetailContent :content="complaint.content" />
           <ComplaintDetailDecisionPanel />
+          <ComplaintDetailAppealPanel
+            :appeal="appealPanel"
+            :employer-name="detailCompanyName"
+            :violation-score="detailViolationScore"
+            :is-suspended="detailIsSuspended"
+            :loading="appealStore.loading"
+            @unsuspend="onUnsuspendEmployer"
+          />
         </div>
 
         <div class="complaint-detail__right">
@@ -46,6 +55,7 @@ import {
 } from '@/constants/complaints.constants'
 import { JOB_POSTING_STATUS_LABELS } from '@/constants/jobPosting.constants'
 import ComplaintDetailAccountImpact from '@/components/admin/complaints/complaint-detail/ComplaintDetailAccountImpact.vue'
+import ComplaintDetailAppealPanel from '@/components/admin/complaints/complaint-detail/ComplaintDetailAppealPanel.vue'
 import ComplaintDetailContent from '@/components/admin/complaints/complaint-detail/ComplaintDetailContent.vue'
 import ComplaintDetailDecisionPanel from '@/components/admin/complaints/complaint-detail/ComplaintDetailDecisionPanel.vue'
 import ComplaintDetailHeader from '@/components/admin/complaints/complaint-detail/ComplaintDetailHeader.vue'
@@ -54,13 +64,18 @@ import ComplaintDetailJobInfo from '@/components/admin/complaints/complaint-deta
 import ComplaintDetailOverview from '@/components/admin/complaints/complaint-detail/ComplaintDetailOverview.vue'
 import ComplaintDetailReporter from '@/components/admin/complaints/complaint-detail/ComplaintDetailReporter.vue'
 import ComplaintDetailWarnings from '@/components/admin/complaints/complaint-detail/ComplaintDetailWarnings.vue'
+import { useConfirm } from '@/composables/useConfirm'
 import { useToast } from '@/composables/useToast'
 import { useAdminReportStore } from '@/stores/adminReport.store'
+import { useAdminViolationScoreStore } from '@/stores/adminViolationScore.store'
+import type { ReqUnsuspendAppeal, ResAppeal } from '@/types/appeal.types'
 import type { ReqConfirmReport } from '@/types/report.types'
 
 const route = useRoute()
 const store = useAdminReportStore()
+const appealStore = useAdminViolationScoreStore()
 const toast = useToast()
+const { confirm } = useConfirm()
 
 async function submitHeaderDecision(approved: boolean) {
   const id = Number(route.params.id)
@@ -85,10 +100,22 @@ async function submitHeaderDecision(approved: boolean) {
 const onReject = () => submitHeaderDecision(false)
 const onConfirm = () => submitHeaderDecision(true)
 
-const complaintTypeLabelMap = Object.fromEntries(COMPLAINT_TYPE_OPTIONS.map((item) => [item.value, item.label])) as Record<string, string>
-const complaintStatusLabelMap = Object.fromEntries(COMPLAINT_STATUS_OPTIONS.map((item) => [item.value, item.label])) as Record<string, string>
-const complaintPriorityLabelMap = Object.fromEntries(COMPLAINT_PRIORITY_OPTIONS.map((item) => [item.value, item.label])) as Record<string, string>
-const violationGroupLabelMap = Object.fromEntries(VIOLATION_GROUP_OPTIONS.map((item) => [item.value, item.label])) as Record<string, string>
+const complaintTypeLabelMap = Object.fromEntries(
+  COMPLAINT_TYPE_OPTIONS.map((item) => [item.value, item.label]),
+) as Record<string, string>
+const complaintStatusLabelMap = Object.fromEntries(
+  COMPLAINT_STATUS_OPTIONS.map((item) => [item.value, item.label]),
+) as Record<string, string>
+const complaintPriorityLabelMap = Object.fromEntries(
+  COMPLAINT_PRIORITY_OPTIONS.map((item) => [item.value, item.label]),
+) as Record<string, string>
+const violationGroupLabelMap = Object.fromEntries(
+  VIOLATION_GROUP_OPTIONS.map((item) => [item.value, item.label]),
+) as Record<string, string>
+
+const detailCompanyName = computed(() => store.currentReport?.jobPosting.company.name ?? '-')
+const detailViolationScore = computed(() => store.currentReport?.jobPosting.company.violationScore ?? 0)
+const detailIsSuspended = computed(() => store.currentReport?.jobPosting.company.status === 'suspended')
 
 function formatDateTime(value: string | null | undefined) {
   if (!value) return '-'
@@ -238,13 +265,61 @@ const complaint = computed(() => {
   }
 })
 
+const appealPanel = computed<ResAppeal | null>(() => {
+  const detail = store.currentReport
+  if (!detail) return null
+
+  const matchedAppeals = appealStore.appeals
+    .filter((item) => item.complaint.id === detail.id)
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+
+  return matchedAppeals[0] ?? null
+})
+
+async function loadAppealsForCurrentReport() {
+  const detail = store.currentReport
+  if (!detail) return
+
+  try {
+    await appealStore.fetchAppealsByEmployerId(detail.jobPosting.company.id)
+  } catch {
+    toast.error('Lỗi', appealStore.error ?? 'Không thể tải danh sách kháng cáo.')
+  }
+}
+
+async function onUnsuspendEmployer(payload: ReqUnsuspendAppeal) {
+  const detail = store.currentReport
+  if (!detail) return
+
+  const accepted = await confirm({
+    title: 'Mở khóa sớm cho nhà tuyển dụng',
+    message: 'Xác nhận duyệt kháng cáo và mở khóa sớm cho nhà tuyển dụng này?',
+    confirmText: 'Mở khóa sớm',
+    confirmColor: 'primary',
+    icon: 'lock_open',
+  })
+
+  if (!accepted) return
+
+  try {
+    await appealStore.unsuspendEmployer(detail.jobPosting.company.id, payload)
+    await Promise.all([
+      store.fetchById(detail.id),
+      loadAppealsForCurrentReport(),
+    ])
+    toast.success('Thành công', 'Đã mở khóa sớm cho nhà tuyển dụng.')
+  } catch {
+    toast.error('Lỗi', appealStore.error ?? 'Không thể mở khóa sớm cho nhà tuyển dụng.')
+  }
+}
+
 async function ensureDetailLoaded() {
   const id = Number(route.params.id)
   if (!id) return
-  if (store.currentReport?.id === id) return
 
   try {
     await store.fetchById(id)
+    await loadAppealsForCurrentReport()
   } catch {
     toast.error('Lỗi', store.error ?? 'Không thể tải chi tiết khiếu nại.')
   }

@@ -5,6 +5,7 @@ import type { ResAppeal } from '@/types/appeal.types'
 import type {
   ReqAdjustViolationScore,
   ReqResetViolationScore,
+  ReqUnsuspendViolationScore,
   ResViolationScore,
 } from '@/types/violationScore.types'
 
@@ -85,6 +86,27 @@ export const useAdminViolationScoreStore = defineStore('adminViolationScore', ()
     }
   }
 
+  async function unsuspendEmployer(
+    employerId: number,
+    payload: ReqUnsuspendViolationScore,
+  ): Promise<ResAppeal> {
+    loading.value = true
+    error.value = null
+    try {
+      const updatedAppeal = await adminViolationScoreService.unsuspendByEmployerId(
+        employerId,
+        payload,
+      )
+      appeals.value = appeals.value.map((item) => (item.id === updatedAppeal.id ? updatedAppeal : item))
+      return updatedAppeal
+    } catch (err) {
+      setError(err)
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
   function reset() {
     violationScore.value = null
     appeals.value = []
@@ -101,6 +123,7 @@ export const useAdminViolationScoreStore = defineStore('adminViolationScore', ()
     resetScore,
     adjustScore,
     fetchAppealsByEmployerId,
+    unsuspendEmployer,
     reset,
   }
 })

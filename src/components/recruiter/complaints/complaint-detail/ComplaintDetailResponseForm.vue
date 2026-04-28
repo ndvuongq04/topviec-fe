@@ -45,8 +45,12 @@
     </label>
 
     <div class="cd-form__footer">
-      <button class="cd-form__btn cd-form__btn--primary" :disabled="!form.confirmed" @click="onSubmit">
-        Gửi phản hồi
+      <button
+        class="cd-form__btn cd-form__btn--primary"
+        :disabled="submittingAppeal || !canSubmitAppeal"
+        @click="onSubmit"
+      >
+        {{ submittingAppeal ? 'Đang gửi kháng cáo...' : 'Gửi kháng cáo' }}
       </button>
       <button
         class="cd-form__btn cd-form__btn--ghost"
@@ -63,23 +67,38 @@
 import { computed, reactive, ref } from 'vue'
 import { COMPLAINT_STATUS, VIOLATION_GROUP } from '@/constants/complaints.constants'
 import { useToast } from '@/composables/useToast'
+import { useEmployerAppealStore } from '@/stores/employerAppeal.store'
 import { useEmployerReportStore } from '@/stores/employerReport.store'
 
 const toast = useToast()
+const appealStore = useEmployerAppealStore()
 const reportStore = useEmployerReportStore()
 
 const form = reactive({ explanation: '', confirmed: false })
 const uploadedFiles = ref<{ name: string }[]>([])
 const fileInput = ref<HTMLInputElement>()
 const responding = ref(false)
+const submittingAppeal = ref(false)
 
 const currentReport = computed(() => reportStore.currentReport)
+
 const canRespondToReport = computed(() => {
   const report = currentReport.value
   if (!report) return false
   return (
     report.status === COMPLAINT_STATUS.WAITING_EMPLOYER
     && report.violationGroup?.toUpperCase() === VIOLATION_GROUP.A
+  )
+})
+
+const canSubmitAppeal = computed(() => {
+  const report = currentReport.value
+  if (!report) return false
+  return (
+    form.confirmed
+    && Boolean(form.explanation.trim())
+    && report.status === COMPLAINT_STATUS.RESOLVED
+    && report.violationGroup?.toUpperCase() === VIOLATION_GROUP.B
   )
 })
 
@@ -108,8 +127,55 @@ const removeFile = (name: string) => {
   uploadedFiles.value = uploadedFiles.value.filter((f) => f.name !== name)
 }
 
-const onSubmit = () => {
-  toast.info('Tính năng', 'Gửi giải trình hiện chưa được kết nối API.')
+async function onSubmit() {
+  const report = currentReport.value
+
+  if (!report) {
+    toast.error('Lỗi', 'Không tìm thấy thông tin báo cáo.')
+    return
+  }
+
+  if (report.violationGroup?.toUpperCase() !== VIOLATION_GROUP.B) {
+    toast.warning(
+      'Không thể kháng cáo',
+      'Chỉ có thể kháng cáo với báo cáo thuộc nhóm vi phạm B.',
+    )
+    return
+  }
+
+  if (report.status !== COMPLAINT_STATUS.RESOLVED) {
+    toast.warning(
+      'Không thể kháng cáo',
+      'Chỉ có thể kháng cáo khi báo cáo đã được xử lý (resolved).',
+    )
+    return
+  }
+
+  if (!form.explanation.trim()) {
+    toast.warning('Thiếu nội dung', 'Vui lòng nhập nội dung kháng cáo.')
+    return
+  }
+
+  if (!form.confirmed) {
+    toast.warning('Chưa xác nhận', 'Vui lòng xác nhận thông tin trước khi gửi.')
+    return
+  }
+
+  submittingAppeal.value = true
+
+  try {
+    await appealStore.createAppeal(report.id, {
+      content: form.explanation.trim(),
+    })
+    form.explanation = ''
+    form.confirmed = false
+    uploadedFiles.value = []
+    toast.success('Thành công', 'Đã gửi kháng cáo cho báo cáo này.')
+  } catch {
+    toast.error('Lỗi', appealStore.error ?? 'Không thể gửi kháng cáo.')
+  } finally {
+    submittingAppeal.value = false
+  }
 }
 
 async function onRespondToReport() {

@@ -109,11 +109,11 @@
             />
             <!-- Tiếp tục đăng: chỉ khi PAUSED -->
             <GlobalDropdownItem
-              v-if="job.status === 'paused'"
+              v-if="job.status === 'paused' || job.status === 'hidden'"
               icon="play_circle"
               label="Tiếp tục đăng tin"
               :disabled="!canResume"
-              :tooltip="!canResume ? 'Chỉ có thể tiếp tục khi tin đang ở trạng thái Tạm dừng' : undefined"
+              :tooltip="!canResume ? 'Chỉ có thể tiếp tục khi tin đang ở trạng thái Tạm dừng hoặc Đã ẩn' : undefined"
               @click="handleAction('resume', job.id, close)"
             />
             <!-- Gia hạn: chỉ khi EXPIRED -->
@@ -232,7 +232,7 @@ const canSubmit = computed(() => ['draft', 'rejected'].includes(props.job.status
 const canPause = computed(() => ['active', 'expiring'].includes(props.job.status))
 
 // Tiếp tục: chỉ khi PAUSED
-const canResume = computed(() => props.job.status === 'paused')
+const canResume = computed(() => ['paused', 'hidden'].includes(props.job.status))
 
 // Gia hạn: chỉ khi EXPIRED
 const canExtend = computed(() => props.job.status === 'expired')
@@ -257,6 +257,7 @@ const statusChipClass = computed(() => ({
   'status-chip--pending':      props.job.status === 'pending',
   'status-chip--expiring':     props.job.status === 'expiring',
   'status-chip--draft':        props.job.status === 'draft',
+  'status-chip--hidden':       props.job.status === 'hidden',
   'status-chip--closed':       props.job.status === 'closed',
   'status-chip--expired':      props.job.status === 'expired',
   'status-chip--paused':       props.job.status === 'paused',
@@ -271,6 +272,7 @@ const statusLabel = computed(() => ({
   pending:      'Chờ duyệt',
   expiring:     'Sắp hết hạn',
   draft:        'Nháp',
+  hidden:       'Đã ẩn',
   closed:       'Đã đóng',
   expired:      'Hết hạn',
   paused:       'Tạm dừng',
@@ -318,6 +320,7 @@ const statusLabel = computed(() => ({
 .status-chip--pending      { background: var(--color-tertiary-light); color: var(--color-tertiary-text); }
 .status-chip--expiring     { background: var(--color-error-light);   color: var(--color-error-text); }
 .status-chip--draft        { background: #f1f5f9; color: #64748b; }
+.status-chip--hidden       { background: #fef3c7; color: #92400e; }
 .status-chip--closed       { background: #f1f5f9; color: #94a3b8; }
 .status-chip--expired      { background: #fee2e2; color: #b91c1c; }
 .status-chip--paused       { background: #ffedd5; color: #c2410c; }
