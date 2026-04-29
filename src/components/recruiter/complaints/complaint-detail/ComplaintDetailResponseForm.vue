@@ -1,120 +1,120 @@
 <template>
-  <section
-    v-if="hasSubmittedAppeal"
-    id="complaint-appeal-section"
-    class="cd-form cd-form--submitted"
-  >
-    <div class="cd-form__accent cd-form__accent--amber"></div>
-    <div class="cd-form__group-header">
-      <span class="material-symbols-outlined cd-form__group-icon cd-form__group-icon--amber">task_alt</span>
-      <div>
-        <h3 class="cd-form__title">Đã gửi giải trình & Bằng chứng</h3>
-        <p class="cd-form__subtitle">Thông tin được tải từ API appeal của nhà tuyển dụng</p>
-      </div>
-    </div>
-
-    <div v-if="currentAppeal" class="cd-form__submitted-content">
-      <div class="cd-form__submitted-grid">
+  <div id="complaint-appeal-section" class="cd-response-stack">
+    <section class="cd-form">
+      <div class="cd-form__accent"></div>
+      <div class="cd-form__group-header">
+        <span class="material-symbols-outlined cd-form__group-icon cd-form__group-icon--red">gavel</span>
         <div>
-          <p class="cd-form__label">Trạng thái</p>
-          <p class="cd-form__submitted-meta">{{ appealStatusLabel }}</p>
-        </div>
-        <div>
-          <p class="cd-form__label">Mã khiếu nại</p>
-          <p class="cd-form__submitted-meta">{{ currentAppeal.complaint.reportCode }}</p>
+          <h3 class="cd-form__title">Gửi giải trình & Bằng chứng</h3>
+          <p class="cd-form__subtitle">Form này luôn hiển thị cho nhà tuyển dụng</p>
         </div>
       </div>
 
       <div class="cd-form__field">
-        <p class="cd-form__label">Nội dung đã gửi</p>
-        <blockquote class="cd-form__submitted-quote">{{ currentAppeal.content }}</blockquote>
-        <p class="cd-form__submitted-meta">
-          Gửi lúc {{ formatDateTime(currentAppeal.createdAt) }}
-        </p>
+        <label class="cd-form__label" for="explanation">
+          Giải trình của bạn <span class="cd-form__required">*</span>
+        </label>
+        <textarea
+          id="explanation"
+          v-model="form.explanation"
+          class="cd-form__textarea"
+          placeholder="Cung cấp thông tin chi tiết về bối cảnh và nội dung cần giải trình..."
+          rows="4"
+        ></textarea>
       </div>
 
       <div class="cd-form__field">
-        <p class="cd-form__label">Bằng chứng đính kèm</p>
-        <p class="cd-form__submitted-meta">
-          API `GET /reports/{id}/appeal` hiện tại chưa trả về danh sách file bằng chứng.
-        </p>
+        <label class="cd-form__label">Đính kèm bằng chứng</label>
+        <div class="cd-form__upload" @click="triggerUpload" @dragover.prevent @drop.prevent="onDrop">
+          <span class="material-symbols-outlined cd-form__upload-icon">cloud_upload</span>
+          <div class="cd-form__upload-text">
+            <span class="cd-form__upload-link">Tải tệp lên</span>
+            <span> hoặc kéo thả vào đây</span>
+          </div>
+          <p class="cd-form__upload-hint">PNG, JPG, PDF tối đa 10MB</p>
+          <input ref="fileInput" class="cd-form__file-input" type="file" multiple @change="onFileChange" />
+        </div>
+
+        <div v-if="uploadedFiles.length" class="cd-form__file-list">
+          <div v-for="f in uploadedFiles" :key="f.name" class="cd-form__file-item">
+            <span class="material-symbols-outlined">attach_file</span>
+            <span class="cd-form__file-name">{{ f.name }}</span>
+            <button class="cd-form__file-remove" type="button" @click="removeFile(f.name)">
+              <span class="material-symbols-outlined">close</span>
+            </button>
+          </div>
+        </div>
       </div>
 
-      <div v-if="currentAppeal.adminNote" class="cd-form__field">
-        <p class="cd-form__label">Ghi chú admin</p>
-        <blockquote class="cd-form__submitted-quote">{{ currentAppeal.adminNote }}</blockquote>
-      </div>
-    </div>
-
-    <div class="cd-form__info-box cd-form__info-box--amber">
-      <span class="material-symbols-outlined">hourglass_top</span>
-      <p>Admin đang xem xét giải trình của bạn. Hệ thống sẽ hiển thị thông tin này theo appeal đã gửi.</p>
-    </div>
-  </section>
-
-  <section v-else id="complaint-appeal-section" class="cd-form">
-    <div class="cd-form__accent"></div>
-    <div class="cd-form__group-header">
-      <span class="material-symbols-outlined cd-form__group-icon cd-form__group-icon--red">gavel</span>
-      <div>
-        <h3 class="cd-form__title">Gửi giải trình & Bằng chứng</h3>
-        <p class="cd-form__subtitle">Nhóm A hoặc nhóm B đều có thể gửi khiếu nại</p>
-      </div>
-    </div>
-
-    <div class="cd-form__field">
-      <label class="cd-form__label" for="explanation">
-        Giải trình của bạn <span class="cd-form__required">*</span>
+      <label class="cd-form__confirm">
+        <input v-model="form.confirmed" class="cd-form__checkbox" type="checkbox" />
+        <span>Tôi cam kết những thông tin và tài liệu cung cấp là trung thực.</span>
       </label>
-      <textarea
-        id="explanation"
-        v-model="form.explanation"
-        class="cd-form__textarea"
-        placeholder="Cung cấp thông tin chi tiết về bối cảnh và nội dung cần giải trình..."
-        rows="4"
-      ></textarea>
-    </div>
 
-    <div class="cd-form__field">
-      <label class="cd-form__label">Đính kèm bằng chứng</label>
-      <div class="cd-form__upload" @click="triggerUpload" @dragover.prevent @drop.prevent="onDrop">
-        <span class="material-symbols-outlined cd-form__upload-icon">cloud_upload</span>
-        <div class="cd-form__upload-text">
-          <span class="cd-form__upload-link">Tải tệp lên</span>
-          <span> hoặc kéo thả vào đây</span>
-        </div>
-        <p class="cd-form__upload-hint">PNG, JPG, PDF tối đa 10MB</p>
-        <input ref="fileInput" class="cd-form__file-input" type="file" multiple @change="onFileChange" />
+      <div class="cd-form__footer">
+        <button
+          class="cd-form__btn cd-form__btn--primary"
+          :disabled="submitting || !canSubmitAppeal"
+          @click="onSubmitAppeal"
+        >
+          <span v-if="submitting" class="material-symbols-outlined spin">autorenew</span>
+          <span v-else class="material-symbols-outlined">send</span>
+          {{ submitting ? 'Đang gửi...' : 'Gửi giải trình' }}
+        </button>
       </div>
+    </section>
 
-      <div v-if="uploadedFiles.length" class="cd-form__file-list">
-        <div v-for="f in uploadedFiles" :key="f.name" class="cd-form__file-item">
-          <span class="material-symbols-outlined">attach_file</span>
-          <span class="cd-form__file-name">{{ f.name }}</span>
-          <button class="cd-form__file-remove" type="button" @click="removeFile(f.name)">
-            <span class="material-symbols-outlined">close</span>
-          </button>
+    <section class="cd-form cd-form--submitted">
+      <div class="cd-form__accent cd-form__accent--amber"></div>
+      <div class="cd-form__group-header">
+        <span class="material-symbols-outlined cd-form__group-icon cd-form__group-icon--amber">task_alt</span>
+        <div>
+          <h3 class="cd-form__title">Dữ liệu appeal từ API</h3>
+          <p class="cd-form__subtitle">
+            GET `/employer/me/reports/{{ currentReport?.id ?? '-' }}/appeal`
+          </p>
         </div>
       </div>
-    </div>
 
-    <label class="cd-form__confirm">
-      <input v-model="form.confirmed" class="cd-form__checkbox" type="checkbox" />
-      <span>Tôi cam kết những thông tin và tài liệu cung cấp là trung thực.</span>
-    </label>
+      <div v-if="currentAppeal" class="cd-form__submitted-content">
+        <div class="cd-form__submitted-grid">
+          <div>
+            <p class="cd-form__label">Trạng thái</p>
+            <p class="cd-form__submitted-meta">{{ appealStatusLabel }}</p>
+          </div>
+          <div>
+            <p class="cd-form__label">Mã khiếu nại</p>
+            <p class="cd-form__submitted-meta">{{ currentAppeal.complaint.reportCode }}</p>
+          </div>
+        </div>
 
-    <div class="cd-form__footer">
-      <button
-        class="cd-form__btn cd-form__btn--primary"
-        :disabled="submitting || !canSubmitAppeal"
-        @click="onSubmitAppeal"
-      >
-        <span v-if="submitting" class="material-symbols-outlined spin">autorenew</span>
-        <span v-else class="material-symbols-outlined">send</span>
-        {{ submitting ? 'Đang gửi...' : 'Gửi giải trình' }}
-      </button>
-    </div>
-  </section>
+        <div class="cd-form__field">
+          <p class="cd-form__label">Nội dung đã gửi</p>
+          <blockquote class="cd-form__submitted-quote">{{ currentAppeal.content }}</blockquote>
+          <p class="cd-form__submitted-meta">
+            Gửi lúc {{ formatDateTime(currentAppeal.createdAt) }}
+          </p>
+        </div>
+
+        <div class="cd-form__field">
+          <p class="cd-form__label">Bằng chứng đính kèm</p>
+          <p class="cd-form__submitted-meta">
+            API hiện tại chưa trả về danh sách file bằng chứng.
+          </p>
+        </div>
+
+        <div v-if="currentAppeal.adminNote" class="cd-form__field">
+          <p class="cd-form__label">Ghi chú admin</p>
+          <blockquote class="cd-form__submitted-quote">{{ currentAppeal.adminNote }}</blockquote>
+        </div>
+      </div>
+
+      <div v-else class="cd-form__empty-state">
+        <span class="material-symbols-outlined">info</span>
+        <p>API appeal hiện chưa có dữ liệu cho report này.</p>
+      </div>
+    </section>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -135,8 +135,6 @@ const submitting = ref(false)
 
 const currentReport = computed(() => reportStore.currentReport)
 const currentAppeal = computed(() => appealStore.currentAppeal)
-
-const hasSubmittedAppeal = computed(() => currentAppeal.value !== null)
 
 const appealStatusLabel = computed(() => {
   const status = currentAppeal.value?.status
@@ -206,6 +204,12 @@ async function onSubmitAppeal() {
 </script>
 
 <style scoped>
+.cd-response-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
 .cd-form {
   background: #fff;
   border-radius: 0.75rem;
@@ -265,28 +269,6 @@ async function onSubmitAppeal() {
   color: #64748b;
   font-weight: 600;
   margin: 0;
-}
-
-.cd-form__info-box {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  border-radius: 0.5rem;
-  padding: 1rem;
-  font-size: 0.875rem;
-  line-height: 1.6;
-}
-
-.cd-form__info-box .material-symbols-outlined {
-  font-size: 1.125rem;
-  flex-shrink: 0;
-  margin-top: 1px;
-}
-
-.cd-form__info-box--amber {
-  background: #fffbeb;
-  border: 1px solid #fde68a;
-  color: #92400e;
 }
 
 .cd-form__field {
@@ -528,6 +510,28 @@ async function onSubmitAppeal() {
   color: #94a3b8;
   font-weight: 600;
   margin: 0;
+}
+
+.cd-form__empty-state {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 1rem;
+  border: 1px dashed #fde68a;
+  background: #fffbeb;
+  border-radius: 0.75rem;
+  color: #92400e;
+}
+
+.cd-form__empty-state .material-symbols-outlined {
+  font-size: 1.125rem;
+  margin-top: 2px;
+}
+
+.cd-form__empty-state p {
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.6;
 }
 
 @media (max-width: 768px) {

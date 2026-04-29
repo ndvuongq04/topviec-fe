@@ -266,14 +266,7 @@ const complaint = computed(() => {
 })
 
 const appealPanel = computed<ResAppeal | null>(() => {
-  const detail = store.currentReport
-  if (!detail) return null
-
-  const matchedAppeals = appealStore.appeals
-    .filter((item) => item.complaint.id === detail.id)
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-
-  return matchedAppeals[0] ?? null
+  return store.currentAppeal
 })
 
 async function loadAppealsForCurrentReport() {
@@ -281,9 +274,9 @@ async function loadAppealsForCurrentReport() {
   if (!detail) return
 
   try {
-    await appealStore.fetchAppealsByEmployerId(detail.jobPosting.company.id)
+    await store.fetchAppealByComplaint(detail.id)
   } catch {
-    toast.error('Lỗi', appealStore.error ?? 'Không thể tải danh sách kháng cáo.')
+    toast.error('Lỗi', store.error ?? 'Không thể tải kháng cáo.')
   }
 }
 

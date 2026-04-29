@@ -2,6 +2,7 @@ import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import adminReportService from '@/services/adminReport.service';
 import type { PaginationMeta } from '@/types/common.types';
+import type { ResAppeal } from '@/types/appeal.types';
 import type {
   ReqConfirmReport,
   ReqGetAdminReports,
@@ -18,6 +19,7 @@ export const useAdminReportStore = defineStore('adminReport', () => {
   const relatedReports = ref<ResReportSummary[]>([]);
   const relatedMeta = ref<PaginationMeta>({ page: 0, pageSize: 10, pages: 0, totals: 0 });
   const currentReport = ref<ResReportDetail | null>(null);
+  const currentAppeal = ref<ResAppeal | null>(null);
   const loading = ref(false);
   const error = ref<string | null>(null);
 
@@ -106,6 +108,20 @@ export const useAdminReportStore = defineStore('adminReport', () => {
     }
   }
 
+  async function fetchAppealByComplaint(id: number): Promise<ResAppeal | null> {
+    loading.value = true;
+    error.value = null;
+    try {
+      currentAppeal.value = await adminReportService.getAppealByComplaint(id);
+      return currentAppeal.value;
+    } catch (err) {
+      setError(err);
+      throw err;
+    } finally {
+      loading.value = false;
+    }
+  }
+
   async function fetchReportsByComplaint(id: number, params: ReqGetReportsByComplaint) {
     loading.value = true;
     error.value = null;
@@ -126,6 +142,7 @@ export const useAdminReportStore = defineStore('adminReport', () => {
     relatedReports.value = [];
     relatedMeta.value = { page: 0, pageSize: 10, pages: 0, totals: 0 };
     currentReport.value = null;
+    currentAppeal.value = null;
     loading.value = false;
     error.value = null;
   }
@@ -136,10 +153,12 @@ export const useAdminReportStore = defineStore('adminReport', () => {
     relatedReports,
     relatedMeta,
     currentReport,
+    currentAppeal,
     loading,
     error,
     fetchAll,
     fetchById,
+    fetchAppealByComplaint,
     processReport,
     confirmReport,
     fetchReportsByComplaint,

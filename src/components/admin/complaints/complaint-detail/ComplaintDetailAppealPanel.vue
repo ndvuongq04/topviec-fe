@@ -83,7 +83,7 @@
 
         <button
           class="cd-appeal__btn"
-          :disabled="loading || !canUnsuspend"
+          :disabled="loading"
           @click="onUnsuspend"
         >
           {{ loading ? 'Đang xử lý...' : 'Mở khóa sớm' }}
@@ -95,7 +95,8 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { APPEAL_STATUS, APPEAL_STATUS_OPTIONS } from '@/constants/complaints.constants'
+import { APPEAL_STATUS_OPTIONS } from '@/constants/complaints.constants'
+import { useToast } from '@/composables/useToast'
 import type { ReqUnsuspendAppeal, ResAppeal } from '@/types/appeal.types'
 
 const props = defineProps<{
@@ -110,6 +111,7 @@ const emit = defineEmits<{
   unsuspend: [payload: ReqUnsuspendAppeal]
 }>()
 
+const toast = useToast()
 const note = ref('')
 
 const statusLabelMap = Object.fromEntries(
@@ -121,17 +123,16 @@ const statusLabel = computed(() => {
   return statusLabelMap[props.appeal.status] ?? props.appeal.status
 })
 
-const canUnsuspend = computed(() => {
-  return Boolean(props.appeal && props.appeal.status === APPEAL_STATUS.PENDING && props.isSuspended)
-})
-
 function formatDateTime(value: string | null | undefined) {
   if (!value) return '-'
   return new Date(value).toLocaleString('vi-VN')
 }
 
 function onUnsuspend() {
-  if (!props.appeal) return
+  if (!props.appeal) {
+    toast.warning('Chưa có kháng cáo', 'Báo cáo này hiện chưa có kháng cáo để mở khóa sớm.')
+    return
+  }
   emit('unsuspend', { appealId: props.appeal.id, note: note.value.trim() || undefined })
 }
 </script>
