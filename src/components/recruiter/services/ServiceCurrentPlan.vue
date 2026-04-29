@@ -49,7 +49,7 @@
     </div>
     <div class="scp-actions">
       <button class="scp-btn-outline" @click="router.push('/recruiter/pricing')">Đổi gói</button>
-      <button class="scp-btn-primary" :disabled="!isExpired && daysLeft > 30">Gia hạn</button>
+      <button class="scp-btn-primary" :disabled="!isExpired && daysLeft > 30" @click="$emit('renew')">Gia hạn</button>
     </div>
   </section>
 </template>
@@ -64,6 +64,8 @@ import { SubscriptionStatus, BillingCycle } from '@/constants/servicePackage.con
 const props = defineProps<{
   subscription: ResCompanySubscriptionDTO | null
 }>()
+
+defineEmits<{ (e: 'renew'): void }>()
 
 const router       = useRouter()
 const billingCycle = computed<'yearly' | 'monthly'>(() =>

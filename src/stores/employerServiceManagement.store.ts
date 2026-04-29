@@ -3,10 +3,12 @@ import { ref } from 'vue'
 import { employerServiceManagementService } from '@/services/employerServiceManagement.service'
 import type {
     ReqApplyAddonDTO,
+    ReqRenewSubscriptionDTO,
     ResCompanySubscriptionDTO,
     ResCompanyAddonDTO,
     ResJobPostAddonDTO,
     ResCompanyBrandingDTO,
+    ResSubscriptionRenewalDTO,
 } from '@/types/servicePackage.types'
 
 // ─── Helper ───────────────────────────────────────────────────────────────────
@@ -24,7 +26,9 @@ function extractErrorMessage(err: unknown): string {
 export const useEmployerServiceManagementStore = defineStore('employerServiceManagement', () => {
     const subscription    = ref<ResCompanySubscriptionDTO | null>(null)
     const addons          = ref<ResCompanyAddonDTO[]>([])
+    const lastRenewalResult = ref<ResSubscriptionRenewalDTO | null>(null)
     const loading         = ref(false)
+    const renewing        = ref(false)
     const error           = ref<string | null>(null)
 
     // ─── Subscription ─────────────────────────────────────────────────────────
@@ -42,6 +46,24 @@ export const useEmployerServiceManagementStore = defineStore('employerServiceMan
     }
 
     // ─── Addons ───────────────────────────────────────────────────────────────
+
+    async function renewSubscription(
+        payload: ReqRenewSubscriptionDTO,
+    ): Promise<ResSubscriptionRenewalDTO> {
+        renewing.value = true
+        error.value = null
+        try {
+            const result = await employerServiceManagementService.renewSubscription(payload)
+            lastRenewalResult.value = result
+            subscription.value = await employerServiceManagementService.getMySubscription()
+            return result
+        } catch (err) {
+            error.value = extractErrorMessage(err)
+            throw err
+        } finally {
+            renewing.value = false
+        }
+    }
 
     async function fetchMyAddons() {
         loading.value = true
@@ -105,16 +127,21 @@ export const useEmployerServiceManagementStore = defineStore('employerServiceMan
     function reset() {
         subscription.value = null
         addons.value       = []
+        lastRenewalResult.value = null
         loading.value      = false
+        renewing.value     = false
         error.value        = null
     }
 
     return {
         subscription,
         addons,
+        lastRenewalResult,
         loading,
+        renewing,
         error,
         fetchMySubscription,
+        renewSubscription,
         fetchMyAddons,
         applyAddonToJobPost,
         applyBrandingToCompany,

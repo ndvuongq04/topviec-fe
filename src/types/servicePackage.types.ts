@@ -3,13 +3,14 @@ import {
     SubscriptionStatus,
     JobPostAddonStatus,
     BrandingAddonStatus,
+    PaymentMethod,
 } from '@/constants/servicePackage.constants'
 import type { PaginationMeta, ResultPaginationDTO } from '@/types/common.types'
 import type { ResServicePackageDetailDTO, ServiceCategory } from '@/types/serviceCatalog.types'
 
 export type { ResServicePackageDetailDTO, ServiceCategory }
 
-export { BillingCycle, SubscriptionStatus, JobPostAddonStatus, BrandingAddonStatus }
+export { BillingCycle, SubscriptionStatus, JobPostAddonStatus, BrandingAddonStatus, PaymentMethod }
 export type { PaginationMeta, ResultPaginationDTO }
 
 // ─── Addon Package ───────────────────────────────────────────────────────────
@@ -94,6 +95,10 @@ export interface ReqApplyAddonDTO {
     companyAddonId: number
 }
 
+export interface ReqRenewSubscriptionDTO {
+    paymentMethod: PaymentMethod
+}
+
 export interface ResSubscriptionUsageDTO {
     id:                number
     featureCode:       string
@@ -158,4 +163,30 @@ export interface ResCompanyBrandingDTO {
     startedAt:      string | null
     expiredAt:      string | null
     createdAt:      string
+}
+
+export interface ResSubscriptionRenewalUsageDTO {
+    featureCode:       string
+    featureName:       string
+    quantityTotal:     number
+    quantityRemaining: number
+}
+
+export interface ResSubscriptionRenewalInfoDTO {
+    id:           number
+    packageName:  string
+    packageCode:  string
+    billingCycle: BillingCycle
+    status:       SubscriptionStatus
+    oldExpiredAt: string
+    newExpiredAt: string
+    usages:       ResSubscriptionRenewalUsageDTO[]
+}
+
+export interface ResSubscriptionRenewalDTO {
+    renewalLogId: number
+    orderId:      number
+    orderCode:    string
+    totalAmount:  number
+    subscription: ResSubscriptionRenewalInfoDTO
 }
