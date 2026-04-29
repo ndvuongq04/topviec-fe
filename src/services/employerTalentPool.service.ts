@@ -146,6 +146,13 @@ const employerTalentPoolService = {
     return res.data.data;
   },
 
+  async getCandidateDetail(candidateUserId: number): Promise<ResTalentPoolCandidateDetailDTO> {
+    const res = await axiosInstance.get<RestResponse<ResTalentPoolCandidateDetailDTO>>(
+      `${BASE_URL}/candidates/${candidateUserId}`,
+    );
+    return res.data.data;
+  },
+
   async getTalentPool(params: TalentPoolParams): Promise<ResultPaginationDTO<ResTalentPoolCandidateDTO>> {
     const query: Record<string, any> = {}
     if (params.source) query.source = params.source

@@ -66,6 +66,21 @@ export const useEmployerTalentPoolStore = defineStore('employerTalentPool', () =
     }
   }
 
+  async function fetchCandidateDetailByUserId(candidateUserId: number) {
+    loading.value = true;
+    error.value = null;
+    try {
+      const data = await employerTalentPoolService.getCandidateDetail(candidateUserId);
+      currentCandidate.value = data;
+      return data;
+    } catch (err) {
+      setError(err);
+      throw err;
+    } finally {
+      loading.value = false;
+    }
+  }
+
   async function addToTalentPool(reqData: ReqAddToTalentPoolDTO) {
     loading.value = true;
     error.value = null;
@@ -159,6 +174,7 @@ export const useEmployerTalentPoolStore = defineStore('employerTalentPool', () =
     // actions
     fetchTalentPool,
     fetchCandidateDetail,
+    fetchCandidateDetailByUserId,
     addToTalentPool,
     updateNote,
     removeFromTalentPool,

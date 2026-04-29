@@ -40,8 +40,11 @@
     </div>
 
     <div class="cs-item__actions">
-      <button class="cs-item__btn cs-item__btn--ghost" @click="$emit('view-cv', candidate)">
-        Xem CV
+      <button
+        class="cs-item__btn cs-item__btn--ghost"
+        @click="$emit('view-detail', candidate)"
+      >
+        Xem chi tiết
       </button>
       <button
         class="cs-item__btn"
@@ -70,7 +73,7 @@ const props = defineProps<{
 
 defineEmits<{
   (e: 'save', candidate: ResCandidateSearchResultDTO): void
-  (e: 'view-cv', candidate: ResCandidateSearchResultDTO): void
+  (e: 'view-detail', candidate: ResCandidateSearchResultDTO): void
 }>()
 
 const initials = computed(() =>

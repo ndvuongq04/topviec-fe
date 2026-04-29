@@ -103,9 +103,12 @@
                   <p class="cdm-cv-title">{{ detail.defaultCv.title }}</p>
                   <p class="cdm-cv-meta">{{ detail.defaultCv.cvType === 'UPLOADED' ? 'CV tải lên' : 'CV tạo online' }}</p>
                 </div>
-                <a v-if="detail.defaultCv.pdfUrl || detail.defaultCv.fileUrl"
-                   :href="detail.defaultCv.pdfUrl || detail.defaultCv.fileUrl"
-                   target="_blank" class="cdm-cv-btn">
+                <a
+                  v-if="detail.defaultCv.pdfUrl || detail.defaultCv.fileUrl"
+                  :href="detail.defaultCv.pdfUrl || detail.defaultCv.fileUrl"
+                  target="_blank"
+                  class="cdm-cv-btn"
+                >
                   <span class="material-symbols-outlined">open_in_new</span>
                   Xem CV
                 </a>
@@ -113,13 +116,13 @@
             </section>
 
             <!-- Ghi chú talent pool -->
-            <section v-if="detail.note" class="cdm-section">
+            <section v-if="showTalentPoolMeta && detail.note" class="cdm-section">
               <h3 class="cdm-section-title">Ghi chú</h3>
               <p class="cdm-note">{{ detail.note }}</p>
             </section>
 
             <!-- Meta -->
-            <div class="cdm-meta-footer">
+            <div v-if="showTalentPoolMeta" class="cdm-meta-footer">
               <span>Lưu bởi: <strong>{{ detail.addedByName || detail.addedBy }}</strong></span>
               <span>Ngày lưu: <strong>{{ formatDate(detail.addedAt) }}</strong></span>
             </div>
@@ -131,12 +134,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import employerTalentPoolService, { type ResTalentPoolCandidateDetailDTO } from '@/services/employerTalentPool.service'
 
 const props = defineProps<{
   modelValue: boolean
   talentPoolId: number | null
+  candidateUserId?: number | null
 }>()
 
 const emit = defineEmits<{
@@ -146,21 +150,28 @@ const emit = defineEmits<{
 const detail = ref<ResTalentPoolCandidateDetailDTO | null>(null)
 const loading = ref(false)
 const error = ref<string | null>(null)
+const showTalentPoolMeta = computed(() => Boolean(props.talentPoolId))
 
-watch(() => props.modelValue, async (open) => {
-  if (open && props.talentPoolId) {
+watch(
+  () => [props.modelValue, props.talentPoolId, props.candidateUserId],
+  async ([open, talentPoolId, candidateUserId]) => {
+    if (!open || (!talentPoolId && !candidateUserId)) return
+
     loading.value = true
     error.value = null
     detail.value = null
+
     try {
-      detail.value = await employerTalentPoolService.getTalentPoolCandidateDetail(props.talentPoolId)
+      detail.value = talentPoolId
+        ? await employerTalentPoolService.getTalentPoolCandidateDetail(talentPoolId)
+        : await employerTalentPoolService.getCandidateDetail(candidateUserId!)
     } catch {
       error.value = 'Không thể tải thông tin ứng viên.'
     } finally {
       loading.value = false
     }
-  }
-})
+  },
+)
 
 function close() {
   emit('update:modelValue', false)
@@ -206,8 +217,9 @@ const salaryDisplay = computed(() => {
   const d = detail.value
   if (!d) return ''
   if (d.salaryNegotiable) return 'Thương lượng'
-  if (d.expectedSalaryMin && d.expectedSalaryMax)
+  if (d.expectedSalaryMin && d.expectedSalaryMax) {
     return `${d.expectedSalaryMin.toLocaleString('vi-VN')} - ${d.expectedSalaryMax.toLocaleString('vi-VN')} VNĐ`
+  }
   if (d.expectedSalaryMin) return `Từ ${d.expectedSalaryMin.toLocaleString('vi-VN')} VNĐ`
   if (d.expectedSalaryMax) return `Đến ${d.expectedSalaryMax.toLocaleString('vi-VN')} VNĐ`
   return 'Chưa cập nhật'

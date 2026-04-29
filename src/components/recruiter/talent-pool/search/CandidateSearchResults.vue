@@ -44,7 +44,7 @@
           :candidate="c"
           :saving="savingId === c.candidateUserId"
           @save="$emit('save', $event)"
-          @view-cv="$emit('view-cv', $event)"
+          @view-detail="$emit('view-detail', $event)"
         />
       </div>
 
@@ -74,7 +74,7 @@ defineProps<{
 
 defineEmits<{
   (e: 'save', candidate: ResCandidateSearchResultDTO): void
-  (e: 'view-cv', candidate: ResCandidateSearchResultDTO): void
+  (e: 'view-detail', candidate: ResCandidateSearchResultDTO): void
   (e: 'page-change', page: number): void
 }>()
 </script>
