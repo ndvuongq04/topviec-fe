@@ -26,15 +26,15 @@
           <router-link
             v-if="report.violationGroup?.toUpperCase() === 'A'"
             :to="`/recruiter/jobs/${report.jobPost.id}/edit`"
-            class="complaint-detail__btn complaint-detail__btn--green"
+            class="complaint-detail__btn complaint-detail__btn--primary"
           >
             <span class="material-symbols-outlined">edit</span>
             Sửa tin tuyển dụng
           </router-link>
           <button
-            v-else
             class="complaint-detail__btn complaint-detail__btn--primary"
             type="button"
+            @click="scrollToAppealSection"
           >
             <span class="material-symbols-outlined">send</span>
             Gửi giải trình
@@ -90,10 +90,12 @@ import {
   VIOLATION_GROUP_OPTIONS,
 } from '@/constants/complaints.constants'
 import { JOB_POSTING_STATUS_LABELS } from '@/constants/jobPosting.constants'
+import { useEmployerAppealStore } from '@/stores/employerAppeal.store'
 import { useEmployerReportStore } from '@/stores/employerReport.store'
 
 const route = useRoute()
 const store = useEmployerReportStore()
+const appealStore = useEmployerAppealStore()
 
 const reportId = computed(() => {
   const rawId = Array.isArray(route.params.id) ? route.params.id[0] : route.params.id
@@ -312,15 +314,24 @@ async function loadData() {
   if (!reportId.value) return
 
   store.currentReport = null
+  appealStore.reset()
 
   try {
     await Promise.all([
       store.fetchById(reportId.value),
       store.myViolationScore ? Promise.resolve(store.myViolationScore) : store.fetchMyViolationScore().catch(() => null),
+      appealStore.fetchCurrentAppeal(reportId.value).catch(() => null),
     ])
   } catch {
     // Error message is already normalized in the store.
   }
+}
+
+function scrollToAppealSection() {
+  document.getElementById('complaint-appeal-section')?.scrollIntoView({
+    behavior: 'smooth',
+    block: 'start',
+  })
 }
 
 onMounted(loadData)

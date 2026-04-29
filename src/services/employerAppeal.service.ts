@@ -10,6 +10,10 @@ const employerAppealService = {
     )
     return res.data.data
   },
+
+  async create(payload: { complaintId: number; content: string }): Promise<ResAppeal> {
+    return this.submitAppeal(payload.complaintId, { content: payload.content })
+  },
 }
 
 export { employerAppealService }

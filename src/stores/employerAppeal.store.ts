@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { employerAppealService } from '@/services/employerAppeal.service'
+import employerReportService from '@/services/employerReport.service'
 import type { ReqSubmitAppeal, ResAppeal } from '@/types/appeal.types'
 
 export const useEmployerAppealStore = defineStore('employerAppeal', () => {
@@ -31,6 +32,20 @@ export const useEmployerAppealStore = defineStore('employerAppeal', () => {
     }
   }
 
+  async function fetchCurrentAppeal(complaintId: number): Promise<ResAppeal | null> {
+    loading.value = true
+    error.value = null
+    try {
+      currentAppeal.value = await employerReportService.getAppealByComplaint(complaintId)
+      return currentAppeal.value
+    } catch (err) {
+      setError(err)
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
   function reset() {
     currentAppeal.value = null
     loading.value = false
@@ -42,6 +57,7 @@ export const useEmployerAppealStore = defineStore('employerAppeal', () => {
     loading,
     error,
     createAppeal,
+    fetchCurrentAppeal,
     reset,
   }
 })
