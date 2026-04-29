@@ -104,6 +104,27 @@ export interface TalentPoolParams {
   size?: number;
 }
 
+export interface ResCandidateSearchResultDTO {
+  candidateUserId: number;
+  fullName: string;
+  avatarUrl?: string;
+  preferredJobTitle?: string;
+  preferredWorkType?: string;
+  preferredLocationId?: number;
+  preferredLocationName?: string;
+  expectedSalaryMin?: number;
+  expectedSalaryMax?: number;
+  salaryNegotiable?: boolean;
+  jobSeekingStatus?: string;
+  alreadyInPool: boolean;
+}
+
+export interface CandidateSearchParams {
+  locationId: number;
+  page?: number;
+  size?: number;
+}
+
 const BASE_URL = '/employer/talent-pool';
 
 const employerTalentPoolService = {
@@ -139,6 +160,17 @@ const employerTalentPoolService = {
     const res = await axiosInstance.post<RestResponse<ResEmployerApplicationDTO>>(
       `${BASE_URL}/${talentPoolId}/invite`,
       data,
+    );
+    return res.data.data;
+  },
+
+  async searchCandidates(params: CandidateSearchParams): Promise<ResultPaginationDTO<ResCandidateSearchResultDTO>> {
+    const query: Record<string, any> = { locationId: params.locationId };
+    if (params.page !== undefined) query.page = params.page;
+    if (params.size !== undefined) query.size = params.size;
+    const res = await axiosInstance.get<RestResponse<ResultPaginationDTO<ResCandidateSearchResultDTO>>>(
+      `${BASE_URL}/search-candidates`,
+      { params: query },
     );
     return res.data.data;
   },
