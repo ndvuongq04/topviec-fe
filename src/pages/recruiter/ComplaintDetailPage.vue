@@ -158,11 +158,11 @@ function scoreStatusVariant(level?: string | null) {
 function scoreStatusLabel(level?: string | null) {
   switch (level) {
     case 'suspended':
-      return 'Nguy cơ rất cao'
+      return 'Đình chỉ (≥50)'
     case 'limited':
-      return 'Cần theo dõi'
+      return 'Hạn chế (20–49)'
     case 'normal':
-      return 'Ổn định'
+      return 'An toàn (0–19)'
     default:
       return 'Đang cập nhật'
   }
@@ -287,7 +287,7 @@ const complaint = computed(() => {
       statusVariant: scoreStatusVariant(scoreData.value?.scoreLevel),
       statusLabel: scoreStatusLabel(scoreData.value?.scoreLevel),
       progressPercent: scoreProgress(violationScore),
-      penaltyIfFail: currentReport.violationGroup === 'B' ? '+10 điểm' : '+5 điểm',
+      penaltyIfFail: currentReport.violationGroup === 'B' ? '+30 điểm' : '+10 điểm',
     },
     impacts: buildImpacts(currentReport.status, currentReport.violationGroup),
     checklist: currentReport.violationGroup?.toUpperCase() === 'A'

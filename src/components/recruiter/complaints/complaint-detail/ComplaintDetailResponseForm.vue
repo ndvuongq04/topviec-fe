@@ -1,6 +1,6 @@
 <template>
   <div id="complaint-appeal-section" class="cd-response-stack">
-    <section class="cd-form">
+    <section v-if="!currentAppeal" class="cd-form">
       <div class="cd-form__accent"></div>
       <div class="cd-form__group-header">
         <span class="material-symbols-outlined cd-form__group-icon cd-form__group-icon--red">gavel</span>
@@ -64,15 +64,13 @@
       </div>
     </section>
 
-    <section class="cd-form cd-form--submitted">
+    <section v-else class="cd-form cd-form--submitted">
       <div class="cd-form__accent cd-form__accent--amber"></div>
       <div class="cd-form__group-header">
         <span class="material-symbols-outlined cd-form__group-icon cd-form__group-icon--amber">task_alt</span>
         <div>
-          <h3 class="cd-form__title">Dữ liệu appeal từ API</h3>
-          <p class="cd-form__subtitle">
-            GET `/employer/me/reports/{{ currentReport?.id ?? '-' }}/appeal`
-          </p>
+          <h3 class="cd-form__title">Giải trình đã gửi</h3>
+          <p class="cd-form__subtitle">Bạn đã gửi giải trình cho khiếu nại này</p>
         </div>
       </div>
 
@@ -109,10 +107,6 @@
         </div>
       </div>
 
-      <div v-else class="cd-form__empty-state">
-        <span class="material-symbols-outlined">info</span>
-        <p>API appeal hiện chưa có dữ liệu cho report này.</p>
-      </div>
     </section>
   </div>
 </template>

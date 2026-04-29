@@ -35,11 +35,11 @@
       </div>
     </div>
 
-    <!-- Warning banner -->
-    <div class="rvs-banner">
+    <!-- Warning banner: chỉ hiện khi không phải An toàn -->
+    <div v-if="statusInfo.level !== 'normal'" class="rvs-banner" :class="`rvs-banner--${statusInfo.level}`">
       <div class="rvs-banner-left">
-        <span class="material-symbols-outlined rvs-banner-icon">warning</span>
-        <span class="rvs-banner-text">Tài khoản của bạn đang có điểm vi phạm ở mức Hạn chế.</span>
+        <span class="material-symbols-outlined rvs-banner-icon">{{ statusInfo.icon }}</span>
+        <span class="rvs-banner-text">{{ statusInfo.bannerText }}</span>
       </div>
       <button class="rvs-contact-btn">Liên hệ Admin</button>
     </div>
@@ -47,9 +47,43 @@
 </template>
 
 <script setup lang="ts">
-defineProps<{
-  score: { violation: number; pending: number; thisMonth: number }
+import { computed } from 'vue'
+
+const props = defineProps<{
+  score: { violation: number; pending: number; thisMonth: number; level?: string | null }
 }>()
+
+const statusInfo = computed(() => {
+  const v = props.score.violation
+  const level = props.score.level
+
+  // Ưu tiên dùng level từ API nếu có, fallback sang tính theo điểm
+  const resolvedLevel = level ?? (v >= 50 ? 'suspended' : v >= 20 ? 'limited' : 'normal')
+
+  switch (resolvedLevel) {
+    case 'suspended':
+      return {
+        level: 'suspended',
+        label: 'Đình chỉ (≥50)',
+        icon: 'block',
+        bannerText: 'Tài khoản của bạn đang bị đình chỉ — tính năng đăng tin bị khoá toàn bộ.',
+      }
+    case 'limited':
+      return {
+        level: 'limited',
+        label: 'Hạn chế (20–49)',
+        icon: 'warning',
+        bannerText: 'Tài khoản của bạn đang ở mức Hạn chế — tối đa 3 tin/tuần, tin mới cần Admin duyệt.',
+      }
+    default:
+      return {
+        level: 'normal',
+        label: 'An toàn (0–19)',
+        icon: 'check_circle',
+        bannerText: '',
+      }
+  }
+})
 </script>
 
 <style scoped>
@@ -127,9 +161,19 @@ defineProps<{
   background: rgba(254,243,199,0.5);
   border-top: 1px solid rgba(245,158,11,0.2);
 }
+.rvs-banner--limited {
+  background: rgba(254,243,199,0.5);
+  border-top: 1px solid rgba(245,158,11,0.2);
+}
+.rvs-banner--suspended {
+  background: rgba(254,226,226,0.5);
+  border-top: 1px solid rgba(239,68,68,0.2);
+}
 .rvs-banner-left { display: flex; align-items: center; gap: 12px; }
-.rvs-banner-icon { color: #f59e0b; font-size: 22px; }
-.rvs-banner-text { font-size: 14px; font-weight: 500; color: #b45309; }
+.rvs-banner--limited .rvs-banner-icon { color: #f59e0b; font-size: 22px; }
+.rvs-banner--suspended .rvs-banner-icon { color: #ef4444; font-size: 22px; }
+.rvs-banner--limited .rvs-banner-text { font-size: 14px; font-weight: 500; color: #b45309; }
+.rvs-banner--suspended .rvs-banner-text { font-size: 14px; font-weight: 500; color: #b91c1c; }
 .rvs-contact-btn {
   padding: 8px 20px;
   background: #fff; color: #0f172a;
