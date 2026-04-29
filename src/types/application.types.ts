@@ -66,3 +66,11 @@ export interface ResApplication {
 }
 
 export type ResApplicationPagination = ResultPaginationDTO<ResApplication>;
+
+export interface ResTalentPoolInviteInfo {
+  applicationId: number;
+  jobPostId: number;
+  jobTitle: string;
+  companyName: string;
+  companyLogoUrl: string;
+}

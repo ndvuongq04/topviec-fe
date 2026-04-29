@@ -3,6 +3,8 @@ import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useApplicationStore } from '@/stores/application.store'
 import { useAuthStore } from '@/stores/auth.store'
+import applicationService from '@/services/application.service'
+import type { ResTalentPoolInviteInfo } from '@/types/application.types'
 
 type InvitePageStatus =
   | 'loading'
@@ -14,6 +16,7 @@ type InvitePageStatus =
   | 'declined'
   | 'forbidden'
   | 'invalid'
+  | 'expired'
   | 'error'
 
 const route = useRoute()
@@ -24,21 +27,28 @@ const applicationStore = useApplicationStore()
 const status = ref<InvitePageStatus>('loading')
 const errorMessage = ref('')
 const successMessage = ref('')
+const inviteInfo = ref<ResTalentPoolInviteInfo | null>(null)
 
-const applicationId = computed(() => {
-  const raw = Number(route.query.applicationId)
-  return Number.isFinite(raw) && raw > 0 ? raw : null
-})
+const token = computed(() => String(route.query.token ?? '').trim())
 
-const jobId = computed(() => {
-  const raw = Number(route.query.jobId)
-  return Number.isFinite(raw) && raw > 0 ? raw : null
-})
-
-function initPage() {
-  if (!applicationId.value) {
+onMounted(async () => {
+  if (!token.value) {
     status.value = 'invalid'
-    errorMessage.value = 'Liên kết mời ứng tuyển không hợp lệ hoặc thiếu applicationId.'
+    errorMessage.value = 'Liên kết mời ứng tuyển không hợp lệ hoặc thiếu token.'
+    return
+  }
+
+  try {
+    inviteInfo.value = await applicationService.verifyInviteToken(token.value)
+  } catch (err: any) {
+    const httpStatus = err?.response?.status
+    if (httpStatus === 404 || httpStatus === 410) {
+      status.value = 'expired'
+      errorMessage.value = 'Liên kết mời đã hết hạn hoặc không còn hiệu lực.'
+    } else {
+      status.value = 'invalid'
+      errorMessage.value = 'Không thể xác thực liên kết mời. Vui lòng thử lại.'
+    }
     return
   }
 
@@ -54,10 +64,6 @@ function initPage() {
   }
 
   status.value = 'ready'
-}
-
-onMounted(() => {
-  initPage()
 })
 
 function goToLogin() {
@@ -73,24 +79,22 @@ function goToAppliedJobs() {
 }
 
 function goToJobDetail() {
-  router.push({ name: 'JobDetail', params: { id: jobId.value } })
+  if (inviteInfo.value?.jobPostId) {
+    router.push({ name: 'JobDetail', params: { id: inviteInfo.value.jobPostId } })
+  }
 }
 
 async function handleAccept() {
-  if (!applicationId.value) {
-    initPage()
-    return
-  }
+  if (!inviteInfo.value) return
 
   status.value = 'submitting-accept'
   errorMessage.value = ''
 
   try {
-    const res = await applicationStore.acceptInvite(applicationId.value)
-    successMessage.value =
-      res.jobPosting?.title
-        ? `Bạn đã chấp nhận lời mời ứng tuyển cho vị trí ${res.jobPosting.title}.`
-        : 'Bạn đã chấp nhận lời mời ứng tuyển thành công.'
+    const res = await applicationStore.acceptInvite(inviteInfo.value.applicationId)
+    successMessage.value = res.jobPosting?.title
+      ? `Bạn đã chấp nhận lời mời ứng tuyển cho vị trí ${res.jobPosting.title}.`
+      : `Bạn đã chấp nhận lời mời ứng tuyển cho vị trí ${inviteInfo.value.jobTitle}.`
     status.value = 'accepted'
   } catch (err: any) {
     const httpStatus = err?.response?.status
@@ -109,17 +113,14 @@ async function handleAccept() {
 }
 
 async function handleDecline() {
-  if (!applicationId.value) {
-    initPage()
-    return
-  }
+  if (!inviteInfo.value) return
 
   status.value = 'submitting-decline'
   errorMessage.value = ''
 
   try {
-    await applicationStore.declineInvite(applicationId.value)
-    successMessage.value = 'Bạn đã từ chối lời mời ứng tuyển.'
+    await applicationStore.declineInvite(inviteInfo.value.applicationId)
+    successMessage.value = `Bạn đã từ chối lời mời ứng tuyển cho vị trí ${inviteInfo.value.jobTitle}.`
     status.value = 'declined'
   } catch (err: any) {
     const httpStatus = err?.response?.status
@@ -140,21 +141,34 @@ async function handleDecline() {
 
 <template>
   <div class="invite-page">
+    <!-- Loading -->
     <div v-if="status === 'loading'" class="invite-card">
       <div class="invite-icon invite-icon--loading">
         <span class="material-symbols-outlined spin">autorenew</span>
       </div>
-      <h2 class="invite-title">Đang tải thông tin...</h2>
+      <h2 class="invite-title">Đang xác thực lời mời...</h2>
       <p class="invite-desc">Vui lòng chờ trong giây lát.</p>
     </div>
 
+    <!-- Need login -->
     <div v-else-if="status === 'need-login'" class="invite-card">
       <div class="invite-icon invite-icon--info">
         <span class="material-symbols-outlined">login</span>
       </div>
+      <div v-if="inviteInfo" class="invite-company">
+        <img
+          v-if="inviteInfo.companyLogoUrl"
+          :src="inviteInfo.companyLogoUrl"
+          :alt="inviteInfo.companyName"
+          class="invite-company__logo"
+        />
+        <div>
+          <p class="invite-company__name">{{ inviteInfo.companyName }}</p>
+          <p class="invite-company__job">{{ inviteInfo.jobTitle }}</p>
+        </div>
+      </div>
       <h2 class="invite-title">Đăng nhập để phản hồi lời mời</h2>
       <p class="invite-desc">
-        Bạn đã nhận được lời mời ứng tuyển cho vị trí <strong>vị trí ứng tuyển</strong>.
         Vui lòng đăng nhập bằng tài khoản ứng viên để tiếp tục.
       </p>
       <div class="invite-actions">
@@ -163,6 +177,7 @@ async function handleDecline() {
       </div>
     </div>
 
+    <!-- Ready / submitting -->
     <div
       v-else-if="status === 'ready' || status === 'submitting-accept' || status === 'submitting-decline'"
       class="invite-card"
@@ -171,21 +186,25 @@ async function handleDecline() {
         <span class="material-symbols-outlined">mail</span>
       </div>
       <h2 class="invite-title">Lời mời ứng tuyển từ Talent Pool</h2>
-      <p class="invite-desc">
-        Nhà tuyển dụng đã gửi lời mời ứng tuyển cho vị trí <strong>vị trí ứng tuyển</strong>.
-        Bạn có thể chấp nhận hoặc từ chối ngay trên trang này.
-      </p>
 
-      <div class="invite-info">
-        <div class="invite-info__row">
-          <span>Application ID</span>
-          <strong>#{{ applicationId }}</strong>
-        </div>
-        <div class="invite-info__row">
-          <span>Job ID</span>
-          <strong>#{{ jobId }}</strong>
+      <div v-if="inviteInfo" class="invite-info">
+        <div class="invite-info__company">
+          <img
+            v-if="inviteInfo.companyLogoUrl"
+            :src="inviteInfo.companyLogoUrl"
+            :alt="inviteInfo.companyName"
+            class="invite-info__logo"
+          />
+          <div>
+            <p class="invite-info__company-name">{{ inviteInfo.companyName }}</p>
+            <p class="invite-info__job-title">{{ inviteInfo.jobTitle }}</p>
+          </div>
         </div>
       </div>
+
+      <p class="invite-desc">
+        Nhà tuyển dụng đã gửi lời mời ứng tuyển cho bạn. Bạn có thể chấp nhận hoặc từ chối ngay trên trang này.
+      </p>
 
       <div class="invite-actions">
         <button
@@ -206,17 +225,14 @@ async function handleDecline() {
           <span v-else class="material-symbols-outlined">close</span>
           {{ status === 'submitting-decline' ? 'Đang từ chối...' : 'Từ chối lời mời' }}
         </button>
-        <button
-          v-if="jobId"
-          class="btn-secondary"
-          @click="goToJobDetail"
-        >
+        <button class="btn-secondary" @click="goToJobDetail">
           <span class="material-symbols-outlined">open_in_new</span>
           Xem chi tiết tin tuyển dụng
         </button>
       </div>
     </div>
 
+    <!-- Accepted -->
     <div v-else-if="status === 'accepted'" class="invite-card">
       <div class="invite-icon invite-icon--success">
         <span class="material-symbols-outlined">check_circle</span>
@@ -229,6 +245,7 @@ async function handleDecline() {
       </div>
     </div>
 
+    <!-- Declined -->
     <div v-else-if="status === 'declined'" class="invite-card">
       <div class="invite-icon invite-icon--warning">
         <span class="material-symbols-outlined">do_not_disturb_on</span>
@@ -240,6 +257,19 @@ async function handleDecline() {
       </div>
     </div>
 
+    <!-- Expired -->
+    <div v-else-if="status === 'expired'" class="invite-card">
+      <div class="invite-icon invite-icon--warning">
+        <span class="material-symbols-outlined">timer_off</span>
+      </div>
+      <h2 class="invite-title">Liên kết đã hết hạn</h2>
+      <p class="invite-desc">{{ errorMessage }}</p>
+      <div class="invite-actions">
+        <button class="btn-secondary" @click="goToHome">Về trang chủ</button>
+      </div>
+    </div>
+
+    <!-- Forbidden -->
     <div v-else-if="status === 'forbidden'" class="invite-card">
       <div class="invite-icon invite-icon--warning">
         <span class="material-symbols-outlined">lock</span>
@@ -251,6 +281,7 @@ async function handleDecline() {
       </div>
     </div>
 
+    <!-- Invalid -->
     <div v-else-if="status === 'invalid'" class="invite-card">
       <div class="invite-icon invite-icon--error">
         <span class="material-symbols-outlined">link_off</span>
@@ -262,6 +293,7 @@ async function handleDecline() {
       </div>
     </div>
 
+    <!-- Error -->
     <div v-else class="invite-card">
       <div class="invite-icon invite-icon--error">
         <span class="material-symbols-outlined">error</span>
@@ -339,6 +371,81 @@ async function handleDecline() {
   color: #be123c;
 }
 
+/* Company preview (need-login state) */
+.invite-company {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  padding: 0.875rem 1rem;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 1rem;
+  width: 100%;
+  text-align: left;
+}
+
+.invite-company__logo {
+  width: 3rem;
+  height: 3rem;
+  border-radius: 0.5rem;
+  object-fit: contain;
+  border: 1px solid #e2e8f0;
+  flex-shrink: 0;
+}
+
+.invite-company__name {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+}
+
+.invite-company__job {
+  font-size: 0.8rem;
+  color: #64748b;
+  margin: 2px 0 0;
+}
+
+/* Job info card (ready state) */
+.invite-info {
+  width: 100%;
+  padding: 1rem 1.125rem;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 1rem;
+  text-align: left;
+}
+
+.invite-info__company {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+}
+
+.invite-info__logo {
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 0.625rem;
+  object-fit: contain;
+  border: 1px solid #e2e8f0;
+  flex-shrink: 0;
+  background: #fff;
+  padding: 4px;
+}
+
+.invite-info__company-name {
+  font-size: 0.875rem;
+  color: #64748b;
+  margin: 0;
+}
+
+.invite-info__job-title {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 2px 0 0;
+}
+
 .invite-title {
   margin: 0;
   font-size: 1.5rem;
@@ -351,30 +458,6 @@ async function handleDecline() {
   color: #64748b;
   font-size: 0.95rem;
   line-height: 1.8;
-}
-
-.invite-info {
-  width: 100%;
-  padding: 1rem 1.125rem;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 1rem;
-  display: grid;
-  gap: 0.75rem;
-  text-align: left;
-}
-
-.invite-info__row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  font-size: 0.9rem;
-  color: #475569;
-}
-
-.invite-info__row strong {
-  color: #0f172a;
 }
 
 .invite-actions {
@@ -436,12 +519,8 @@ async function handleDecline() {
 }
 
 @keyframes spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
 }
 
 @media (max-width: 640px) {
