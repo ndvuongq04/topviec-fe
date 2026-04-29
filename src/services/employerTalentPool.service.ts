@@ -1,5 +1,7 @@
 import axiosInstance from './axios';
 import type { RestResponse, ResultPaginationDTO } from '@/types/common.types';
+import type { ReqInviteFromTalentPool } from '@/types/application.types';
+import type { ResEmployerApplicationDTO } from '@/types/employerApplication.types';
 
 export type TalentPoolSource = 'REVIEW_CV' | 'INTERVIEW' | 'SEARCH_IN_DB';
 
@@ -130,6 +132,14 @@ const employerTalentPoolService = {
     if (params.page !== undefined) query.page = params.page
     if (params.size !== undefined) query.size = params.size
     const res = await axiosInstance.get<RestResponse<ResultPaginationDTO<ResTalentPoolCandidateDTO>>>(BASE_URL, { params: query });
+    return res.data.data;
+  },
+
+  async invite(talentPoolId: number, data: ReqInviteFromTalentPool): Promise<ResEmployerApplicationDTO> {
+    const res = await axiosInstance.post<RestResponse<ResEmployerApplicationDTO>>(
+      `${BASE_URL}/${talentPoolId}/invite`,
+      data,
+    );
     return res.data.data;
   },
 };

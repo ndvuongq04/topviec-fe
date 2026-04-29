@@ -39,7 +39,7 @@
         <button class="sc-card__action-btn" title="Xem hồ sơ" @click="emit('view-detail', candidate.talentPoolId)">
           <span class="material-symbols-outlined">visibility</span>
         </button>
-        <button class="sc-card__action-btn" title="Gửi email">
+        <button class="sc-card__action-btn" title="Gửi email" @click="emit('invite-email', candidate.talentPoolId)">
           <span class="material-symbols-outlined">mail</span>
         </button>
         <button class="sc-card__action-btn" title="Chỉnh sửa ghi chú" @click="emit('edit-note', candidate.talentPoolId, candidate.note ?? '')">
@@ -60,6 +60,7 @@ import type { ResTalentPoolCandidateDTO } from '@/services/employerTalentPool.se
 const props = defineProps<{ candidate: ResTalentPoolCandidateDTO }>()
 const emit = defineEmits<{
   (e: 'view-detail', talentPoolId: number): void
+  (e: 'invite-email', talentPoolId: number): void
   (e: 'edit-note', talentPoolId: number, currentNote: string): void
   (e: 'delete', talentPoolId: number): void
 }>()
@@ -72,9 +73,9 @@ const initials = computed(() => {
 })
 
 const SOURCE_MAP: Record<string, { label: string; cls: string }> = {
-  'Duyệt CV':              { label: 'Duyệt CV',    cls: 'sc-card__label--review' },
-  'PV UV':                 { label: 'Phỏng vấn',   cls: 'sc-card__label--interview' },
-  'Tìm kiếm UV trong DB':  { label: 'Tìm kiếm',    cls: 'sc-card__label--search' },
+  'Duyệt CV': { label: 'Duyệt CV', cls: 'sc-card__label--review' },
+  'PV UV': { label: 'Phỏng vấn', cls: 'sc-card__label--interview' },
+  'Tìm kiếm UV trong DB': { label: 'Tìm kiếm', cls: 'sc-card__label--search' },
 }
 
 const sourceLabel = computed(() => SOURCE_MAP[props.candidate.source]?.label ?? props.candidate.source)
@@ -83,14 +84,14 @@ const sourceLabelClass = computed(() => SOURCE_MAP[props.candidate.source]?.cls 
 const WORK_TYPE_MAP: Record<string, string> = {
   full_time: 'Toàn thời gian',
   part_time: 'Bán thời gian',
-  remote:    'Làm từ xa',
-  hybrid:    'Kết hợp',
+  remote: 'Làm từ xa',
+  hybrid: 'Kết hợp',
 }
 const workTypeLabel = computed(() => WORK_TYPE_MAP[props.candidate.preferredWorkType ?? ''] ?? props.candidate.preferredWorkType ?? '')
 
 const SEEKING_MAP: Record<string, string> = {
-  active:      'Đang tìm việc gấp',
-  passive:     'Sẵn sàng nếu có cơ hội',
+  active: 'Đang tìm việc gấp',
+  passive: 'Sẵn sàng nếu có cơ hội',
   not_looking: 'Không tìm việc',
 }
 const seekingStatusLabel = computed(() => SEEKING_MAP[props.candidate.jobSeekingStatus ?? ''] ?? props.candidate.jobSeekingStatus ?? '')

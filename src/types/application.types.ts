@@ -21,6 +21,10 @@ export interface ReqUpdateApplicationCv {
   cvId: number;
 }
 
+export interface ReqInviteFromTalentPool {
+  jobPostId: number;
+}
+
 // ─── Response ─────────────────────────────────────────────
 
 export interface ResCompanyInfo {
