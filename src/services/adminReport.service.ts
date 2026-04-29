@@ -3,11 +3,12 @@ import type { RestResponse } from '@/types/common.types';
 import type {
   ReqConfirmReport,
   ReqGetAdminReports,
-  ReqGetReportsByComplaint,
+  ReqGetReportsByJobPost,
   ReqProcessReport,
   ResReportDetail,
   ResReportPagination,
 } from '@/types/report.types';
+import type { ResAppeal } from '@/types/appeal.types';
 
 const BASE_URL = '/admin/reports';
 
@@ -22,11 +23,16 @@ const adminReportService = {
     return res.data.data;
   },
 
-  async process(id: number, data: ReqProcessReport): Promise<ResReportDetail> {
-    const res = await axiosInstance.patch<RestResponse<ResReportDetail>>(
-      `${BASE_URL}/${id}/process`,
-      data,
+  async getReportsByJobPost(jobPostId: number, params: ReqGetReportsByJobPost): Promise<ResReportPagination> {
+    const res = await axiosInstance.get<RestResponse<ResReportPagination>>(
+      `${BASE_URL}/job-posts/${jobPostId}`,
+      { params },
     );
+    return res.data.data;
+  },
+
+  async getAppealByComplaint(id: number): Promise<ResAppeal | null> {
+    const res = await axiosInstance.get<RestResponse<ResAppeal | null>>(`${BASE_URL}/${id}/appeal`);
     return res.data.data;
   },
 
@@ -38,10 +44,10 @@ const adminReportService = {
     return res.data.data;
   },
 
-  async getReportsByComplaint(id: number, params: ReqGetReportsByComplaint): Promise<ResReportPagination> {
-    const res = await axiosInstance.get<RestResponse<ResReportPagination>>(
-      `${BASE_URL}/${id}/job-post-complaints`,
-      { params },
+  async process(id: number, data: ReqProcessReport): Promise<ResReportDetail> {
+    const res = await axiosInstance.patch<RestResponse<ResReportDetail>>(
+      `${BASE_URL}/${id}/process`,
+      data,
     );
     return res.data.data;
   },
