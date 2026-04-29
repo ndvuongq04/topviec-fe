@@ -2,7 +2,9 @@
   <div class="cd-job">
     <div class="cd-job__header">
       <h2 class="cd-job__title">Thông tin tin tuyển dụng</h2>
-      <span class="material-symbols-outlined cd-job__open-icon">open_in_new</span>
+      <router-link :to="{ name: 'JobDetail', params: { id: job.id } }" target="_blank" class="cd-job__open-link" title="Xem chi tiết tin tuyển dụng">
+        <span class="material-symbols-outlined cd-job__open-icon">open_in_new</span>
+      </router-link>
     </div>
     <h3 class="cd-job__name">{{ job.title }}</h3>
     <p class="cd-job__company">{{ job.company }}</p>
@@ -14,7 +16,7 @@
 </template>
 
 <script setup lang="ts">
-defineProps<{ job: { title: string; company: string; status: string } }>()
+defineProps<{ job: { id: number | string; title: string; company: string; status: string } }>()
 </script>
 
 <style scoped>
@@ -26,6 +28,7 @@ defineProps<{ job: { title: string; company: string; status: string } }>()
   display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;
 }
 .cd-job__title { font-size: 1.125rem; font-weight: 700; color: #1b1c18; }
+.cd-job__open-link { display: inline-flex; align-items: center; text-decoration: none; }
 .cd-job__open-icon { font-size: 20px; color: #574240; cursor: pointer; transition: color 0.15s; }
 .cd-job__open-icon:hover { color: #76191d; }
 

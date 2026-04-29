@@ -6,9 +6,7 @@
           <span class="material-symbols-outlined">fact_check</span>
           Kháng cáo của NTD
         </h2>
-        <p class="cd-appeal__subtitle">
-          Dữ liệu đang lấy từ API kháng cáo của nhà tuyển dụng.
-        </p>
+
       </div>
 
       <div class="cd-appeal__badges">
@@ -21,8 +19,8 @@
       </div>
     </div>
 
-    <div class="cd-appeal__grid">
-      <div class="cd-appeal__card">
+    <div :class="['cd-appeal__grid', { 'cd-appeal__grid--single': isResolved }]">
+      <div class="cd-appeal__card cd-appeal__card--info">
         <div class="cd-appeal__meta">
           <div>
             <span class="cd-appeal__label">Nhà tuyển dụng</span>
@@ -53,7 +51,7 @@
         </div>
       </div>
 
-      <div class="cd-appeal__card cd-appeal__card--action">
+      <div v-if="!isResolved" class="cd-appeal__card cd-appeal__card--action">
         <div class="cd-appeal__action-head">
           <div>
             <span class="cd-appeal__label">Trạng thái xử lý kháng cáo</span>
@@ -117,6 +115,8 @@ const note = ref('')
 const statusLabelMap = Object.fromEntries(
   APPEAL_STATUS_OPTIONS.map((item) => [item.value, item.label]),
 ) as Record<string, string>
+
+const isResolved = computed(() => props.appeal && props.appeal.status !== 'pending')
 
 const statusLabel = computed(() => {
   if (!props.appeal) return 'Chưa có kháng cáo'
@@ -216,8 +216,13 @@ function onUnsuspend() {
 
 .cd-appeal__grid {
   display: grid;
-  grid-template-columns: 1.4fr 1fr;
-  gap: 1rem;
+  grid-template-columns: 1fr 340px;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.cd-appeal__grid--single {
+  grid-template-columns: 1fr;
 }
 
 @media (max-width: 900px) {
@@ -294,6 +299,14 @@ function onUnsuspend() {
   background: #fff;
   outline: none;
   resize: vertical;
+}
+
+.cd-appeal__textarea--readonly {
+  white-space: pre-wrap;
+  color: #574240;
+  background: #f9f9f9;
+  border-color: #e5e7eb;
+  overflow-y: auto;
 }
 
 .cd-appeal__textarea:focus {

@@ -5,10 +5,16 @@
       Bảng quyết định xử lý
     </h2>
 
-    <div class="cd-decision__row">
-      <div class="cd-decision__field">
-        <label class="cd-decision__label">Kết luận</label>
-        <select v-model="form.decision" class="cd-decision__select">
+    <div v-if="isResolved" class="cd-decision__resolved-banner">
+      <span class="material-symbols-outlined">check_circle</span>
+      <p>Khiếu nại này đã được quyết định xử lý và hiện đang ở trạng thái <strong>Đã giải quyết</strong>.</p>
+    </div>
+
+    <template v-else>
+      <div class="cd-decision__row">
+        <div class="cd-decision__field">
+          <label class="cd-decision__label">Kết luận</label>
+          <select v-model="form.decision" class="cd-decision__select">
           <option value="">Chọn kết luận...</option>
           <option value="approve">Phê duyệt khiếu nại</option>
           <option value="reject">Từ chối khiếu nại</option>
@@ -21,34 +27,39 @@
       </div>
     </div>
 
-    <div class="cd-decision__note">
-      API xử lý hiện chỉ nhận `decision` và `resolutionNote`. Các cấu hình như nhóm vi phạm,
-      điểm phạt hoặc biện pháp xử lý không còn được gửi từ form này.
-    </div>
+      <div class="cd-decision__note">
+        API xử lý hiện chỉ nhận `decision` và `resolutionNote`. Các cấu hình như nhóm vi phạm,
+        điểm phạt hoặc biện pháp xử lý không còn được gửi từ form này.
+      </div>
+    </template>
 
     <div class="cd-decision__field">
       <label class="cd-decision__label">Ghi chú xử lý</label>
       <textarea
+        v-if="!isResolved"
         v-model="form.resolutionNote"
         class="cd-decision__textarea"
         placeholder="Nhập ghi chú xử lý..."
         rows="4"
       />
+      <div v-else class="cd-decision__textarea cd-decision__textarea--readonly">
+        {{ store.currentReport?.resolutionNote || 'Không có ghi chú xử lý.' }}
+      </div>
     </div>
 
-    <div class="cd-decision__footer">
+    <div v-if="!isResolved" class="cd-decision__footer">
       <button class="cd-decision__btn cd-decision__btn--cancel" type="button" @click="onCancel">
         Hủy
       </button>
-      <button
-        class="cd-decision__btn cd-decision__btn--submit"
-        type="button"
-        :disabled="submitting || !canSubmit"
-        @click="onSubmit"
-      >
-        {{ submitting ? 'Đang gửi...' : 'Gửi quyết định' }}
-      </button>
-    </div>
+        <button
+          class="cd-decision__btn cd-decision__btn--submit"
+          type="button"
+          :disabled="submitting || !canSubmit"
+          @click="onSubmit"
+        >
+          {{ submitting ? 'Đang gửi...' : 'Gửi quyết định' }}
+        </button>
+      </div>
   </div>
 </template>
 
@@ -88,6 +99,8 @@ const isProcessable = computed(() => {
 })
 
 const canSubmit = computed(() => Boolean(form.decision) && isProcessable.value)
+
+const isResolved = computed(() => store.currentReport?.status === 'resolved')
 
 watch(
   () => store.currentReport,
@@ -163,6 +176,28 @@ async function onSubmit() {
   font-size: 22px;
 }
 
+.cd-decision__resolved-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  color: #166534;
+}
+
+.cd-decision__resolved-banner .material-symbols-outlined {
+  color: #15803d;
+  font-size: 1.5rem;
+}
+
+.cd-decision__resolved-banner p {
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
 .cd-decision__row {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -219,6 +254,12 @@ async function onSubmit() {
 .cd-decision__textarea {
   resize: vertical;
   min-height: 112px;
+}
+
+.cd-decision__textarea--readonly {
+  white-space: pre-wrap;
+  color: #574240;
+  overflow-y: auto;
 }
 
 .cd-decision__note {

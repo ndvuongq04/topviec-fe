@@ -20,7 +20,7 @@
         Từ chối
       </button>
       <button class="cd-header__btn cd-header__btn--primary" @click="$emit('confirm')">
-        Xác nhận vi phạm
+        Duyệt khiếu nại
       </button>
     </div>
   </div>

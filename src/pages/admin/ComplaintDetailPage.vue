@@ -21,15 +21,6 @@
             <ComplaintDetailReporter :reporter="complaint.reporter" />
           </div>
           <ComplaintDetailContent :content="complaint.content" />
-          <ComplaintDetailDecisionPanel />
-          <ComplaintDetailAppealPanel
-            :appeal="appealPanel"
-            :employer-name="detailCompanyName"
-            :violation-score="detailViolationScore"
-            :is-suspended="detailIsSuspended"
-            :loading="appealStore.loading"
-            @unsuspend="onUnsuspendEmployer"
-          />
         </div>
 
         <div class="complaint-detail__right">
@@ -39,6 +30,18 @@
             <ComplaintDetailHistory :history="complaint.history" />
           </div>
         </div>
+      </div>
+
+      <div class="complaint-detail__full-width-panels">
+        <ComplaintDetailDecisionPanel />
+        <ComplaintDetailAppealPanel
+          :appeal="appealPanel"
+          :employer-name="detailCompanyName"
+          :violation-score="detailViolationScore"
+          :is-suspended="detailIsSuspended"
+          :loading="appealStore.loading"
+          @unsuspend="onUnsuspendEmployer"
+        />
       </div>
     </div>
   </div>
@@ -63,7 +66,6 @@ import ComplaintDetailHistory from '@/components/admin/complaints/complaint-deta
 import ComplaintDetailJobInfo from '@/components/admin/complaints/complaint-detail/ComplaintDetailJobInfo.vue'
 import ComplaintDetailOverview from '@/components/admin/complaints/complaint-detail/ComplaintDetailOverview.vue'
 import ComplaintDetailReporter from '@/components/admin/complaints/complaint-detail/ComplaintDetailReporter.vue'
-import ComplaintDetailWarnings from '@/components/admin/complaints/complaint-detail/ComplaintDetailWarnings.vue'
 import { useConfirm } from '@/composables/useConfirm'
 import { useToast } from '@/composables/useToast'
 import { useAdminReportStore } from '@/stores/adminReport.store'
@@ -218,6 +220,7 @@ const complaint = computed(() => {
       evidenceStatus: detail.evidences.length ? 'Đã cung cấp' : 'Chưa cung cấp',
     },
     job: {
+      id: detail.jobPosting.id,
       title: detail.jobPosting.title,
       company: detail.jobPosting.company.name,
       status: getJobPostingStatusLabel(detail.jobPosting.status),
@@ -385,6 +388,13 @@ watch(() => route.params.id, () => {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
+}
+
+.complaint-detail__full-width-panels {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin-top: 1.5rem;
 }
 
 .complaint-detail__row {
