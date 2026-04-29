@@ -5,6 +5,7 @@ import type { PaginationMeta } from '@/types/common.types';
 import type {
   ReqConfirmReport,
   ReqGetAdminReports,
+  ReqGetReportsByComplaint,
   ReqProcessReport,
   ResReportDetail,
   ResReportSummary,
@@ -14,6 +15,8 @@ export const useAdminReportStore = defineStore('adminReport', () => {
   // ─── State ──────────────────────────────────────────────────────────────────
   const reports = ref<ResReportSummary[]>([]);
   const meta = ref<PaginationMeta>({ page: 0, pageSize: 10, pages: 0, totals: 0 });
+  const relatedReports = ref<ResReportSummary[]>([]);
+  const relatedMeta = ref<PaginationMeta>({ page: 0, pageSize: 10, pages: 0, totals: 0 });
   const currentReport = ref<ResReportDetail | null>(null);
   const loading = ref(false);
   const error = ref<string | null>(null);
@@ -103,9 +106,25 @@ export const useAdminReportStore = defineStore('adminReport', () => {
     }
   }
 
+  async function fetchReportsByComplaint(id: number, params: ReqGetReportsByComplaint) {
+    loading.value = true;
+    error.value = null;
+    try {
+      const data = await adminReportService.getReportsByComplaint(id, params);
+      relatedReports.value = data.result;
+      relatedMeta.value = data.meta;
+    } catch (err) {
+      setError(err);
+    } finally {
+      loading.value = false;
+    }
+  }
+
   function reset() {
     reports.value = [];
     meta.value = { page: 0, pageSize: 10, pages: 0, totals: 0 };
+    relatedReports.value = [];
+    relatedMeta.value = { page: 0, pageSize: 10, pages: 0, totals: 0 };
     currentReport.value = null;
     loading.value = false;
     error.value = null;
@@ -114,6 +133,8 @@ export const useAdminReportStore = defineStore('adminReport', () => {
   return {
     reports,
     meta,
+    relatedReports,
+    relatedMeta,
     currentReport,
     loading,
     error,
@@ -121,6 +142,7 @@ export const useAdminReportStore = defineStore('adminReport', () => {
     fetchById,
     processReport,
     confirmReport,
+    fetchReportsByComplaint,
     reset,
   };
 });

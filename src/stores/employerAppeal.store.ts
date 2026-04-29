@@ -17,11 +17,11 @@ export const useEmployerAppealStore = defineStore('employerAppeal', () => {
     }
   }
 
-  async function createAppeal(reportId: number, payload: ReqSubmitAppeal): Promise<ResAppeal> {
+  async function createAppeal(complaintId: number, payload: Omit<ReqSubmitAppeal, 'complaintId'>): Promise<ResAppeal> {
     loading.value = true
     error.value = null
     try {
-      currentAppeal.value = await employerAppealService.create(reportId, payload)
+      currentAppeal.value = await employerAppealService.create({ complaintId, ...payload })
       return currentAppeal.value
     } catch (err) {
       setError(err)

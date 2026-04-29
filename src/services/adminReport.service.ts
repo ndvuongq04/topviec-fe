@@ -3,6 +3,7 @@ import type { RestResponse } from '@/types/common.types';
 import type {
   ReqConfirmReport,
   ReqGetAdminReports,
+  ReqGetReportsByComplaint,
   ReqProcessReport,
   ResReportDetail,
   ResReportPagination,
@@ -33,6 +34,14 @@ const adminReportService = {
     const res = await axiosInstance.patch<RestResponse<ResReportDetail>>(
       `${BASE_URL}/${id}/confirm`,
       data,
+    );
+    return res.data.data;
+  },
+
+  async getReportsByComplaint(id: number, params: ReqGetReportsByComplaint): Promise<ResReportPagination> {
+    const res = await axiosInstance.get<RestResponse<ResReportPagination>>(
+      `${BASE_URL}/${id}/job-post-complaints`,
+      { params },
     );
     return res.data.data;
   },

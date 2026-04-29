@@ -4,6 +4,7 @@ import employerReportService from '@/services/employerReport.service';
 import type { PaginationMeta } from '@/types/common.types';
 import type {
   ReqGetEmployerReports,
+  ReqGetReportsByComplaint,
   ResEmployerReportDetail,
   ResEmployerReportSummary,
   ResMyViolationScore,
@@ -12,6 +13,8 @@ import type {
 export const useEmployerReportStore = defineStore('employerReport', () => {
   const reports = ref<ResEmployerReportSummary[]>([]);
   const meta = ref<PaginationMeta>({ page: 0, pageSize: 10, pages: 0, totals: 0 });
+  const relatedReports = ref<ResEmployerReportSummary[]>([]);
+  const relatedMeta = ref<PaginationMeta>({ page: 0, pageSize: 10, pages: 0, totals: 0 });
   const currentReport = ref<ResEmployerReportDetail | null>(null);
   const myViolationScore = ref<ResMyViolationScore | null>(null);
   const loading = ref(false);
@@ -98,9 +101,25 @@ export const useEmployerReportStore = defineStore('employerReport', () => {
     }
   }
 
+  async function fetchReportsByComplaint(id: number, params: ReqGetReportsByComplaint) {
+    loading.value = true;
+    error.value = null;
+    try {
+      const data = await employerReportService.getReportsByComplaint(id, params);
+      relatedReports.value = data.result;
+      relatedMeta.value = data.meta;
+    } catch (err) {
+      setError(err);
+    } finally {
+      loading.value = false;
+    }
+  }
+
   function reset() {
     reports.value = [];
     meta.value = { page: 0, pageSize: 10, pages: 0, totals: 0 };
+    relatedReports.value = [];
+    relatedMeta.value = { page: 0, pageSize: 10, pages: 0, totals: 0 };
     currentReport.value = null;
     myViolationScore.value = null;
     loading.value = false;
@@ -110,6 +129,8 @@ export const useEmployerReportStore = defineStore('employerReport', () => {
   return {
     reports,
     meta,
+    relatedReports,
+    relatedMeta,
     currentReport,
     myViolationScore,
     loading,
@@ -118,6 +139,7 @@ export const useEmployerReportStore = defineStore('employerReport', () => {
     fetchById,
     fetchMyViolationScore,
     respondToReport,
+    fetchReportsByComplaint,
     reset,
   };
 });

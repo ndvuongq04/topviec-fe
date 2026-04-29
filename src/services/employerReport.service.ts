@@ -2,6 +2,7 @@ import axiosInstance from './axios';
 import type { RestResponse } from '@/types/common.types';
 import type {
   ReqGetEmployerReports,
+  ReqGetReportsByComplaint,
   ResEmployerReportDetail,
   ResEmployerReportPagination,
   ResMyViolationScore,
@@ -35,6 +36,14 @@ const employerReportService = {
   async respondToReport(id: number): Promise<ResEmployerReportDetail> {
     const res = await axiosInstance.post<RestResponse<ResEmployerReportDetail>>(
       `${BASE_URL}/reports/${id}/respond`,
+    );
+    return res.data.data;
+  },
+
+  async getReportsByComplaint(id: number, params: ReqGetReportsByComplaint): Promise<ResEmployerReportPagination> {
+    const res = await axiosInstance.get<RestResponse<ResEmployerReportPagination>>(
+      `${BASE_URL}/reports/${id}/job-post-complaints`,
+      { params },
     );
     return res.data.data;
   },

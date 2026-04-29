@@ -18,12 +18,24 @@
           </div>
         </div>
 
-        <div class="complaint-detail__header-actions">
+        <div v-if="report" class="complaint-detail__header-actions">
           <button class="complaint-detail__btn complaint-detail__btn--ghost" type="button">
             <span class="material-symbols-outlined">support_agent</span>
             Liên hệ Admin
           </button>
-          <button class="complaint-detail__btn complaint-detail__btn--primary" type="button">
+          <router-link
+            v-if="report.violationGroup?.toUpperCase() === 'A'"
+            :to="`/recruiter/jobs/${report.jobPost.id}/edit`"
+            class="complaint-detail__btn complaint-detail__btn--green"
+          >
+            <span class="material-symbols-outlined">edit</span>
+            Sửa tin tuyển dụng
+          </router-link>
+          <button
+            v-else
+            class="complaint-detail__btn complaint-detail__btn--primary"
+            type="button"
+          >
             <span class="material-symbols-outlined">send</span>
             Gửi giải trình
           </button>
@@ -238,12 +250,16 @@ const complaint = computed(() => {
       { label: `Ưu tiên: ${priorityLabel}`, variant: 'error-soft' },
     ],
     alert: {
-      title: currentReport.status === COMPLAINT_STATUS.WAITING_EMPLOYER
-        ? 'Yêu cầu phản hồi từ admin'
-        : 'Thông tin báo cáo vi phạm',
-      message: currentReport.remainingHours !== null
-        ? `Bạn đang bị báo cáo vì "${complaintTypeLabel}". Hạn phản hồi hiện tại là ${remainingLabel}. Vui lòng cung cấp giải trình đầy đủ để admin xem xét.`
-        : `Bạn đang bị báo cáo vì "${complaintTypeLabel}". Vui lòng cung cấp giải trình và thông tin liên quan để admin xem xét.`,
+      title: currentReport.violationGroup?.toUpperCase() === 'A'
+        ? 'Yêu cầu chỉnh sửa tin tuyển dụng (Nhóm A)'
+        : currentReport.status === COMPLAINT_STATUS.WAITING_EMPLOYER
+          ? 'Yêu cầu phản hồi từ admin (Nhóm B)'
+          : 'Thông tin báo cáo vi phạm',
+      message: currentReport.violationGroup?.toUpperCase() === 'A'
+        ? `Tin tuyển dụng của bạn bị báo cáo vì "${complaintTypeLabel}". Hãy sửa nội dung vi phạm và xác nhận để hệ thống tự đóng báo cáo. ${currentReport.remainingHours !== null ? `Còn ${remainingLabel} để xử lý.` : ''}`
+        : currentReport.remainingHours !== null
+          ? `Bạn đang bị báo cáo vì "${complaintTypeLabel}". Hạn phản hồi hiện tại là ${remainingLabel}. Vui lòng cung cấp giải trình đầy đủ để admin xem xét.`
+          : `Bạn đang bị báo cáo vì "${complaintTypeLabel}". Vui lòng cung cấp giải trình và thông tin liên quan để admin xem xét.`,
       highlight: [complaintTypeLabel, remainingLabel].filter(Boolean),
     },
     job: {
@@ -257,9 +273,11 @@ const complaint = computed(() => {
     content: {
       violationType: complaintTypeLabel,
       summary: currentReport.description?.trim() || 'Chưa có mô tả chi tiết từ bên báo cáo.',
-      noteTitle: currentReport.violationGroup === 'B' ? 'Lưu ý cho Nhóm B' : 'Lưu ý từ admin',
+      noteTitle: currentReport.violationGroup?.toUpperCase() === 'A' ? 'Hướng dẫn xử lý Nhóm A' : 'Lưu ý cho Nhóm B',
       note: currentReport.resolutionNote?.trim()
-        || 'Nếu bạn có bằng chứng hoặc cần làm rõ bối cảnh tuyển dụng, hãy gửi giải trình để admin tiếp tục xử lý.',
+        || (currentReport.violationGroup?.toUpperCase() === 'A'
+          ? 'Vi phạm nhóm A có thể tự khắc phục. Hãy sửa nội dung tin tuyển dụng và nhấn "Xác nhận đã sửa" để hệ thống tự đóng báo cáo.'
+          : 'Vi phạm nhóm B nghiêm trọng hơn và cần admin xét duyệt. Vui lòng cung cấp giải trình và bằng chứng đầy đủ.'),
     },
     score: {
       current: violationScore,
@@ -270,14 +288,23 @@ const complaint = computed(() => {
       penaltyIfFail: currentReport.violationGroup === 'B' ? '+10 điểm' : '+5 điểm',
     },
     impacts: buildImpacts(currentReport.status, currentReport.violationGroup),
-    checklist: [
-      'Kiểm tra lại nội dung tin tuyển dụng liên quan',
-      'Chuẩn bị giải trình rõ ràng cho admin',
-      'Đính kèm bằng chứng hỗ trợ nếu có',
-      currentReport.employerDeadline
-        ? `Hoàn tất phản hồi trước ${formatDateTime(currentReport.employerDeadline)}`
-        : 'Theo dõi cập nhật từ admin trên hệ thống',
-    ],
+    checklist: currentReport.violationGroup?.toUpperCase() === 'A'
+      ? [
+          'Vào trang quản lý tin tuyển dụng và chỉnh sửa nội dung vi phạm',
+          'Lưu lại tin sau khi sửa xong',
+          'Quay lại trang này và nhấn "Xác nhận đã sửa"',
+          currentReport.employerDeadline
+            ? `Hoàn tất trước ${formatDateTime(currentReport.employerDeadline)}`
+            : 'Xử lý sớm để tránh ảnh hưởng đến tài khoản',
+        ]
+      : [
+          'Kiểm tra lại nội dung tin tuyển dụng liên quan',
+          'Chuẩn bị giải trình rõ ràng cho admin',
+          'Đính kèm bằng chứng hỗ trợ nếu có',
+          currentReport.employerDeadline
+            ? `Hoàn tất phản hồi trước ${formatDateTime(currentReport.employerDeadline)}`
+            : 'Theo dõi cập nhật từ admin trên hệ thống',
+        ],
   }
 })
 
@@ -423,6 +450,17 @@ watch(reportId, (nextId, prevId) => {
 
 .complaint-detail__btn--primary:active {
   transform: scale(0.97);
+}
+
+.complaint-detail__btn--green {
+  background: #16a34a;
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(22, 163, 74, 0.25);
+  text-decoration: none;
+}
+
+.complaint-detail__btn--green:hover {
+  background: #15803d;
 }
 
 .complaint-detail__state {

@@ -59,6 +59,15 @@ export interface ReqGetEmployerReports {
   sort?: string;
 }
 
+export interface ReqGetReportsByComplaint {
+  status?: ComplaintStatus;
+  group?: ViolationGroup;
+  complaintType?: ComplaintType;
+  page?: number;
+  size?: number;
+  sort?: string;
+}
+
 // ─── Response ─────────────────────────────────────────────────
 
 export interface ResReporterInfo {

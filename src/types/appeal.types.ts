@@ -5,6 +5,7 @@ export interface ReqCreateAppeal {
 }
 
 export interface ReqSubmitAppeal {
+  complaintId: number
   content: string
 }
 
