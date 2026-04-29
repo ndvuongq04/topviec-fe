@@ -133,7 +133,7 @@
             >
               <span class="material-symbols-outlined text-[20px]">edit_document</span>
             </button>
-            <button 
+            <button
               v-if="app.status === APPLICATION_STATUS.PENDING"
               @click="handleWithdraw(app)"
               class="p-2 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all cursor-pointer"
@@ -141,6 +141,22 @@
             >
               <span class="material-symbols-outlined text-[20px]">cancel</span>
             </button>
+            <template v-if="app.status === APPLICATION_STATUS.INVITED">
+              <button
+                @click="handleAcceptInvite(app)"
+                class="p-2 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-all cursor-pointer"
+                title="Tham gia ứng tuyển"
+              >
+                <span class="material-symbols-outlined text-[20px]">check_circle</span>
+              </button>
+              <button
+                @click="handleDeclineInvite(app)"
+                class="p-2 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all cursor-pointer"
+                title="Từ chối ứng tuyển"
+              >
+                <span class="material-symbols-outlined text-[20px]">do_not_disturb_on</span>
+              </button>
+            </template>
           </div>
         </div>
       </div>
@@ -241,6 +257,7 @@ function getStatusLabel(status: string) {
 function getStatusIcon(status: string) {
   switch (status) {
     case APPLICATION_STATUS.PENDING: return 'send'
+    case APPLICATION_STATUS.INVITED: return 'mail'
     case APPLICATION_STATUS.SEEN: return 'visibility'
     case APPLICATION_STATUS.INTERVIEWING: return 'event_upcoming'
     case APPLICATION_STATUS.OFFERED: return 'local_offer'
@@ -270,6 +287,46 @@ function getStatusClasses(status: string) {
 
 function formatDate(date: string) {
   return dayjs(date).format('DD/MM/YYYY')
+}
+
+async function handleAcceptInvite(app: ResApplication) {
+  const ok = await confirm({
+    title: 'Tham gia ứng tuyển?',
+    message: `Bạn có muốn chấp nhận lời mời ứng tuyển cho vị trí "${app.jobPosting?.title}" tại ${app.jobPosting?.company.name}?`,
+    confirmText: 'Tham gia',
+    cancelText: 'Hủy',
+    confirmColor: 'primary',
+    icon: 'check_circle',
+  })
+
+  if (ok) {
+    try {
+      await applicationStore.acceptInvite(app.id)
+      toast.success('Thành công', 'Đã chấp nhận lời mời ứng tuyển')
+    } catch {
+      toast.error('Lỗi', applicationStore.error ?? 'Không thể chấp nhận lời mời. Vui lòng thử lại.')
+    }
+  }
+}
+
+async function handleDeclineInvite(app: ResApplication) {
+  const ok = await confirm({
+    title: 'Từ chối ứng tuyển?',
+    message: `Bạn có muốn từ chối lời mời ứng tuyển cho vị trí "${app.jobPosting?.title}" tại ${app.jobPosting?.company.name}?`,
+    confirmText: 'Từ chối',
+    cancelText: 'Hủy',
+    confirmColor: 'red',
+    icon: 'do_not_disturb_on',
+  })
+
+  if (ok) {
+    try {
+      await applicationStore.declineInvite(app.id)
+      toast.success('Thành công', 'Đã từ chối lời mời ứng tuyển')
+    } catch {
+      toast.error('Lỗi', applicationStore.error ?? 'Không thể từ chối lời mời. Vui lòng thử lại.')
+    }
+  }
 }
 
 async function handleWithdraw(app: ResApplication) {

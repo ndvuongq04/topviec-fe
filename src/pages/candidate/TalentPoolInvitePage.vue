@@ -30,15 +30,9 @@ const applicationId = computed(() => {
   return Number.isFinite(raw) && raw > 0 ? raw : null
 })
 
-const jobSlug = computed(() => String(route.query.jobSlug ?? '').trim())
-
-const jobTitle = computed(() => {
-  if (!jobSlug.value) return 'vị trí ứng tuyển'
-  return jobSlug.value
-    .split('-')
-    .filter(Boolean)
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(' ')
+const jobId = computed(() => {
+  const raw = Number(route.query.jobId)
+  return Number.isFinite(raw) && raw > 0 ? raw : null
 })
 
 function initPage() {
@@ -76,6 +70,10 @@ function goToHome() {
 
 function goToAppliedJobs() {
   router.push({ name: 'AppliedJobs' })
+}
+
+function goToJobDetail() {
+  router.push({ name: 'JobDetail', params: { id: jobId.value } })
 }
 
 async function handleAccept() {
@@ -156,7 +154,7 @@ async function handleDecline() {
       </div>
       <h2 class="invite-title">Đăng nhập để phản hồi lời mời</h2>
       <p class="invite-desc">
-        Bạn đã nhận được lời mời ứng tuyển cho vị trí <strong>{{ jobTitle }}</strong>.
+        Bạn đã nhận được lời mời ứng tuyển cho vị trí <strong>vị trí ứng tuyển</strong>.
         Vui lòng đăng nhập bằng tài khoản ứng viên để tiếp tục.
       </p>
       <div class="invite-actions">
@@ -174,7 +172,7 @@ async function handleDecline() {
       </div>
       <h2 class="invite-title">Lời mời ứng tuyển từ Talent Pool</h2>
       <p class="invite-desc">
-        Nhà tuyển dụng đã gửi lời mời ứng tuyển cho vị trí <strong>{{ jobTitle }}</strong>.
+        Nhà tuyển dụng đã gửi lời mời ứng tuyển cho vị trí <strong>vị trí ứng tuyển</strong>.
         Bạn có thể chấp nhận hoặc từ chối ngay trên trang này.
       </p>
 
@@ -184,8 +182,8 @@ async function handleDecline() {
           <strong>#{{ applicationId }}</strong>
         </div>
         <div class="invite-info__row">
-          <span>Vị trí</span>
-          <strong>{{ jobTitle }}</strong>
+          <span>Job ID</span>
+          <strong>#{{ jobId }}</strong>
         </div>
       </div>
 
@@ -207,6 +205,14 @@ async function handleDecline() {
           <span v-if="status === 'submitting-decline'" class="material-symbols-outlined spin">autorenew</span>
           <span v-else class="material-symbols-outlined">close</span>
           {{ status === 'submitting-decline' ? 'Đang từ chối...' : 'Từ chối lời mời' }}
+        </button>
+        <button
+          v-if="jobId"
+          class="btn-secondary"
+          @click="goToJobDetail"
+        >
+          <span class="material-symbols-outlined">open_in_new</span>
+          Xem chi tiết tin tuyển dụng
         </button>
       </div>
     </div>
