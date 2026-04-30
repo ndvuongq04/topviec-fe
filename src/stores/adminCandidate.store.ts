@@ -5,7 +5,8 @@ import type {
     ResAdminCandidateDTO, 
     ResAdminCandidateDetailDTO, 
     AdminCandidateQueryParams,
-    ResAdminCandidatePagination
+    ResAdminCandidatePagination,
+    ResAdminCandidateStatisticsDTO
 } from '@/types/adminCandidate.types'
 import type { PaginationMeta, ResultPaginationDTO } from '@/types/common.types'
 import type { ResCv } from '@/types/cvs.types'
@@ -33,6 +34,7 @@ export const useAdminCandidateStore = defineStore('adminCandidate', () => {
     
     const savedJobs = ref<ResSavedJobDTO[]>([])
     const savedJobsMeta = ref<PaginationMeta | null>(null)
+    const statistics = ref<ResAdminCandidateStatisticsDTO | null>(null)
 
     // ─── Helpers ────────────────────────────────────────────────────────────────
     function setError(err: unknown) {
@@ -122,6 +124,39 @@ export const useAdminCandidateStore = defineStore('adminCandidate', () => {
         }
     }
 
+    /** GET /admin/candidates/{userId}/statistics */
+    async function fetchCandidateStatistics(userId: number) {
+        try {
+            statistics.value = await adminCandidateService.getCandidateStatistics(userId)
+        } catch (err) {
+            setError(err)
+        }
+    }
+
+    /** PATCH /admin/candidates/{userId}/toggle-status */
+    async function toggleCandidateStatus(userId: number) {
+        loading.value = true
+        error.value = null
+        try {
+            const newStatus = await adminCandidateService.toggleCandidateStatus(userId)
+            // Cập nhật status trực tiếp trên selectedCandidate (nếu đang xem detail)
+            if (selectedCandidate.value && selectedCandidate.value.id === userId) {
+                selectedCandidate.value = { ...selectedCandidate.value, status: newStatus }
+            }
+            // Cập nhật trong danh sách candidates nếu có
+            const idx = candidates.value.findIndex(c => c.id === userId)
+            if (idx !== -1) {
+                candidates.value[idx] = { ...candidates.value[idx], status: newStatus }
+            }
+            return newStatus
+        } catch (err) {
+            setError(err)
+            throw err
+        } finally {
+            loading.value = false
+        }
+    }
+
     function reset() {
         candidates.value = []
         selectedCandidate.value = null
@@ -132,6 +167,7 @@ export const useAdminCandidateStore = defineStore('adminCandidate', () => {
         applications.value = []
         followedCompanies.value = []
         savedJobs.value = []
+        statistics.value = null
     }
 
     return {
@@ -148,12 +184,15 @@ export const useAdminCandidateStore = defineStore('adminCandidate', () => {
         followedCompaniesMeta,
         savedJobs,
         savedJobsMeta,
+        statistics,
         fetchCandidates,
         fetchCandidateDetail,
         fetchCandidateCvs,
         fetchCandidateApplications,
         fetchCandidateFollowedCompanies,
         fetchCandidateSavedJobs,
+        fetchCandidateStatistics,
+        toggleCandidateStatus,
         reset
     }
 })

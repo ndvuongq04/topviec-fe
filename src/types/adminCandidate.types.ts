@@ -50,3 +50,11 @@ export interface AdminCandidateQueryParams {
     size?: number
     sort?: string
 }
+
+// ─── Statistics DTO ───────────────────────────────────────────────
+export interface ResAdminCandidateStatisticsDTO {
+    totalCvs: number
+    totalApplications: number
+    totalFollowedCompanies: number
+    totalSavedJobs: number
+}

@@ -31,13 +31,16 @@
           </td>
           <td class="secondary-text text-[12px] whitespace-nowrap">{{ formatDate(item.followedAt) }}</td>
           <td class="text-right">
-            <router-link 
-              v-if="item.company?.id"
-              :to="{ name: 'admin-employer-detail', params: { id: item.company.id } }"
-              class="action-link"
+            <a
+              v-if="item.company?.slug"
+              :href="router.resolve({ name: 'CompanyDetail', params: { slug: item.company.slug } }).href"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="action-link inline-flex items-center gap-1"
             >
+              <span class="material-symbols-outlined text-[14px]">open_in_new</span>
               Xem
-            </router-link>
+            </a>
           </td>
         </tr>
       </tbody>
@@ -51,7 +54,10 @@
 </template>
 
 <script setup lang="ts">
+import { useRouter } from 'vue-router'
 import type { ResCompanyDTO } from '@/types/company.types'
+
+const router = useRouter()
 
 defineProps<{
   companies: ResCompanyDTO[]

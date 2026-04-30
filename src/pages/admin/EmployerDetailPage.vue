@@ -74,6 +74,7 @@ import EmployerStatsCards from '@/components/admin/employers/EmployerStatsCards.
 import EmployerViolationScorePanel from '@/components/admin/employers/EmployerViolationScorePanel.vue'
 import { useToast } from '@/composables/useToast'
 import { useAdminCompanyStore } from '@/stores/adminCompany.store'
+import { CompanyStatus } from '@/constants/company.constants'
 import type { StatItem } from '@/components/admin/employers/EmployerStatsCards.vue'
 
 const route = useRoute()
@@ -137,7 +138,7 @@ function onWarn() {
 async function onSuspend() {
   if (!store.selectedCompany) return
   try {
-    if (store.selectedCompany.status === 'suspended') {
+    if (store.selectedCompany.status === CompanyStatus.SUSPENDED) {
       await store.unsuspendCompany(store.selectedCompany.id)
       toast.success('Thành công', 'Đã mở khóa công ty.')
     } else {

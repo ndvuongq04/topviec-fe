@@ -72,6 +72,15 @@
               Reset mật khẩu
             </button>
             <button
+              v-if="candidate.status === UserStatus.LOCKED_PERM"
+              class="px-5 py-2.5 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-[1rem] font-bold flex items-center gap-2 hover:bg-emerald-200 transition-colors"
+              @click="handleLockAccount"
+            >
+              <span class="material-symbols-outlined text-[1.125rem]">lock_open</span>
+              Mở khóa tài khoản
+            </button>
+            <button
+              v-else
               class="px-5 py-2.5 rounded-lg bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 text-[1rem] font-bold flex items-center gap-2 hover:bg-red-200 transition-colors"
               @click="handleLockAccount"
             >
@@ -177,6 +186,7 @@ const tabs = [
 async function loadCandidateDetail() {
   if (candidateId) {
     await store.fetchCandidateDetail(candidateId)
+    store.fetchCandidateStatistics(candidateId)
   }
 }
 
@@ -210,29 +220,29 @@ const formatDate = (iso: string) => {
 
 const stats = computed(() => [
   {
-    label: 'Tổng CV (Fake)',
-    value: 3,
+    label: 'Tổng CV',
+    value: store.statistics?.totalCvs ?? '—',
     icon: 'description',
     iconBg: 'bg-blue-50 dark:bg-blue-900/20',
     iconColor: 'text-blue-600',
   },
   {
-    label: 'Lần ứng tuyển (Fake)',
-    value: 0,
+    label: 'Lần ứng tuyển',
+    value: store.statistics?.totalApplications ?? '—',
     icon: 'send',
     iconBg: 'bg-green-50 dark:bg-green-900/20',
     iconColor: 'text-green-600',
   },
   {
-    label: 'Cty theo dõi (Fake)',
-    value: 0,
+    label: 'Công ty theo dõi',
+    value: store.statistics?.totalFollowedCompanies ?? '—',
     icon: 'corporate_fare',
     iconBg: 'bg-purple-50 dark:bg-purple-900/20',
     iconColor: 'text-purple-600',
   },
   {
-    label: 'Việc làm đã lưu (Fake)',
-    value: 0,
+    label: 'Việc làm đã lưu',
+    value: store.statistics?.totalSavedJobs ?? '—',
     icon: 'bookmark',
     iconBg: 'bg-[#963131]/10',
     iconColor: 'text-[#963131]',
@@ -243,8 +253,17 @@ function handleResetPassword() {
   toast.info('Tính năng', 'Reset mật khẩu đang được phát triển.')
 }
 
-function handleLockAccount() {
-  toast.info('Tính năng', 'Khóa tài khoản đang được phát triển.')
+async function handleLockAccount() {
+  if (!candidate.value) return
+  const isLocked = candidate.value.status === UserStatus.LOCKED_PERM
+  const actionText = isLocked ? 'mở khóa' : 'khóa'
+  
+  try {
+    await store.toggleCandidateStatus(candidateId)
+    toast.success('Thành công', `Đã ${actionText} tài khoản ứng viên.`)
+  } catch (error) {
+    toast.error('Lỗi', `Không thể ${actionText} tài khoản.`)
+  }
 }
 </script>
 

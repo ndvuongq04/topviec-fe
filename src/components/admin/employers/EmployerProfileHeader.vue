@@ -83,6 +83,15 @@
           Gửi cảnh báo
         </button>
         <button
+          v-if="company.status === CompanyStatus.SUSPENDED"
+          class="px-4 py-2 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-sm font-bold flex items-center gap-2 hover:bg-emerald-200 transition-colors"
+          @click="$emit('suspend')"
+        >
+          <span class="material-symbols-outlined text-sm">lock_open</span>
+          Mở khóa tài khoản
+        </button>
+        <button
+          v-else
           class="px-4 py-2 rounded-lg bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 text-sm font-bold flex items-center gap-2 hover:bg-red-200 transition-colors"
           @click="$emit('suspend')"
         >
@@ -97,7 +106,7 @@
 
 <script setup lang="ts">
 import type { ResCompanyDTO } from '@/types/company.types'
-import { VerificationStatus } from '@/constants/company.constants'
+import { CompanyStatus, VerificationStatus } from '@/constants/company.constants'
 
 import { computed } from 'vue'
 

@@ -21,6 +21,7 @@
               target="_blank" 
               class="action-link"
             >
+              <span class="material-symbols-outlined" style="font-size:14px;">open_in_new</span>
               Xem
             </a>
           </td>
@@ -69,4 +70,12 @@ th {
 td { padding: 16px 24px; font-weight: 500; }
 .position-text { color: #1b1c18; }
 .secondary-text { color: #574240; }
+.action-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  color: #76191d; font-size: 13px; font-weight: 600;
+  transition: color 0.15s;
+}
+.action-link:hover { color: #963131; }
 </style>

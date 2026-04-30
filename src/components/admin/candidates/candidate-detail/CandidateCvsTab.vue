@@ -25,6 +25,7 @@
               target="_blank" 
               class="action-link"
             >
+              <span class="material-symbols-outlined" style="font-size:14px;">open_in_new</span>
               Xem
             </a>
             <span v-else class="text-slate-400 italic">Trống</span>
@@ -90,6 +91,9 @@ td { padding: 16px 24px; font-weight: 500; color: #1b1c18; }
   border-radius: 99px;
 }
 .action-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
   background: none; border: none;
   color: #76191d; font-size: 13px; font-weight: 600;
   cursor: pointer; font-family: inherit;
