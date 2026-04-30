@@ -139,16 +139,17 @@ export const useAdminCandidateStore = defineStore('adminCandidate', () => {
         error.value = null
         try {
             const newStatus = await adminCandidateService.toggleCandidateStatus(userId)
+            const normalizedStatus = typeof newStatus === 'string' ? newStatus.toLowerCase() : newStatus
             // Cập nhật status trực tiếp trên selectedCandidate (nếu đang xem detail)
             if (selectedCandidate.value && selectedCandidate.value.id === userId) {
-                selectedCandidate.value = { ...selectedCandidate.value, status: newStatus }
+                selectedCandidate.value = { ...selectedCandidate.value, status: normalizedStatus as any }
             }
             // Cập nhật trong danh sách candidates nếu có
             const idx = candidates.value.findIndex(c => c.id === userId)
             if (idx !== -1) {
-                candidates.value[idx] = { ...candidates.value[idx], status: newStatus }
+                candidates.value[idx] = { ...candidates.value[idx], status: normalizedStatus as any }
             }
-            return newStatus
+            return normalizedStatus
         } catch (err) {
             setError(err)
             throw err
