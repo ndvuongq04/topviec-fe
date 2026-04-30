@@ -67,6 +67,7 @@ const tabs = [
   { label: 'Tất cả', value: '' },
   { label: JOB_POSTING_STATUS_LABELS[JobPostingStatus.PENDING_APPROVAL], value: JobPostingStatus.PENDING_APPROVAL },
   { label: JOB_POSTING_STATUS_LABELS[JobPostingStatus.PUBLISHED], value: JobPostingStatus.PUBLISHED },
+  { label: JOB_POSTING_STATUS_LABELS[JobPostingStatus.HIDDEN], value: JobPostingStatus.HIDDEN },
   { label: JOB_POSTING_STATUS_LABELS[JobPostingStatus.REJECTED], value: JobPostingStatus.REJECTED },
   { label: JOB_POSTING_STATUS_LABELS[JobPostingStatus.PAUSED], value: JobPostingStatus.PAUSED },
   { label: JOB_POSTING_STATUS_LABELS[JobPostingStatus.CLOSED], value: JobPostingStatus.CLOSED },

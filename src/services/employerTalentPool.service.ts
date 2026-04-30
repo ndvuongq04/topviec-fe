@@ -1,5 +1,7 @@
 import axiosInstance from './axios';
 import type { RestResponse, ResultPaginationDTO } from '@/types/common.types';
+import type { ReqInviteFromTalentPool } from '@/types/application.types';
+import type { ResEmployerApplicationDTO } from '@/types/employerApplication.types';
 
 export type TalentPoolSource = 'REVIEW_CV' | 'INTERVIEW' | 'SEARCH_IN_DB';
 
@@ -102,6 +104,27 @@ export interface TalentPoolParams {
   size?: number;
 }
 
+export interface ResCandidateSearchResultDTO {
+  candidateUserId: number;
+  fullName: string;
+  avatarUrl?: string;
+  preferredJobTitle?: string;
+  preferredWorkType?: string;
+  preferredLocationId?: number;
+  preferredLocationName?: string;
+  expectedSalaryMin?: number;
+  expectedSalaryMax?: number;
+  salaryNegotiable?: boolean;
+  jobSeekingStatus?: string;
+  alreadyInPool: boolean;
+}
+
+export interface CandidateSearchParams {
+  locationId: number;
+  page?: number;
+  size?: number;
+}
+
 const BASE_URL = '/employer/talent-pool';
 
 const employerTalentPoolService = {
@@ -123,6 +146,13 @@ const employerTalentPoolService = {
     return res.data.data;
   },
 
+  async getCandidateDetail(candidateUserId: number): Promise<ResTalentPoolCandidateDetailDTO> {
+    const res = await axiosInstance.get<RestResponse<ResTalentPoolCandidateDetailDTO>>(
+      `${BASE_URL}/candidates/${candidateUserId}`,
+    );
+    return res.data.data;
+  },
+
   async getTalentPool(params: TalentPoolParams): Promise<ResultPaginationDTO<ResTalentPoolCandidateDTO>> {
     const query: Record<string, any> = {}
     if (params.source) query.source = params.source
@@ -130,6 +160,25 @@ const employerTalentPoolService = {
     if (params.page !== undefined) query.page = params.page
     if (params.size !== undefined) query.size = params.size
     const res = await axiosInstance.get<RestResponse<ResultPaginationDTO<ResTalentPoolCandidateDTO>>>(BASE_URL, { params: query });
+    return res.data.data;
+  },
+
+  async invite(talentPoolId: number, data: ReqInviteFromTalentPool): Promise<ResEmployerApplicationDTO> {
+    const res = await axiosInstance.post<RestResponse<ResEmployerApplicationDTO>>(
+      `${BASE_URL}/${talentPoolId}/invite`,
+      data,
+    );
+    return res.data.data;
+  },
+
+  async searchCandidates(params: CandidateSearchParams): Promise<ResultPaginationDTO<ResCandidateSearchResultDTO>> {
+    const query: Record<string, any> = { locationId: params.locationId };
+    if (params.page !== undefined) query.page = params.page;
+    if (params.size !== undefined) query.size = params.size;
+    const res = await axiosInstance.get<RestResponse<ResultPaginationDTO<ResCandidateSearchResultDTO>>>(
+      `${BASE_URL}/search-candidates`,
+      { params: query },
+    );
     return res.data.data;
   },
 };

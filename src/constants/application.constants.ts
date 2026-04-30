@@ -22,6 +22,7 @@ export const APPLY_METHOD = {
   NORMAL: 'normal',
   QUICK: 'quick',
   BULK: 'bulk',
+  INVITED: 'invited',
 } as const;
 
 export type ApplyMethod = (typeof APPLY_METHOD)[keyof typeof APPLY_METHOD];
@@ -48,4 +49,5 @@ export const APPLY_METHOD_OPTIONS = [
   { value: APPLY_METHOD.NORMAL, label: 'Nộp thông thường' },
   { value: APPLY_METHOD.QUICK, label: 'Ứng tuyển nhanh' },
   { value: APPLY_METHOD.BULK, label: 'Ứng tuyển hàng loạt' },
+  { value: APPLY_METHOD.INVITED, label: 'Được mời từ Talent Pool' },
 ];

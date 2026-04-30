@@ -143,6 +143,42 @@ export const useApplicationStore = defineStore('application', () => {
     }
   }
 
+  async function acceptInvite(applicationId: number) {
+    loading.value = true;
+    error.value = null;
+    try {
+      const data = await applicationService.acceptInvite(applicationId);
+      const index = applications.value.findIndex(app => app.id === applicationId);
+      if (index !== -1) {
+        applications.value[index] = data;
+      }
+      return data;
+    } catch (err) {
+      setError(err);
+      throw err;
+    } finally {
+      loading.value = false;
+    }
+  }
+
+  async function declineInvite(applicationId: number) {
+    loading.value = true;
+    error.value = null;
+    try {
+      const data = await applicationService.declineInvite(applicationId);
+      const index = applications.value.findIndex(app => app.id === applicationId);
+      if (index !== -1) {
+        applications.value[index] = data;
+      }
+      return data;
+    } catch (err) {
+      setError(err);
+      throw err;
+    } finally {
+      loading.value = false;
+    }
+  }
+
   /** Reset store */
   function reset() {
     applications.value = [];
@@ -165,6 +201,8 @@ export const useApplicationStore = defineStore('application', () => {
     bulkApply,
     withdraw,
     updateApplicationCv,
+    acceptInvite,
+    declineInvite,
     reset,
   };
 });

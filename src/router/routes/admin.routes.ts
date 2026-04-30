@@ -77,6 +77,16 @@ export const adminRoutes: RouteRecordRaw[] = [
                 component: () => import('@/pages/admin/SubscriberDetailPage.vue'),
             },
             {
+                path: 'reports',
+                name: 'admin-complaints',
+                component: () => import('@/pages/admin/ComplaintsPage.vue'),
+            },
+            {
+                path: 'reports/:id',
+                name: 'admin-complaint-detail',
+                component: () => import('@/pages/admin/ComplaintDetailPage.vue'),
+            },
+            {
                 path: 'settings/permissions',
                 name: 'admin-settings-permissions',
                 component: () => import('@/pages/admin/PermissionConfigPage.vue'),

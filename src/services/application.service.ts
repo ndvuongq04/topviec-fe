@@ -1,12 +1,13 @@
 import axiosInstance from './axios';
 import type { RestResponse } from '@/types/common.types';
-import type { 
-  ResApplication, 
-  ResApplicationPagination, 
-  ReqApplyJob, 
-  ReqBulkApply, 
+import type {
+  ResApplication,
+  ResApplicationPagination,
+  ReqApplyJob,
+  ReqBulkApply,
   ReqWithdrawApplication,
-  ReqUpdateApplicationCv 
+  ReqUpdateApplicationCv,
+  ResTalentPoolInviteInfo,
 } from '@/types/application.types';
 
 const BASE_URL = '/applications';
@@ -65,6 +66,37 @@ const applicationService = {
    */
   async updateApplicationCv(applicationId: number, data: ReqUpdateApplicationCv): Promise<ResApplication> {
     const res = await axiosInstance.patch<RestResponse<ResApplication>>(`${BASE_URL}/${applicationId}/cv`, data);
+    return res.data.data;
+  },
+
+  /**
+   * UV chấp nhận lời mời từ talent pool (INVITED → PENDING)
+   */
+  async acceptInvite(applicationId: number): Promise<ResApplication> {
+    const res = await axiosInstance.patch<RestResponse<ResApplication>>(
+      `${BASE_URL}/${applicationId}/accept-invite`,
+    );
+    return res.data.data;
+  },
+
+  /**
+   * UV từ chối lời mời từ talent pool (INVITED → WITHDRAWN)
+   */
+  async declineInvite(applicationId: number): Promise<ResApplication> {
+    const res = await axiosInstance.patch<RestResponse<ResApplication>>(
+      `${BASE_URL}/${applicationId}/decline-invite`,
+    );
+    return res.data.data;
+  },
+
+  /**
+   * Public: xác thực token từ email mời, trả về thông tin lời mời
+   */
+  async verifyInviteToken(token: string): Promise<ResTalentPoolInviteInfo> {
+    const res = await axiosInstance.get<RestResponse<ResTalentPoolInviteInfo>>(
+      '/talent-pool-invite/verify',
+      { params: { token } },
+    );
     return res.data.data;
   },
 };

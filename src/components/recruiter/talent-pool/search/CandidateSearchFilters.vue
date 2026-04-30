@@ -2,11 +2,13 @@
   <aside class="cs-filters">
     <h2 class="cs-filters__title">Bộ lọc tìm kiếm</h2>
 
+    <!-- Search input -->
     <div class="cs-filters__search-wrap">
       <span class="material-symbols-outlined cs-filters__search-icon">search</span>
       <input class="cs-filters__search-input" placeholder="Tìm theo tên, kỹ năng..." type="text" />
     </div>
 
+    <!-- Kỹ năng -->
     <div class="cs-filters__section">
       <button class="cs-filters__section-header" @click="toggle('skills')">
         <span>Kỹ năng</span>
@@ -25,19 +27,38 @@
       </div>
     </div>
 
+    <!-- Địa điểm -->
     <div class="cs-filters__section">
       <button class="cs-filters__section-header" @click="toggle('location')">
-        <span>Địa điểm</span>
+        <span>Địa điểm <span class="cs-filters__required">*</span></span>
         <span :class="['material-symbols-outlined', 'cs-filters__chevron', !open.location && 'cs-filters__chevron--collapsed']">expand_more</span>
       </button>
-      <div v-show="open.location" class="cs-filters__checkboxes">
-        <label v-for="loc in locations" :key="loc" class="cs-filters__checkbox-label">
-          <input :checked="loc === 'Hà Nội'" class="cs-filters__checkbox" type="checkbox" />
-          {{ loc }}
-        </label>
+      <div v-show="open.location">
+        <div v-if="locationStore.loading" class="cs-filters__loading-inline">
+          <span class="material-symbols-outlined cs-filters__spin">autorenew</span>
+          Đang tải...
+        </div>
+        <div v-else class="cs-filters__radios">
+          <label
+            v-for="loc in locationStore.locations"
+            :key="loc.id"
+            class="cs-filters__radio-label"
+          >
+            <input
+              class="cs-filters__radio"
+              type="radio"
+              name="location"
+              :value="loc.id"
+              :checked="selectedLocationId === loc.id"
+              @change="selectedLocationId = loc.id"
+            />
+            {{ loc.name }}
+          </label>
+        </div>
       </div>
     </div>
 
+    <!-- Kinh nghiệm -->
     <div class="cs-filters__section">
       <button class="cs-filters__section-header" @click="toggle('exp')">
         <span>Kinh nghiệm</span>
@@ -52,20 +73,47 @@
     </div>
 
     <button class="cs-filters__clear-btn">Xóa tất cả bộ lọc</button>
+
+    <button
+      class="cs-filters__search-btn"
+      :disabled="selectedLocationId === null"
+      @click="doSearch"
+    >
+      <span class="material-symbols-outlined">search</span>
+      Tìm kiếm
+    </button>
   </aside>
 </template>
 
 <script setup lang="ts">
-import { reactive, ref } from 'vue'
+import { reactive, ref, onMounted } from 'vue'
+import { useLocationStore } from '@/stores/location.store'
 import CandidateSkillTag from '../shared/CandidateSkillTag.vue'
 
+const emit = defineEmits<{
+  (e: 'search', locationId: number): void
+}>()
+
+const locationStore = useLocationStore()
+const selectedLocationId = ref<number | null>(null)
 const expValue = ref(3)
 const activeSkills = ref(['React', 'Node.js'])
-const locations = ['Hà Nội', 'TP.HCM', 'Đà Nẵng']
 const open = reactive({ skills: true, location: true, exp: true })
 
 const toggle = (key: keyof typeof open) => { open[key] = !open[key] }
 const removeSkill = (s: string) => { activeSkills.value = activeSkills.value.filter((x) => x !== s) }
+
+function doSearch() {
+  if (selectedLocationId.value !== null) {
+    emit('search', selectedLocationId.value)
+  }
+}
+
+onMounted(() => {
+  if (!locationStore.locations.length) {
+    locationStore.fetchLocations({ size: 100 })
+  }
+})
 </script>
 
 <style scoped>
@@ -130,6 +178,7 @@ const removeSkill = (s: string) => { activeSkills.value = activeSkills.value.fil
 .cs-filters__section-header {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   width: 100%;
   margin-bottom: 12px;
   padding: 0;
@@ -141,6 +190,10 @@ const removeSkill = (s: string) => { activeSkills.value = activeSkills.value.fil
   font-family: 'Manrope', sans-serif;
   font-size: 0.875rem;
   font-weight: 600;
+}
+
+.cs-filters__required {
+  color: #ef4444;
 }
 
 .cs-filters__chevron {
@@ -169,22 +222,46 @@ const removeSkill = (s: string) => { activeSkills.value = activeSkills.value.fil
   font-size: 0.875rem;
 }
 
-.cs-filters__checkboxes {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.cs-filters__checkbox-label {
+.cs-filters__loading-inline {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   color: #64748b;
-  cursor: pointer;
   font-size: 0.875rem;
 }
 
-.cs-filters__checkbox {
+.cs-filters__spin {
+  font-size: 1.125rem;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.cs-filters__radios {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.cs-filters__radio-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #475569;
+  cursor: pointer;
+  font-size: 0.875rem;
+  transition: color 0.15s;
+}
+
+.cs-filters__radio-label:hover {
+  color: #0f172a;
+}
+
+.cs-filters__radio {
   accent-color: #4b9af6;
   cursor: pointer;
 }
@@ -223,5 +300,39 @@ const removeSkill = (s: string) => { activeSkills.value = activeSkills.value.fil
 
 .cs-filters__clear-btn:hover {
   color: #0f172a;
+}
+
+.cs-filters__search-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  margin-top: 0.5rem;
+  padding: 10px 0;
+  border: none;
+  border-radius: 0.5rem;
+  background: #4b9af6;
+  box-shadow: 0 1px 4px rgba(75, 154, 246, 0.25);
+  color: #fff;
+  cursor: pointer;
+  font-family: 'Manrope', sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+  transition: background 0.15s;
+}
+
+.cs-filters__search-btn:hover:not(:disabled) {
+  background: #2563eb;
+}
+
+.cs-filters__search-btn:disabled {
+  background: #cbd5e1;
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+.cs-filters__search-btn .material-symbols-outlined {
+  font-size: 1.125rem;
 }
 </style>

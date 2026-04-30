@@ -50,4 +50,9 @@ export const authRoutes: RouteRecordRaw[] = [
         name: 'InterviewSelectSlot',
         component: () => import('@/pages/candidate/InterviewSelectSlotPage.vue'),
     },
+    {
+        path: '/talent-pool-invite',
+        name: 'TalentPoolInvite',
+        component: () => import('@/pages/candidate/TalentPoolInvitePage.vue'),
+    },
 ]

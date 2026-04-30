@@ -34,6 +34,7 @@ const STATUS_LABELS: Record<string, string> = {
   draft:            'Bản nháp',
   pending_approval: 'Chờ duyệt',
   published:        'Đang tuyển',
+  hidden:           'Đã ẩn',
   paused:           'Tạm dừng',
   closed:           'Đã đóng',
   expired:          'Hết hạn',
@@ -60,6 +61,7 @@ const statusBadgeClass = computed(() => ({
   'status-badge--active':       ['published', 'renewed'].includes(props.status ?? ''),
   'status-badge--pending':      props.status === 'pending_approval',
   'status-badge--draft':        props.status === 'draft',
+  'status-badge--hidden':       props.status === 'hidden',
   'status-badge--paused':       props.status === 'paused',
   'status-badge--closed':       ['closed', 'expired'].includes(props.status ?? ''),
   'status-badge--rejected':     props.status === 'rejected',
@@ -140,6 +142,7 @@ const statusDotClass = computed(() => ({
 .status-badge--active       { background: #dbeafe; color: #2563eb; }
 .status-badge--pending      { background: #fef3c7; color: #b45309; }
 .status-badge--draft        { background: #f1f5f9; color: #64748b; }
+.status-badge--hidden       { background: #fef3c7; color: #92400e; }
 .status-badge--paused       { background: #ffedd5; color: #c2410c; }
 .status-badge--closed       { background: #f1f5f9; color: #94a3b8; }
 .status-badge--rejected     { background: #ffe4e6; color: #be123c; }

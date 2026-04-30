@@ -12,6 +12,7 @@ export enum JobPostingStatus {
     REJECTED = 'rejected',
     SCHEDULED = 'scheduled',
     PUBLISHED = 'published',
+    HIDDEN = 'hidden',
     PAUSED = 'paused',
     CLOSED = 'closed',
     EXPIRED = 'expired',
@@ -37,6 +38,7 @@ export const JOB_POSTING_STATUS_LABELS: Record<JobPostingStatus, string> = {
     [JobPostingStatus.REJECTED]: 'Bị từ chối',
     [JobPostingStatus.SCHEDULED]: 'Đã lên lịch',
     [JobPostingStatus.PUBLISHED]: 'Đang đăng',
+    [JobPostingStatus.HIDDEN]: 'Đã ẩn',
     [JobPostingStatus.PAUSED]: 'Tạm dừng',
     [JobPostingStatus.CLOSED]: 'Đã đóng',
     [JobPostingStatus.EXPIRED]: 'Hết hạn',
@@ -66,6 +68,10 @@ export const JOB_POSTING_STATUS_BADGE: Record<JobPostingStatus, string> = {
     // Đang chạy — xanh lá
     [JobPostingStatus.PUBLISHED]:
         'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400',
+
+    // Bị ẩn khỏi hiển thị — amber/slate để phân biệt với paused thủ công
+    [JobPostingStatus.HIDDEN]:
+        'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400',
 
     // Tạm dừng — cam
     [JobPostingStatus.PAUSED]:

@@ -2,10 +2,12 @@ import axiosInstance from './axios'
 import type { RestResponse } from '@/types/common.types'
 import type {
     ReqApplyAddonDTO,
+    ReqRenewSubscriptionDTO,
     ResCompanySubscriptionDTO,
     ResCompanyAddonDTO,
     ResJobPostAddonDTO,
     ResCompanyBrandingDTO,
+    ResSubscriptionRenewalDTO,
 } from '@/types/servicePackage.types'
 
 const BASE_URL = '/employer/services'
@@ -17,6 +19,17 @@ export const employerServiceManagementService = {
     async getMySubscription(): Promise<ResCompanySubscriptionDTO> {
         const res = await axiosInstance.get<RestResponse<ResCompanySubscriptionDTO>>(
             `${BASE_URL}/subscription`,
+        )
+        return res.data.data
+    },
+
+    /**
+     * Gia hạn gói subscription hiện tại
+     */
+    async renewSubscription(payload: ReqRenewSubscriptionDTO): Promise<ResSubscriptionRenewalDTO> {
+        const res = await axiosInstance.post<RestResponse<ResSubscriptionRenewalDTO>>(
+            `${BASE_URL}/subscription/renew`,
+            payload,
         )
         return res.data.data
     },

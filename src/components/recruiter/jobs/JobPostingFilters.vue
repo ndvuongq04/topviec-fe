@@ -36,13 +36,14 @@
 <script setup lang="ts">
 export type JobPostingFilterTab =
   | 'all' | 'active' | 'pending' | 'draft'
-  | 'closed' | 'expired' | 'interviewing' | 'completed' | 'deleted'
+  | 'hidden' | 'closed' | 'expired' | 'interviewing' | 'completed' | 'deleted'
 
 const tabs: { label: string; value: JobPostingFilterTab }[] = [
   { label: 'Tất cả',           value: 'all' },
   { label: 'Đang tuyển',       value: 'active' },
   { label: 'Chờ duyệt',        value: 'pending' },
   { label: 'Nháp',             value: 'draft' },
+  { label: 'Đã ẩn',            value: 'hidden' },
   { label: 'Đã đóng',          value: 'closed' },
   { label: 'Hết hạn',          value: 'expired' },
   { label: 'Đang phỏng vấn',   value: 'interviewing' },

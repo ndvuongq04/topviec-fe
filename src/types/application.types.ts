@@ -21,6 +21,10 @@ export interface ReqUpdateApplicationCv {
   cvId: number;
 }
 
+export interface ReqInviteFromTalentPool {
+  jobPostId: number;
+}
+
 // ─── Response ─────────────────────────────────────────────
 
 export interface ResCompanyInfo {
@@ -62,3 +66,11 @@ export interface ResApplication {
 }
 
 export type ResApplicationPagination = ResultPaginationDTO<ResApplication>;
+
+export interface ResTalentPoolInviteInfo {
+  applicationId: number;
+  jobPostId: number;
+  jobTitle: string;
+  companyName: string;
+  companyLogoUrl: string;
+}

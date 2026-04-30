@@ -168,6 +168,7 @@ const navItems = [
   { to: '/recruiter/permissions/log', icon: 'history', label: 'Lịch sử phân quyền' },
   { to: '/recruiter/company-profile', icon: 'business', label: 'Thông tin công ty' },
   { to: '/recruiter/messages', icon: 'chat', label: 'Tin nhắn' },
+  { to: '/recruiter/complaints', icon: 'flag', label: 'Báo cáo vi phạm' },
   { to: '/recruiter/services', icon: 'diamond', label: 'Dịch vụ' },
   { to: '/recruiter/billing', icon: 'receipt_long', label: 'Lịch sử đơn hàng' },
 ]

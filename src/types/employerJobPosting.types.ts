@@ -74,7 +74,7 @@ export interface ResJobPostingDetail {
   workType: string
   headcount: number
   deadline: string
-  status: 'draft' | 'pending_approval' | 'published' | 'paused' | 'closed' | 'expired' | 'rejected'
+  status: 'draft' | 'pending_approval' | 'published' | 'hidden' | 'paused' | 'closed' | 'expired' | 'rejected'
   isFeatured: boolean
   isUrgent: boolean
   viewCount: number
@@ -101,7 +101,7 @@ export interface JobPostingRow {
   id: number
   title: string
   code: string
-  status: 'active' | 'pending' | 'expiring' | 'draft' | 'closed' | 'expired' | 'paused' | 'rejected' | 'interviewing' | 'completed' | string
+  status: 'active' | 'pending' | 'expiring' | 'draft' | 'hidden' | 'closed' | 'expired' | 'paused' | 'rejected' | 'interviewing' | 'completed' | string
   postedAt: string
   deadline?: string
   daysLeft?: number

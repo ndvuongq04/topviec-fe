@@ -7,7 +7,7 @@
 
     <template v-else>
       <!-- API 1a: Gói subscription hiện tại -->
-      <ServiceCurrentPlan :subscription="store.subscription" />
+      <ServiceCurrentPlan :subscription="store.subscription" @renew="showRenewModal = true" />
 
       <!-- API 1b: Hạn mức tính năng từ usages[] -->
       <ServiceQuotaGrid v-if="quotaItems.length" :quotas="quotaItems" />
@@ -19,19 +19,31 @@
     </template>
 
   </div>
+
+  <!-- Modal gia hạn -->
+  <ServiceRenewModal
+    v-if="store.subscription"
+    :visible="showRenewModal"
+    :loading="store.renewing"
+    :package-name="store.subscription.packageName ?? store.subscription.packageCode ?? 'Gói dịch vụ'"
+    :billing-cycle="store.subscription.billingCycle"
+    @close="showRenewModal = false"
+    @confirm="handleRenew"
+  />
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import dayjs from 'dayjs'
 import ServiceCurrentPlan from '@/components/recruiter/services/ServiceCurrentPlan.vue'
 import ServiceQuotaGrid, { type QuotaItem } from '@/components/recruiter/services/ServiceQuotaGrid.vue'
 import ServiceActiveList, { type ActiveService } from '@/components/recruiter/services/ServiceActiveList.vue'
 import ServicePromoSection from '@/components/recruiter/services/ServicePromoSection.vue'
+import ServiceRenewModal from '@/components/recruiter/services/ServiceRenewModal.vue'
 import { useToast } from '@/composables/useToast'
 import { useEmployerServiceManagementStore } from '@/stores/employerServiceManagement.store'
-import { SubscriptionStatus } from '@/constants/servicePackage.constants'
+import { SubscriptionStatus, PaymentMethod } from '@/constants/servicePackage.constants'
 import { SERVICE_CATEGORY_ICON_MAP, ServiceCategory } from '@/constants/serviceCatalog.constants'
 
 const FEATURE_CODE_ICON: Record<string, { icon: string; iconBg: string; iconColor: string }> = {
@@ -46,6 +58,7 @@ const FEATURE_CODE_ICON: Record<string, { icon: string; iconBg: string; iconColo
 const store             = useEmployerServiceManagementStore()
 const router            = useRouter()
 const toast             = useToast()
+const showRenewModal    = ref(false)
 
 // ─── Computed: map usages[] → QuotaItem[] ────────────────────────────────────
 const quotaItems = computed<QuotaItem[]>(() => {
@@ -91,6 +104,20 @@ const activeAddonItems = computed<ActiveService[]>(() =>
 )
 
 // ─── Handlers ─────────────────────────────────────────────────────────────────
+
+async function handleRenew(paymentMethod: PaymentMethod) {
+  try {
+    const result = await store.renewSubscription({ paymentMethod })
+    showRenewModal.value = false
+    const newExpiry = dayjs(result.subscription.newExpiredAt).format('DD/MM/YYYY')
+    toast.success(
+      'Gia hạn thành công',
+      `Gói "${result.subscription.packageName}" đã được gia hạn đến ${newExpiry}.`,
+    )
+  } catch {
+    toast.error('Gia hạn thất bại', store.error ?? 'Vui lòng thử lại.')
+  }
+}
 
 async function handleApply(svc: ActiveService) {
     if (svc.category === ServiceCategory.JOB_POSTING) {
