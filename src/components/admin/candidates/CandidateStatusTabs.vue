@@ -41,6 +41,7 @@
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
+import { UserStatus, USER_STATUS_LABELS } from '@/constants/user.constants'
 
 const props = defineProps<{
   activeTab: string        // '' = tất cả, hoặc status value
@@ -68,10 +69,10 @@ function triggerSearch() {
 const statusTabs = computed(() => {
   const all = props.candidates
   return [
-    { value: '',          label: 'Tất cả',     count: all.length },
-    { value: 'active',    label: 'Hoạt động',  count: all.filter(c => c.status === 'active').length },
-    { value: 'pending',   label: 'Chờ duyệt',  count: all.filter(c => c.status === 'pending').length },
-    { value: 'suspended', label: 'Đã khóa',    count: all.filter(c => c.status === 'suspended').length },
+    { value: '',                      label: 'Tất cả',                count: all.length },
+    { value: UserStatus.ACTIVE,       label: USER_STATUS_LABELS[UserStatus.ACTIVE],    count: all.filter(c => c.status === UserStatus.ACTIVE).length },
+    { value: UserStatus.PENDING,      label: USER_STATUS_LABELS[UserStatus.PENDING],   count: all.filter(c => c.status === UserStatus.PENDING).length },
+    { value: UserStatus.LOCKED_PERM,  label: USER_STATUS_LABELS[UserStatus.LOCKED_PERM], count: all.filter(c => c.status === UserStatus.LOCKED_PERM).length },
   ]
 })
 </script>

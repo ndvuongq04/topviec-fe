@@ -21,15 +21,16 @@
     <CandidateStatusTabs
       v-model:active-tab="filters.statusTab"
       v-model:search="filters.search"
-      :candidates="mockCandidates"
+      :candidates="store.candidates"
     />
 
     <!-- Table -->
     <CandidateTable
-      :candidates="filteredCandidates"
-      :total="filteredCandidates.length"
-      :current-page="currentPage"
-      :page-size="pageSize"
+      :candidates="store.candidates"
+      :total="store.meta.totals"
+      :current-page="filters.page"
+      :page-size="filters.size"
+      :loading="store.loading"
       @view="onView"
       @delete="onDelete"
       @page-change="onPageChange"
@@ -39,44 +40,47 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed } from 'vue'
+import { onMounted, watch, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import CandidateStatusTabs from '@/components/admin/candidates/CandidateStatusTabs.vue'
 import CandidateTable from '@/components/admin/candidates/CandidateTable.vue'
 import { useToast } from '@/composables/useToast'
+import { useAdminCandidateStore } from '@/stores/adminCandidate.store'
 
 const toast = useToast()
 const router = useRouter()
-
-// ─── Hardcoded Data ──────────────────────────────────────────────────────────────
-const mockCandidates = ref([
-  { id: 1, fullName: 'Nguyễn Văn A', email: 'vana@gmail.com', status: 'active', createdAt: '2024-01-15T08:00:00Z', avatarUrl: 'https://i.pravatar.cc/150?u=1' },
-  { id: 2, fullName: 'Trần Thị B', email: 'thib@yahoo.com', status: 'active', createdAt: '2024-01-20T09:30:00Z', avatarUrl: 'https://i.pravatar.cc/150?u=2' },
-  { id: 3, fullName: 'Lê Văn C', email: 'vanc@outlook.com', status: 'pending', createdAt: '2024-02-05T10:15:00Z', avatarUrl: 'https://i.pravatar.cc/150?u=3' },
-  { id: 4, fullName: 'Phạm Minh D', email: 'minhd@gmail.com', status: 'suspended', createdAt: '2023-12-10T14:20:00Z', avatarUrl: 'https://i.pravatar.cc/150?u=4' },
-  { id: 5, fullName: 'Hoàng Anh E', email: 'anhe@gmail.com', status: 'active', createdAt: '2024-02-15T11:45:00Z', avatarUrl: 'https://i.pravatar.cc/150?u=5' },
-  { id: 6, fullName: 'Đặng Thu F', email: 'thuf@gmail.com', status: 'active', createdAt: '2024-03-01T08:20:00Z', avatarUrl: 'https://i.pravatar.cc/150?u=6' },
-  { id: 7, fullName: 'Bùi Gia G', email: 'giag@gmail.com', status: 'pending', createdAt: '2024-03-05T09:10:00Z', avatarUrl: 'https://i.pravatar.cc/150?u=7' },
-])
+const store = useAdminCandidateStore()
 
 // ─── State ───────────────────────────────────────────────────────────────────────
-const currentPage = ref(1)
-const pageSize    = ref(10)
-
 const filters = reactive({
   statusTab: '',
   search:    '',
+  page: 0,
+  size: 10
 })
 
-// ─── Computed ────────────────────────────────────────────────────────────────────
-const filteredCandidates = computed(() => {
-  return mockCandidates.value.filter(c => {
-    const matchesStatus = filters.statusTab === '' || c.status === filters.statusTab
-    const matchesSearch = filters.search === '' || 
-                          c.fullName.toLowerCase().includes(filters.search.toLowerCase()) ||
-                          c.email.toLowerCase().includes(filters.search.toLowerCase())
-    return matchesStatus && matchesSearch
+onMounted(() => {
+  loadCandidates()
+})
+
+async function loadCandidates() {
+  await store.fetchCandidates({
+    status: filters.statusTab || undefined,
+    keyword: filters.search || undefined,
+    page: filters.page,
+    size: filters.size
   })
+}
+
+// ─── Watchers ────────────────────────────────────────────────────────────────────
+watch(() => filters.statusTab, () => {
+  filters.page = 0 // Reset to first page on filter change
+  loadCandidates()
+})
+
+watch(() => filters.search, () => {
+  filters.page = 0
+  loadCandidates()
 })
 
 // ─── Event handlers ──────────────────────────────────────────────────────────────
@@ -90,12 +94,12 @@ function onView(candidate: any) {
 
 function onDelete(candidate: any) {
   if (confirm(`Bạn có chắc chắn muốn xóa ứng viên ${candidate.fullName}?`)) {
-    mockCandidates.value = mockCandidates.value.filter(c => c.id !== candidate.id)
-    toast.success('Thành công', `Đã xóa ứng viên ${candidate.fullName}`)
+    toast.info('Thông báo', 'Chức năng xóa sẽ được cập nhật khi có API xóa ứng viên.')
   }
 }
 
 function onPageChange(page: number) {
-  currentPage.value = page
+  filters.page = page
+  loadCandidates()
 }
 </script>

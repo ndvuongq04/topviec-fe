@@ -13,13 +13,26 @@
           <td>
             <div class="cv-name-cell">
               <span class="material-symbols-outlined cv-icon">picture_as_pdf</span>
-              <span>{{ cv.name }}</span>
-              <span v-if="cv.isPrimary" class="primary-badge">Chính</span>
+              <span class="truncate max-w-[300px]" :title="cv.title">{{ cv.title }}</span>
+              <span v-if="cv.isDefault" class="primary-badge">Chính</span>
             </div>
           </td>
-          <td class="secondary-text">{{ cv.updatedAt }}</td>
+          <td class="secondary-text text-[12px] whitespace-nowrap">{{ formatDate(cv.updatedAt) }}</td>
           <td class="text-right">
-            <button class="action-link">Xem</button>
+            <a 
+              v-if="cv.pdfUrl || cv.fileUrl"
+              :href="cv.pdfUrl || cv.fileUrl" 
+              target="_blank" 
+              class="action-link"
+            >
+              Xem
+            </a>
+            <span v-else class="text-slate-400 italic">Trống</span>
+          </td>
+        </tr>
+        <tr v-if="cvs.length === 0">
+          <td colspan="3" class="px-6 py-10 text-center text-slate-400">
+            Ứng viên chưa tải lên CV nào
           </td>
         </tr>
       </tbody>
@@ -28,9 +41,17 @@
 </template>
 
 <script setup lang="ts">
+import type { ResCv } from '@/types/cvs.types'
+
 defineProps<{
-  cvs: Array<{ id: number; name: string; updatedAt: string; isPrimary: boolean }>
+  cvs: ResCv[]
 }>()
+
+const formatDate = (iso: string) => {
+  if (!iso) return '—'
+  const d = new Date(iso)
+  return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+}
 </script>
 
 <style scoped>

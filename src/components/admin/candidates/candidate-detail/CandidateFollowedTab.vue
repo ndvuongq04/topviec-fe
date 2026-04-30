@@ -1,31 +1,67 @@
 <template>
   <div class="tab-card">
-    <table class="data-table">
+    <table v-if="companies.length > 0" class="data-table">
       <thead>
         <tr>
           <th>Công ty</th>
-          <th>Ngày follow</th>
+          <th>Ngày theo dõi</th>
+          <th class="text-right">Thao tác</th>
         </tr>
       </thead>
       <tbody>
-        <tr v-for="company in companies" :key="company.id" class="data-row">
+        <tr v-for="item in (companies as any[])" :key="item.id" class="data-row">
           <td>
             <div class="company-cell">
-              <div class="company-initial">{{ company.initial }}</div>
-              <span>{{ company.name }}</span>
+              <div class="company-logo">
+                <img 
+                  v-if="item.company?.logoUrl" 
+                  :src="item.company.logoUrl" 
+                  :alt="item.company.name"
+                  class="size-full object-contain"
+                />
+                <div v-else class="size-full bg-slate-100 flex items-center justify-center font-bold text-slate-400">
+                  {{ item.company?.name?.charAt(0).toUpperCase() || 'C' }}
+                </div>
+              </div>
+              <div class="flex flex-col">
+                <span class="font-bold text-[13px] text-slate-900">{{ item.company?.name }}</span>
+                <span class="text-[11px] text-slate-500">{{ item.company?.industryName || 'Đang cập nhật' }}</span>
+              </div>
             </div>
           </td>
-          <td class="secondary-text">{{ company.followDate }}</td>
+          <td class="secondary-text text-[12px] whitespace-nowrap">{{ formatDate(item.followedAt) }}</td>
+          <td class="text-right">
+            <router-link 
+              v-if="item.company?.id"
+              :to="{ name: 'admin-employer-detail', params: { id: item.company.id } }"
+              class="action-link"
+            >
+              Xem
+            </router-link>
+          </td>
         </tr>
       </tbody>
     </table>
+    
+    <div v-else class="text-center py-12 text-slate-400">
+      <span class="material-symbols-outlined text-4xl block mb-2">corporate_fare</span>
+      Ứng viên chưa theo dõi công ty nào
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import type { ResCompanyDTO } from '@/types/company.types'
+
 defineProps<{
-  companies: Array<{ id: number; name: string; initial: string; followDate: string }>
+  companies: ResCompanyDTO[]
 }>()
+
+const formatDate = (iso: string) => {
+  if (!iso) return '—'
+  const d = new Date(iso)
+  return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`
+}
 </script>
 
 <style scoped>

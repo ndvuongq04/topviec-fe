@@ -1,28 +1,52 @@
 <template>
   <div class="tab-card">
-    <table class="data-table">
+    <table v-if="jobs.length > 0" class="data-table">
       <thead>
         <tr>
           <th>Vị trí</th>
           <th>Công ty</th>
           <th>Ngày lưu</th>
+          <th class="text-right">Thao tác</th>
         </tr>
       </thead>
       <tbody>
         <tr v-for="job in jobs" :key="job.id" class="data-row">
-          <td class="position-text">{{ job.position }}</td>
-          <td class="secondary-text">{{ job.company }}</td>
-          <td class="secondary-text">{{ job.savedAt }}</td>
+          <td class="position-text font-bold text-slate-900">{{ job.jobPosting?.title || 'Không xác định' }}</td>
+          <td class="secondary-text">{{ job.jobPosting?.company?.name || 'Không xác định' }}</td>
+          <td class="secondary-text text-[12px] whitespace-nowrap">{{ formatDate(job.savedAt) }}</td>
+          <td class="text-right">
+            <a 
+              v-if="job.jobPosting?.id"
+              :href="`/jobs/${job.jobPosting.id}`" 
+              target="_blank" 
+              class="action-link"
+            >
+              Xem
+            </a>
+          </td>
         </tr>
       </tbody>
     </table>
+    
+    <div v-else class="text-center py-12 text-slate-400">
+      <span class="material-symbols-outlined text-4xl block mb-2">bookmark</span>
+      Ứng viên chưa lưu tin tuyển dụng nào
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import type { ResSavedJobDTO } from '@/types/savedJob.types'
+
 defineProps<{
-  jobs: Array<{ id: number; position: string; company: string; savedAt: string }>
+  jobs: ResSavedJobDTO[]
 }>()
+
+const formatDate = (iso: string) => {
+  if (!iso) return '—'
+  const d = new Date(iso)
+  return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`
+}
 </script>
 
 <style scoped>
