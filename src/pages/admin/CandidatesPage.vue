@@ -40,11 +40,13 @@
 
 <script setup lang="ts">
 import { ref, reactive, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import CandidateStatusTabs from '@/components/admin/candidates/CandidateStatusTabs.vue'
 import CandidateTable from '@/components/admin/candidates/CandidateTable.vue'
 import { useToast } from '@/composables/useToast'
 
 const toast = useToast()
+const router = useRouter()
 
 // ─── Hardcoded Data ──────────────────────────────────────────────────────────────
 const mockCandidates = ref([
@@ -83,7 +85,7 @@ function onAddNew() {
 }
 
 function onView(candidate: any) {
-  toast.info('Thông tin', `Xem chi tiết ứng viên: ${candidate.fullName}`)
+  router.push({ name: 'admin-candidate-detail', params: { id: candidate.id } })
 }
 
 function onDelete(candidate: any) {
