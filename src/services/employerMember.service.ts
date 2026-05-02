@@ -1,6 +1,6 @@
 import axiosInstance from './axios';
 import type { RestResponse, ResultPaginationDTO } from '@/types/common.types';
-import type { ReqAddMember, ReqBatchMemberPermission, ReqToggleMemberAction, ReqUpdatePermission, ResCompanyMember, ResMemberPermissionDetail, ResPermissionChangeLogDTO } from '@/types/companyMember.types';
+import type { ReqAddMember, ReqBatchMemberPermission, ReqToggleMemberAction, ReqUpdatePermission, ResCompanyMember, ResMemberPermissionDetail, ResPermissionChangeLogDTO, ResEmployerMemberStatisticsDTO } from '@/types/companyMember.types';
 
 export const employerMemberService = {
     /**
@@ -94,5 +94,14 @@ export const employerMemberService = {
             data
         );
         return res.data;
-    }
+    },
+
+    /**
+     * GET /employer/member/statistics
+     * Lấy thống kê thành viên của công ty.
+     */
+    async getMemberStatistics(): Promise<ResEmployerMemberStatisticsDTO> {
+        const res = await axiosInstance.get<RestResponse<ResEmployerMemberStatisticsDTO>>('/employer/member/statistics');
+        return res.data.data;
+    },
 };

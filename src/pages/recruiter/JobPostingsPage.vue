@@ -157,11 +157,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted } from 'vue'
+import { ref, watch, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { employerJobPostingService } from '@/services/employerJobPosting.service'
 import employerInterviewService from '@/services/employerInterview.service'
 import { useToast } from '@/composables/useToast'
+import { useEmployerJobPostingStore } from '@/stores/employerJobPosting.store'
 import { JobPostingStatus } from '@/constants/jobPosting.constants'
 import type { ResJobPostingDetail } from '@/types/jobPosting.types'
 import JobPostingStatsGrid  from '@/components/recruiter/jobs/JobPostingStatsGrid.vue'
@@ -178,10 +179,16 @@ const currentPage  = ref(0)
 const searchValue  = ref('')
 const router = useRouter()
 const toast  = useToast()
+const store  = useEmployerJobPostingStore()
 
 const jobs      = ref<JobPostingRow[]>([])
 const totalJobs = ref(0)
-const stats     = ref<JobPostingStats>({ total: 0, active: 0, pending: 0, expiring: 0 })
+const stats     = computed<JobPostingStats>(() => ({
+  total:    store.jobStatistics?.totalJobPosts ?? 0,
+  active:   store.jobStatistics?.activeJobPosts ?? 0,
+  pending:  store.jobStatistics?.pendingJobPosts ?? 0,
+  expiring: store.jobStatistics?.expiringJobPosts ?? 0,
+}))
 
 // Extend Modal State
 const isExtendModalVisible = ref(false)
@@ -277,17 +284,7 @@ async function fetchJobs() {
 }
 
 async function fetchStats() {
-  const [allRes, activeRes, pendingRes] = await Promise.all([
-    employerJobPostingService.getList({ size: 1 }),
-    employerJobPostingService.getList({ status: JobPostingStatus.PUBLISHED, size: 1 }),
-    employerJobPostingService.getList({ status: JobPostingStatus.PENDING_APPROVAL, size: 1 }),
-  ])
-  stats.value = {
-    total:   allRes.meta.totals,
-    active:  activeRes.meta.totals,
-    pending: pendingRes.meta.totals,
-    expiring: 0,
-  }
+  await store.fetchStatistics()
 }
 
 // ── Watchers ─────────────────────────────────────────────

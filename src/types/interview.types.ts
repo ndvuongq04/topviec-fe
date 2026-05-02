@@ -236,3 +236,18 @@ export interface ResSlotSelectionPageDTO {
   deadline:     string;  // ISO LocalDateTime — hạn chót UV chọn slot
   slots:        ResInterviewSlotDTO[];
 }
+
+/** GET /employer/interviews/interview-statistics */
+export interface ResEmployerInterviewStatisticsDTO {
+    /** Tổng số lịch phỏng vấn của công ty */
+    totalSchedules: number
+
+    /** Tổng số UV đã nộp CV nhưng chưa có lịch mới (isDefault = true) */
+    pendingNewSchedules: number
+
+    /** Tổng số UV chưa xác nhận lịch PV (confirmedByCandidate = false) */
+    unconfirmedSchedules: number
+
+    /** Tổng số lịch quá hạn (chưa xác nhận/lên lịch nhưng đã qua deadline hoặc application bị overdue) */
+    overdueSchedules: number
+}

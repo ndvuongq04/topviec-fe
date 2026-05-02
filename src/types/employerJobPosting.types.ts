@@ -96,6 +96,21 @@ export interface JobPostingStats {
   expiring: number
 }
 
+/** GET /employer/company/job-statistics */
+export interface ResEmployerJobStatisticsDTO {
+  /** Tổng số tin tuyển dụng (chưa xóa mềm) của công ty */
+  totalJobPosts: number
+
+  /** Tổng số tin đang hoạt động (trạng thái 'published' hoặc 'interviewing') */
+  activeJobPosts: number
+
+  /** Tổng số tin đang chờ duyệt (trạng thái 'pending_approval') */
+  pendingJobPosts: number
+
+  /** Tổng số tin sắp hết hạn (còn <= 7 ngày, đang trong trạng thái hoạt động) */
+  expiringJobPosts: number
+}
+
 /** Represending a row in the job postings table */
 export interface JobPostingRow {
   id: number

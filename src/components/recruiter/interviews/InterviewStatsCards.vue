@@ -19,38 +19,57 @@
 </template>
 
 <script setup lang="ts">
-const STATS = [
-  {
-    key: 'total',
-    label: 'Tổng lịch phỏng vấn',
-    value: 24,
-    icon: 'work',
-    iconColor: 'blue',
-    footerIcon: 'trending_up',
-    footerText: '+12% so với tháng trước',
-    footerColor: 'green',
-  },
-  {
-    key: 'pending',
-    label: 'Chờ xác nhận',
-    value: 8,
-    icon: 'pending_actions',
-    iconColor: 'amber',
-    footerIcon: 'schedule',
-    footerText: 'Cần xử lý trong 24h tới',
-    footerColor: 'amber',
-  },
-  {
-    key: 'overdue',
-    label: 'Lịch quá hạn (Overdue)',
-    value: 2,
-    icon: 'error',
-    iconColor: 'red',
-    footerIcon: 'priority_high',
-    footerText: 'Vui lòng kiểm tra lại',
-    footerColor: 'red',
-  },
-] as const
+import { computed } from 'vue'
+import { useEmployerInterviewStore } from '@/stores/employerInterview.store'
+
+const store = useEmployerInterviewStore()
+
+const STATS = computed(() => {
+  const s = store.interviewStatistics
+  
+  return [
+    {
+      key: 'total',
+      label: 'Tổng lịch phỏng vấn',
+      value: s?.totalSchedules ?? 0,
+      icon: 'work',
+      iconColor: 'blue',
+      footerIcon: 'trending_up',
+      footerText: 'Tất cả các vòng',
+      footerColor: 'green',
+    },
+    {
+      key: 'pending-new',
+      label: 'Ứng viên chưa có lịch',
+      value: s?.pendingNewSchedules ?? 0,
+      icon: 'person_add',
+      iconColor: 'blue',
+      footerIcon: 'info',
+      footerText: 'Cần lên lịch phỏng vấn',
+      footerColor: 'blue',
+    },
+    {
+      key: 'pending',
+      label: 'Chờ ứng viên xác nhận',
+      value: s?.unconfirmedSchedules ?? 0,
+      icon: 'pending_actions',
+      iconColor: 'amber',
+      footerIcon: 'schedule',
+      footerText: 'Ứng viên chưa bấm Confirm',
+      footerColor: 'amber',
+    },
+    {
+      key: 'overdue',
+      label: 'Lịch quá hạn (Overdue)',
+      value: s?.overdueSchedules ?? 0,
+      icon: 'error',
+      iconColor: 'red',
+      footerIcon: 'priority_high',
+      footerText: 'Vui lòng kiểm tra lại',
+      footerColor: 'red',
+    },
+  ]
+})
 </script>
 
 <style scoped>
