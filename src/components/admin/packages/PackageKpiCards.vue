@@ -21,9 +21,12 @@ import { useServiceCatalogStore } from '@/stores/serviceCatalog.store'
 const store = useServiceCatalogStore()
 
 const formatCurrency = (val: number) => {
-  if (val >= 1000000) return (val / 1000000).toFixed(1) + 'M'
-  if (val >= 1000) return (val / 1000).toFixed(0) + 'k'
-  return val.toString()
+  if (val >= 1000000) return (Math.floor(val / 10000) / 100).toLocaleString('vi-VN', { minimumFractionDigits: 1, maximumFractionDigits: 2 }) + 'M'
+  if (val >= 1000) {
+    const kValue = Math.floor(val / 100) / 10
+    return kValue.toLocaleString('vi-VN', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + 'K'
+  }
+  return val.toLocaleString('vi-VN')
 }
 
 const cards = computed(() => {
