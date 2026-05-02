@@ -87,36 +87,44 @@ const employerId = computed(() => store.selectedCompany?.createdBy ?? null)
 
 onMounted(async () => {
   if (!companyId) return
-  await store.fetchById(companyId)
+  await Promise.all([
+    store.fetchById(companyId),
+    store.fetchStatistics(companyId)
+  ])
+  
   if (store.error) {
     toast.error('Lỗi', 'Không tìm thấy công ty này.')
     router.push({ name: 'admin-employers' })
   }
 })
 
-const stats: StatItem[] = [
-  {
-    label: 'Tin đã đăng',
-    value: 145,
-    icon: 'post_add',
-    iconBg: 'bg-blue-50 dark:bg-blue-900/20',
-    iconColor: 'text-blue-600',
-  },
-  {
-    label: 'CV đã nhận',
-    value: '2,482',
-    icon: 'description',
-    iconBg: 'bg-green-50 dark:bg-green-900/20',
-    iconColor: 'text-green-600',
-  },
-  {
-    label: 'Gói dịch vụ',
-    value: 'Gói VIP Pro',
-    icon: 'diamond',
-    iconBg: 'bg-[#963131]/10',
-    iconColor: 'text-[#963131]',
-  },
-]
+const stats = computed<StatItem[]>(() => {
+  const s = store.companyStatistics
+  
+  return [
+    {
+      label: 'Tin đã đăng',
+      value: s?.totalJobPostings ?? 0,
+      icon: 'post_add',
+      iconBg: 'bg-blue-50 dark:bg-blue-900/20',
+      iconColor: 'text-blue-600',
+    },
+    {
+      label: 'CV đã nhận',
+      value: s?.totalApplicationsReceived?.toLocaleString() ?? 0,
+      icon: 'description',
+      iconBg: 'bg-green-50 dark:bg-green-900/20',
+      iconColor: 'text-green-600',
+    },
+    {
+      label: 'Gói dịch vụ',
+      value: s?.activeSubscriptions?.[0]?.packageName ?? 'Chưa đăng ký',
+      icon: 'diamond',
+      iconBg: 'bg-[#963131]/10',
+      iconColor: 'text-[#963131]',
+    },
+  ]
+})
 
 const activeTab = ref('profile')
 const tabs = [

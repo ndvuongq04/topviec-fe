@@ -1,4 +1,5 @@
 import { CompanySize, CompanyStatus, VerificationStatus } from '@/constants/company.constants'
+import { BillingCycle, SubscriptionStatus } from '@/constants/servicePackage.constants'
 import type { PaginationMeta, ResultPaginationDTO } from '@/types/common.types'
 
 // Re-export để các file khác chỉ cần import từ 1 chỗ
@@ -139,6 +140,29 @@ export interface ResCompanyDTO {
     createdBy: number | null
     createdAt: string
     updatedAt: string
+}
+
+/** GET /admin/companies/{id}/statistics */
+export interface ResAdminCompanyStatisticsDTO {
+    /** Tổng số tin tuyển dụng đã đăng (chưa bị xóa mềm) */
+    totalJobPostings: number
+
+    /** Tổng số CV/đơn ứng tuyển đã nhận (chưa bị xóa mềm) */
+    totalApplicationsReceived: number
+
+    /** Danh sách gói dịch vụ đang sử dụng (status = ACTIVE) */
+    activeSubscriptions: ActiveSubscriptionDTO[]
+}
+
+export interface ActiveSubscriptionDTO {
+    subscriptionId: number
+    servicePackageId: number
+    packageName: string
+    packageCode: string
+    billingCycle: BillingCycle
+    status: SubscriptionStatus
+    startedAt: string
+    expiredAt: string
 }
 
 

@@ -7,14 +7,16 @@ import type {
     ResultPaginationDTO,
     PaginationMeta,
     ReqCreateCompanyDTO,
+    ResAdminCompanyStatisticsDTO,
 } from '@/types/company.types'
 import type { ReqRegisterEmployerDTO } from '@/types/auth.types'
 
 export const useAdminCompanyStore = defineStore('adminCompany', () => {
     // ─── State ──────────────────────────────────────────────────────────────────
     const companies = ref<ResCompanyDTO[]>([])
-    const selectedCompany = ref<ResCompanyDTO | null>(null)
     const meta = ref<PaginationMeta>({ page: 0, pageSize: 10, pages: 0, totals: 0 })
+    const selectedCompany = ref<ResCompanyDTO | null>(null)
+    const companyStatistics = ref<ResAdminCompanyStatisticsDTO | null>(null)
     const loading = ref(false)
     const error = ref<string | null>(null)
 
@@ -176,6 +178,19 @@ export const useAdminCompanyStore = defineStore('adminCompany', () => {
         }
     }
 
+    /** GET /admin/companies/{id}/statistics */
+    async function fetchStatistics(id: number) {
+        loading.value = true
+        error.value = null
+        try {
+            companyStatistics.value = await adminCompanyService.getCompanyStatistics(id)
+        } catch (err) {
+            setError(err)
+        } finally {
+            loading.value = false
+        }
+    }
+
     // ─── Private helpers ─────────────────────────────────────────────────────────
     function _updateInList(updated: ResCompanyDTO) {
         const idx = companies.value.findIndex(c => c.id === updated.id)
@@ -185,6 +200,7 @@ export const useAdminCompanyStore = defineStore('adminCompany', () => {
     function reset() {
         companies.value = []
         selectedCompany.value = null
+        companyStatistics.value = null
         meta.value = { page: 0, pageSize: 10, pages: 0, totals: 0 }
         loading.value = false
         error.value = null
@@ -193,6 +209,7 @@ export const useAdminCompanyStore = defineStore('adminCompany', () => {
     return {
         companies,
         selectedCompany,
+        companyStatistics,
         meta,
         loading,
         error,
@@ -204,6 +221,7 @@ export const useAdminCompanyStore = defineStore('adminCompany', () => {
         unsuspendCompany,
         adminUpdateCompany,
         deleteCompany,
+        fetchStatistics,
         reset,
     }
 })
