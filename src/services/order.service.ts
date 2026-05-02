@@ -7,6 +7,7 @@ import type {
     AdminOrderQueryParams,
     EmployerOrderQueryParams,
     EmployerAddonPackageQueryParams,
+    ResAdminOrderStatisticsDTO,
 } from '@/types/order.types'
 import type { ResServicePackageDTO } from '@/types/servicePackage.types'
 import type { ResAddonServiceDTO } from '@/types/serviceCatalog.types'
@@ -28,6 +29,14 @@ export const adminOrderService = {
 
     async updateStatus(id: number, payload: ReqUpdateOrderStatusDTO): Promise<ResOrderDTO> {
         const res = await axiosInstance.patch<RestResponse<ResOrderDTO>>(`${ADMIN_ORDERS_URL}/${id}/status`, payload)
+        return res.data.data
+    },
+
+    /** GET /admin/orders/statistics */
+    async getStatistics(): Promise<ResAdminOrderStatisticsDTO> {
+        const res = await axiosInstance.get<RestResponse<ResAdminOrderStatisticsDTO>>(
+            `${ADMIN_ORDERS_URL}/statistics`
+        )
         return res.data.data
     },
 }

@@ -82,3 +82,18 @@ export interface ResServicePackageDetailDTO {
     serviceUnit: string | null
     quantity: number
 }
+
+/** GET /admin/service-catalog/statistics */
+export interface ResAdminServiceStatisticsDTO {
+    /** Tổng số gói dịch vụ trong hệ thống */
+    totalServicePackages: number
+
+    /** Doanh thu trung bình trên mỗi đơn hàng đã thanh toán */
+    averageRevenue: number
+
+    /**
+     * Tỉ lệ chuyển đổi (%)
+     * = (Số công ty có ít nhất 1 đơn hàng đã thanh toán / Tổng số công ty) × 100
+     */
+    conversionRate: number
+}

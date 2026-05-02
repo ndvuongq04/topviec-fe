@@ -4,7 +4,8 @@ import type {
     ReqServiceDTO,
     ResServiceDTO,
     ResServicePagination,
-    AdminServiceQueryParams
+    AdminServiceQueryParams,
+    ResAdminServiceStatisticsDTO
 } from '@/types/serviceCatalog.types'
 
 const BASE_URL = '/admin/services'
@@ -27,6 +28,14 @@ export const serviceCatalogService = {
 
     async updateService(id: number, data: ReqServiceDTO) {
         const res = await axiosInstance.put<RestResponse<ResServiceDTO>>(`${BASE_URL}/${id}`, data)
+        return res.data.data
+    },
+
+    /** GET /admin/services/statistics */
+    async getStatistics(): Promise<ResAdminServiceStatisticsDTO> {
+        const res = await axiosInstance.get<RestResponse<ResAdminServiceStatisticsDTO>>(
+            `${BASE_URL}/statistics`
+        )
         return res.data.data
     }
 }

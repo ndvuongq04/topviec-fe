@@ -9,6 +9,7 @@ import type {
     AdminOrderQueryParams,
     EmployerOrderQueryParams,
     EmployerAddonPackageQueryParams,
+    ResAdminOrderStatisticsDTO,
 } from '@/types/order.types'
 import type { ResServicePackageDTO } from '@/types/servicePackage.types'
 import type { ResAddonServiceDTO } from '@/types/serviceCatalog.types'
@@ -46,6 +47,7 @@ function extractErrorMessage(err: unknown): string {
 export const useAdminOrderStore = defineStore('adminOrder', () => {
     const orders        = ref<ResOrderDTO[]>([])
     const selectedOrder = ref<ResOrderDTO | null>(null)
+    const orderStatistics = ref<ResAdminOrderStatisticsDTO | null>(null)
     const meta          = ref<PaginationMeta>({ page: 0, pageSize: 10, pages: 0, totals: 0 })
     const loading       = ref(false)
     const error         = ref<string | null>(null)
@@ -97,9 +99,22 @@ export const useAdminOrderStore = defineStore('adminOrder', () => {
         }
     }
 
+    async function fetchStatistics() {
+        loading.value = true
+        error.value   = null
+        try {
+            orderStatistics.value = await adminOrderService.getStatistics()
+        } catch (err) {
+            error.value = extractErrorMessage(err)
+        } finally {
+            loading.value = false
+        }
+    }
+
     function reset() {
         orders.value        = []
         selectedOrder.value = null
+        orderStatistics.value = null
         meta.value          = { page: 0, pageSize: 10, pages: 0, totals: 0 }
         loading.value       = false
         error.value         = null
@@ -108,12 +123,14 @@ export const useAdminOrderStore = defineStore('adminOrder', () => {
     return {
         orders,
         selectedOrder,
+        orderStatistics,
         meta,
         loading,
         error,
         fetchOrders,
         fetchOrderById,
         updateOrderStatus,
+        fetchStatistics,
         reset,
     }
 })

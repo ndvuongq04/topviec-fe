@@ -55,5 +55,8 @@ function onFilter(params: AdminOrderQueryParams) {
   fetch()
 }
 
-onMounted(() => fetch())
+onMounted(() => {
+  fetch()
+  store.fetchStatistics()
+})
 </script>

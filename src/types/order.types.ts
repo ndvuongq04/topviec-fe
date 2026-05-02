@@ -96,3 +96,18 @@ export interface EmployerOrderQueryParams {
 export interface EmployerAddonPackageQueryParams {
     category?: string
 }
+
+/** GET /admin/orders/statistics */
+export interface ResAdminOrderStatisticsDTO {
+    /** Tổng số đơn hàng trong hệ thống */
+    totalOrders: number
+
+    /** Tổng đơn hàng đã thanh toán (status = PAID) */
+    paidOrders: number
+
+    /** Tổng đơn hàng đang chờ xử lý (status = PENDING) */
+    pendingOrders: number
+
+    /** Tổng giá trị tất cả đơn hàng đã thanh toán */
+    totalRevenue: number
+}

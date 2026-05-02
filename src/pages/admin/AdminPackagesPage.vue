@@ -80,12 +80,14 @@ import PackageKpiCards from '@/components/admin/packages/PackageKpiCards.vue'
 import ServicePackageCreateModal from '@/components/admin/packages/ServicePackageCreateModal.vue'
 import ServicePackageEditModal from '@/components/admin/packages/ServicePackageEditModal.vue'
 import { useServicePackageStore } from '@/stores/servicePackage.store'
+import { useServiceCatalogStore } from '@/stores/serviceCatalog.store'
 import { useToast } from '@/composables/useToast'
 import { serviceCatalogService } from '@/services/serviceCatalog.service'
 import type { ReqServicePackageDTO, ResServicePackageDTO } from '@/types/servicePackage.types'
 import type { ResServiceDTO } from '@/types/serviceCatalog.types'
 
 const store = useServicePackageStore()
+const catalogStore = useServiceCatalogStore()
 const toast = useToast()
 
 const showCreateModal = ref(false)
@@ -128,6 +130,7 @@ async function loadServices() {
 onMounted(() => {
   loadPackages()
   loadServices()
+  catalogStore.fetchStatistics()
 })
 
 const onFilter = (f: typeof filterState.value) => { filterState.value = f }
