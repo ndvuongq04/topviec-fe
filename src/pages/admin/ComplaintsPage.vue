@@ -61,7 +61,10 @@ function fetchData() {
   })
 }
 
-onMounted(() => fetchData())
+onMounted(() => {
+  fetchData()
+  store.fetchStatistics()
+})
 
 function onFilter(params: Omit<ReqGetAdminReports, 'page' | 'size' | 'sort'>) {
   filterParams.value = params

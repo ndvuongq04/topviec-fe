@@ -238,3 +238,18 @@ export interface ResCandidateReportSummary {
 export type ResReportPagination = ResultPaginationDTO<ResReportSummary>;
 export type ResEmployerReportPagination = ResultPaginationDTO<ResEmployerReportSummary>;
 export type ResCandidateReportPagination = ResultPaginationDTO<ResCandidateReportSummary>;
+
+/** GET /admin/reports/statistics */
+export interface ResAdminReportStatisticsDTO {
+  /** Tổng số báo cáo trong hệ thống (chưa bị xóa mềm) */
+  totalReports: number;
+
+  /** Số báo cáo đang chờ xử lý (status = pending) */
+  pendingReports: number;
+
+  /** Số báo cáo nhóm B — vi phạm nặng (violation_group = B, chưa xóa mềm) */
+  groupBReports: number;
+
+  /** Số báo cáo quá hạn SLA — chưa xử lý xong mà đã quá deadline */
+  slaOverdueReports: number;
+}
