@@ -90,7 +90,7 @@
           <!-- Thao tác -->
           <td class="px-6 py-4 text-right">
             <button
-              class="p-1.5 text-slate-400 hover:text-[#963131] transition-colors"
+              class="p-1.5 text-slate-400 hover:text-[#963131] transition-colors cursor-pointer"
               title="Chỉnh sửa"
               @click="$emit('edit', pkg)"
             >

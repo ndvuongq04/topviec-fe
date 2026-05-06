@@ -6,7 +6,7 @@
       <button
         v-for="tab in tabs"
         :key="tab.key"
-        class="px-6 py-4 text-sm font-medium transition-colors whitespace-nowrap flex items-center gap-2"
+        class="px-6 py-4 text-sm font-medium transition-colors whitespace-nowrap flex items-center gap-2 cursor-pointer"
         :class="activeTab === tab.key
           ? 'font-bold border-b-2 border-[#963131] text-[#963131] bg-[#963131]/5'
           : 'text-slate-500 hover:text-[#963131]'"
@@ -68,13 +68,13 @@
 
       <!-- Actions -->
       <button
-        class="shrink-0 bg-[#963131] hover:bg-[#963131]/90 text-white px-5 py-2.5 rounded-lg text-sm font-bold transition-all shadow-sm"
+        class="shrink-0 bg-[#963131] hover:bg-[#963131]/90 text-white px-5 py-2.5 rounded-lg text-sm font-bold transition-all shadow-sm cursor-pointer"
         @click="emitFilter"
       >
         Lọc
       </button>
       <button
-        class="shrink-0 text-sm font-medium text-slate-500 hover:text-[#963131] transition-colors"
+        class="shrink-0 text-sm font-medium text-slate-500 hover:text-[#963131] transition-colors cursor-pointer"
         @click="clearFilters"
       >
         Xoá bộ lọc

@@ -125,7 +125,7 @@
           </div>
           <button
             type="button"
-            class="flex items-center gap-1 text-xs font-semibold text-[#963131] hover:text-[#7a2828] transition-colors"
+            class="flex items-center gap-1 text-xs font-semibold text-[#963131] hover:text-[#7a2828] transition-colors cursor-pointer"
             @click="addDetail"
           >
             <span class="material-symbols-outlined text-[16px]">add</span>
@@ -168,7 +168,7 @@
 
             <button
               type="button"
-              class="p-1.5 text-slate-400 hover:text-red-500 transition-colors shrink-0"
+              class="p-1.5 text-slate-400 hover:text-red-500 transition-colors shrink-0 cursor-pointer"
               @click="removeDetail(idx)"
             >
               <span class="material-symbols-outlined text-[18px]">delete</span>
@@ -199,7 +199,7 @@
               type="button"
               role="switch"
               :aria-checked="form.isActive"
-              class="relative w-11 h-6 rounded-full transition-colors duration-200 shrink-0 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#963131]"
+              class="relative w-11 h-6 rounded-full transition-colors duration-200 shrink-0 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#963131] cursor-pointer"
               :class="form.isActive ? 'bg-[#963131]' : 'bg-slate-200 dark:bg-slate-700'"
               @click="form.isActive = !form.isActive"
             >

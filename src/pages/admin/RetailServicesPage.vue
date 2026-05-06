@@ -8,7 +8,7 @@
         <p class="text-slate-500 text-sm mt-1">Quản lý các dịch vụ bán lẻ theo danh mục phân loại.</p>
       </div>
       <button
-        class="bg-[#963131] hover:bg-[#963131]/90 text-white px-5 py-2.5 rounded-lg font-bold text-sm flex items-center gap-2 shadow-lg shadow-[#963131]/20 transition-all"
+        class="bg-[#963131] hover:bg-[#963131]/90 text-white px-5 py-2.5 rounded-lg font-bold text-sm flex items-center gap-2 shadow-lg shadow-[#963131]/20 transition-all cursor-pointer"
         @click="showCreateModal = true"
       >
         <span class="material-symbols-outlined text-lg">add</span>
@@ -35,7 +35,7 @@
         <span class="material-symbols-outlined text-4xl">error</span>
         <p class="text-sm font-semibold">{{ fetchError }}</p>
         <button
-          class="mt-2 text-xs text-slate-500 hover:text-slate-700 underline"
+          class="mt-2 text-xs text-slate-500 hover:text-slate-700 underline cursor-pointer"
           @click="loadAddonServices"
         >
           Thử lại

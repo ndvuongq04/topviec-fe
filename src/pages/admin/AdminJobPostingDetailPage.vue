@@ -4,7 +4,7 @@
     <div class="flex flex-wrap items-center justify-between gap-4 mb-8">
       <div class="flex items-center gap-4">
         <button
-          class="text-slate-400 hover:text-[#963131] transition-colors"
+          class="text-slate-400 hover:text-[#963131] transition-colors cursor-pointer"
           @click="router.back()"
         >
           <span class="material-symbols-outlined">arrow_back</span>
@@ -20,14 +20,14 @@
       <div v-if="job" class="flex items-center gap-3">
         <template v-if="job.status === JobPostingStatus.PENDING_APPROVAL">
           <button
-            class="flex items-center gap-2 px-4 py-2 bg-red-50 dark:bg-red-900/10 text-red-600 hover:bg-red-100 rounded-lg text-sm font-semibold transition-colors shadow-sm"
+            class="flex items-center gap-2 px-4 py-2 bg-red-50 dark:bg-red-900/10 text-red-600 hover:bg-red-100 rounded-lg text-sm font-semibold transition-colors shadow-sm cursor-pointer"
             @click="onOpenReject"
           >
             <span class="material-symbols-outlined text-[18px]">cancel</span>
             Từ chối
           </button>
           <button
-            class="flex items-center gap-2 px-4 py-2 bg-[#963131] text-white hover:bg-[#963131]/90 rounded-lg text-sm font-semibold transition-opacity shadow-lg shadow-[#963131]/20"
+            class="flex items-center gap-2 px-4 py-2 bg-[#963131] text-white hover:bg-[#963131]/90 rounded-lg text-sm font-semibold transition-opacity shadow-lg shadow-[#963131]/20 cursor-pointer"
             @click="onApprove"
           >
             <span class="material-symbols-outlined text-[18px]">check_circle</span>
@@ -37,7 +37,7 @@
         
         <template v-if="[JobPostingStatus.PUBLISHED, JobPostingStatus.PAUSED].includes(job.status)">
           <button
-            class="flex items-center gap-2 px-4 py-2 bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-900/30 dark:text-red-400 dark:hover:bg-red-900/50 rounded-lg text-sm font-semibold transition-all shadow-sm"
+            class="flex items-center gap-2 px-4 py-2 bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-900/30 dark:text-red-400 dark:hover:bg-red-900/50 rounded-lg text-sm font-semibold transition-all shadow-sm cursor-pointer"
             @click="onOpenTakedown"
           >
             <span class="material-symbols-outlined text-[18px]">gavel</span>
@@ -58,7 +58,7 @@
       <span class="material-symbols-outlined text-5xl mb-4">error</span>
       <p class="font-bold mb-1">Lỗi tải dữ liệu</p>
       <p class="text-sm text-red-400 mb-6">{{ store.error }}</p>
-      <button class="bg-red-50 text-red-600 px-6 py-2 rounded-lg font-bold hover:bg-red-100 transition-colors" @click="loadData">
+      <button class="bg-red-50 text-red-600 px-6 py-2 rounded-lg font-bold hover:bg-red-100 transition-colors cursor-pointer" @click="loadData">
         Thử lại
       </button>
     </div>

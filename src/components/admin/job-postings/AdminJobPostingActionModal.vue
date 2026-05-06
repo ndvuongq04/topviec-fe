@@ -17,7 +17,7 @@
             </p>
           </div>
         </div>
-        <button class="text-slate-400 hover:text-slate-600 rounded-full p-1" @click="$emit('close')">
+        <button class="text-slate-400 hover:text-slate-600 rounded-full p-1 cursor-pointer" @click="$emit('close')">
           <span class="material-symbols-outlined">close</span>
         </button>
       </div>
@@ -49,14 +49,14 @@
       <!-- Footer -->
       <div class="px-6 py-4 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-200 dark:border-slate-800 flex justify-end gap-3">
         <button
-          class="px-4 py-2 text-sm font-semibold text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
+          class="px-4 py-2 text-sm font-semibold text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors cursor-pointer"
           @click="$emit('close')"
           :disabled="submitting"
         >
           Hủy bỏ
         </button>
         <button
-          class="px-4 py-2 text-sm font-bold text-white rounded-lg transition-colors flex items-center gap-2 bg-red-600 hover:bg-red-700"
+          class="px-4 py-2 text-sm font-bold text-white rounded-lg transition-colors flex items-center gap-2 bg-red-600 hover:bg-red-700 cursor-pointer"
           @click="handleSubmit"
           :disabled="submitting || !form.rejectionReason.trim()"
         >

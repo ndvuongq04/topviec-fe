@@ -46,10 +46,10 @@
             </td>
             <td class="px-6 py-4">
               <div class="flex items-center justify-center gap-2">
-                <button class="p-1.5 hover:bg-[#963131]/10 rounded-lg text-slate-500 hover:text-[#963131] transition-colors" title="Xem chi tiết" @click="$emit('view', candidate)">
+                <button class="p-1.5 hover:bg-[#963131]/10 rounded-lg text-slate-500 hover:text-[#963131] transition-colors cursor-pointer" title="Xem chi tiết" @click="$emit('view', candidate)">
                   <span class="material-symbols-outlined text-xl">visibility</span>
                 </button>
-                <button class="p-1.5 hover:bg-red-50 rounded-lg text-slate-500 hover:text-red-600 transition-colors" title="Xóa" @click="$emit('delete', candidate)">
+                <button class="p-1.5 hover:bg-red-50 rounded-lg text-slate-500 hover:text-red-600 transition-colors cursor-pointer" title="Xóa" @click="$emit('delete', candidate)">
                   <span class="material-symbols-outlined text-xl">delete</span>
                 </button>
               </div>
@@ -72,7 +72,7 @@
       </p>
       <div class="flex items-center gap-2">
         <button
-          class="size-9 flex items-center justify-center rounded-lg border border-[#963131]/10 hover:bg-white text-slate-400 hover:text-[#963131] transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+          class="size-9 flex items-center justify-center rounded-lg border border-[#963131]/10 hover:bg-white text-slate-400 hover:text-[#963131] transition-all disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
           :disabled="currentPage === 0"
           @click="$emit('page-change', currentPage - 1)"
         >
@@ -83,7 +83,7 @@
           <span v-if="page === '...'" class="px-2 text-slate-400">...</span>
           <button
             v-else
-            class="size-9 flex items-center justify-center rounded-lg font-bold text-sm transition-all"
+            class="size-9 flex items-center justify-center rounded-lg font-bold text-sm transition-all cursor-pointer"
             :class="(page as number) === currentPage + 1
               ? 'bg-[#963131] text-white shadow-md'
               : 'border border-[#963131]/10 hover:bg-white text-slate-600 hover:text-[#963131]'"
@@ -94,7 +94,7 @@
         </template>
 
         <button
-          class="size-9 flex items-center justify-center rounded-lg border border-[#963131]/10 hover:bg-white text-slate-400 hover:text-[#963131] transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+          class="size-9 flex items-center justify-center rounded-lg border border-[#963131]/10 hover:bg-white text-slate-400 hover:text-[#963131] transition-all disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
           :disabled="currentPage >= totalPages - 1 || totalPages === 0"
           @click="$emit('page-change', currentPage + 1)"
         >

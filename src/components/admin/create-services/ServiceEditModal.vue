@@ -5,7 +5,7 @@
       <!-- Header -->
       <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
         <h3 class="text-lg font-bold text-slate-900 tracking-tight">Sửa dịch vụ</h3>
-        <button class="text-slate-400 hover:text-slate-600 transition-colors" @click="$emit('close')">
+        <button class="text-slate-400 hover:text-slate-600 transition-colors cursor-pointer" @click="$emit('close')">
           <span class="material-symbols-outlined">close</span>
         </button>
       </div>
@@ -48,14 +48,14 @@
       <!-- Footer -->
       <div class="px-6 py-4 border-t border-slate-100 bg-slate-50 flex items-center justify-end gap-3">
         <button
-          class="px-5 py-2 text-sm font-semibold text-slate-600 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors"
+          class="px-5 py-2 text-sm font-semibold text-slate-600 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors cursor-pointer"
           @click="$emit('close')"
           :disabled="submitting"
         >
           Hủy
         </button>
         <button
-          class="px-5 py-2.5 text-sm font-semibold text-white bg-gradient-to-br from-[#76191d] to-[#963131] rounded-lg hover:opacity-90 transition-opacity flex items-center gap-2 disabled:opacity-50"
+          class="px-5 py-2.5 text-sm font-semibold text-white bg-gradient-to-br from-[#76191d] to-[#963131] rounded-lg hover:opacity-90 transition-opacity flex items-center gap-2 disabled:opacity-50 cursor-pointer"
           @click="submit"
           :disabled="submitting"
         >
