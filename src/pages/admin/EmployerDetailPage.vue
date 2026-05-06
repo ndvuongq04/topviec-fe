@@ -44,6 +44,26 @@
       :employer-id="employerId"
     />
 
+    <div v-else-if="activeTab === 'services'" class="flex flex-col gap-8">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        <div class="lg:col-span-4">
+          <SubscriberCurrentPlan />
+        </div>
+        <div class="lg:col-span-8">
+          <SubscriberQuotas />
+        </div>
+      </div>
+      <SubscriberAddons />
+    </div>
+
+    <div v-else-if="activeTab === 'orders'">
+      <SubscriberOrderHistory />
+    </div>
+
+    <div v-else-if="activeTab === 'renewals'">
+      <SubscriberRenewalTimeline />
+    </div>
+
     <div
       v-else-if="!store.selectedCompany"
       class="rounded-xl border border-slate-200 bg-white p-12 text-center text-slate-400 dark:border-slate-800 dark:bg-slate-900"
@@ -72,6 +92,11 @@ import EmployerProfileHeader from '@/components/admin/employers/EmployerProfileH
 import EmployerProfileTab from '@/components/admin/employers/EmployerProfileTab.vue'
 import EmployerStatsCards from '@/components/admin/employers/EmployerStatsCards.vue'
 import EmployerViolationScorePanel from '@/components/admin/employers/EmployerViolationScorePanel.vue'
+import SubscriberCurrentPlan from '@/components/admin/subscribers/SubscriberCurrentPlan.vue'
+import SubscriberQuotas from '@/components/admin/subscribers/SubscriberQuotas.vue'
+import SubscriberAddons from '@/components/admin/subscribers/SubscriberAddons.vue'
+import SubscriberOrderHistory from '@/components/admin/subscribers/SubscriberOrderHistory.vue'
+import SubscriberRenewalTimeline from '@/components/admin/subscribers/SubscriberRenewalTimeline.vue'
 import { useToast } from '@/composables/useToast'
 import { useAdminCompanyStore } from '@/stores/adminCompany.store'
 import { CompanyStatus } from '@/constants/company.constants'
@@ -89,7 +114,8 @@ onMounted(async () => {
   if (!companyId) return
   await Promise.all([
     store.fetchById(companyId),
-    store.fetchStatistics(companyId)
+    store.fetchStatistics(companyId),
+    store.fetchCompanyPlan(companyId)
   ])
   
   if (store.error) {
@@ -129,6 +155,9 @@ const stats = computed<StatItem[]>(() => {
 const activeTab = ref('profile')
 const tabs = [
   { key: 'profile', label: 'Hồ sơ công ty' },
+  { key: 'services', label: 'Dịch vụ' },
+  { key: 'orders', label: 'Lịch sử đơn hàng' },
+  { key: 'renewals', label: 'Lịch sử gia hạn' },
   { key: 'license', label: 'Giấy phép & Xác thực' },
   { key: 'violation', label: 'Điểm vi phạm' },
   { key: 'activity', label: 'Lịch sử hoạt động' },

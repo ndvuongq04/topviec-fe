@@ -6,6 +6,7 @@ import type {
     ReqAdminUpdateCompanyDTO,
     ResCompanyDTO,
     ResAdminCompanyStatisticsDTO,
+    ResCompanyPlanDTO,
     ResultPaginationDTO,
 } from '@/types/company.types'
 import type { ReqRegisterEmployerDTO } from '@/types/auth.types'
@@ -109,6 +110,17 @@ const adminCompanyService = {
     async getCompanyStatistics(id: number): Promise<ResAdminCompanyStatisticsDTO> {
         const res = await axiosInstance.get<RestResponse<ResAdminCompanyStatisticsDTO>>(
             `/admin/companies/${id}/statistics`
+        )
+        return res.data.data
+    },
+
+    /**
+     * GET /admin/companies/{id}/plan
+     * Lấy thông tin gói dịch vụ hiện tại của công ty.
+     */
+    async getCompanyPlan(id: number): Promise<ResCompanyPlanDTO> {
+        const res = await axiosInstance.get<RestResponse<ResCompanyPlanDTO>>(
+            `/admin/companies/${id}/plan`
         )
         return res.data.data
     },

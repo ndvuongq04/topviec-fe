@@ -165,6 +165,40 @@ export interface ActiveSubscriptionDTO {
     expiredAt: string
 }
 
+/** GET /admin/companies/{id}/plan */
+export interface UsageDTO {
+    featureCode: string
+    total: number
+    used: number
+}
+
+export interface CurrentPackageDTO {
+    subscriptionId: number
+    servicePackageId: number
+    packageName: string
+    packageCode: string
+    status: string
+    startedAt: string
+    expiredAt: string
+    usages: UsageDTO[]
+}
+
+export interface CurrentAddonDTO {
+    addonId: number
+    addonServiceId: number
+    addonName: string
+    addonCode: string
+    status: string
+    total: number
+    used: number
+    startedAt: string
+    expiredAt: string
+}
+
+export interface ResCompanyPlanDTO {
+    currentPackage: CurrentPackageDTO | null
+    currentAddons: CurrentAddonDTO[]
+}
 
 
 export type { PaginationMeta, ResultPaginationDTO }

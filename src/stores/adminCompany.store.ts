@@ -8,6 +8,7 @@ import type {
     PaginationMeta,
     ReqCreateCompanyDTO,
     ResAdminCompanyStatisticsDTO,
+    ResCompanyPlanDTO,
 } from '@/types/company.types'
 import type { ReqRegisterEmployerDTO } from '@/types/auth.types'
 
@@ -17,6 +18,7 @@ export const useAdminCompanyStore = defineStore('adminCompany', () => {
     const meta = ref<PaginationMeta>({ page: 0, pageSize: 10, pages: 0, totals: 0 })
     const selectedCompany = ref<ResCompanyDTO | null>(null)
     const companyStatistics = ref<ResAdminCompanyStatisticsDTO | null>(null)
+    const companyPlan = ref<ResCompanyPlanDTO | null>(null)
     const loading = ref(false)
     const error = ref<string | null>(null)
 
@@ -191,6 +193,19 @@ export const useAdminCompanyStore = defineStore('adminCompany', () => {
         }
     }
 
+    /** GET /admin/companies/{id}/plan */
+    async function fetchCompanyPlan(id: number) {
+        loading.value = true
+        error.value = null
+        try {
+            companyPlan.value = await adminCompanyService.getCompanyPlan(id)
+        } catch (err) {
+            setError(err)
+        } finally {
+            loading.value = false
+        }
+    }
+
     // ─── Private helpers ─────────────────────────────────────────────────────────
     function _updateInList(updated: ResCompanyDTO) {
         const idx = companies.value.findIndex(c => c.id === updated.id)
@@ -201,6 +216,7 @@ export const useAdminCompanyStore = defineStore('adminCompany', () => {
         companies.value = []
         selectedCompany.value = null
         companyStatistics.value = null
+        companyPlan.value = null
         meta.value = { page: 0, pageSize: 10, pages: 0, totals: 0 }
         loading.value = false
         error.value = null
@@ -210,6 +226,7 @@ export const useAdminCompanyStore = defineStore('adminCompany', () => {
         companies,
         selectedCompany,
         companyStatistics,
+        companyPlan,
         meta,
         loading,
         error,
@@ -222,6 +239,7 @@ export const useAdminCompanyStore = defineStore('adminCompany', () => {
         adminUpdateCompany,
         deleteCompany,
         fetchStatistics,
+        fetchCompanyPlan,
         reset,
     }
 })

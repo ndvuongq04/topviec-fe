@@ -1,46 +1,36 @@
 <script setup lang="ts">
-const quotas = [
-  {
-    icon: 'stars',
-    label: 'Tin nổi bật',
-    used: 2,
-    total: 3,
-    resetAt: '14/06/2025',
-    iconBg: '#EEEDFE',
-    iconColor: '#3C3489',
-    barColor: '#3C3489',
-  },
-  {
-    icon: 'visibility',
-    label: 'CV views',
-    used: 150,
-    total: 500,
-    resetAt: '14/06/2025',
-    iconBg: '#ffdad7',
-    iconColor: '#963131',
-    barColor: '#963131',
-  },
-  {
-    icon: 'mail',
-    label: 'Gửi Email Marketing',
-    used: 1240,
-    total: 5000,
-    resetAt: '14/06/2025',
-    iconBg: '#b0efdb',
-    iconColor: '#004638',
-    barColor: '#004638',
-  },
-  {
-    icon: 'campaign',
-    label: 'Quảng cáo Banner',
-    used: 0,
-    total: 1,
-    resetAt: '14/06/2025',
-    iconBg: '#FAEEDA',
-    iconColor: '#633806',
-    barColor: '#633806',
-  },
-]
+import { computed } from 'vue'
+import { useAdminCompanyStore } from '@/stores/adminCompany.store'
+
+const store = useAdminCompanyStore()
+
+const featureMeta: Record<string, any> = {
+  'URGENT_JOB': { icon: 'stars', iconBg: '#EEEDFE', iconColor: '#3C3489', barColor: '#3C3489', name: 'Tin nổi bật' },
+  'VIEW_CV': { icon: 'visibility', iconBg: '#ffdad7', iconColor: '#963131', barColor: '#963131', name: 'Lượt xem CV' },
+  'EMAIL_MARKETING': { icon: 'mail', iconBg: '#b0efdb', iconColor: '#004638', barColor: '#004638', name: 'Email Marketing' },
+  'BANNER': { icon: 'campaign', iconBg: '#FAEEDA', iconColor: '#633806', barColor: '#633806', name: 'Quảng cáo Banner' },
+}
+
+const quotas = computed(() => {
+  const current = store.companyPlan?.currentPackage
+  if (!current?.usages) return []
+
+  const resetDate = new Date(current.expiredAt).toLocaleDateString('vi-VN')
+
+  return current.usages.map(u => {
+    const meta = featureMeta[u.featureCode] || { icon: 'check_circle', iconBg: '#f3f4f6', iconColor: '#6b7280', barColor: '#6b7280', name: u.featureCode }
+    return {
+      icon: meta.icon,
+      label: meta.name,
+      used: u.used,
+      total: u.total,
+      resetAt: resetDate,
+      iconBg: meta.iconBg,
+      iconColor: meta.iconColor,
+      barColor: meta.barColor
+    }
+  })
+})
 
 const percent = (used: number, total: number) =>
   total > 0 ? `${Math.round((used / total) * 100)}%` : '0%'
@@ -49,7 +39,7 @@ const percent = (used: number, total: number) =>
 <template>
   <section class="quotas-section">
     <h3 class="section-heading">Quota tính năng theo gói</h3>
-    <div class="quotas-grid">
+    <div v-if="quotas.length" class="quotas-grid">
       <div v-for="(q, i) in quotas" :key="i" class="quota-card">
         <div class="quota-row">
           <div class="quota-icon" :style="{ background: q.iconBg, color: q.iconColor }">
@@ -67,6 +57,9 @@ const percent = (used: number, total: number) =>
         </div>
         <p class="quota-reset">Reset lúc: {{ q.resetAt }}</p>
       </div>
+    </div>
+    <div v-else class="empty-state text-center text-slate-500 py-8 bg-white rounded-2xl border border-slate-100">
+      Không có dữ liệu sử dụng
     </div>
   </section>
 </template>

@@ -1,8 +1,10 @@
 <template>
-  <div class="cop-page">
-    <div class="cop-welcome">
-      <h1 class="cop-title">Tổng quan</h1>
-      <p class="cop-desc">Quản lý và xử lý khiếu nại của người dùng hiệu quả.</p>
+  <div class="space-y-6">
+    <div class="flex justify-between items-end">
+      <div>
+        <h2 class="text-3xl font-black text-slate-900 dark:text-slate-100 tracking-tight">Tổng quan</h2>
+        <p class="text-slate-500 text-sm mt-1">Quản lý và xử lý khiếu nại của người dùng hiệu quả.</p>
+      </div>
     </div>
 
     <ComplaintKpiCards />
@@ -84,19 +86,6 @@ async function onSelect(row: ResReportSummary) {
 </script>
 
 <style scoped>
-.cop-page {
-  
-  max-width: 1280px;
-  margin: 0 auto;
-  display: flex;
-  flex-direction: column;
-  gap: 32px;
-}
-.cop-title {
-  font-size: 1.875rem; font-weight: 900; font-family: 'Manrope', sans-serif;
-  letter-spacing: -0.02em; color: #1b1c18; margin-bottom: 4px;
-}
-.cop-desc { font-size: 0.875rem; color: #574240; font-family: 'Manrope', sans-serif; }
 .cop-card {
   background: #fff;
   border-radius: 12px;

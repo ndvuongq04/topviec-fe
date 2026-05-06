@@ -1,18 +1,33 @@
 <script setup lang="ts">
-const plan = {
-  tier: 'Pro',
-  expiresAt: '14/06/2025',
-  daysLeft: 62,
-  billingCycle: 'Hàng năm',
-  activatedAt: '14/01/2025',
-  orderCode: '#ORD-00189',
-}
+import { computed } from 'vue'
+import { useAdminCompanyStore } from '@/stores/adminCompany.store'
+
+const store = useAdminCompanyStore()
+
+const plan = computed(() => {
+  const current = store.companyPlan?.currentPackage
+  if (!current) return null
+
+  const expiredDate = new Date(current.expiredAt)
+  const diffTime = Math.max(0, expiredDate.getTime() - new Date().getTime())
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+
+  return {
+    tier: current.packageName,
+    expiresAt: expiredDate.toLocaleDateString('vi-VN'),
+    daysLeft: diffDays,
+    billingCycle: 'Chu kỳ gói',
+    activatedAt: new Date(current.startedAt).toLocaleDateString('vi-VN'),
+    orderCode: '#ORD-' + current.subscriptionId.toString().padStart(5, '0'),
+  }
+})
 </script>
 
 <template>
   <section class="plan-section">
     <h3 class="section-heading">Gói dịch vụ hiện tại</h3>
-    <div class="plan-card">
+    
+    <div v-if="plan" class="plan-card">
       <div class="plan-glow"></div>
 
       <div class="plan-top">
@@ -39,6 +54,10 @@ const plan = {
         <span class="material-symbols-outlined link-icon">link</span>
         <span>Mã đơn gốc: <a href="#" class="order-link">{{ plan.orderCode }}</a></span>
       </div>
+    </div>
+    
+    <div v-else class="plan-card empty-card text-center">
+      <p>Chưa đăng ký gói dịch vụ nào</p>
     </div>
   </section>
 </template>
@@ -176,5 +195,14 @@ const plan = {
 
 .order-link:hover {
   text-decoration: underline;
+}
+
+.empty-card {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #574240;
+  font-weight: 500;
+  min-height: 200px;
 }
 </style>
