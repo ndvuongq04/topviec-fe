@@ -36,16 +36,29 @@
     </div>
 
     <!-- Empty state -->
-    <JobAssignmentEmpty v-else @assign="$emit('assign')" />
+    <JobAssignmentEmpty v-else :can-assign="canAssign" @assign="$emit('assign')" />
   </div>
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import { JOB_POSTING_STATUS_LABELS, JOB_POSTING_STATUS_BADGE, JobPostingStatus } from '@/constants/jobPosting.constants'
 import JobAssignmentEmpty from './JobAssignmentEmpty.vue'
 
-defineProps<{ job: any; assignment?: any; loading?: boolean }>()
+const props = defineProps<{ job: any; assignment?: any; loading?: boolean }>()
 defineEmits(['assign'])
+
+const canAssign = computed(() => {
+  const allowed = [
+    JobPostingStatus.PUBLISHED,
+    JobPostingStatus.PAUSED,
+    JobPostingStatus.RENEWED,
+    JobPostingStatus.INTERVIEWING,
+    JobPostingStatus.SCHEDULED,
+    JobPostingStatus.CLOSED
+  ]
+  return allowed.includes(props.job?.status as JobPostingStatus)
+})
 
 function initials(email: string) {
   return email.split('@')[0].slice(0, 2).toUpperCase()

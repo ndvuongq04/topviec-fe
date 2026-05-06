@@ -126,4 +126,5 @@ export interface JobPostingRow {
   isUrgent?: boolean
   isFeatured?: boolean
   isHot?: boolean
+  rawStatus?: string
 }

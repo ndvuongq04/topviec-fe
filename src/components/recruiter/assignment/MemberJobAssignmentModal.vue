@@ -42,22 +42,29 @@
 
       <!-- Job List (Scrollable) -->
       <div v-else class="flex-1 overflow-y-auto pr-2 space-y-2 -mr-2 custom-scrollbar">
-        <div 
-          v-for="job in jobs" 
-          :key="job.id"
-          class="flex items-center justify-between p-3.5 rounded-xl transition-all duration-200 cursor-pointer border group"
-          :class="selectedJobId === job.id ? 'bg-primary/5 border-primary/30' : 'hover:bg-slate-50 border-transparent'"
-          @click="selectJob(job.id)"
-        >
-          <div class="flex items-center gap-4">
-            <div class="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center text-slate-500 group-hover:bg-primary/10 group-hover:text-primary transition-colors">
-              <span class="material-symbols-outlined">work</span>
+          <div 
+            v-for="job in jobs" 
+            :key="job.id"
+            class="flex items-center justify-between p-3.5 rounded-xl transition-all duration-200 border group"
+            :class="[
+              selectedJobId === job.id ? 'bg-primary/5 border-primary/30' : 'border-transparent',
+              canAssign(job.status) ? 'cursor-pointer hover:bg-slate-50' : 'cursor-not-allowed opacity-50 bg-slate-50/50'
+            ]"
+            :title="!canAssign(job.status) ? 'Cho phép: published, paused, renewed, interviewing, scheduled, closed' : ''"
+            @click="canAssign(job.status) && selectJob(job.id)"
+          >
+            <div class="flex items-center gap-4">
+              <div 
+                class="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center text-slate-500 transition-colors"
+                :class="canAssign(job.status) ? 'group-hover:bg-primary/10 group-hover:text-primary' : ''"
+              >
+                <span class="material-symbols-outlined">work</span>
+              </div>
+              <div>
+                <p class="font-bold text-slate-900 text-lg leading-tight">{{ job.title }}</p>
+                <p class="text-sm text-slate-500 mt-0.5">ID: {{ job.code || 'JOB-' + job.id }}</p>
+              </div>
             </div>
-            <div>
-              <p class="font-bold text-slate-900 text-lg leading-tight">{{ job.title }}</p>
-              <p class="text-sm text-slate-500 mt-0.5">ID: {{ job.code || 'JOB-' + job.id }}</p>
-            </div>
-          </div>
           <div class="flex items-center gap-4">
             <!-- Status indicator -->
             <span 
@@ -156,6 +163,18 @@ async function handleSearch() {
   } finally {
     loading.value = false
   }
+}
+
+function canAssign(status: string) {
+  const allowed = [
+    JobPostingStatus.PUBLISHED,
+    JobPostingStatus.PAUSED,
+    JobPostingStatus.RENEWED,
+    JobPostingStatus.INTERVIEWING,
+    JobPostingStatus.SCHEDULED,
+    JobPostingStatus.CLOSED
+  ]
+  return allowed.includes(status as JobPostingStatus)
 }
 
 function selectJob(id: number) {

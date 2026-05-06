@@ -3,7 +3,13 @@
     <span class="material-symbols-outlined job-empty__icon">person_off</span>
     <h3 class="job-empty__title">Chưa có người quản lý phụ</h3>
     <p class="job-empty__desc">Tin tuyển dụng này hiện chỉ do người tạo quản lý. Thêm thành viên để chia sẻ công việc.</p>
-    <button class="job-empty__btn" @click="$emit('assign')">
+    <button 
+      class="job-empty__btn" 
+      :class="!canAssign ? 'opacity-50 cursor-not-allowed' : ''"
+      :disabled="!canAssign"
+      :title="!canAssign ? 'Cho phép: published, paused, renewed, interviewing, scheduled, closed' : undefined"
+      @click="canAssign && $emit('assign')"
+    >
       <span class="material-symbols-outlined">person_add</span>
       Phân công người ngay
     </button>
@@ -11,6 +17,7 @@
 </template>
 
 <script setup lang="ts">
+defineProps<{ canAssign?: boolean }>()
 defineEmits(['assign'])
 </script>
 

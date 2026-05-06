@@ -47,7 +47,9 @@
               <div class="assign-table__actions">
                 <button 
                   class="assign-table__action-btn" 
-                  title="Chuyển giao"
+                  :class="!canAssign(row.jobPost?.status) ? 'opacity-40 cursor-not-allowed' : ''"
+                  :title="!canAssign(row.jobPost?.status) ? 'Cho phép: published, paused, renewed, interviewing, scheduled, closed' : 'Chuyển giao'"
+                  :disabled="!canAssign(row.jobPost?.status)"
                   @click="handleReassign(row)"
                 >
                   <span class="material-symbols-outlined">swap_horiz</span>
@@ -104,6 +106,18 @@ const emit = defineEmits<{
 }>()
 
 const revoking = ref<number | null>(null)
+
+function canAssign(status: string) {
+  const allowed = [
+    JobPostingStatus.PUBLISHED,
+    JobPostingStatus.PAUSED,
+    JobPostingStatus.RENEWED,
+    JobPostingStatus.INTERVIEWING,
+    JobPostingStatus.SCHEDULED,
+    JobPostingStatus.CLOSED
+  ]
+  return allowed.includes(status as JobPostingStatus)
+}
 
 function handleRevoke(row: any) {
   if (revoking.value) return

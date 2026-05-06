@@ -286,6 +286,7 @@ function mapToRow(job: ResJobPostingDetail): JobPostingRow {
     isUrgent:   job.isUrgent,
     isFeatured: job.isFeatured,
     isHot:      job.isHot,
+    rawStatus:  job.status,
     assignedRecruiter: (job as any).assignedRecruiter ?? null,
   }
 }
