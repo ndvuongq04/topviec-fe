@@ -15,6 +15,16 @@ export interface ReqAssignJobPostDTO {
 }
 
 /**
+ * PUT /employer/job-assignments/reassign
+ * Đổi người phân công: thu hồi NTD cũ + giao cho NTD mới trong 1 bước.
+ */
+export interface ReqReassignJobPostDTO {
+  jobPostId: number
+  userId: number
+  note?: string
+}
+
+/**
  * PATCH /employer/job-assignments/revoke
  * Thu hồi phân công tin tuyển dụng.
  */
@@ -38,6 +48,8 @@ export interface AssignmentJobPostQueryParams {
 
 export interface AssignmentRecruiterQueryParams {
   keyword?: string
+  /** Truyền jobPostId để BE đánh dấu isCurrentAssignee cho NTD đang quản lý tin này */
+  jobPostId?: number
   page?: number
   size?: number
 }
@@ -77,6 +89,8 @@ export interface ResRecruiterWithAssignmentCountDTO {
   jobTitle: string | null
   status: string
   assignedJobCount: number
+  /** true nếu đây là NTD đang quản lý tin cụ thể (chỉ có giá trị khi truyền jobPostId) */
+  isCurrentAssignee?: boolean
 }
 
 // ============================================================================

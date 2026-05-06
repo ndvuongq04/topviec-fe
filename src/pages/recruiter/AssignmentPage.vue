@@ -47,14 +47,16 @@
               ref="memberTableRef"
               :assignments="assignmentStore.jobPostsByRecruiter?.result || []"
               :loading="assignmentStore.loading"
+              :active-member-id="activeMemberId"
               @revoke="handleRevoke"
+              @reassign="handleOpenReassign"
             />
           </template>
         </template>
       </section>
     </div>
 
-    <!-- Modal Phân công (Chọn người cho tin) -->
+    <!-- Modal Phân công (Chọn người cho tin - tab job) -->
     <JobAssignmentModal
       :visible="showJobAssignModal && activeTab === 'job'"
       :job="activeJob ?? null"
@@ -62,12 +64,20 @@
       @assigned="handleConfirmAssign"
     />
 
-    <!-- Modal Giao việc (Chọn tin cho người) -->
+    <!-- Modal Giao việc (Chọn tin cho người - tab member) -->
     <MemberJobAssignmentModal
       :visible="showJobAssignModal && activeTab === 'member'"
       :member="activeMember"
       @close="showJobAssignModal = false"
       @assigned="handleConfirmAssignJob"
+    />
+
+    <!-- Modal Đổi người phụ trách (swap từ bảng member) -->
+    <JobAssignmentModal
+      :visible="showReassignModal"
+      :job="reassigningJob"
+      @close="showReassignModal = false"
+      @assigned="handleReassignSuccess"
     />
   </div>
 </template>
@@ -90,6 +100,8 @@ const activeTab = ref<'job' | 'member'>('member')
 const activeJobId = ref<number | null>(null)
 const activeMemberId = ref<number | null>(null)
 const showJobAssignModal = ref(false)
+const showReassignModal = ref(false)
+const reassigningJob = ref<{ id: number; title: string; assignedRecruiter: { userId: number; email: string } } | null>(null)
 const assignmentStore = useEmployerJobAssignmentStore()
 const toast = useToast()
 const memberTableRef = ref<any>(null)
@@ -203,6 +215,24 @@ async function handleRevoke(payload: { assignmentId: number; jobPostId: number }
   } finally {
     memberTableRef.value?.clearRevoking()
   }
+}
+
+/** Mở modal đổi người từ nút swap_horiz trong bảng */
+function handleOpenReassign(payload: { jobPostId: number; jobTitle: string; currentUserId: number }) {
+  reassigningJob.value = {
+    id: payload.jobPostId,
+    title: payload.jobTitle,
+    assignedRecruiter: {
+      userId: payload.currentUserId,
+      email: activeMember.value?.email ?? '',
+    },
+  }
+  showReassignModal.value = true
+}
+
+async function handleReassignSuccess() {
+  showReassignModal.value = false
+  await refreshCurrentTab()
 }
 
 async function handleSearch(keyword: string) {

@@ -1,9 +1,9 @@
 <template>
   <GlobalModal
     :visible="visible"
-    title="Phân công người phụ trách"
+    :title="isReassignMode ? 'Đổi người phụ trách' : 'Phân công người phụ trách'"
     :subtitle="job ? `<span class='text-primary font-bold'>${job.title}</span> | ID: ${job.code || 'JOB-' + job.id}` : ''"
-    icon="person_add"
+    :icon="isReassignMode ? 'swap_horiz' : 'person_add'"
     max-width="2xl"
     @close="$emit('close')"
   >
@@ -25,7 +25,7 @@
 
       <!-- List Header -->
       <div class="flex justify-between items-center mb-3 px-2 shrink-0">
-        <span class="text-xs font-extrabold text-slate-500 uppercase tracking-wider">Thành viên khả dụng</span>
+        <span class="text-xs font-extrabold text-slate-500 uppercase tracking-wider">Thành viên</span>
         <span class="text-xs font-extrabold text-slate-500 uppercase tracking-wider">Khối lượng công việc</span>
       </div>
 
@@ -42,11 +42,15 @@
 
       <!-- Member List (Scrollable) -->
       <div v-else class="flex-1 overflow-y-auto pr-2 space-y-2 -mr-2">
-        <div 
-          v-for="member in recruiters" 
+        <div
+          v-for="member in recruiters"
           :key="member.userId"
           class="flex items-center justify-between p-3.5 rounded-xl transition-all duration-200 cursor-pointer border"
-          :class="selectedMemberId === member.userId ? 'bg-primary/5 border-primary/30' : 'hover:bg-slate-50 border-transparent'"
+          :class="[
+            selectedMemberId === member.userId ? 'bg-primary/5 border-primary/30' :
+            member.isCurrentAssignee ? 'bg-amber-50 border-amber-200' :
+            'hover:bg-slate-50 border-transparent'
+          ]"
           @click="selectMember(member.userId)"
         >
           <div class="flex items-center gap-4">
@@ -59,7 +63,13 @@
               <div class="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-500 border-2 border-white rounded-full"></div>
             </div>
             <div>
-              <p class="font-bold text-slate-900 text-lg leading-tight">{{ member.email.split('@')[0] }}</p>
+              <div class="flex items-center gap-2">
+                <p class="font-bold text-slate-900 text-lg leading-tight">{{ member.email.split('@')[0] }}</p>
+                <span v-if="member.isCurrentAssignee" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-700">
+                  <span class="material-symbols-outlined" style="font-size:11px;font-variation-settings:'FILL' 1">star</span>
+                  Đang phụ trách
+                </span>
+              </div>
               <p class="text-sm text-slate-500 mt-0.5">{{ member.email }}</p>
             </div>
           </div>
@@ -88,21 +98,21 @@
 
     <!-- Custom Footer -->
     <template #footer>
-      <button 
+      <button
         class="px-6 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-700 font-bold text-base hover:bg-slate-50 transition-colors cursor-pointer"
         @click="$emit('close')"
         :disabled="submitting"
       >
         Hủy
       </button>
-      <button 
+      <button
         class="px-6 py-2.5 rounded-xl bg-primary text-white font-bold text-base shadow-lg shadow-primary/20 hover:bg-primary/90 transition-colors flex items-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-        :disabled="!selectedMemberId || submitting"
+        :disabled="!selectedMemberId || submitting || selectedMemberId === currentAssigneeId"
         @click="handleAssign"
       >
         <span v-if="submitting" class="material-symbols-outlined animate-spin text-[18px]">progress_activity</span>
-        <span v-else class="material-symbols-outlined text-[18px]">arrow_forward</span>
-        Xác nhận phân công
+        <span v-else class="material-symbols-outlined text-[18px]">{{ isReassignMode ? 'swap_horiz' : 'arrow_forward' }}</span>
+        {{ isReassignMode ? 'Xác nhận đổi người' : 'Xác nhận phân công' }}
       </button>
     </template>
   </GlobalModal>
@@ -116,7 +126,7 @@ import GlobalModal from '@/components/ui/GlobalModal.vue'
 
 const props = defineProps<{
   visible: boolean
-  job: { id: number; title: string; code?: string } | null
+  job: { id: number; title: string; code?: string; assignedRecruiter?: { userId: number; email: string } | null } | null
 }>()
 
 const emit = defineEmits<{
@@ -131,28 +141,39 @@ const selectedMemberId = ref<number | null>(null)
 const loading = ref(false)
 const submitting = ref(false)
 
-// Lấy danh sách NTD từ API response (ResRecruiterWithAssignmentCountDTO)
-const recruiters = computed(() => assignmentStore.recruiters?.result || [])
+/** ID của NTD đang phụ trách (nếu có) */
+const currentAssigneeId = computed(() => props.job?.assignedRecruiter?.userId ?? null)
+/** Modal đang ở chế độ đổi người (tin đã có người phụ trách) */
+const isReassignMode = computed(() => !!currentAssigneeId.value)
 
-// Mở modal → reset state → gọi API lấy danh sách NTD (luôn load mới)
+// Mở modal → reset state → gọi API lấy danh sách NTD
+// Truyền jobPostId để BE đánh dấu isCurrentAssignee
 watch(() => props.visible, async (newVal) => {
   if (newVal) {
     searchQuery.value = ''
-    selectedMemberId.value = null
+    // Pre-select NTD đang phụ trách nếu ở chế độ reassign
+    selectedMemberId.value = currentAssigneeId.value
     loading.value = true
     try {
-      await assignmentStore.fetchRecruiters({ size: 50 })
+      await assignmentStore.fetchRecruiters({
+        size: 50,
+        jobPostId: props.job?.id,
+      })
     } finally {
       loading.value = false
     }
   }
 })
 
+// Lấy danh sách NTD từ store
+const recruiters = computed(() => assignmentStore.recruiters?.result || [])
+
 async function handleSearch() {
   loading.value = true
   try {
     await assignmentStore.fetchRecruiters({
       keyword: searchQuery.value || undefined,
+      jobPostId: props.job?.id,
       size: 50,
     })
   } catch {
@@ -168,21 +189,35 @@ function selectMember(id: number) {
 
 async function handleAssign() {
   if (!selectedMemberId.value || !props.job) return
+  // Không cho đổi về chính người đang phụ trách
+  if (selectedMemberId.value === currentAssigneeId.value) return
+
   submitting.value = true
   try {
-    await assignmentStore.assignJobPost({
-      jobPostId: props.job.id,
-      userId: selectedMemberId.value,
-    })
-    toast.success(
-      'Phân công thành công!',
-      `Đã giao tin “${props.job.title}” cho thành viên được chọn.`,
-    )
+    if (isReassignMode.value) {
+      await assignmentStore.reassignJobPost({
+        jobPostId: props.job.id,
+        userId: selectedMemberId.value,
+      })
+      toast.success(
+        'Đổi người phụ trách thành công!',
+        `Đã chuyển tin "${props.job.title}" sang thành viên mới.`,
+      )
+    } else {
+      await assignmentStore.assignJobPost({
+        jobPostId: props.job.id,
+        userId: selectedMemberId.value,
+      })
+      toast.success(
+        'Phân công thành công!',
+        `Đã giao tin “${props.job.title}” cho thành viên được chọn.`,
+      )
+    }
     emit('assigned')
     emit('close')
   } catch (err: any) {
-    const msg = err?.response?.data?.message || 'Không thể phân công. Vui lòng thử lại.'
-    toast.error('Phân công thất bại', msg)
+    const msg = err?.response?.data?.message || 'Không thể thực hiện. Vui lòng thử lại.'
+    toast.error(isReassignMode.value ? 'Đổi người thất bại' : 'Phân công thất bại', msg)
   } finally {
     submitting.value = false
   }

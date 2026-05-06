@@ -557,7 +557,12 @@ const confirmStartInterviewing = async () => {
 const handleAssign = (id: number) => {
   const job = jobs.value.find(j => j.id === id)
   if (!job) return
-  assigningJob.value = { id: job.id, title: job.title, code: job.code }
+  assigningJob.value = {
+    id: job.id,
+    title: job.title,
+    code: job.code,
+    assignedRecruiter: (job as any).assignedRecruiter ?? null,
+  }
   isAssignModalVisible.value = true
 }
 

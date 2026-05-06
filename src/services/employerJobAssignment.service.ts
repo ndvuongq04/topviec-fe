@@ -2,6 +2,7 @@ import axiosInstance from './axios'
 import type { RestResponse } from '@/types/common.types'
 import type {
   ReqAssignJobPostDTO,
+  ReqReassignJobPostDTO,
   ReqRevokeAssignmentDTO,
   ResJobPostAssignmentDTO,
   ResRecruiterAssignmentPagination,
@@ -26,6 +27,15 @@ export const employerJobAssignmentService = {
    */
   async assignJobPost(payload: ReqAssignJobPostDTO): Promise<ResJobPostAssignmentDTO> {
     const res = await axiosInstance.post<RestResponse<ResJobPostAssignmentDTO>>(BASE_URL, payload)
+    return res.data.data
+  },
+
+  /**
+   * PUT /employer/job-assignments/reassign
+   * Đổi người phân công (thu hồi NTD cũ + giao NTD mới trong 1 bước).
+   */
+  async reassignJobPost(payload: ReqReassignJobPostDTO): Promise<ResJobPostAssignmentDTO> {
+    const res = await axiosInstance.put<RestResponse<ResJobPostAssignmentDTO>>(`${BASE_URL}/reassign`, payload)
     return res.data.data
   },
 

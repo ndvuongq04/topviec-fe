@@ -3,6 +3,7 @@ import { defineStore } from 'pinia'
 import { employerJobAssignmentService } from '@/services/employerJobAssignment.service'
 import type {
   ReqAssignJobPostDTO,
+  ReqReassignJobPostDTO,
   ReqRevokeAssignmentDTO,
   ResJobPostAssignmentDTO,
   ResRecruiterAssignmentPagination,
@@ -50,13 +51,33 @@ export const useEmployerJobAssignmentStore = defineStore('employerJobAssignment'
     error.value = null
     try {
       const result = await employerJobAssignmentService.assignJobPost(payload)
-      // Cập nhật currentAssignment nếu đang xem đúng tin này
       if (currentAssignment.value?.jobPostId === payload.jobPostId) {
         currentAssignment.value = result
       }
       return result
     } catch (err: any) {
       error.value = err.response?.data?.message || 'Không thể phân công. Vui lòng thử lại.'
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
+  /**
+   * PUT /reassign
+   * Đổi người phân công (thu hồi NTD cũ + giao NTD mới trong 1 bước).
+   */
+  async function reassignJobPost(payload: ReqReassignJobPostDTO): Promise<ResJobPostAssignmentDTO> {
+    loading.value = true
+    error.value = null
+    try {
+      const result = await employerJobAssignmentService.reassignJobPost(payload)
+      if (currentAssignment.value?.jobPostId === payload.jobPostId) {
+        currentAssignment.value = result
+      }
+      return result
+    } catch (err: any) {
+      error.value = err.response?.data?.message || 'Không thể đổi người phân công. Vui lòng thử lại.'
       throw err
     } finally {
       loading.value = false
@@ -211,6 +232,7 @@ export const useEmployerJobAssignmentStore = defineStore('employerJobAssignment'
 
     // Actions
     assignJobPost,
+    reassignJobPost,
     fetchRecruiters,
     fetchJobPostsByRecruiter,
     fetchJobPostsWithAssignment,

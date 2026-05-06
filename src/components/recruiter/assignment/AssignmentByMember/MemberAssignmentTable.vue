@@ -45,7 +45,11 @@
             </td>
             <td class="assign-table__td assign-table__td--right">
               <div class="assign-table__actions">
-                <button class="assign-table__action-btn" title="Chuyển giao">
+                <button 
+                  class="assign-table__action-btn" 
+                  title="Chuyển giao"
+                  @click="handleReassign(row)"
+                >
                   <span class="material-symbols-outlined">swap_horiz</span>
                 </button>
                 <button 
@@ -88,12 +92,16 @@
 import { ref } from 'vue'
 import { JOB_POSTING_STATUS_LABELS, JOB_POSTING_STATUS_BADGE, JobPostingStatus } from '@/constants/jobPosting.constants'
 
-defineProps<{
+const props = defineProps<{
   assignments: any[]
   loading?: boolean
+  activeMemberId?: number | null
 }>()
 
-const emit = defineEmits<{ revoke: [payload: { assignmentId: number; jobPostId: number }] }>()
+const emit = defineEmits<{
+  revoke: [payload: { assignmentId: number; jobPostId: number }]
+  reassign: [payload: { jobPostId: number; jobTitle: string; currentUserId: number }]
+}>()
 
 const revoking = ref<number | null>(null)
 
@@ -101,6 +109,14 @@ function handleRevoke(row: any) {
   if (revoking.value) return
   emit('revoke', { assignmentId: row.assignmentId, jobPostId: row.jobPost?.id })
   revoking.value = row.assignmentId
+}
+
+function handleReassign(row: any) {
+  emit('reassign', {
+    jobPostId: row.jobPost?.id,
+    jobTitle: row.jobPost?.title,
+    currentUserId: props.activeMemberId ?? 0,
+  })
 }
 
 /** Cha gọi để reset trạng thái sau khi revoke xong */
