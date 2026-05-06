@@ -4,6 +4,7 @@
       <thead>
         <tr>
           <th class="col-left">Thông tin tin tuyển dụng</th>
+          <th class="col-left">Người phụ trách</th>
           <th class="col-left">Trạng thái</th>
           <th class="col-center">Hiệu suất</th>
           <th class="col-left">Hạn nộp</th>
@@ -28,9 +29,10 @@
           @delete="$emit('delete', $event)"
           @restore="$emit('restore', $event)"
           @applications="$emit('applications', $event)"
+          @assign="$emit('assign', $event)"
         />
         <tr v-if="jobs.length === 0">
-          <td colspan="5" class="empty">Không có tin tuyển dụng nào.</td>
+          <td colspan="6" class="empty">Không có tin tuyển dụng nào.</td>
         </tr>
       </tbody>
     </table>
@@ -57,6 +59,7 @@ defineEmits<{
   delete: [id: number]
   restore: [id: number]
   applications: [id: number]
+  assign: [id: number]
 }>()
 </script>
 

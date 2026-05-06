@@ -38,6 +38,7 @@
         @delete="handleDelete"
         @restore="handleRestore"
         @applications="handleViewApplications"
+        @assign="handleAssign"
       />
       <JobPostingPagination
         v-model:currentPage="currentPage"
@@ -153,6 +154,15 @@
       </div>
     </GlobalModal>
 
+    <!-- ── Assign Recruiter Modal ─────────────────────────── -->
+    <JobAssignmentModal
+      ref="assignModalRef"
+      :visible="isAssignModalVisible"
+      :job="assigningJob"
+      @close="isAssignModalVisible = false"
+      @assign="confirmAssign"
+    />
+
   </div>
 </template>
 
@@ -169,6 +179,7 @@ import JobPostingStatsGrid  from '@/components/recruiter/jobs/JobPostingStatsGri
 import JobPostingFilters    from '@/components/recruiter/jobs/JobPostingFilters.vue'
 import JobPostingTable      from '@/components/recruiter/jobs/JobPostingTable.vue'
 import JobPostingPagination from '@/components/recruiter/jobs/JobPostingPagination.vue'
+import JobAssignmentModal   from '@/components/recruiter/jobs/JobAssignmentModal.vue'
 import GlobalModal          from '@/components/ui/GlobalModal.vue'
 import type { JobPostingFilterTab } from '@/components/recruiter/jobs/JobPostingFilters.vue'
 import type { JobPostingRow, JobPostingStats } from '@/types/employerJobPosting.types'
@@ -211,6 +222,11 @@ const deletingJob          = ref<{ id: number; title: string } | null>(null)
 const isInterviewModalVisible = ref(false)
 const isInterviewLoading      = ref(false)
 const interviewingJob         = ref<{ id: number; title: string } | null>(null)
+
+// Assign Modal State
+const isAssignModalVisible = ref(false)
+const assigningJob         = ref<{ id: number; title: string; code?: string } | null>(null)
+const assignModalRef       = ref<any>(null)
 
 // ── Status mapping ───────────────────────────────────────
 const tabToStatus: Partial<Record<JobPostingFilterTab, JobPostingStatus>> = {
@@ -532,6 +548,47 @@ const confirmStartInterviewing = async () => {
     toast.error('Lỗi', msg)
   } finally {
     isInterviewLoading.value = false
+  }
+}
+
+const handleAssign = (id: number) => {
+  const job = jobs.value.find(j => j.id === id)
+  if (!job) return
+
+  assigningJob.value = { id: job.id, title: job.title, code: job.code }
+  isAssignModalVisible.value = true
+}
+
+const confirmAssign = async (memberId: number) => {
+  if (!assigningJob.value) return
+
+  assignModalRef.value?.setSubmitting(true)
+  try {
+    // HARDCODED: Mock the API response to assign the recruiter
+    const member = useEmployerMemberStore().members?.result.find(m => m.userId === memberId)
+    const idx = jobs.value.findIndex(j => j.id === assigningJob.value?.id)
+    
+    if (idx !== -1 && member) {
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 600))
+      
+      const updatedJob = {
+        ...jobs.value[idx],
+        assignee: {
+          id: member.userId,
+          name: member.email.split('@')[0], // Fallback name
+          email: member.email,
+        }
+      }
+      jobs.value[idx] = updatedJob
+    }
+
+    toast.success('Phân công thành công!', `Đã phân công tin tuyển dụng cho ${member?.email.split('@')[0] || 'thành viên'}.`)
+    isAssignModalVisible.value = false
+  } catch (err: any) {
+    toast.error('Lỗi', 'Không thể phân công. Vui lòng thử lại.')
+  } finally {
+    assignModalRef.value?.setSubmitting(false)
   }
 }
 </script>

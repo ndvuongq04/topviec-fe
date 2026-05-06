@@ -22,6 +22,34 @@
       </div>
     </td>
 
+    <!-- Assignee -->
+    <td class="td">
+      <div 
+        v-if="(job as any).assignee" 
+        class="group flex items-center gap-3 cursor-pointer hover:bg-slate-50 p-1.5 -ml-1.5 rounded-lg transition-colors"
+        @click="$emit('assign', job.id)"
+        title="Đổi người phụ trách"
+      >
+        <div class="relative">
+          <div class="w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs bg-primary/10 text-primary border border-primary/20 shrink-0"
+               :style="(job as any).assignee.avatarUrl ? `background-image: url('${(job as any).assignee.avatarUrl}'); background-size: cover;` : ''">
+            <span v-if="!(job as any).assignee.avatarUrl">{{ (job as any).assignee.name?.substring(0, 2).toUpperCase() || 'U' }}</span>
+          </div>
+        </div>
+        <div>
+          <p class="font-bold text-slate-900 text-[13px] leading-tight group-hover:text-primary transition-colors">{{ (job as any).assignee.name }}</p>
+        </div>
+      </div>
+      <button 
+        v-else
+        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary/10 text-primary hover:bg-primary hover:text-white transition-colors font-bold text-xs cursor-pointer border border-primary/20"
+        @click="$emit('assign', job.id)"
+      >
+        <span class="material-symbols-outlined text-[14px]">person_add</span>
+        Giao việc
+      </button>
+    </td>
+
     <!-- Status -->
     <td class="td">
       <span class="status-chip" :class="statusChipClass">
@@ -79,6 +107,13 @@
               :disabled="!canViewApplications"
               :tooltip="!canViewApplications ? 'Tin nháp chưa có ứng viên nộp đơn' : undefined"
               @click="handleAction('applications', job.id, close)"
+            />
+            <!-- Phân công: tất cả trạng thái trừ xóa -->
+            <GlobalDropdownItem
+              v-if="job.status !== 'deleted'"
+              icon="person_add"
+              :label="(job as any).assignee ? 'Đổi người phụ trách' : 'Phân công'"
+              @click="handleAction('assign', job.id, close)"
             />
             <div class="dropdown-divider-v2" />
             <!-- Chỉnh sửa: DRAFT/REJECTED/RENEWED luôn được; PUBLISHED chỉ khi editCount < 1 -->
@@ -199,6 +234,7 @@ const emit = defineEmits<{
   delete:    [id: number]
   restore:   [id: number]
   applications: [id: number]
+  assign:    [id: number]
 }>()
 
 function handleAction(event: any, id: number, close: () => void) {
