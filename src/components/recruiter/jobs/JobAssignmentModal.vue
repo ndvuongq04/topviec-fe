@@ -17,8 +17,9 @@
         <input 
           v-model="searchQuery"
           class="w-full pl-11 pr-4 py-3 bg-slate-50 rounded-full border border-slate-200 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none text-base text-slate-900 placeholder:text-slate-400 transition-all duration-200" 
-          placeholder="Tìm kiếm theo tên hoặc email..." 
+          placeholder="Nhập tên hoặc email rồi nhấn Enter..." 
           type="text"
+          @keyup.enter="handleSearch"
         />
       </div>
 
@@ -34,7 +35,7 @@
       </div>
       
       <!-- Empty State -->
-      <div v-else-if="filteredMembers.length === 0" class="flex-1 flex flex-col items-center justify-center text-slate-400">
+      <div v-else-if="recruiters.length === 0" class="flex-1 flex flex-col items-center justify-center text-slate-400">
         <span class="material-symbols-outlined text-5xl mb-2">search_off</span>
         <p class="text-sm font-medium">Không tìm thấy thành viên nào</p>
       </div>
@@ -42,11 +43,11 @@
       <!-- Member List (Scrollable) -->
       <div v-else class="flex-1 overflow-y-auto pr-2 space-y-2 -mr-2">
         <div 
-          v-for="member in filteredMembers" 
-          :key="member.id"
+          v-for="member in recruiters" 
+          :key="member.userId"
           class="flex items-center justify-between p-3.5 rounded-xl transition-all duration-200 cursor-pointer border"
-          :class="selectedMemberId === member.id ? 'bg-primary/5 border-primary/30' : 'hover:bg-slate-50 border-transparent'"
-          @click="selectMember(member.id)"
+          :class="selectedMemberId === member.userId ? 'bg-primary/5 border-primary/30' : 'hover:bg-slate-50 border-transparent'"
+          @click="selectMember(member.userId)"
         >
           <div class="flex items-center gap-4">
             <div class="relative">
@@ -58,7 +59,7 @@
               <div class="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-500 border-2 border-white rounded-full"></div>
             </div>
             <div>
-              <p class="font-bold text-slate-900 text-lg leading-tight">{{ member.name || member.email.split('@')[0] }}</p>
+              <p class="font-bold text-slate-900 text-lg leading-tight">{{ member.email.split('@')[0] }}</p>
               <p class="text-sm text-slate-500 mt-0.5">{{ member.email }}</p>
             </div>
           </div>
@@ -66,19 +67,19 @@
             <!-- Job count badge -->
             <span 
               class="px-2.5 py-1 rounded-full text-xs font-bold flex items-center gap-1.5"
-              :class="getJobCountBadgeClass(member.jobCount || 0)"
+              :class="getJobCountBadgeClass(member.assignedJobCount || 0)"
             >
-              <span class="material-symbols-outlined text-sm" v-if="(member.jobCount || 0) < 10">work_outline</span>
+              <span class="material-symbols-outlined text-sm" v-if="(member.assignedJobCount || 0) < 10">work_outline</span>
               <span class="material-symbols-outlined text-sm" v-else>warning</span>
-              {{ member.jobCount || 0 }} Jobs
+              {{ member.assignedJobCount || 0 }} Jobs
             </span>
 
             <!-- Checkbox/Radio indicator -->
             <div 
               class="w-5 h-5 rounded-full flex items-center justify-center transition-all duration-200"
-              :class="selectedMemberId === member.id ? 'bg-primary border-none shadow-sm shadow-primary/30' : 'border-2 border-slate-200'"
+              :class="selectedMemberId === member.userId ? 'bg-primary border-none shadow-sm shadow-primary/30' : 'border-2 border-slate-200'"
             >
-              <span v-if="selectedMemberId === member.id" class="material-symbols-outlined text-white text-sm" style="font-variation-settings: 'FILL' 1;">check</span>
+              <span v-if="selectedMemberId === member.userId" class="material-symbols-outlined text-white text-sm" style="font-variation-settings: 'FILL' 1;">check</span>
             </div>
           </div>
         </div>
@@ -109,7 +110,8 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
-import { useEmployerMemberStore } from '@/stores/employerMember.store'
+import { useEmployerJobAssignmentStore } from '@/stores/employerJobAssignment.store'
+import { useToast } from '@/composables/useToast'
 import GlobalModal from '@/components/ui/GlobalModal.vue'
 
 const props = defineProps<{
@@ -119,73 +121,77 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   close: []
-  assign: [memberId: number]
+  assigned: []        // Phát ra sau khi giao việc thành công
 }>()
 
-const memberStore = useEmployerMemberStore()
+const assignmentStore = useEmployerJobAssignmentStore()
+const toast = useToast()
 const searchQuery = ref('')
 const selectedMemberId = ref<number | null>(null)
 const loading = ref(false)
 const submitting = ref(false)
 
-// We mock job count here because backend currently doesn't return it
-// In a real scenario, this should come from `ResCompanyMember`
-const membersWithMockData = computed(() => {
-  return (memberStore.members?.result || []).map((m, index) => ({
-    ...m,
-    id: m.userId,
-    name: m.email.split('@')[0], // Fallback if name is missing
-    // Randomly mock job counts for demo purposes since backend doesn't have it yet
-    jobCount: index % 3 === 0 ? 12 : index % 2 === 0 ? 6 : 2,
-    avatarUrl: (m as any).avatarUrl || undefined // Thêm để tránh lỗi TS
-  })).filter(m => m.status === 'active' && (m.roleName === 'owner' || m.roleName === 'manager' || m.roleName === 'recruiter')) as any[]
-})
+// Lấy danh sách NTD từ API response (ResRecruiterWithAssignmentCountDTO)
+const recruiters = computed(() => assignmentStore.recruiters?.result || [])
 
-const filteredMembers = computed(() => {
-  if (!searchQuery.value) return membersWithMockData.value
-  
-  const lowerQuery = searchQuery.value.toLowerCase()
-  return membersWithMockData.value.filter(m => 
-    (m.name && m.name.toLowerCase().includes(lowerQuery)) || 
-    m.email.toLowerCase().includes(lowerQuery)
-  )
-})
-
+// Mở modal → reset state → gọi API lấy danh sách NTD (luôn load mới)
 watch(() => props.visible, async (newVal) => {
   if (newVal) {
     searchQuery.value = ''
     selectedMemberId.value = null
-    // Load members if not loaded yet
-    if (!memberStore.members) {
-      loading.value = true
-      try {
-        await memberStore.getMembers({ page: 0, size: 50 })
-      } finally {
-        loading.value = false
-      }
+    loading.value = true
+    try {
+      await assignmentStore.fetchRecruiters({ size: 50 })
+    } finally {
+      loading.value = false
     }
   }
 })
 
-function selectMember(id: number) {
-  if (selectedMemberId.value === id) {
-    selectedMemberId.value = null // Toggle off
-  } else {
-    selectedMemberId.value = id
+async function handleSearch() {
+  loading.value = true
+  try {
+    await assignmentStore.fetchRecruiters({
+      keyword: searchQuery.value || undefined,
+      size: 50,
+    })
+  } catch {
+    toast.error('Tìm kiếm thất bại', 'Không thể tải danh sách thành viên. Vui lòng thử lại.')
+  } finally {
+    loading.value = false
   }
 }
 
-function handleAssign() {
-  if (!selectedMemberId.value) return
-  submitting.value = true
-  // Emit event to parent to handle API call
-  emit('assign', selectedMemberId.value)
-  // Parent should close the modal and toggle submitting
+function selectMember(id: number) {
+  selectedMemberId.value = selectedMemberId.value === id ? null : id
 }
 
-function initials(name: string) {
-  if (!name) return 'U'
-  return name.split(' ').slice(-2).map(w => w[0]).join('').toUpperCase()
+async function handleAssign() {
+  if (!selectedMemberId.value || !props.job) return
+  submitting.value = true
+  try {
+    await assignmentStore.assignJobPost({
+      jobPostId: props.job.id,
+      userId: selectedMemberId.value,
+    })
+    toast.success(
+      'Phân công thành công!',
+      `Đã giao tin “${props.job.title}” cho thành viên được chọn.`,
+    )
+    emit('assigned')
+    emit('close')
+  } catch (err: any) {
+    const msg = err?.response?.data?.message || 'Không thể phân công. Vui lòng thử lại.'
+    toast.error('Phân công thất bại', msg)
+  } finally {
+    submitting.value = false
+  }
+}
+
+function initials(email: string) {
+  if (!email) return 'U'
+  const name = email.split('@')[0]
+  return name.split(/[._-]/).map(w => w[0]).join('').slice(0, 2).toUpperCase()
 }
 
 function getAvatarColorClass(member: any) {
@@ -196,20 +202,15 @@ function getAvatarColorClass(member: any) {
     'bg-purple-100 text-purple-700 border-purple-200',
     'bg-rose-100 text-rose-700 border-rose-200',
   ]
-  // Simple hash to get consistent color for same user
-  const hash = String(member.id).split('').reduce((acc, char) => acc + char.charCodeAt(0), 0)
+  const hash = String(member.userId).split('').reduce((acc: number, char: string) => acc + char.charCodeAt(0), 0)
   return colors[hash % colors.length]
 }
 
 function getJobCountBadgeClass(count: number) {
   if (count >= 10) return 'bg-rose-100 text-rose-700'
-  if (count >= 5) return 'bg-amber-100 text-amber-700'
+  if (count >= 5)  return 'bg-amber-100 text-amber-700'
   return 'bg-emerald-100 text-emerald-700'
 }
-
-defineExpose({
-  setSubmitting: (val: boolean) => { submitting.value = val }
-})
 </script>
 
 <style scoped>

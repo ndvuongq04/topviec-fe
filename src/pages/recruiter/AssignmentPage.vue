@@ -9,11 +9,19 @@
       <!-- Left Panel -->
       <section class="assignment-page__left">
         <AssignmentTabs v-model="activeTab" />
-        <AssignmentSearch :placeholder="activeTab === 'job' ? 'Tìm kiếm tin tuyển dụng...' : 'Tìm tên hoặc email...'" />
+        <AssignmentSearch
+          :placeholder="activeTab === 'job' ? 'Nhập tên tin rồi nhấn Enter...' : 'Nhập email rồi nhấn Enter...'"
+          @search="handleSearch"
+        />
 
         <div class="assignment-page__list">
           <template v-if="activeTab === 'job'">
-            <JobAssignmentList :jobs="jobs" :active-id="activeJobId" @select="activeJobId = $event" />
+            <JobAssignmentList
+              :jobs="jobList"
+              :active-id="activeJobId"
+              :loading="activeTab === 'job' && assignmentStore.loading"
+              @select="activeJobId = $event"
+            />
           </template>
           <template v-else>
             <MemberAssignmentList :members="members" :active-id="activeMemberId" @select="activeMemberId = $event" />
@@ -24,12 +32,21 @@
       <!-- Right Panel -->
       <section class="assignment-page__right">
         <template v-if="activeTab === 'job'">
-          <JobAssignmentDetail v-if="activeJob" :job="activeJob" @assign="showJobAssignModal = true" />
+          <JobAssignmentDetail
+            v-if="activeJob"
+            :job="activeJob"
+            :assignment="activeJob.assignment ?? null"
+            :loading="false"
+            @assign="showJobAssignModal = true"
+          />
         </template>
         <template v-else>
           <template v-if="activeMember">
             <MemberAssignmentProfile :member="activeMember" @assign="showJobAssignModal = true" />
-            <MemberAssignmentTable :assignments="activeMember.assignments" />
+            <MemberAssignmentTable 
+              :assignments="assignmentStore.jobPostsByRecruiter?.result || []"
+              :loading="assignmentStore.loading"
+            />
           </template>
         </template>
       </section>
@@ -38,7 +55,7 @@
     <!-- Modal Phân công (Chọn người cho tin) -->
     <JobAssignmentModal
       :visible="showJobAssignModal && activeTab === 'job'"
-      :job="activeJob"
+      :job="activeJob ?? null"
       @close="showJobAssignModal = false"
       @assign="handleConfirmAssign"
     />
@@ -54,7 +71,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
+import { useEmployerJobAssignmentStore } from '@/stores/employerJobAssignment.store'
 import AssignmentTabs from '@/components/recruiter/assignment/AssignmentTabs.vue'
 import AssignmentSearch from '@/components/recruiter/assignment/AssignmentSearch.vue'
 import JobAssignmentList from '@/components/recruiter/assignment/AssignmentByJob/JobAssignmentList.vue'
@@ -66,63 +84,100 @@ import JobAssignmentModal from '@/components/recruiter/jobs/JobAssignmentModal.v
 import MemberJobAssignmentModal from '@/components/recruiter/assignment/MemberJobAssignmentModal.vue'
 
 const activeTab = ref<'job' | 'member'>('member')
-const activeJobId = ref(1)
-const activeMemberId = ref(1)
+const activeJobId = ref<number | null>(null)
+const activeMemberId = ref<number | null>(null)
 const showJobAssignModal = ref(false)
+const assignmentStore = useEmployerJobAssignmentStore()
 
-const jobs = ref([
-  { id: 1, title: 'Senior UI/UX Designer',       code: '#JOB-8429', active: true },
-  { id: 2, title: 'Frontend Developer (React)',   code: '#JOB-8430', active: false },
-  { id: 3, title: 'Product Manager',              code: '#JOB-8431', active: false },
-  { id: 4, title: 'Data Analyst',                 code: '#JOB-8432', active: false },
-])
+// Gọi API khi trang mount → load members và tự động chọn người đầu tiên
+onMounted(async () => {
+  await assignmentStore.fetchRecruiters({ size: 50 })
+  const first = assignmentStore.recruiters?.result?.[0]
+  if (first) {
+    activeMemberId.value = first.userId
+    await assignmentStore.fetchJobPostsByRecruiter(first.userId, { page: 0, size: 20 })
+  }
+})
 
-const members = ref([
-  {
-    id: 1, name: 'Lê Anh', role: 'Senior Recruiter',
-    email: 'anh.le@topviec.vn', initials: '', online: true, jobCount: 5,
-    avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCUrF99Xh6g3ZMJ_xYZ6v9NK0pCmNbqfyJbfZtbyJigRI6vckIfQjWLnHkgkXUy5SSABNeC6eR2N4ItFpCvREej4_yGXkW20KR9jLdzQzP_iFIAY6qgHmBrmZoRaox55tiINVNGdb79uZMyF46J_JmokEBE3ray8LG0CcDZ-LxhGMSmjyeobnKEOKVrJy7ARbJtuQxMY7O7MWQtxNFLhQ3AGW-6psQcUD7WQApebzGu-1DadVOJ6v9MG2FHMH4hG5Dd01GWr4iaMA',
-    avatarLarge: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCleStjjtnfJ1YrBJB7BiPjOXtC-9eUjrXnNSxtnk8iiL8TCh4Vzkb6yVFSa0diBKEMPrVjkWlS6TP2OhfAHCyfqkTrtxdY1yNnjeDGlXargQ_INwbohvMabENTretTbA1gbyPJzcK61HuIzrXuJKsXfoHEmGiM6NbAxvJbsywreO-rX9HK6Jq5fRtKj5cq4WJRU4pfaUqKemH5MoX_Y72Jpsxz6qq_2vqVPE0jn3yFE9apjAqu8HkzOQkntfBZMp5WVDyBxwkOsw',
-    assignments: [
-      { id: 1, title: 'Frontend Developer (ReactJS)', company: 'TechCorp VN',      code: '#JD-1024', status: 'active',    deadline: '15/11/2023', done: false },
-      { id: 2, title: 'Senior Product Designer',      company: 'Creative Hub',     code: '#JD-1035', status: 'expiring',  deadline: '30/10/2023', done: false },
-      { id: 3, title: 'Backend Engineer (Node.js)',   company: 'Fintech Solutions', code: '#JD-1042', status: 'active',    deadline: '05/12/2023', done: false },
-      { id: 4, title: 'Marketing Manager',            company: 'Retail Group VN',  code: '#JD-1050', status: 'completed', deadline: '10/10/2023', done: true },
-    ],
-  },
-  {
-    id: 2, name: 'Minh Trần', role: 'Technical Recruiter',
-    email: '', initials: '', online: true, jobCount: 2,
-    avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDx1ca110N21ja6r715NpxXZBwmnD-4uBT88CCI3ZvVwdaJ6VwXaoKWjbk6S65rWcFkq5ayaqMqUjuCixNfaMdrohgfz6SC8j6NfV0UJ610c0byf8NFlqdosNrYaPfeyD3ehcVdCcc-1gzLV8qTX4owKYW_0kuWhbnql2Jw5dxcnXnKtRMnMBr_x0paMP7RvkIiEsO09VtWgQt1ZP8oQB-VOeUZoJ6VSTNV53-muYQRTAeG5iVOSftr_ISHOkSygtOg66kPwOedew',
-    avatarLarge: '', assignments: [],
-  },
-  {
-    id: 3, name: 'Hải Phạm', role: 'Recruitment Assistant',
-    email: '', initials: 'HP', online: false, jobCount: 8,
-    avatar: '', avatarLarge: '', assignments: [],
+// Khi chọn member → gọi API lấy danh sách tin đang được giao
+watch(activeMemberId, async (userId) => {
+  if (userId) {
+    await assignmentStore.fetchJobPostsByRecruiter(userId, { page: 0, size: 20 })
+  } else {
+    assignmentStore.jobPostsByRecruiter = null
+  }
+}, { immediate: false })
+
+// Map dữ liệu từ ResRecruiterWithAssignmentCountDTO sang shape mà MemberAssignmentItem cần
+const members = computed(() =>
+  (assignmentStore.recruiters?.result || []).map((r) => ({
+    id:       r.userId,
+    name:     r.email.split('@')[0],       // hiển thị phần trước @ làm tên
+    email:    r.email,
+    role:     r.roleName,
+    jobCount: r.assignedJobCount,
+    avatar:   '',
+    initials: r.email.split('@')[0].slice(0, 2).toUpperCase(),
+    online:   r.status === 'active',
     avatarBg: 'secondary',
-  },
-  {
-    id: 4, name: 'Thảo Nguyễn', role: 'Talent Sourcer',
-    email: '', initials: 'TN', online: false, jobCount: 0,
-    avatar: '', avatarLarge: '', assignments: [],
-    avatarBg: 'tertiary',
-  },
-])
+    avatarLarge: '',
+  }))
+)
 
-const activeJob = computed(() => jobs.value.find(j => j.id === activeJobId.value))
+// Khi chọn tab 'job' → load danh sách tin và tự động chọn tin đầu tiên
+watch(activeTab, async (tab) => {
+  if (tab === 'job') {
+    if (!assignmentStore.jobPostsWithAssignment) {
+      await assignmentStore.fetchJobPostsWithAssignment({ size: 50 })
+    }
+    // Auto-select tin đầu tiên
+    const firstJob = assignmentStore.jobPostsWithAssignment?.result?.[0] as any
+    if (firstJob && !activeJobId.value) {
+      activeJobId.value = firstJob.id
+    }
+  }
+})
+
+// Map job list từ API sang shape phù hợp với JobAssignmentItem
+// Lưu ý: BE trả về {id, title, status, assignment} - không phải jobPostId/jobPostTitle
+const jobList = computed(() =>
+  (assignmentStore.jobPostsWithAssignment?.result || []).map((item: any) => ({
+    id:         item.id,
+    title:      item.title,
+    code:       `#JOB-${item.id}`,
+    status:     item.status,
+    assignment: item.assignment ?? null,   // null nếu chưa phân công
+  }))
+)
+
+const activeJob = computed(() => jobList.value.find(j => j.id === activeJobId.value))
 const activeMember = computed(() => members.value.find(m => m.id === activeMemberId.value))
 
-function handleConfirmAssign(memberId: number) {
-  console.log('Confirm assignment:', { memberId, job: activeJob.value })
+function handleConfirmAssign() {
   showJobAssignModal.value = false
-  alert('Đã phân công thành công!')
+  // Reload nếu cần
 }
 
-function handleConfirmAssignJob(jobId: number) {
-  console.log('Confirm job assignment:', { jobId, member: activeMember.value })
+function handleConfirmAssignJob() {
   showJobAssignModal.value = false
-  alert('Đã giao việc thành công!')
+  if (activeMemberId.value) {
+    assignmentStore.fetchJobPostsByRecruiter(activeMemberId.value, { page: 0, size: 20 })
+  }
+}
+
+async function handleSearch(keyword: string) {
+  if (activeTab.value === 'member') {
+    await assignmentStore.fetchRecruiters({ keyword: keyword || undefined, size: 50 })
+    // Auto-select lại người đầu tiên sau khi search
+    const first = assignmentStore.recruiters?.result?.[0]
+    activeMemberId.value = first?.userId ?? null
+    if (first) assignmentStore.fetchJobPostsByRecruiter(first.userId, { page: 0, size: 20 })
+  } else {
+    await assignmentStore.fetchJobPostsWithAssignment({ keyword: keyword || undefined, size: 50 })
+    // Auto-select lại tin đầu tiên sau khi search
+    const firstJob = assignmentStore.jobPostsWithAssignment?.result?.[0] as any
+    activeJobId.value = firstJob?.id ?? null
+  }
 }
 </script>
 

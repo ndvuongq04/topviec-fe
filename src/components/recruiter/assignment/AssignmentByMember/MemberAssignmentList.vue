@@ -10,7 +10,7 @@
 
 <script setup lang="ts">
 import MemberAssignmentItem from './MemberAssignmentItem.vue'
-defineProps<{ members: any[]; activeId: number }>()
+defineProps<{ members: any[]; activeId: number | null }>()
 defineEmits(['select'])
 </script>
 

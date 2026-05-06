@@ -4,41 +4,59 @@
     <div class="job-detail__summary">
       <div class="job-detail__summary-left">
         <h2 class="job-detail__title">{{ job.title }}</h2>
-        <p class="job-detail__meta">ID: {{ job.code }} • Đăng ngày 24/10/2023</p>
+        <p class="job-detail__meta">ID: {{ job.code }}</p>
       </div>
-      <span class="job-detail__status">Đang tuyển</span>
+      <span class="job-detail__status" :class="JOB_POSTING_STATUS_BADGE[job.status as JobPostingStatus] ?? 'bg-slate-100 text-slate-500'">
+        {{ JOB_POSTING_STATUS_LABELS[job.status as JobPostingStatus] ?? job.status }}
+      </span>
+    </div>
+
+    <!-- Loading -->
+    <div v-if="loading" class="job-detail__card" style="display:flex;align-items:center;justify-content:center;padding:2rem;">
+      <span class="material-symbols-outlined animate-spin" style="font-size:32px;color:#cbd5e1;">progress_activity</span>
     </div>
 
     <!-- Assigned manager -->
-    <div class="job-detail__card">
+    <div v-else-if="assignment" class="job-detail__card">
       <div class="job-detail__accent"></div>
       <div class="job-detail__card-body">
         <p class="job-detail__card-label">Người đang quản lý tin này</p>
         <div class="job-detail__manager">
-          <img alt="Minh Tú" class="job-detail__manager-avatar"
-            src="https://lh3.googleusercontent.com/aida-public/AB6AXuBHGlBjmGAPkHzxtawUTU13Qg4VURJOPoQRIszSxmRSJ--f0bSfLurznEDmnWtrT7FrIta4qjDWzNl7iLJmBKxnrQzp2EVTN5lelDhXn-HllG41J884lY9VbgqY43PuG4h3f7Mnb6FaFKzUTjgLMHYaL0vLZoDNE0kRW-s2-InA7bfLFfy7NJt2Pv2zbTIMHqSfwI2gV6wRWhgpjGq-NqiYKJDkN7jUqnI_O8IrzzYMJ1oqu4T7YFDym0OEL5jI-gDRHH0EXLxC5A"
-          />
-          <div>
-            <p class="job-detail__manager-name">Minh Tú</p>
-            <p class="job-detail__manager-role">HR Manager</p>
+          <div class="job-detail__manager-avatar-wrap">
+            <span style="font-size:1.25rem;font-weight:700;">{{ initials(assignment.userEmail) }}</span>
           </div>
-          <button class="job-detail__manager-action">
+          <div>
+            <p class="job-detail__manager-name">{{ assignment.userEmail.split('@')[0] }}</p>
+            <p class="job-detail__manager-role">{{ assignment.userEmail }}</p>
+            <p class="job-detail__manager-meta">Giao lúc: {{ formatDate(assignment.assignedAt) }}</p>
+          </div>
+          <button class="job-detail__manager-action" :title="assignment.userEmail">
             <span class="material-symbols-outlined">mail</span>
           </button>
         </div>
-        <a href="#" class="job-detail__view-all">👉 Xem tất cả tin mà Minh Tú đang quản lý</a>
+        <a href="#" class="job-detail__view-all">&#128073; Xem tất cả tin {{ assignment.userEmail.split('@')[0] }} đang quản lý</a>
       </div>
     </div>
 
     <!-- Empty state -->
-    <JobAssignmentEmpty @assign="$emit('assign')" />
+    <JobAssignmentEmpty v-else @assign="$emit('assign')" />
   </div>
 </template>
 
 <script setup lang="ts">
+import { JOB_POSTING_STATUS_LABELS, JOB_POSTING_STATUS_BADGE, JobPostingStatus } from '@/constants/jobPosting.constants'
 import JobAssignmentEmpty from './JobAssignmentEmpty.vue'
-defineProps<{ job: any }>()
+
+defineProps<{ job: any; assignment?: any; loading?: boolean }>()
 defineEmits(['assign'])
+
+function initials(email: string) {
+  return email.split('@')[0].slice(0, 2).toUpperCase()
+}
+
+function formatDate(dateStr: string) {
+  return new Date(dateStr).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })
+}
 </script>
 
 <style scoped>
@@ -79,10 +97,15 @@ defineEmits(['assign'])
   display: flex; align-items: center; gap: 1rem;
   background: #f1f4f9; padding: 1rem; border-radius: 0.75rem;
 }
-.job-detail__manager-avatar {
-  width: 48px; height: 48px; border-radius: 50%; object-fit: cover;
-  border: 2px solid #fff; box-shadow: 0 1px 4px rgba(0,0,0,0.1); flex-shrink: 0;
+.job-detail__manager-avatar-wrap {
+  width: 48px; height: 48px; border-radius: 50%;
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  display: flex; align-items: center; justify-content: center;
+  color: #fff; font-size: 1.125rem; font-weight: 800;
+  flex-shrink: 0; border: 2px solid #fff;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.1);
 }
+.job-detail__manager-meta { font-size: 0.75rem; color: #94a3b8; margin-top: 2px; }
 .job-detail__manager-name { font-size: 1.125rem; font-weight: 800; color: #0f172a; }
 .job-detail__manager-role { font-size: 0.875rem; color: #64748b; }
 .job-detail__manager-action {

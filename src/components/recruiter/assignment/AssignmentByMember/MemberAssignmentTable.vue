@@ -18,25 +18,39 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="row in assignments" :key="row.id" class="assign-table__row">
+          <!-- Loading State -->
+          <tr v-if="loading">
+            <td colspan="4" class="assign-table__td" style="text-align:center; padding: 2rem;">
+              <span class="material-symbols-outlined animate-spin" style="font-size:32px; color:#cbd5e1;">progress_activity</span>
+            </td>
+          </tr>
+          <!-- Empty State -->
+          <tr v-else-if="assignments.length === 0">
+            <td colspan="4" class="assign-table__td" style="text-align:center; padding: 2rem; color:#94a3b8;">
+              <span class="material-symbols-outlined" style="font-size:36px; display:block; margin-bottom:4px;">assignment_late</span>
+              Chưa có công việc nào được giao
+            </td>
+          </tr>
+          <!-- Data Rows -->
+          <tr v-else v-for="row in assignments" :key="row.assignmentId" class="assign-table__row">
             <td class="assign-table__td">
-              <p class="assign-table__job-title">{{ row.title }}</p>
-              <p class="assign-table__job-meta">{{ row.company }} • ID: {{ row.code }}</p>
+              <p class="assign-table__job-title">{{ row.jobPost?.title }}</p>
+              <p class="assign-table__job-meta">ID: {{ row.jobPost?.id }} • Giao lúc: {{ formatDate(row.assignedAt) }}</p>
             </td>
             <td class="assign-table__td">
-              <span :class="['assign-table__status', `assign-table__status--${row.status}`]">
-                {{ statusLabel[row.status] }}
+              <span :class="['assign-table__status', JOB_POSTING_STATUS_BADGE[row.jobPost?.status as JobPostingStatus] ?? 'bg-slate-100 text-slate-500']">
+                {{ JOB_POSTING_STATUS_LABELS[row.jobPost?.status as JobPostingStatus] ?? row.jobPost?.status }}
               </span>
             </td>
-            <td :class="['assign-table__td', row.status === 'expiring' && 'assign-table__td--warn']">
-              {{ row.deadline }}
+            <td class="assign-table__td">
+              {{ row.jobPost?.deadline ? formatDate(row.jobPost.deadline) : '—' }}
             </td>
             <td class="assign-table__td assign-table__td--right">
               <div class="assign-table__actions">
-                <button class="assign-table__action-btn" :disabled="row.done" title="Chuyển giao">
+                <button class="assign-table__action-btn" title="Chuyển giao">
                   <span class="material-symbols-outlined">swap_horiz</span>
                 </button>
-                <button class="assign-table__action-btn assign-table__action-btn--danger" :disabled="row.done" title="Gỡ phân công">
+                <button class="assign-table__action-btn assign-table__action-btn--danger" title="Gỡ phân công">
                   <span class="material-symbols-outlined">person_remove</span>
                 </button>
               </div>
@@ -47,7 +61,7 @@
     </div>
 
     <div class="assign-table__footer">
-      <span class="assign-table__info">Hiển thị 1-{{ assignments.length }} của {{ assignments.length }} công việc</span>
+      <span class="assign-table__info">Hiển thị {{ assignments.length }} công việc</span>
       <div class="assign-table__pagination">
         <button class="assign-table__pag-btn" disabled>
           <span class="material-symbols-outlined">chevron_left</span>
@@ -63,17 +77,18 @@
 </template>
 
 <script setup lang="ts">
+import { JOB_POSTING_STATUS_LABELS, JOB_POSTING_STATUS_BADGE, JobPostingStatus } from '@/constants/jobPosting.constants'
+
 defineProps<{
-  assignments: {
-    id: number; title: string; company: string; code: string
-    status: string; deadline: string; done: boolean
-  }[]
+  assignments: any[]
+  loading?: boolean
 }>()
 
-const statusLabel: Record<string, string> = {
-  active:    'Đang tuyển',
-  expiring:  'Sắp hết hạn',
-  completed: 'Hoàn thành',
+function formatDate(dateStr: string | null | undefined): string {
+  if (!dateStr) return '—'
+  return new Date(dateStr).toLocaleDateString('vi-VN', {
+    day: '2-digit', month: '2-digit', year: 'numeric',
+  })
 }
 </script>
 
