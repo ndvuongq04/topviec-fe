@@ -87,3 +87,33 @@ export type ResRecruiterAssignmentPagination = ResultPaginationDTO<ResRecruiterW
 
 /** Dùng để lấy danh sách job-posts kèm thông tin assignment (từ endpoint /job-posts) */
 export type ResJobPostWithAssignmentPagination = ResultPaginationDTO<ResJobPostAssignmentDTO>
+
+// ============================================================================
+// UNASSIGNED JOB POSTS
+// ============================================================================
+
+export interface ResJobPostingSummaryAssignedRecruiter {
+  userId: number
+  email: string
+  jobTitle: string | null
+}
+
+export interface ResJobPostingSummary {
+  id: number
+  title: string
+  slug: string
+  status: string
+  deadline: string | null
+  publishedAt: string | null
+  createdAt: string
+  assignedRecruiter: ResJobPostingSummaryAssignedRecruiter | null
+}
+
+export interface UnassignedJobPostQueryParams {
+  keyword?: string
+  status?: string
+  page?: number
+  size?: number
+}
+
+export type ResUnassignedJobPostPagination = ResultPaginationDTO<ResJobPostingSummary>

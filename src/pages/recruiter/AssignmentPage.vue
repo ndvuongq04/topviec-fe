@@ -44,8 +44,10 @@
           <template v-if="activeMember">
             <MemberAssignmentProfile :member="activeMember" @assign="showJobAssignModal = true" />
             <MemberAssignmentTable 
+              ref="memberTableRef"
               :assignments="assignmentStore.jobPostsByRecruiter?.result || []"
               :loading="assignmentStore.loading"
+              @revoke="handleRevoke"
             />
           </template>
         </template>
@@ -73,6 +75,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue'
 import { useEmployerJobAssignmentStore } from '@/stores/employerJobAssignment.store'
+import { useToast } from '@/composables/useToast'
 import AssignmentTabs from '@/components/recruiter/assignment/AssignmentTabs.vue'
 import AssignmentSearch from '@/components/recruiter/assignment/AssignmentSearch.vue'
 import JobAssignmentList from '@/components/recruiter/assignment/AssignmentByJob/JobAssignmentList.vue'
@@ -88,6 +91,8 @@ const activeJobId = ref<number | null>(null)
 const activeMemberId = ref<number | null>(null)
 const showJobAssignModal = ref(false)
 const assignmentStore = useEmployerJobAssignmentStore()
+const toast = useToast()
+const memberTableRef = ref<any>(null)
 
 // Gọi API khi trang mount → load members và tự động chọn người đầu tiên
 onMounted(async () => {
@@ -165,6 +170,22 @@ function handleConfirmAssignJob() {
   }
 }
 
+async function handleRevoke(payload: { assignmentId: number; jobPostId: number }) {
+  try {
+    await assignmentStore.revokeAssignment({ jobPostId: payload.jobPostId })
+    toast.success('Gỡ phân công thành công!')
+    // Reload lại danh sách tin của member đang chọn
+    if (activeMemberId.value) {
+      await assignmentStore.fetchJobPostsByRecruiter(activeMemberId.value, { page: 0, size: 20 })
+    }
+  } catch (err: any) {
+    const msg = err?.response?.data?.message || 'Không thể gỡ phân công. Vui lòng thử lại.'
+    toast.error('Gỡ phân công thất bại', msg)
+  } finally {
+    memberTableRef.value?.clearRevoking()
+  }
+}
+
 async function handleSearch(keyword: string) {
   if (activeTab.value === 'member') {
     await assignmentStore.fetchRecruiters({ keyword: keyword || undefined, size: 50 })
@@ -194,7 +215,7 @@ async function handleSearch(keyword: string) {
 
 .assignment-page__body {
   flex: 1; display: flex; gap: 1.5rem; overflow: hidden;
-  padding: 0 1.5rem 1.5rem; background: #f8fafd;
+ 
 }
 
 .assignment-page__left {

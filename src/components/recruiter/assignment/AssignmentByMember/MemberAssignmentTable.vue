@@ -50,8 +50,18 @@
                 <button class="assign-table__action-btn" title="Chuyển giao">
                   <span class="material-symbols-outlined">swap_horiz</span>
                 </button>
-                <button class="assign-table__action-btn assign-table__action-btn--danger" title="Gỡ phân công">
-                  <span class="material-symbols-outlined">person_remove</span>
+                <button 
+                  class="assign-table__action-btn assign-table__action-btn--danger" 
+                  title="Gỡ phân công"
+                  :disabled="revoking === row.assignmentId"
+                  @click="handleRevoke(row)"
+                >
+                  <span 
+                    class="material-symbols-outlined"
+                    :class="revoking === row.assignmentId ? 'animate-spin' : ''"
+                  >
+                    {{ revoking === row.assignmentId ? 'progress_activity' : 'person_remove' }}
+                  </span>
                 </button>
               </div>
             </td>
@@ -77,12 +87,27 @@
 </template>
 
 <script setup lang="ts">
+import { ref } from 'vue'
 import { JOB_POSTING_STATUS_LABELS, JOB_POSTING_STATUS_BADGE, JobPostingStatus } from '@/constants/jobPosting.constants'
 
 defineProps<{
   assignments: any[]
   loading?: boolean
 }>()
+
+const emit = defineEmits<{ revoke: [payload: { assignmentId: number; jobPostId: number }] }>()
+
+const revoking = ref<number | null>(null)
+
+function handleRevoke(row: any) {
+  if (revoking.value) return
+  emit('revoke', { assignmentId: row.assignmentId, jobPostId: row.jobPost?.id })
+  revoking.value = row.assignmentId
+}
+
+/** Cha gọi để reset trạng thái sau khi revoke xong */
+function clearRevoking() { revoking.value = null }
+defineExpose({ clearRevoking })
 
 function formatDate(dateStr: string | null | undefined): string {
   if (!dateStr) return '—'

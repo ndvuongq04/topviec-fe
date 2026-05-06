@@ -9,6 +9,8 @@ import type {
   ResJobPostWithAssignmentPagination,
   AssignmentJobPostQueryParams,
   AssignmentRecruiterQueryParams,
+  ResUnassignedJobPostPagination,
+  UnassignedJobPostQueryParams,
 } from '@/types/employerJobAssignment.types'
 
 export const useEmployerJobAssignmentStore = defineStore('employerJobAssignment', () => {
@@ -25,6 +27,9 @@ export const useEmployerJobAssignmentStore = defineStore('employerJobAssignment'
 
   /** Danh sách tin đang được giao cho 1 NTD cụ thể (tab Theo Thành viên) */
   const jobPostsByRecruiter = ref<ResJobPostWithAssignmentPagination | null>(null)
+
+  /** Danh sách tin chưa được phân công (dùng cho MemberJobAssignmentModal) */
+  const unassignedJobPosts = ref<ResUnassignedJobPostPagination | null>(null)
 
   /** Thông tin phân công hiện tại của 1 tin cụ thể */
   const currentAssignment = ref<ResJobPostAssignmentDTO | null>(null)
@@ -137,6 +142,23 @@ export const useEmployerJobAssignmentStore = defineStore('employerJobAssignment'
     }
   }
 
+  /**
+   * GET /job-posts/unassigned
+   * Lấy danh sách tin chưa được phân công.
+   */
+  async function fetchUnassignedJobPosts(params?: UnassignedJobPostQueryParams) {
+    loading.value = true
+    error.value = null
+    try {
+      unassignedJobPosts.value = await employerJobAssignmentService.getUnassignedJobPosts(params)
+    } catch (err: any) {
+      error.value = err.response?.data?.message || 'Không thể tải danh sách tin chưa phân công.'
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
   // ==========================================================================
   // Actions – Thu hồi
   // ==========================================================================
@@ -171,6 +193,7 @@ export const useEmployerJobAssignmentStore = defineStore('employerJobAssignment'
     recruiters.value = null
     jobPostsWithAssignment.value = null
     jobPostsByRecruiter.value = null
+    unassignedJobPosts.value = null
     currentAssignment.value = null
     loading.value = false
     error.value = null
@@ -181,6 +204,7 @@ export const useEmployerJobAssignmentStore = defineStore('employerJobAssignment'
     recruiters,
     jobPostsWithAssignment,
     jobPostsByRecruiter,
+    unassignedJobPosts,
     currentAssignment,
     loading,
     error,
@@ -191,6 +215,7 @@ export const useEmployerJobAssignmentStore = defineStore('employerJobAssignment'
     fetchJobPostsByRecruiter,
     fetchJobPostsWithAssignment,
     fetchCurrentAssignment,
+    fetchUnassignedJobPosts,
     revokeAssignment,
     reset,
   }

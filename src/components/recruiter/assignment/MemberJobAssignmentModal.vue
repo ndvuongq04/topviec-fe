@@ -17,8 +17,9 @@
         <input 
           v-model="searchQuery"
           class="w-full pl-11 pr-4 py-3 bg-slate-50 rounded-full border border-slate-200 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none text-base text-slate-900 placeholder:text-slate-400 transition-all duration-200" 
-          placeholder="Tìm kiếm tin tuyển dụng theo tiêu đề hoặc mã..." 
+          placeholder="Nhập tiêu đề tin rồi nhấn Enter..." 
           type="text"
+          @keyup.enter="handleSearch"
         />
       </div>
 
@@ -34,15 +35,15 @@
       </div>
       
       <!-- Empty State -->
-      <div v-else-if="filteredJobs.length === 0" class="flex-1 flex flex-col items-center justify-center text-slate-400">
-        <span class="material-symbols-outlined text-5xl mb-2">search_off</span>
-        <p class="text-sm font-medium">Không tìm thấy tin tuyển dụng nào</p>
+      <div v-else-if="jobs.length === 0" class="flex-1 flex flex-col items-center justify-center text-slate-400">
+        <span class="material-symbols-outlined text-5xl mb-2">work_off</span>
+        <p class="text-sm font-medium">Tất cả tin đã được phân công</p>
       </div>
 
       <!-- Job List (Scrollable) -->
       <div v-else class="flex-1 overflow-y-auto pr-2 space-y-2 -mr-2 custom-scrollbar">
         <div 
-          v-for="job in filteredJobs" 
+          v-for="job in jobs" 
           :key="job.id"
           class="flex items-center justify-between p-3.5 rounded-xl transition-all duration-200 cursor-pointer border group"
           :class="selectedJobId === job.id ? 'bg-primary/5 border-primary/30' : 'hover:bg-slate-50 border-transparent'"
@@ -61,9 +62,9 @@
             <!-- Status indicator -->
             <span 
               class="px-2.5 py-1 rounded-full text-xs font-bold"
-              :class="job.status === 'active' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600'"
+              :class="JOB_POSTING_STATUS_BADGE[job.status as JobPostingStatus] ?? 'bg-slate-100 text-slate-500'"
             >
-              {{ job.status === 'active' ? 'Đang tuyển' : job.status }}
+              {{ JOB_POSTING_STATUS_LABELS[job.status as JobPostingStatus] ?? job.status }}
             </span>
 
             <!-- Checkbox/Radio indicator -->
@@ -102,6 +103,9 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
+import { useEmployerJobAssignmentStore } from '@/stores/employerJobAssignment.store'
+import { useToast } from '@/composables/useToast'
+import { JOB_POSTING_STATUS_LABELS, JOB_POSTING_STATUS_BADGE, JobPostingStatus } from '@/constants/jobPosting.constants'
 import GlobalModal from '@/components/ui/GlobalModal.vue'
 
 const props = defineProps<{
@@ -111,71 +115,75 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   close: []
-  assign: [jobId: number]
+  assigned: []
 }>()
 
+const assignmentStore = useEmployerJobAssignmentStore()
+const toast = useToast()
 const searchQuery = ref('')
 const selectedJobId = ref<number | null>(null)
 const loading = ref(false)
 const submitting = ref(false)
 
-// Dữ liệu Hardcoded để demo giao diện
-const hardcodedJobs = [
-  { id: 1, title: 'Senior UI/UX Designer',       code: '#JOB-8429', status: 'active' },
-  { id: 2, title: 'Frontend Developer (React)',   code: '#JOB-8430', status: 'active' },
-  { id: 3, title: 'Product Manager',              code: '#JOB-8431', status: 'paused' },
-  { id: 4, title: 'Data Analyst',                 code: '#JOB-8432', status: 'active' },
-  { id: 5, title: 'Mobile App Developer',         code: '#JOB-8433', status: 'active' },
-  { id: 6, title: 'DevOps Engineer',              code: '#JOB-8434', status: 'active' },
-  { id: 7, title: 'Fullstack Developer (Node.js)', code: '#JOB-8435', status: 'active' },
-]
+const jobs = computed(() => assignmentStore.unassignedJobPosts?.result || [])
 
-const availableJobs = computed(() => hardcodedJobs)
-
-const filteredJobs = computed(() => {
-  if (!searchQuery.value) return availableJobs.value
-  
-  const lowerQuery = searchQuery.value.toLowerCase()
-  return availableJobs.value.filter(j => 
-    j.title.toLowerCase().includes(lowerQuery) || 
-    (j.code && j.code.toLowerCase().includes(lowerQuery))
-  )
-})
-
-watch(() => props.visible, (newVal) => {
+// Mở modal → reset + load danh sách tin chưa phân công
+watch(() => props.visible, async (newVal) => {
   if (newVal) {
     searchQuery.value = ''
     selectedJobId.value = null
     loading.value = true
-    // Giả lập loading nhanh
-    setTimeout(() => {
+    try {
+      await assignmentStore.fetchUnassignedJobPosts({ size: 50 })
+    } catch {
+      toast.error('Tải thất bại', 'Không thể lấy danh sách tin tuyển dụng.')
+    } finally {
       loading.value = false
-    }, 400)
+    }
   }
 })
+
+// Enter → search API
+async function handleSearch() {
+  loading.value = true
+  try {
+    await assignmentStore.fetchUnassignedJobPosts({
+      keyword: searchQuery.value || undefined,
+      size: 50,
+    })
+  } catch {
+    toast.error('Tìm kiếm thất bại', 'Không thể tải danh sách tin.')
+  } finally {
+    loading.value = false
+  }
+}
 
 function selectJob(id: number) {
-  if (selectedJobId.value === id) {
-    selectedJobId.value = null
-  } else {
-    selectedJobId.value = id
+  selectedJobId.value = selectedJobId.value === id ? null : id
+}
+
+async function handleAssign() {
+  if (!selectedJobId.value || !props.member) return
+  submitting.value = true
+  try {
+    await assignmentStore.assignJobPost({
+      jobPostId: selectedJobId.value,
+      userId: props.member.id,
+    })
+    const jobTitle = jobs.value.find((j: any) => j.id === selectedJobId.value)?.title ?? ''
+    toast.success(
+      'Giao việc thành công!',
+      `Đã giao tin "${jobTitle}" cho ${props.member.name}.`,
+    )
+    emit('assigned')
+    emit('close')
+  } catch (err: any) {
+    const msg = err?.response?.data?.message || 'Không thể giao việc. Vui lòng thử lại.'
+    toast.error('Giao việc thất bại', msg)
+  } finally {
+    submitting.value = false
   }
 }
-
-function handleAssign() {
-  if (!selectedJobId.value) return
-  submitting.value = true
-  
-  // Giả lập quá trình gửi
-  setTimeout(() => {
-    emit('assign', selectedJobId.value!)
-    submitting.value = false
-  }, 800)
-}
-
-defineExpose({
-  setSubmitting: (val: boolean) => { submitting.value = val }
-})
 </script>
 
 <style scoped>

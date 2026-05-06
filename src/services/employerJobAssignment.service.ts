@@ -8,6 +8,8 @@ import type {
   ResJobPostWithAssignmentPagination,
   AssignmentJobPostQueryParams,
   AssignmentRecruiterQueryParams,
+  ResUnassignedJobPostPagination,
+  UnassignedJobPostQueryParams,
 } from '@/types/employerJobAssignment.types'
 
 const BASE_URL = '/employer/job-assignments'
@@ -63,10 +65,19 @@ export const employerJobAssignmentService = {
   // ==========================================================================
 
   /**
-   * GET /employer/job-assignments/job-posts
-   * Lấy danh sách tin của công ty kèm thông tin phân công.
-   * Hỗ trợ filter: keyword, status, assigned (true/false/null).
+   * GET /employer/job-assignments/job-posts/unassigned
+   * Lấy danh sách tin chưa được phân công cho member nào.
    */
+  async getUnassignedJobPosts(
+    params?: UnassignedJobPostQueryParams,
+  ): Promise<ResUnassignedJobPostPagination> {
+    const res = await axiosInstance.get<RestResponse<ResUnassignedJobPostPagination>>(
+      `${BASE_URL}/job-posts/unassigned`,
+      { params },
+    )
+    return res.data.data
+  },
+
   async getJobPostsWithAssignment(
     params?: AssignmentJobPostQueryParams,
   ): Promise<ResJobPostWithAssignmentPagination> {
