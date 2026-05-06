@@ -2,7 +2,7 @@
   <GlobalModal
     :visible="visible"
     title="Phân công người phụ trách"
-    :subtitle="job ? `${job.title} | ID: ${job.code || 'JOB-' + job.id}` : ''"
+    :subtitle="job ? `<span class='text-primary font-bold'>${job.title}</span> | ID: ${job.code || 'JOB-' + job.id}` : ''"
     icon="person_add"
     max-width="2xl"
     @close="$emit('close')"

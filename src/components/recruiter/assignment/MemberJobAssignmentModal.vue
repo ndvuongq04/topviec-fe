@@ -2,7 +2,7 @@
   <GlobalModal
     :visible="visible"
     title="Giao việc cho thành viên"
-    :subtitle="member ? `${member.name} | ${member.role}` : ''"
+    :subtitle="member ? `<span class='text-primary font-bold'>${member.name}</span> | <span class='text-primary font-medium'>${member.role}</span>` : ''"
     icon="add_task"
     max-width="2xl"
     @close="$emit('close')"
