@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useAdminCompanyStore } from '@/stores/adminCompany.store'
+import { BILLING_CYCLE_LABELS, BillingCycle } from '@/constants/servicePackage.constants'
 
 const store = useAdminCompanyStore()
 
@@ -16,9 +17,10 @@ const plan = computed(() => {
     tier: current.packageName,
     expiresAt: expiredDate.toLocaleDateString('vi-VN'),
     daysLeft: diffDays,
-    billingCycle: 'Chu kỳ gói',
+    billingCycle: BILLING_CYCLE_LABELS[(current.billingCycle || '').toLowerCase() as BillingCycle] || current.billingCycle || 'N/A',
     activatedAt: new Date(current.startedAt).toLocaleDateString('vi-VN'),
-    orderCode: '#ORD-' + current.subscriptionId.toString().padStart(5, '0'),
+    orderCode: current.orderCode || '#N/A',
+    orderId: current.orderId,
   }
 })
 </script>
@@ -52,7 +54,16 @@ const plan = computed(() => {
 
       <div class="plan-order-link">
         <span class="material-symbols-outlined link-icon">link</span>
-        <span>Mã đơn gốc: <a href="#" class="order-link">{{ plan.orderCode }}</a></span>
+        <span>Mã đơn gốc: 
+          <router-link
+            v-if="plan.orderId"
+            :to="{ name: 'admin-order-detail', params: { id: plan.orderId } }"
+            class="order-link"
+          >
+            {{ plan.orderCode }}
+          </router-link>
+          <span v-else class="order-link">{{ plan.orderCode }}</span>
+        </span>
       </div>
     </div>
     

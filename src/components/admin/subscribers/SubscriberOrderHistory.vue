@@ -1,9 +1,50 @@
 <script setup lang="ts">
-const orders = [
-  { code: '#ORD-00210', type: 'Dịch vụ lẻ', detail: 'Lọc hồ sơ nâng cao', amount: '2.500.000 đ', status: 'Hoàn tất' },
-  { code: '#ORD-00189', type: 'Gói hội viên', detail: 'Gói Pro - 1 năm', amount: '8.000.000 đ', status: 'Hoàn tất' },
-  { code: '#ORD-00155', type: 'Dịch vụ lẻ', detail: 'Gói 100 tin nhắn', amount: '1.200.000 đ', status: 'Hoàn tất' },
-]
+import { computed } from 'vue'
+import { useAdminCompanyStore } from '@/stores/adminCompany.store'
+import {
+  OrderType,
+  OrderStatus,
+  ORDER_TYPE_LABELS,
+  ORDER_STATUS_LABELS,
+} from '@/constants/servicePackage.constants'
+
+const store = useAdminCompanyStore()
+
+const formatCurrency = (amount: number) => {
+  return amount.toLocaleString('vi-VN') + ' đ'
+}
+
+const statusClass = (status: string) => {
+  return {
+    [OrderStatus.PAID]:      'bg-emerald-50 text-emerald-700',
+    [OrderStatus.PENDING]:   'bg-amber-50 text-amber-700',
+    [OrderStatus.FAILED]:    'bg-red-50 text-red-700',
+    [OrderStatus.CANCELLED]: 'bg-slate-100 text-slate-600',
+    [OrderStatus.REFUNDED]:  'bg-slate-100 text-slate-600',
+  }[status as OrderStatus] || 'bg-slate-100 text-slate-600'
+}
+
+const typeClass = (type: string) => {
+  return type === OrderType.SUBSCRIPTION
+    ? 'bg-emerald-50 text-emerald-700'
+    : 'bg-violet-50 text-violet-700'
+}
+
+const orders = computed(() => {
+  const items = store.companyOrders?.result || []
+  return items.map(o => {
+    const detail = o.items?.map(i => i.packageName || 'Dịch vụ').join(', ') || 'Chưa có thông tin'
+    return {
+      code: o.orderCode,
+      type: ORDER_TYPE_LABELS[o.type as OrderType] || o.type,
+      typeCss: typeClass(o.type),
+      detail: detail,
+      amount: formatCurrency(o.totalAmount),
+      status: ORDER_STATUS_LABELS[o.status as OrderStatus] || o.status,
+      statusCss: statusClass(o.status)
+    }
+  })
+})
 </script>
 
 <template>
@@ -25,13 +66,18 @@ const orders = [
           </tr>
         </thead>
         <tbody>
+          <tr v-if="!orders.length">
+            <td colspan="5" class="text-center py-8 text-slate-500">Chưa có đơn hàng nào</td>
+          </tr>
           <tr v-for="(o, i) in orders" :key="i">
             <td class="cell-code">{{ o.code }}</td>
-            <td class="cell-type">{{ o.type }}</td>
+            <td>
+              <span class="inline-block px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap" :class="o.typeCss">{{ o.type }}</span>
+            </td>
             <td>{{ o.detail }}</td>
             <td class="cell-amount">{{ o.amount }}</td>
             <td>
-              <span class="status-complete">{{ o.status }}</span>
+              <span class="inline-block px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap" :class="o.statusCss">{{ o.status }}</span>
             </td>
           </tr>
         </tbody>
@@ -121,11 +167,5 @@ const orders = [
 
 .cell-amount {
   font-weight: 700;
-}
-
-.status-complete {
-  font-size: 0.75rem;
-  font-weight: 700;
-  color: #004638;
 }
 </style>

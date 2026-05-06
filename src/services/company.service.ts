@@ -7,6 +7,7 @@ import type {
     ResCompanyDTO,
     ResAdminCompanyStatisticsDTO,
     ResCompanyPlanDTO,
+    ResSubscriptionHistoryDTO,
     ResultPaginationDTO,
 } from '@/types/company.types'
 import type { ReqRegisterEmployerDTO } from '@/types/auth.types'
@@ -121,6 +122,18 @@ const adminCompanyService = {
     async getCompanyPlan(id: number): Promise<ResCompanyPlanDTO> {
         const res = await axiosInstance.get<RestResponse<ResCompanyPlanDTO>>(
             `/admin/companies/${id}/plan`
+        )
+        return res.data.data
+    },
+
+    /**
+     * GET /admin/companies/{id}/subscriptions
+     * Lấy lịch sử gia hạn gói dịch vụ của công ty.
+     */
+    async getSubscriptionHistory(id: number, params?: { page?: number; size?: number; sort?: string }): Promise<ResultPaginationDTO<ResSubscriptionHistoryDTO>> {
+        const res = await axiosInstance.get<RestResponse<ResultPaginationDTO<ResSubscriptionHistoryDTO>>>(
+            `/admin/companies/${id}/subscriptions`,
+            { params }
         )
         return res.data.data
     },

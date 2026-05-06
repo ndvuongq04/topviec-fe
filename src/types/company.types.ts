@@ -168,6 +168,7 @@ export interface ActiveSubscriptionDTO {
 /** GET /admin/companies/{id}/plan */
 export interface UsageDTO {
     featureCode: string
+    featureName: string
     total: number
     used: number
 }
@@ -177,9 +178,12 @@ export interface CurrentPackageDTO {
     servicePackageId: number
     packageName: string
     packageCode: string
+    billingCycle: string
     status: string
     startedAt: string
     expiredAt: string
+    orderId: number
+    orderCode: string
     usages: UsageDTO[]
 }
 
@@ -188,11 +192,15 @@ export interface CurrentAddonDTO {
     addonServiceId: number
     addonName: string
     addonCode: string
+    serviceCategory: string
+    serviceCategoryName: string
     status: string
     total: number
     used: number
     startedAt: string
     expiredAt: string
+    orderId: number
+    orderCode: string
 }
 
 export interface ResCompanyPlanDTO {
@@ -200,6 +208,20 @@ export interface ResCompanyPlanDTO {
     currentAddons: CurrentAddonDTO[]
 }
 
+export interface ResSubscriptionHistoryDTO {
+    subscriptionId: number
+    companyId: number
+    orderId: number
+    servicePackageId: number
+    packageName: string
+    packageCode: string
+    status: string
+    billingCycle: string
+    startedAt: string
+    expiredAt: string
+    purchasedAt: string
+    packagePrice: number
+}
 
 export type { PaginationMeta, ResultPaginationDTO }
 

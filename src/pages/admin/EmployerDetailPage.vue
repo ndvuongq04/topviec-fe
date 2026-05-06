@@ -84,7 +84,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import EmployerDetailTabs from '@/components/admin/employers/EmployerDetailTabs.vue'
 import EmployerLicensePanel from '@/components/admin/employers/EmployerLicensePanel.vue'
@@ -114,8 +114,7 @@ onMounted(async () => {
   if (!companyId) return
   await Promise.all([
     store.fetchById(companyId),
-    store.fetchStatistics(companyId),
-    store.fetchCompanyPlan(companyId)
+    store.fetchStatistics(companyId)
   ])
   
   if (store.error) {
@@ -160,9 +159,23 @@ const tabs = [
   { key: 'renewals', label: 'Lịch sử gia hạn' },
   { key: 'license', label: 'Giấy phép & Xác thực' },
   { key: 'violation', label: 'Điểm vi phạm' },
-  { key: 'activity', label: 'Lịch sử hoạt động' },
-  { key: 'payment', label: 'Lịch sử thanh toán' },
 ]
+
+watch(activeTab, async (newTab) => {
+  if (!companyId) return
+  
+  try {
+    if (newTab === 'services') {
+      await store.fetchCompanyPlan(companyId)
+    } else if (newTab === 'orders') {
+      await store.fetchCompanyOrders(companyId)
+    } else if (newTab === 'renewals') {
+      await store.fetchCompanySubscriptions(companyId)
+    }
+  } catch (err) {
+    toast.error('Lỗi', store.error || 'Không thể tải dữ liệu tab này')
+  }
+}, { immediate: true })
 
 function onResetPassword() {
   toast.info('Tính năng', 'Reset mật khẩu đang được phát triển.')

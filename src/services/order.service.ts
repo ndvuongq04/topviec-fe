@@ -39,6 +39,15 @@ export const adminOrderService = {
         )
         return res.data.data
     },
+
+    /** GET /admin/orders/company/{companyId} */
+    async getOrdersByCompanyId(companyId: number, params?: { page?: number; size?: number; sort?: string }): Promise<ResultPaginationDTO<ResOrderDTO>> {
+        const res = await axiosInstance.get<RestResponse<ResultPaginationDTO<ResOrderDTO>>>(
+            `${ADMIN_ORDERS_URL}/company/${companyId}`,
+            { params }
+        )
+        return res.data.data
+    },
 }
 
 // ─── Employer Order ───────────────────────────────────────────────────────────

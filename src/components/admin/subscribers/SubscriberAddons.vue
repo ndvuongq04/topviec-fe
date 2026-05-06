@@ -10,18 +10,19 @@ const addons = computed(() => {
     const expiredDate = new Date(a.expiredAt)
     const isExpired = expiredDate.getTime() < new Date().getTime()
 
-    // Determine group based on addon code (mocked logic for UI presentation)
-    let group = 'DỊCH VỤ'
+    // Determine group based on serviceCategory
+    let group = a.serviceCategoryName || 'DỊCH VỤ'
     let groupBg = '#e5e7eb'
     let groupColor = '#374151'
-    if (a.addonCode?.includes('CV')) {
-      group = 'RECRUITMENT'
+    if (a.serviceCategory === 'RECRUITMENT' || a.addonCode?.includes('CV')) {
       groupBg = '#b0efdb'
       groupColor = '#095041'
-    } else if (a.addonCode?.includes('MSG')) {
-      group = 'MESSAGING'
+    } else if (a.serviceCategory === 'MESSAGING' || a.addonCode?.includes('MSG')) {
       groupBg = '#EEEDFE'
       groupColor = '#3C3489'
+    } else if (a.serviceCategory === 'BRANDING' || a.addonCode?.includes('BANNER') || a.addonCode?.includes('URGENT')) {
+      groupBg = '#FAEEDA'
+      groupColor = '#633806'
     }
 
     return {
@@ -35,7 +36,8 @@ const addons = computed(() => {
       expiredText: isExpired,
       status: a.status === 'ACTIVE' && !isExpired ? 'Hiệu lực' : 'Hết hạn',
       statusClass: a.status === 'ACTIVE' && !isExpired ? 'active' : 'expired',
-      orderCode: '#ORD-' + a.addonId.toString().padStart(5, '0')
+      orderCode: a.orderCode || '#N/A',
+      orderId: a.orderId
     }
   })
 })
@@ -88,7 +90,16 @@ const percent = (u: number, t: number) => (t > 0 ? Math.round((u / t) * 100) : 0
               <span class="status-tag" :class="a.statusClass">{{ a.status }}</span>
             </td>
             <td class="text-right">
-              <a href="#" class="order-link">{{ a.orderCode }}</a>
+              <div class="addon-actions">
+                <router-link
+                  v-if="a.orderId"
+                  :to="{ name: 'admin-order-detail', params: { id: a.orderId } }"
+                  class="order-link"
+                >
+                  {{ a.orderCode }}
+                </router-link>
+                <span v-else class="text-sm font-medium text-slate-500">{{ a.orderCode }}</span>
+              </div>
             </td>
           </tr>
         </tbody>

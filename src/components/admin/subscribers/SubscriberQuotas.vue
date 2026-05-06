@@ -5,10 +5,11 @@ import { useAdminCompanyStore } from '@/stores/adminCompany.store'
 const store = useAdminCompanyStore()
 
 const featureMeta: Record<string, any> = {
-  'URGENT_JOB': { icon: 'stars', iconBg: '#EEEDFE', iconColor: '#3C3489', barColor: '#3C3489', name: 'Tin nổi bật' },
-  'VIEW_CV': { icon: 'visibility', iconBg: '#ffdad7', iconColor: '#963131', barColor: '#963131', name: 'Lượt xem CV' },
-  'EMAIL_MARKETING': { icon: 'mail', iconBg: '#b0efdb', iconColor: '#004638', barColor: '#004638', name: 'Email Marketing' },
-  'BANNER': { icon: 'campaign', iconBg: '#FAEEDA', iconColor: '#633806', barColor: '#633806', name: 'Quảng cáo Banner' },
+  'URGENT_JOB': { icon: 'campaign', iconBg: '#ffedd5', iconColor: '#c2410c', barColor: '#ea580c' },
+  'VIEW_CV': { icon: 'visibility', iconBg: '#e0e7ff', iconColor: '#4338ca', barColor: '#4f46e5' },
+  'TOP_JOB': { icon: 'arrow_upward', iconBg: '#fce7f3', iconColor: '#be185d', barColor: '#db2777' },
+  'VERIFY_BADGE': { icon: 'verified', iconBg: '#dcfce7', iconColor: '#15803d', barColor: '#16a34a' },
+  'CONNECT_MESSAGE': { icon: 'chat', iconBg: '#f3e8ff', iconColor: '#7e22ce', barColor: '#9333ea' },
 }
 
 const quotas = computed(() => {
@@ -18,10 +19,10 @@ const quotas = computed(() => {
   const resetDate = new Date(current.expiredAt).toLocaleDateString('vi-VN')
 
   return current.usages.map(u => {
-    const meta = featureMeta[u.featureCode] || { icon: 'check_circle', iconBg: '#f3f4f6', iconColor: '#6b7280', barColor: '#6b7280', name: u.featureCode }
+    const meta = featureMeta[u.featureCode] || { icon: 'check_circle', iconBg: '#f3f4f6', iconColor: '#6b7280', barColor: '#6b7280' }
     return {
       icon: meta.icon,
-      label: meta.name,
+      label: u.featureName || meta.name || u.featureCode,
       used: u.used,
       total: u.total,
       resetAt: resetDate,
