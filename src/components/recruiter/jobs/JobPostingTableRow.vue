@@ -25,19 +25,21 @@
     <!-- Assignee -->
     <td class="td">
       <div 
-        v-if="(job as any).assignee" 
+        v-if="(job as any).assignedRecruiter" 
         class="group flex items-center gap-3 cursor-pointer hover:bg-slate-50 p-1.5 -ml-1.5 rounded-lg transition-colors"
         @click="$emit('assign', job.id)"
         title="Đổi người phụ trách"
       >
         <div class="relative">
-          <div class="w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs bg-primary/10 text-primary border border-primary/20 shrink-0"
-               :style="(job as any).assignee.avatarUrl ? `background-image: url('${(job as any).assignee.avatarUrl}'); background-size: cover;` : ''">
-            <span v-if="!(job as any).assignee.avatarUrl">{{ (job as any).assignee.name?.substring(0, 2).toUpperCase() || 'U' }}</span>
+          <div class="w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs bg-primary/10 text-primary border border-primary/20 shrink-0">
+            {{ (job as any).assignedRecruiter.email?.split('@')[0].slice(0, 2).toUpperCase() || 'U' }}
           </div>
         </div>
         <div>
-          <p class="font-bold text-slate-900 text-[13px] leading-tight group-hover:text-primary transition-colors">{{ (job as any).assignee.name }}</p>
+          <p class="font-bold text-slate-900 text-[13px] leading-tight group-hover:text-primary transition-colors">
+            {{ (job as any).assignedRecruiter.email?.split('@')[0] }}
+          </p>
+          <p class="text-[11px] text-slate-400 leading-tight">{{ (job as any).assignedRecruiter.email }}</p>
         </div>
       </div>
       <button 
@@ -112,7 +114,7 @@
             <GlobalDropdownItem
               v-if="job.status !== 'deleted'"
               icon="person_add"
-              :label="(job as any).assignee ? 'Đổi người phụ trách' : 'Phân công'"
+              :label="(job as any).assignedRecruiter ? 'Đổi người phụ trách' : 'Phân công'"
               @click="handleAction('assign', job.id, close)"
             />
             <div class="dropdown-divider-v2" />

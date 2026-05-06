@@ -2,9 +2,7 @@
   <div class="assign-table">
     <div class="assign-table__header">
       <h3 class="assign-table__title">Danh sách việc được giao</h3>
-      <button class="assign-table__filter-btn">
-        <span class="material-symbols-outlined">filter_list</span> Lọc
-      </button>
+      
     </div>
 
     <div class="assign-table__wrap">

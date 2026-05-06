@@ -13,9 +13,16 @@
       <p class="member-item__role">{{ member.role }}</p>
     </div>
 
-    <span :class="['member-item__count', active ? 'member-item__count--active' : 'member-item__count--default']">
-      {{ member.jobCount }}
-    </span>
+    <div class="member-item__right">
+      <span v-if="member.jobCount > 0" class="member-item__badge member-item__badge--active">
+        <span class="material-symbols-outlined" style="font-size:13px;">work_outline</span>
+        {{ member.jobCount }} tin
+      </span>
+      <span v-else class="member-item__badge member-item__badge--empty">
+        Chưa có tin
+      </span>
+      <span v-if="active" class="material-symbols-outlined member-item__arrow">chevron_right</span>
+    </div>
   </button>
 </template>
 
@@ -64,11 +71,22 @@ defineEmits(['click'])
   margin-top: 2px;
 }
 
-.member-item__count {
-  padding: 2px 8px; border-radius: 999px;
-  font-size: 0.75rem; font-weight: 700;
-  min-width: 24px; text-align: center; flex-shrink: 0;
+.member-item__right {
+  display: flex; align-items: center; gap: 6px;
+  flex-shrink: 0; margin-left: 4px;
 }
-.member-item__count--active  { background: #4B9AF6; color: #fff; }
-.member-item__count--default { background: #e2e7f0; color: #64748b; }
+.member-item__badge {
+  display: inline-flex; align-items: center; gap: 3px;
+  padding: 2px 8px; border-radius: 999px;
+  font-size: 0.7rem; font-weight: 700;
+}
+.member-item__badge--active {
+  background: rgba(16,185,129,0.1); color: #059669;
+  border: 1px solid rgba(16,185,129,0.25);
+}
+.member-item__badge--empty {
+  background: #f1f4f9; color: #94a3b8;
+  border: 1px solid #e2e8f0;
+}
+.member-item__arrow { font-size: 18px; color: #4B9AF6; }
 </style>

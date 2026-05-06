@@ -30,11 +30,8 @@
             <p class="job-detail__manager-role">{{ assignment.userEmail }}</p>
             <p class="job-detail__manager-meta">Giao lúc: {{ formatDate(assignment.assignedAt) }}</p>
           </div>
-          <button class="job-detail__manager-action" :title="assignment.userEmail">
-            <span class="material-symbols-outlined">mail</span>
-          </button>
+          
         </div>
-        <a href="#" class="job-detail__view-all">&#128073; Xem tất cả tin {{ assignment.userEmail.split('@')[0] }} đang quản lý</a>
       </div>
     </div>
 

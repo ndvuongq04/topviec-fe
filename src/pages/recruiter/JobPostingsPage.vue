@@ -160,7 +160,7 @@
       :visible="isAssignModalVisible"
       :job="assigningJob"
       @close="isAssignModalVisible = false"
-      @assign="confirmAssign"
+      @assigned="handleAssignSuccess"
     />
 
   </div>
@@ -173,6 +173,7 @@ import { employerJobPostingService } from '@/services/employerJobPosting.service
 import employerInterviewService from '@/services/employerInterview.service'
 import { useToast } from '@/composables/useToast'
 import { useEmployerJobPostingStore } from '@/stores/employerJobPosting.store'
+import { useEmployerJobAssignmentStore } from '@/stores/employerJobAssignment.store'
 import { JobPostingStatus } from '@/constants/jobPosting.constants'
 import type { ResJobPostingDetail } from '@/types/jobPosting.types'
 import JobPostingStatsGrid  from '@/components/recruiter/jobs/JobPostingStatsGrid.vue'
@@ -191,6 +192,7 @@ const searchValue  = ref('')
 const router = useRouter()
 const toast  = useToast()
 const store  = useEmployerJobPostingStore()
+const assignmentStore = useEmployerJobAssignmentStore()
 
 const jobs      = ref<JobPostingRow[]>([])
 const totalJobs = ref(0)
@@ -284,6 +286,7 @@ function mapToRow(job: ResJobPostingDetail): JobPostingRow {
     isUrgent:   job.isUrgent,
     isFeatured: job.isFeatured,
     isHot:      job.isHot,
+    assignedRecruiter: (job as any).assignedRecruiter ?? null,
   }
 }
 
@@ -554,42 +557,17 @@ const confirmStartInterviewing = async () => {
 const handleAssign = (id: number) => {
   const job = jobs.value.find(j => j.id === id)
   if (!job) return
-
   assigningJob.value = { id: job.id, title: job.title, code: job.code }
   isAssignModalVisible.value = true
 }
 
-const confirmAssign = async (memberId: number) => {
-  if (!assigningJob.value) return
-
-  assignModalRef.value?.setSubmitting(true)
-  try {
-    // HARDCODED: Mock the API response to assign the recruiter
-    const member = useEmployerMemberStore().members?.result.find(m => m.userId === memberId)
-    const idx = jobs.value.findIndex(j => j.id === assigningJob.value?.id)
-    
-    if (idx !== -1 && member) {
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 600))
-      
-      const updatedJob = {
-        ...jobs.value[idx],
-        assignee: {
-          id: member.userId,
-          name: member.email.split('@')[0], // Fallback name
-          email: member.email,
-        }
-      }
-      jobs.value[idx] = updatedJob
-    }
-
-    toast.success('Phân công thành công!', `Đã phân công tin tuyển dụng cho ${member?.email.split('@')[0] || 'thành viên'}.`)
-    isAssignModalVisible.value = false
-  } catch (err: any) {
-    toast.error('Lỗi', 'Không thể phân công. Vui lòng thử lại.')
-  } finally {
-    assignModalRef.value?.setSubmitting(false)
-  }
+/**
+ * Gọi sau khi JobAssignmentModal emit 'assigned'
+ * Reload lại trang hiện tại để cập nhật cột assignedRecruiter
+ */
+async function handleAssignSuccess() {
+  isAssignModalVisible.value = false
+  await fetchJobs()
 }
 </script>
 

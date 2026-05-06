@@ -59,7 +59,7 @@
       :visible="showJobAssignModal && activeTab === 'job'"
       :job="activeJob ?? null"
       @close="showJobAssignModal = false"
-      @assign="handleConfirmAssign"
+      @assigned="handleConfirmAssign"
     />
 
     <!-- Modal Giao việc (Chọn tin cho người) -->
@@ -67,7 +67,7 @@
       :visible="showJobAssignModal && activeTab === 'member'"
       :member="activeMember"
       @close="showJobAssignModal = false"
-      @assign="handleConfirmAssignJob"
+      @assigned="handleConfirmAssignJob"
     />
   </div>
 </template>
@@ -95,12 +95,12 @@ const toast = useToast()
 const memberTableRef = ref<any>(null)
 
 // Gọi API khi trang mount → load members và tự động chọn người đầu tiên
+// watch(activeMemberId) sẽ tự trigger fetchJobPostsByRecruiter khi activeMemberId thay đổi
 onMounted(async () => {
   await assignmentStore.fetchRecruiters({ size: 50 })
   const first = assignmentStore.recruiters?.result?.[0]
   if (first) {
-    activeMemberId.value = first.userId
-    await assignmentStore.fetchJobPostsByRecruiter(first.userId, { page: 0, size: 20 })
+    activeMemberId.value = first.userId  // ← watch tự gọi fetchJobPostsByRecruiter
   }
 })
 
@@ -129,16 +129,20 @@ const members = computed(() =>
   }))
 )
 
-// Khi chọn tab 'job' → load danh sách tin và tự động chọn tin đầu tiên
+// Khi đổi tab → luôn re-fetch và reset selection
 watch(activeTab, async (tab) => {
   if (tab === 'job') {
-    if (!assignmentStore.jobPostsWithAssignment) {
-      await assignmentStore.fetchJobPostsWithAssignment({ size: 50 })
-    }
-    // Auto-select tin đầu tiên
+    activeJobId.value = null
+    await assignmentStore.fetchJobPostsWithAssignment({ size: 50 })
     const firstJob = assignmentStore.jobPostsWithAssignment?.result?.[0] as any
-    if (firstJob && !activeJobId.value) {
-      activeJobId.value = firstJob.id
+    if (firstJob) activeJobId.value = firstJob.id
+  } else {
+    activeMemberId.value = null
+    await assignmentStore.fetchRecruiters({ size: 50 })
+    const first = assignmentStore.recruiters?.result?.[0]
+    if (first) {
+      activeMemberId.value = first.userId
+      await assignmentStore.fetchJobPostsByRecruiter(first.userId, { page: 0, size: 20 })
     }
   }
 })
@@ -160,13 +164,31 @@ const activeMember = computed(() => members.value.find(m => m.id === activeMembe
 
 function handleConfirmAssign() {
   showJobAssignModal.value = false
-  // Reload nếu cần
+  refreshCurrentTab()
 }
 
 function handleConfirmAssignJob() {
   showJobAssignModal.value = false
-  if (activeMemberId.value) {
-    assignmentStore.fetchJobPostsByRecruiter(activeMemberId.value, { page: 0, size: 20 })
+  refreshCurrentTab()
+}
+
+/** Re-fetch dữ liệu theo tab đang active, sau đó chọn lại item đang active */
+async function refreshCurrentTab() {
+  if (activeTab.value === 'member') {
+    const currentMemberId = activeMemberId.value
+    await assignmentStore.fetchRecruiters({ size: 50 })
+    // Giữ selection hiện tại, chỉ reload bảng tiếp theo
+    if (currentMemberId) {
+      await assignmentStore.fetchJobPostsByRecruiter(currentMemberId, { page: 0, size: 20 })
+    }
+  } else {
+    const currentJobId = activeJobId.value
+    await assignmentStore.fetchJobPostsWithAssignment({ size: 50 })
+    // Giữ selection nếu tin vẫn tồn tại
+    if (currentJobId) {
+      const still = assignmentStore.jobPostsWithAssignment?.result?.find((j: any) => j.id === currentJobId)
+      if (!still) activeJobId.value = (assignmentStore.jobPostsWithAssignment?.result?.[0] as any)?.id ?? null
+    }
   }
 }
 
@@ -174,10 +196,7 @@ async function handleRevoke(payload: { assignmentId: number; jobPostId: number }
   try {
     await assignmentStore.revokeAssignment({ jobPostId: payload.jobPostId })
     toast.success('Gỡ phân công thành công!')
-    // Reload lại danh sách tin của member đang chọn
-    if (activeMemberId.value) {
-      await assignmentStore.fetchJobPostsByRecruiter(activeMemberId.value, { page: 0, size: 20 })
-    }
+    await refreshCurrentTab()
   } catch (err: any) {
     const msg = err?.response?.data?.message || 'Không thể gỡ phân công. Vui lòng thử lại.'
     toast.error('Gỡ phân công thất bại', msg)

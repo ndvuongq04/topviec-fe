@@ -23,21 +23,32 @@ const query = ref('')
 
 <style scoped>
 .assign-search {
-  display: flex; align-items: center; gap: 8px;
-  margin: 0 1rem 0; padding: 8px 16px;
-  background: #f1f4f9; border-radius: 999px;
-  flex-shrink: 0; margin: 1rem;
+  padding: 0.875rem 1rem;
+  border-bottom: 1px solid #e2e8f0;
+  position: relative;
+  flex-shrink: 0;
 }
-.assign-search__icon { font-size: 20px; color: #64748b; flex-shrink: 0; }
+.assign-search__icon {
+  position: absolute;
+  left: 1.75rem; top: 50%; transform: translateY(-50%);
+  font-size: 1.1rem; color: #64748b; pointer-events: none;
+}
 .assign-search__input {
-  flex: 1; background: none; border: none; outline: none;
-  font-size: 1rem; font-family: 'Manrope', sans-serif; color: #0f172a;
+  width: 100%; background: #f1f4f9;
+  border: none; border-radius: 999px;
+  padding: 8px 36px 8px 40px;
+  font-size: 1rem; font-family: 'Manrope', sans-serif;
+  color: #0f172a; outline: none; box-sizing: border-box;
+  transition: box-shadow 0.15s;
 }
-.assign-search__input::placeholder { color: rgba(100,116,139,0.7); }
+.assign-search__input:focus { box-shadow: 0 0 0 2px rgba(75,154,246,0.25); }
+.assign-search__input::placeholder { color: #94a3b8; }
 .assign-search__clear {
+  position: absolute;
+  right: 1.25rem; top: 50%; transform: translateY(-50%);
   background: none; border: none; cursor: pointer; padding: 0;
   color: #94a3b8; display: flex; align-items: center;
-  transition: color 0.15s; flex-shrink: 0;
+  transition: color 0.15s;
 }
 .assign-search__clear:hover { color: #64748b; }
 </style>
