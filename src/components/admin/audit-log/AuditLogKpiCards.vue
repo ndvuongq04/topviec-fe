@@ -47,7 +47,7 @@ defineProps<{
 }
 .kpi-card__icon .material-symbols-outlined { font-size: 18px; }
 .kpi-card__label {
-  font-size: 0.6875rem; font-weight: 600; text-transform: uppercase;
+  font-size: 0.75rem; font-weight: 700; text-transform: uppercase;
   letter-spacing: 0.07em; color: #574240;
 }
 

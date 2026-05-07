@@ -25,14 +25,21 @@
     <AuditLogFilters />
     
     <!-- Table -->
-    <AuditLogTable :logs="logs" />
+    <AuditLogTable :logs="logs" @view="handleView" />
   </div>
 </template>
 
 <script setup lang="ts">
+import { useRouter } from 'vue-router'
 import AuditLogKpiCards from '@/components/admin/audit-log/AuditLogKpiCards.vue'
 import AuditLogFilters from '@/components/admin/audit-log/AuditLogFilters.vue'
 import AuditLogTable from '@/components/admin/audit-log/AuditLogTable.vue'
+
+const router = useRouter()
+
+function handleView(traceId: string) {
+  router.push({ name: 'admin-audit-log-detail', params: { id: traceId } })
+}
 
 const stats = [
   { label: 'Tổng log hôm nay',     value: '1,284', icon: 'receipt_long', iconBg: '#e4e2dc', iconColor: '#574240', trend: '+12% so với hôm qua', trendVariant: 'up' },

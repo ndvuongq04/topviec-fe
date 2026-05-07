@@ -55,6 +55,7 @@
                 <button
                   class="p-1.5 text-slate-400 hover:text-[#963131] transition-colors cursor-pointer"
                   title="Xem chi tiết"
+                  @click="$emit('view', log.traceId)"
                 >
                   <span class="material-symbols-outlined text-lg">visibility</span>
                 </button>
@@ -79,6 +80,10 @@ defineProps<{
     action: string; category: string; resource: string
     severity: string; ip: string; traceId: string; result: string
   }[]
+}>()
+
+defineEmits<{
+  view: [traceId: string]
 }>()
 
 const resultIcon: Record<string, string> = {
