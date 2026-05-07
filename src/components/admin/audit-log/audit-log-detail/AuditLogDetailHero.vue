@@ -10,7 +10,7 @@
           <p class="ald-hero__admin-email">{{ log.admin.email }}</p>
         </div>
       </div>
-      <span class="ald-hero__tag ald-hero__tag--default">{{ log.admin.role }}</span>
+      <span class="ald-hero__tag ald-hero__tag--default italic opacity-60">Chưa hỗ trợ (Role)</span>
     </div>
 
     <!-- Action -->
@@ -23,7 +23,7 @@
           {{ log.category }}
         </p>
       </div>
-      <span :class="['ald-hero__tag', `ald-hero__tag--${log.severity.toLowerCase()}`]">{{ log.severity }}</span>
+      <span v-if="type === 'audit'" :class="['ald-hero__tag', `ald-hero__tag--${log.severity.toLowerCase()}`]">{{ log.severityLabel || log.severity }}</span>
     </div>
 
     <!-- Resource -->
@@ -58,10 +58,11 @@
 defineProps<{
   log: {
     admin: { name: string; email: string; initials: string; role: string }
-    action: string; category: string; severity: string
+    action: string; category: string; severity: string; severityLabel?: string
     resource: { type: string; name: string; id: string }
     result: { status: string; note: string }
-  }
+  },
+  type: 'audit' | 'business'
 }>()
 </script>
 

@@ -8,12 +8,11 @@
             <span class="ald-header__meta-label">Audit ID</span>
             <span class="ald-header__meta-value">{{ log.auditId }}</span>
           </div>
-          <div class="ald-header__divider"></div>
-          <div class="ald-header__meta-item">
+          <div v-if="type === 'audit'" class="ald-header__meta-item">
             <span class="ald-header__meta-label">Trace ID</span>
-            <span class="ald-header__meta-value ald-header__meta-value--mono">{{ log.traceId }}</span>
+            <span class="ald-header__meta-value ald-header__meta-value--mono italic text-slate-400">Chưa hỗ trợ</span>
           </div>
-          <div class="ald-header__divider"></div>
+          <div v-if="type === 'audit'" class="ald-header__divider"></div>
           <div class="ald-header__meta-item">
             <span class="ald-header__meta-label">Thời gian</span>
             <span class="ald-header__meta-value">{{ log.time }}</span>
@@ -22,7 +21,7 @@
       </div>
 
       <div class="ald-header__actions">
-        <button class="ald-header__btn" @click="copyTrace">
+        <button v-if="type === 'audit'" class="ald-header__btn opacity-50 cursor-not-allowed" disabled>
           <span class="material-symbols-outlined">content_copy</span>
           Copy Trace ID
         </button>
@@ -40,7 +39,10 @@
 </template>
 
 <script setup lang="ts">
-const props = defineProps<{ log: { auditId: string; traceId: string; time: string } }>()
+const props = defineProps<{ 
+  log: { auditId: string; traceId: string; time: string },
+  type: 'audit' | 'business'
+}>()
 
 const copyTrace = () => navigator.clipboard?.writeText(props.log.traceId)
 </script>

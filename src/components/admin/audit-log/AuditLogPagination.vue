@@ -2,7 +2,7 @@
   <div class="p-6 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between">
     <p class="text-sm text-slate-500 font-medium">
       Hiển thị
-      <span class="text-slate-900 dark:text-white font-bold">1–{{ shown }}</span>
+      <span class="text-slate-900 dark:text-white font-bold">{{ rangeStart }}–{{ rangeEnd }}</span>
       trong số
       <span class="text-slate-900 dark:text-white font-bold">{{ total.toLocaleString() }}</span> kết quả
     </p>
@@ -44,11 +44,50 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-const props = defineProps<{ current: number; totalPages: number; total: number; shown: number }>()
-defineEmits<{ change: [page: number] }>()
+const props = defineProps<{ 
+  current: number;    // 1-based
+  totalPages: number; 
+  total: number; 
+  shown: number 
+}>()
+
+const emit = defineEmits<{ change: [page: number] }>()
+
+const rangeStart = computed(() => {
+  if (props.total === 0) return 0
+  // Chúng ta không có pageSize trực tiếp, nhưng có thể ước lượng hoặc dùng shown
+  // Tuy nhiên theo skill-Pagination: rangeStart = currentPage * pageSize + 1
+  // Ở đây current là 1-based, nên currentPage = current - 1
+  // Giả định pageSize = 20 (theo mặc định BE)
+  return (props.current - 1) * 20 + 1
+})
+
+const rangeEnd = computed(() => {
+  return Math.min(props.current * 20, props.total)
+})
 
 const displayPages = computed(() => {
-  const pages: (number | string)[] = [1, 2, 3, '...', props.totalPages]
+  const total = props.totalPages
+  const current = props.current
+  const pages: (number | string)[] = []
+
+  if (total <= 7) {
+    for (let i = 1; i <= total; i++) pages.push(i)
+  } else {
+    pages.push(1)
+    if (current > 4) pages.push('...')
+    
+    const start = Math.max(2, current - 1)
+    const end = Math.min(total - 1, current + 1)
+    
+    for (let i = start; i <= end; i++) {
+      if (!pages.includes(i)) pages.push(i)
+    }
+    
+    if (current < total - 3) pages.push('...')
+    if (!pages.includes(total)) pages.push(total)
+  }
+  
   return pages
 })
-</script>
+</script>

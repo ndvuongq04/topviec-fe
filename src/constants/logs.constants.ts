@@ -380,3 +380,13 @@ export const SEVERITY_OPTIONS = Object.entries(SEVERITY_LABELS).map(([value, lab
   label,
   value: value as Severity,
 }))
+
+export const LOG_ACTION_TYPE_OPTIONS = Object.entries(LOG_ACTION_TYPE_LABELS).map(([value, label]) => ({
+  label,
+  value: value as LogActionType,
+}))
+
+export const LOG_STATUS_OPTIONS = [
+  { label: 'Thành công', value: 'SUCCESS' },
+  { label: 'Thất bại', value: 'FAILURE' },
+]

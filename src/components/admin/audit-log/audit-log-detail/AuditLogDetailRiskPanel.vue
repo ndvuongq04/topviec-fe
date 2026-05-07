@@ -7,7 +7,7 @@
     </h3>
 
     <div class="ald-risk__level-badge">
-      <span class="ald-risk__level-text">{{ risk.level }}</span>
+      <span class="ald-risk__level-text">{{ SEVERITY_LABELS[risk.level as keyof typeof SEVERITY_LABELS] || risk.level }}</span>
     </div>
 
     <ul class="ald-risk__reasons">
@@ -20,6 +20,8 @@
 </template>
 
 <script setup lang="ts">
+import { SEVERITY_LABELS } from '@/constants/logs.constants'
+
 defineProps<{ risk: { level: string; reasons: { icon: string; text: string }[] } }>()
 </script>
 
