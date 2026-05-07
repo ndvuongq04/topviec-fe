@@ -88,8 +88,8 @@ onUnmounted(() => document.removeEventListener('mousedown', onDocClick))
   color: #475569;
   cursor: pointer;
   font-family: 'Manrope', sans-serif;
-  font-size: 0.875rem;
-  font-weight: 500;
+  font-size: 1rem;
+  font-weight: 700;
   white-space: nowrap;
   transition: border-color 0.15s, box-shadow 0.15s;
 }
@@ -125,8 +125,8 @@ onUnmounted(() => document.removeEventListener('mousedown', onDocClick))
   background: transparent;
   cursor: pointer;
   font-family: 'Manrope', sans-serif;
-  font-size: 0.875rem;
-  font-weight: 500;
+  font-size: 1rem;
+  font-weight: 600;
   color: #334155;
   text-align: left;
   transition: background 0.12s;

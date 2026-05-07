@@ -220,8 +220,8 @@ const hasFilters = computed(() => {
   color: #334155;
   cursor: pointer;
   font-family: 'Manrope', sans-serif;
-  font-size: 0.875rem;
-  font-weight: 600;
+  font-size: 1rem;
+  font-weight: 700;
   transition: border-color 0.15s, box-shadow 0.15s;
   white-space: nowrap;
 }

@@ -40,10 +40,13 @@
 
 <script setup lang="ts">
 import { ref, reactive } from 'vue'
+import { useRouter } from 'vue-router'
 import ActivityLogKpiCards from '@/components/recruiter/activity-log/ActivityLogKpiCards.vue'
 import ActivityLogFilters from '@/components/recruiter/activity-log/ActivityLogFilters.vue'
 import ActivityLogTable from '@/components/recruiter/activity-log/ActivityLogTable.vue'
 import ActivityLogPagination from '@/components/recruiter/activity-log/ActivityLogPagination.vue'
+
+const router = useRouter()
 
 const currentPage = ref(1)
 const totalRecords = ref(186)
@@ -111,7 +114,9 @@ function handleReset() {
   })
 }
 
-function handleView(id: number) { /* mở detail modal hoặc navigate */ }
+function handleView(id: number) {
+  router.push({ name: 'recruiter-activity-log-detail', params: { id } })
+}
 
 function handlePageChange(page: number) { currentPage.value = page }
 </script>
