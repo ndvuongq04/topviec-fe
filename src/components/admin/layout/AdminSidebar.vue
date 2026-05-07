@@ -196,6 +196,7 @@ const navItems: NavItem[] = [
         label: 'Hệ thống',
         items: [
           { to: '/admin/settings/permissions', icon: 'admin_panel_settings', label: 'Cài đặt quyền' },
+          { to: '/admin/audit-logs', icon: 'history', label: 'Nhật kí hệ thống' },
         ],
       },
     ],
