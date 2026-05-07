@@ -168,6 +168,11 @@ export const recruiterRoutes: RouteRecordRaw[] = [
         name: 'recruiter-complaint-detail',
         component: () => import('@/pages/recruiter/ComplaintDetailPage.vue'),
       },
+      {
+        path: 'activity-log',
+        name: 'recruiter-activity-log',
+        component: () => import('@/pages/recruiter/ActivityLogPage.vue'),
+      },
     ],
   },
 ]
