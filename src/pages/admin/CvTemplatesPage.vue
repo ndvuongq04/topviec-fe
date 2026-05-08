@@ -50,11 +50,13 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import CvTemplateKpiCards from '@/components/admin/cv-templates/CvTemplateKpiCards.vue'
 import CvTemplateFilters from '@/components/admin/cv-templates/CvTemplateFilters.vue'
 import CvTemplateTable from '@/components/admin/cv-templates/CvTemplateTable.vue'
 import CvTemplatePagination from '@/components/admin/cv-templates/CvTemplatePagination.vue'
 
+const router = useRouter()
 const currentPage = ref(1)
 const perPage = ref(10)
 const totalTemplates = ref(48)
@@ -118,9 +120,11 @@ const filteredTemplates = computed(() => {
   })
 })
 
-function handleAdd() { /* navigate to create page */ }
-function handlePreview(id: number) { /* open preview modal */ }
-function handleEdit(id: number) { /* navigate to edit page */ }
+function handleAdd() {
+  router.push({ name: 'admin-cv-template-create' })
+}
+function handlePreview(_id: number) { /* open preview modal */ }
+function handleEdit(_id: number) { /* navigate to edit page */ }
 function handleArchive(id: number) {
   templates.value = templates.value.filter(t => t.id !== id)
 }
