@@ -6,53 +6,55 @@
       <div class="relative flex-1 min-w-[200px] max-w-[400px]">
         <span class="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none text-[18px]">search</span>
         <input
-          class="w-full bg-slate-100 dark:bg-slate-800/50 border-none rounded-full py-2.5 pl-[42px] pr-10 text-base outline-none focus:ring-2 focus:ring-primary/20 text-slate-900 dark:text-white placeholder:text-slate-400 transition-shadow"
+          class="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-full py-2.5 pl-[42px] pr-10 text-base outline-none focus:ring-2 focus:ring-primary/20 text-slate-900 dark:text-white placeholder:text-slate-400 transition-shadow italic"
           type="text"
-          placeholder="Tìm tên thành viên, email, trace_id..."
+          placeholder="Tìm kiếm (Chưa hỗ trợ)..."
           :value="modelValue.search"
-          @input="update('search', ($event.target as HTMLInputElement).value)"
-          @keyup.enter="$emit('apply')"
+          disabled
         />
-        <button
-          v-if="modelValue.search"
-          class="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-full transition-colors flex items-center justify-center cursor-pointer"
-          title="Xóa tìm kiếm"
-          @click="update('search', ''); $emit('apply')"
-        >
-          <span class="material-symbols-outlined text-[16px]">close</span>
-        </button>
       </div>
 
       <div class="flex items-center gap-2 flex-wrap ml-auto">
+        <!-- Action Filter (Searchable) -->
+        <div class="w-[200px]">
+          <SearchableSelect
+            :modelValue="modelValue.action"
+            placeholder="Hành động"
+            :options="actionOptionsForSelect"
+            @update:modelValue="update('action', $event); $emit('apply')"
+          />
+        </div>
+
+        <!-- Category Filter (Searchable) -->
+        <div class="w-[200px]">
+          <SearchableSelect
+            :modelValue="modelValue.category"
+            placeholder="Danh mục"
+            :options="categoryOptionsForSelect"
+            @update:modelValue="update('category', $event); $emit('apply')"
+          />
+        </div>
+
+        <!-- Severity Filter (AUDIT only) -->
         <FilterSelect
-          :value="modelValue.role"
-          placeholder="Tất cả vai trò"
-          defaultIcon="groups"
-          :options="[
-            { value: 'admin', label: 'Admin', icon: 'admin_panel_settings', colorClass: 'ico-blue' },
-            { value: 'recruiter', label: 'Nhà tuyển dụng', icon: 'person_search', colorClass: 'ico-green' }
-          ]"
-          @change="update('role', $event)"
+          v-if="activeType === 'AUDIT'"
+          :value="modelValue.severity"
+          placeholder="Mức độ"
+          defaultIcon="warning"
+          :options="severityOptions"
+          @change="update('severity', $event); $emit('apply')"
         />
+
+        <!-- Status Filter -->
         <FilterSelect
-          :value="modelValue.group"
-          placeholder="Tất cả nhóm"
-          defaultIcon="category"
+          :value="modelValue.status"
+          placeholder="Trạng thái"
+          defaultIcon="check_circle"
           :options="[
-            { value: 'job', label: 'Tuyển dụng', icon: 'work', colorClass: 'ico-blue' },
-            { value: 'candidate', label: 'Ứng viên', icon: 'person_check', colorClass: 'ico-green' }
+            { value: 'SUCCESS', label: 'Thành công', icon: 'done_all', colorClass: 'ico-green' },
+            { value: 'FAILURE', label: 'Thất bại', icon: 'error', colorClass: 'ico-red' }
           ]"
-          @change="update('group', $event)"
-        />
-        <FilterSelect
-          :value="modelValue.action"
-          placeholder="Tất cả hành động"
-          defaultIcon="manage_history"
-          :options="[
-            { value: 'create', label: 'Tạo mới', icon: 'add_circle', colorClass: 'ico-green' },
-            { value: 'update', label: 'Cập nhật', icon: 'edit', colorClass: 'ico-blue' }
-          ]"
-          @change="update('action', $event)"
+          @change="update('status', $event); $emit('apply')"
         />
 
         <!-- Date range picker -->
@@ -61,7 +63,7 @@
             <span class="material-symbols-outlined type-btn-icon">calendar_month</span>
             {{ dateLabel }}
             <span
-              v-if="modelValue.dateFrom || modelValue.dateTo"
+              v-if="modelValue.startDate || modelValue.endDate"
               class="date-clear"
               @click.stop="clearDate"
             >
@@ -99,7 +101,7 @@
               </div>
               <div class="date-actions">
                 <button class="date-action-clear" type="button" @click="clearDate">Xóa</button>
-                <button class="date-action-apply" type="button" @click="onApplyDate">Áp dụng</button>
+                <button class="date-action-apply" type="button" @click="onApplyDate">Lọc thời gian</button>
               </div>
             </div>
           </Transition>
@@ -107,11 +109,12 @@
 
         <button
           v-if="hasFilters"
-          class="flex items-center p-[7px] border border-red-200 dark:border-red-900/50 rounded-lg bg-white dark:bg-slate-900 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors cursor-pointer"
+          class="flex items-center p-[7px] border border-red-200 dark:border-red-900/50 rounded-lg bg-white dark:bg-slate-900 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors cursor-pointer font-bold gap-1 text-xs"
           title="Xóa bộ lọc"
           @click="resetAll"
         >
           <span class="material-symbols-outlined text-[16px]">filter_alt_off</span>
+          Xóa lọc
         </button>
       </div>
     </div>
@@ -121,47 +124,69 @@
 <script setup lang="ts">
 import { computed, ref, watch, onMounted, onUnmounted } from 'vue'
 import FilterSelect from './FilterSelect.vue'
+import SearchableSelect from '@/components/ui/SearchableSelect.vue'
+import { 
+  LOG_ACTION_TYPE_LABELS, 
+  LOG_CATEGORY_LABELS, 
+  SEVERITY_LABELS 
+} from '@/constants/logs.constants'
 
 const props = defineProps<{
-  modelValue: {
-    search: string; member: string; role: string
-    group: string; action: string; target: string; dateFrom: string; dateTo: string
-  }
+  modelValue: any,
+  activeType: 'AUDIT' | 'BUSINESS'
 }>()
 
 const emit = defineEmits<{
-  'update:modelValue': [value: typeof props.modelValue]
+  'update:modelValue': [value: any]
   apply: []
   reset: []
 }>()
 
-function update(key: keyof typeof props.modelValue, value: string) {
+const actionOptionsForSelect = computed(() => [
+  { id: '', name: 'Tất cả hành động' },
+  ...Object.entries(LOG_ACTION_TYPE_LABELS).map(([id, name]) => ({
+    id, name
+  }))
+])
+
+const categoryOptionsForSelect = computed(() => [
+  { id: '', name: 'Tất cả danh mục' },
+  ...Object.entries(LOG_CATEGORY_LABELS).map(([id, name]) => ({
+    id, name
+  }))
+])
+
+const severityOptions = computed(() => Object.entries(SEVERITY_LABELS).map(([value, label]) => ({
+  value, label, icon: 'warning', colorClass: value === 'CRITICAL' ? 'ico-red' : value === 'HIGH' ? 'ico-orange' : 'ico-yellow'
+})))
+
+function update(key: string, value: any) {
   emit('update:modelValue', { ...props.modelValue, [key]: value })
 }
 
 // Date Picker Logic
 const showDate = ref(false)
 const dateRef = ref<HTMLElement | null>(null)
-const draftDateFrom = ref(props.modelValue.dateFrom)
-const draftDateTo = ref(props.modelValue.dateTo)
+const draftDateFrom = ref(props.modelValue.startDate)
+const draftDateTo = ref(props.modelValue.endDate)
 
 const dateLabel = computed(() => {
-  if (!props.modelValue.dateFrom && !props.modelValue.dateTo) return 'Thời gian'
+  if (!props.modelValue.startDate && !props.modelValue.endDate) return 'Thời gian'
   const fmt = (d: string) => d.split('-').reverse().join('/')
-  if (props.modelValue.dateFrom && props.modelValue.dateTo) return `${fmt(props.modelValue.dateFrom)} – ${fmt(props.modelValue.dateTo)}`
-  if (props.modelValue.dateFrom) return `Từ ${fmt(props.modelValue.dateFrom)}`
-  return `Đến ${fmt(props.modelValue.dateTo)}`
+  if (props.modelValue.startDate && props.modelValue.endDate) return `${fmt(props.modelValue.startDate)} – ${fmt(props.modelValue.endDate)}`
+  if (props.modelValue.startDate) return `Từ ${fmt(props.modelValue.startDate)}`
+  return `Đến ${fmt(props.modelValue.endDate)}`
 })
 
 watch(showDate, (isOpen) => {
   if (isOpen) {
-    draftDateFrom.value = props.modelValue.dateFrom
-    draftDateTo.value = props.modelValue.dateTo
+    draftDateFrom.value = props.modelValue.startDate
+    draftDateTo.value = props.modelValue.endDate
   }
 })
 
 function onApplyDate() {
-  emit('update:modelValue', { ...props.modelValue, dateFrom: draftDateFrom.value, dateTo: draftDateTo.value })
+  emit('update:modelValue', { ...props.modelValue, startDate: draftDateFrom.value, endDate: draftDateTo.value })
   showDate.value = false
   emit('apply')
 }
@@ -169,7 +194,7 @@ function onApplyDate() {
 function clearDate() {
   draftDateFrom.value = ''
   draftDateTo.value = ''
-  emit('update:modelValue', { ...props.modelValue, dateFrom: '', dateTo: '' })
+  emit('update:modelValue', { ...props.modelValue, startDate: '', endDate: '' })
   showDate.value = false
   emit('apply')
 }
@@ -188,7 +213,12 @@ onMounted(() => document.addEventListener('mousedown', onDocClick))
 onUnmounted(() => document.removeEventListener('mousedown', onDocClick))
 
 const hasFilters = computed(() => {
-  return props.modelValue.search || props.modelValue.role || props.modelValue.group || props.modelValue.action || props.modelValue.dateFrom || props.modelValue.dateTo
+  return props.modelValue.action || 
+         props.modelValue.category || 
+         props.modelValue.severity || 
+         props.modelValue.status || 
+         props.modelValue.startDate || 
+         props.modelValue.endDate
 })
 </script>
 

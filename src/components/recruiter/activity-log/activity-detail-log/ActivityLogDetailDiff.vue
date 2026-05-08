@@ -1,30 +1,32 @@
 <template>
-  <div class="space-y-4">
-    <h3 class="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">Chi tiết thay đổi</h3>
-
-    <div class="divide-y divide-slate-100 dark:divide-slate-800">
-      <div
-        v-for="change in changes"
-        :key="change.field"
-        class="grid grid-cols-1 md:grid-cols-[160px_1fr] items-center gap-4 py-4"
-      >
-        <span class="text-sm font-medium text-slate-500 dark:text-slate-400">{{ change.field }}</span>
-        <div class="flex items-center gap-3 flex-wrap">
-          <span
-            class="inline-flex px-3 py-1.5 rounded-lg text-sm font-medium"
-            :class="[getChipStyle(change.before.style), { 'line-through opacity-50': change.before.strikethrough }]"
-          >
-            {{ change.before.label }}
-          </span>
-          <span class="material-symbols-outlined text-slate-300 dark:text-slate-600">arrow_right_alt</span>
-          <span
-            class="inline-flex px-3 py-1.5 rounded-lg text-sm font-bold shadow-sm"
-            :class="getChipStyle(change.after.style)"
-          >
-            {{ change.after.label }}
-          </span>
+  <div class="space-y-6">
+    <div v-if="changes.length > 0" class="divide-y divide-slate-100 dark:divide-slate-800">
+      <div v-for="(change, idx) in changes" :key="idx" class="py-4 first:pt-0 last:pb-0">
+        <div class="flex flex-col sm:flex-row sm:items-center gap-4">
+          <div class="sm:w-1/4">
+            <p class="text-xs font-bold text-slate-400 uppercase tracking-widest">{{ change.field }}</p>
+          </div>
+          <div class="flex-1 flex items-center gap-4">
+            <div class="flex-1 p-3 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 text-sm text-slate-500 line-through decoration-slate-300">
+              {{ change.before.label }}
+            </div>
+            <span class="material-symbols-outlined text-slate-300">arrow_forward</span>
+            <div class="flex-1 p-3 rounded-lg bg-primary/5 dark:bg-primary/10 border border-primary/20 text-sm font-bold text-primary">
+              {{ change.after.label }}
+            </div>
+          </div>
         </div>
       </div>
+    </div>
+    
+    <div v-else class="flex flex-col items-center justify-center py-12 border-2 border-dashed border-slate-100 dark:border-slate-800 rounded-2xl">
+      <div class="size-16 rounded-full bg-slate-50 dark:bg-slate-800 flex items-center justify-center mb-4">
+        <span class="material-symbols-outlined text-3xl text-slate-300">compare_arrows</span>
+      </div>
+      <p class="text-slate-500 font-bold">Dữ liệu so sánh hiện chưa hỗ trợ</p>
+      <p class="text-xs text-slate-400 mt-1 italic text-center max-w-xs">
+        Hệ thống đang được nâng cấp để ghi lại chi tiết các thay đổi trước và sau khi thực hiện thao tác này.
+      </p>
     </div>
   </div>
 </template>
@@ -33,22 +35,8 @@
 defineProps<{
   changes: Array<{
     field: string
-    before: { label: string; style: string; strikethrough?: boolean }
-    after: { label: string; style: string }
+    before: { label: string; style?: string }
+    after: { label: string; style?: string }
   }>
 }>()
-
-function getChipStyle(style: string) {
-  switch (style) {
-    case 'chip-neutral': return 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'
-    case 'chip-empty':   return 'bg-slate-50 dark:bg-slate-800/50 text-slate-400 border border-slate-200 dark:border-slate-700 italic'
-    case 'chip-success': return 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400'
-    case 'chip-info':    return 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'
-    default:             return 'bg-slate-100 dark:bg-slate-800 text-slate-600'
-  }
-}
 </script>
-
-<style scoped>
-/* Switched to Tailwind */
-</style>

@@ -24,33 +24,144 @@
     <!-- KPI Row -->
     <ActivityLogKpiCards :stats="kpiStats" />
 
-    <!-- Main section (Card containing Filter, Table, Pagination) -->
-    <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden flex flex-col">
-      <ActivityLogFilters v-model="filters" @apply="fetchLogs" @reset="handleReset" />
-      <ActivityLogTable :logs="logs" @view="handleView" />
-      <ActivityLogPagination
-        :current-page="currentPage"
-        :total-records="totalRecords"
-        :per-page="perPage"
-        @change="handlePageChange"
-      />
+    <!-- Tabs Section -->
+    <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
+      <div class="flex border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30">
+        <button
+          v-for="tab in logTypeTabs"
+          :key="tab.value"
+          class="px-8 py-4 text-sm font-extrabold border-b-2 transition-all cursor-pointer flex items-center gap-2"
+          :class="activeLogType === tab.value
+            ? 'border-primary text-primary bg-white dark:bg-slate-900'
+            : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 border-transparent'"
+          @click="handleTabChange(tab.value as any)"
+        >
+          <span class="material-symbols-outlined text-lg">{{ tab.icon }}</span>
+          {{ tab.label }}
+          <span v-if="tab.count > 0" class="ml-1 text-[10px] px-1.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 font-bold">
+            {{ tab.count }}
+          </span>
+        </button>
+      </div>
+
+      <div class="relative flex flex-col min-h-[400px]">
+        <!-- Loading Overlay -->
+        <div v-if="loading" class="absolute inset-0 bg-white/50 dark:bg-slate-900/50 z-10 flex items-center justify-center backdrop-blur-[1px]">
+          <div class="flex flex-col items-center gap-2">
+            <span class="material-symbols-outlined animate-spin text-4xl text-primary">progress_activity</span>
+            <span class="text-sm font-bold text-slate-500">Đang tải dữ liệu...</span>
+          </div>
+        </div>
+
+        <ActivityLogFilters v-model="filters" :active-type="activeLogType" @apply="handleApplyFilters" @reset="handleReset" />
+        
+        <ActivityLogTable 
+          :logs="currentLogs" 
+          :type="activeLogType"
+          @view="handleView" 
+        />
+        
+        <ActivityLogPagination
+          :current-page="currentMeta.page + 1"
+          :total-records="currentMeta.totals"
+          :per-page="currentMeta.pageSize"
+          @change="handlePageChange"
+        />
+      </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { storeToRefs } from 'pinia'
+import { useEmployerLogStore } from '@/stores/employerLog.store'
+import type { LogQueryParams } from '@/types/logs.types'
 import ActivityLogKpiCards from '@/components/recruiter/activity-log/ActivityLogKpiCards.vue'
 import ActivityLogFilters from '@/components/recruiter/activity-log/ActivityLogFilters.vue'
 import ActivityLogTable from '@/components/recruiter/activity-log/ActivityLogTable.vue'
 import ActivityLogPagination from '@/components/recruiter/activity-log/ActivityLogPagination.vue'
 
 const router = useRouter()
+const logStore = useEmployerLogStore()
+const { auditLogs, businessLogs, auditMeta, businessMeta, loading } = storeToRefs(logStore)
 
-const currentPage = ref(1)
-const totalRecords = ref(186)
-const perPage = ref(10)
+const activeLogType = ref<'AUDIT' | 'BUSINESS'>('AUDIT')
+
+const logTypeTabs = computed(() => [
+  { label: 'Nhật ký hoạt động', value: 'AUDIT', icon: 'security', count: auditMeta.value.totals },
+  { label: 'Lịch sử tài khoản', value: 'BUSINESS', icon: 'business_center', count: businessMeta.value.totals },
+])
+
+const currentLogs = computed(() => activeLogType.value === 'AUDIT' ? auditLogs.value : businessLogs.value)
+const currentMeta = computed(() => activeLogType.value === 'AUDIT' ? auditMeta.value : businessMeta.value)
+
+const filters = ref<LogQueryParams>({
+  userId: null as any,
+  action: '',
+  category: '',
+  severity: '',
+  status: '',
+  startDate: '',
+  endDate: '',
+  page: 0,
+  size: 20
+})
+
+async function fetchData() {
+  const params = {
+    ...filters.value,
+    page: currentMeta.value.page,
+    size: currentMeta.value.pageSize
+  }
+  
+  if (activeLogType.value === 'AUDIT') {
+    await logStore.fetchAuditLogs(params)
+  } else {
+    await logStore.fetchBusinessLogs(params)
+  }
+}
+
+onMounted(() => {
+  fetchData()
+})
+
+function handleTabChange(type: 'AUDIT' | 'BUSINESS') {
+  activeLogType.value = type
+  currentMeta.value.page = 0
+  fetchData()
+}
+
+function handleApplyFilters() {
+  currentMeta.value.page = 0
+  fetchData()
+}
+
+function handlePageChange(page: number) {
+  currentMeta.value.page = page - 1
+  fetchData()
+}
+
+function handleReset() {
+  filters.value = {
+    userId: null as any,
+    action: '',
+    category: '',
+    severity: '',
+    status: '',
+    startDate: '',
+    endDate: '',
+    page: 0,
+    size: 20
+  }
+  currentMeta.value.page = 0
+  fetchData()
+}
+
+function handleView(id: number) {
+  router.push({ name: 'recruiter-activity-log-detail', params: { id, type: activeLogType.value.toLowerCase() } })
+}
 
 const kpiStats = ref([
   { label: 'Tổng thao tác hôm nay', value: 186, icon: 'local_activity', iconBg: 'bg-primary/10', iconColor: 'text-primary', trend: '+12%', trendUp: true, trendNote: 'so với hôm qua' },
@@ -58,65 +169,4 @@ const kpiStats = ref([
   { label: 'Tin tuyển dụng cập nhật', value: 24, icon: 'work', iconBg: 'bg-blue-100 dark:bg-blue-900/30', iconColor: 'text-blue-600 dark:text-blue-400', sub: 'Hôm nay' },
   { label: 'Ứng viên được xử lý', value: 53, icon: 'person_check', iconBg: 'bg-emerald-100 dark:bg-emerald-900/30', iconColor: 'text-emerald-600 dark:text-emerald-400', trend: '+5%', trendUp: true, trendNote: 'so với tuần trước' },
 ])
-
-const filters = reactive({
-  search: '',
-  member: '',
-  role: '',
-  group: '',
-  action: '',
-  target: '',
-  dateFrom: '2023-10-01',
-  dateTo: '2023-10-24',
-})
-
-const logs = ref([
-  {
-    id: 1,
-    time: '14:30', date: '24/10/2023',
-    memberName: 'Nguyễn Thùy Linh', memberEmail: 'linhnt@company.com',
-    avatar: 'https://example.com/a1.jpg', initials: '',
-    role: 'Admin', roleStyle: 'role-admin',
-    action: 'Cập nhật trạng thái',
-    group: 'Ứng viên',
-    targetName: 'CV - Trần Đại Quang', targetId: 'APP-9921',
-    status: 'success', statusLabel: 'Thành công',
-  },
-  {
-    id: 2,
-    time: '11:15', date: '24/10/2023',
-    memberName: 'Trần Hoài Nam', memberEmail: 'namth@company.com',
-    avatar: '', initials: 'HN',
-    role: 'Recruiter', roleStyle: 'role-recruiter',
-    action: 'Tạo mới tin tuyển dụng',
-    group: 'Tin tuyển dụng',
-    targetName: 'Senior Frontend Engineer', targetId: 'JOB-1042',
-    status: 'success', statusLabel: 'Thành công',
-  },
-  {
-    id: 3,
-    time: '09:45', date: '24/10/2023',
-    memberName: 'Phạm Đức Anh', memberEmail: 'anhpd@company.com',
-    avatar: 'https://example.com/a3.jpg', initials: '',
-    role: 'Manager', roleStyle: 'role-admin',
-    action: 'Thay đổi quyền hạn',
-    group: 'Phân quyền',
-    targetName: 'Trần Hoài Nam (Recruiter)', targetId: 'USR-884',
-    status: 'failed', statusLabel: 'Thất bại',
-  },
-])
-
-function fetchLogs() { /* gọi API với filters */ }
-
-function handleReset() {
-  Object.assign(filters, {
-    search: '', member: '', role: '', group: '', action: '', target: '', dateFrom: '', dateTo: '',
-  })
-}
-
-function handleView(id: number) {
-  router.push({ name: 'recruiter-activity-log-detail', params: { id } })
-}
-
-function handlePageChange(page: number) { currentPage.value = page }
 </script>

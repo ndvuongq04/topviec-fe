@@ -105,14 +105,22 @@ onUnmounted(() => document.removeEventListener('mousedown', onDocClick))
   position: absolute;
   top: calc(100% + 6px);
   left: 0;
-  z-index: 20;
-  min-width: 190px;
+  z-index: 50;
+  min-width: 240px;
+  max-height: 400px;
+  overflow-y: auto;
   padding: 5px;
   border: 1px solid #e2e8f0;
   border-radius: 12px;
   background: #fff;
   box-shadow: 0 8px 24px rgba(0,0,0,0.1), 0 2px 6px rgba(0,0,0,0.05);
 }
+
+/* Custom Scrollbar for Dropdown */
+.tt-dropdown::-webkit-scrollbar { width: 5px; }
+.tt-dropdown::-webkit-scrollbar-track { background: transparent; }
+.tt-dropdown::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+.tt-dropdown::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 
 .tt-opt {
   display: flex;
