@@ -73,6 +73,11 @@ export const candidateRoutes: RouteRecordRaw[] = [
                 component: () => import('@/pages/candidate/ComplaintsPage.vue'),
                 meta: { requiresAuth: true, role: 'CANDIDATE' },
             },
+            {
+                path: 'cv-templates',
+                name: 'CvTemplateList',
+                component: () => import('@/pages/candidate/CvTemplateListPage.vue'),
+            },
         ],
     },
 ]
