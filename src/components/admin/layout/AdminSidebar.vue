@@ -164,6 +164,7 @@ const navItems: NavItem[] = [
   { to: '/admin/admins',     icon: 'admin_panel_settings', label: 'Quản lý Admin' },
   { to: '/admin/employers',  icon: 'corporate_fare',       label: 'Quản lý Nhà Tuyển Dụng' },
   { to: '/admin/candidates', icon: 'group',                label: 'Quản lý Ứng Viên' },
+  { to: '/admin/cv-templates', icon: 'description',        label: 'Quản lý CV' },
   { to: '/admin/moderation', icon: 'fact_check',           label: 'Kiểm duyệt Nội dung' },
   { to: '/admin/reports',    icon: 'report',               label: 'Khiếu nại' },
   {
