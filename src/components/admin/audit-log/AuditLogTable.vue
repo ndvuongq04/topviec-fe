@@ -9,8 +9,8 @@
             <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">
               Vai trò
             </th>
-            <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">Hành động</th>
             <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">Danh mục</th>
+            <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">Hành động</th>
             <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">Đối tượng</th>
             <th v-if="type === 'AUDIT'" class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">Mức độ</th>
             <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">Log ID</th>
@@ -46,11 +46,11 @@
               </span>
               <span v-else class="text-xs text-slate-400 italic">N/A</span>
             </td>
-            <td class="px-6 py-4 text-sm font-medium text-slate-700 dark:text-slate-300 whitespace-nowrap">
-              {{ LOG_ACTION_TYPE_LABELS[log.action as keyof typeof LOG_ACTION_TYPE_LABELS] || log.action }}
-            </td>
             <td class="px-6 py-4 text-sm text-slate-500 whitespace-nowrap">
               {{ LOG_CATEGORY_LABELS[log.category as keyof typeof LOG_CATEGORY_LABELS] || log.category }}
+            </td>
+            <td class="px-6 py-4 text-sm font-medium text-slate-700 dark:text-slate-300 whitespace-nowrap">
+              {{ LOG_ACTION_TYPE_LABELS[log.action as keyof typeof LOG_ACTION_TYPE_LABELS] || log.action }}
             </td>
             <td class="px-6 py-4 text-sm font-medium text-slate-700 dark:text-slate-300 whitespace-nowrap">
               {{ log.targetEntity }}: {{ log.targetId }}

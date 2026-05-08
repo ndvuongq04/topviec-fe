@@ -232,7 +232,7 @@ export const LOG_CATEGORY_LABELS: Record<LogCategory, string> = {
 
 export const LOG_TYPE_LABELS: Record<LogType, string> = {
   [LogType.AUDIT]: 'Nhật ký hệ thống',
-  [LogType.BUSINESS]: 'Sự kiện nghiệp vụ',
+  [LogType.BUSINESS]: 'Nhật ký nghiệp vụ',
   [LogType.BOTH]: 'Tất cả nhật ký',
 }
 

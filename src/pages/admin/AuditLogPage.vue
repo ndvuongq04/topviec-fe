@@ -97,7 +97,7 @@ const activeLogType = ref<'AUDIT' | 'BUSINESS'>('AUDIT')
 
 const logTypeTabs = computed(() => [
   { label: 'Nhật ký hệ thống', value: 'AUDIT', icon: 'security', count: auditMeta.value.totals },
-  { label: 'Sự kiện nghiệp vụ', value: 'BUSINESS', icon: 'business_center', count: businessMeta.value.totals },
+  { label: 'Nhật ký nghiệp vụ', value: 'BUSINESS', icon: 'business_center', count: businessMeta.value.totals },
 ])
 
 const currentLogs = computed(() => activeLogType.value === 'AUDIT' ? auditLogs.value : businessLogs.value)

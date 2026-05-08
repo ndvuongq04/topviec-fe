@@ -29,13 +29,27 @@
             <div class="flex items-center gap-2 text-sm font-bold text-slate-700 dark:text-slate-300">
               <span class="material-symbols-outlined text-base text-slate-400">public</span>
               {{ actor.ip }}
+              <button 
+                class="ml-1 p-1 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-primary transition-all cursor-pointer"
+                title="Sao chép IP"
+                @click="copyToClipboard(actor.ip, 'Địa chỉ IP')"
+              >
+                <span class="material-symbols-outlined text-sm">content_copy</span>
+              </button>
             </div>
           </div>
           <div v-if="actor.userAgent" class="space-y-1">
             <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Thiết bị / Trình duyệt</p>
-            <div class="flex items-center gap-2 text-sm font-bold text-slate-700 dark:text-slate-300 truncate" :title="actor.userAgent">
-              <span class="material-symbols-outlined text-base text-slate-400">devices</span>
+            <div class="flex items-center gap-2 text-sm font-bold text-slate-700 dark:text-slate-300 min-w-0">
+              <span class="material-symbols-outlined text-base text-slate-400 shrink-0">devices</span>
               <span class="truncate">{{ actor.userAgent }}</span>
+              <button 
+                class="ml-1 p-1 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-primary transition-all cursor-pointer shrink-0"
+                title="Sao chép User Agent"
+                @click="copyToClipboard(actor.userAgent, 'Thông tin thiết bị')"
+              >
+                <span class="material-symbols-outlined text-sm">content_copy</span>
+              </button>
             </div>
           </div>
         </div>
@@ -45,6 +59,8 @@
 </template>
 
 <script setup lang="ts">
+import { useToast } from '@/composables/useToast'
+
 defineProps<{
   actor: { 
     name: string; 
@@ -56,4 +72,12 @@ defineProps<{
     userAgent: string;
   }
 }>()
+
+const toast = useToast()
+
+const copyToClipboard = (text: string, label: string) => {
+  if (!text) return
+  navigator.clipboard.writeText(text)
+  toast.success('Đã sao chép', `${label} đã được lưu vào bộ nhớ tạm.`)
+}
 </script>
