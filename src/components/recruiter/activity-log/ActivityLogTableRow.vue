@@ -6,11 +6,15 @@
       <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{{ formatDate(log.createdAt).date }}</p>
     </td>
 
-    <!-- Vai trò (Chưa hỗ trợ) -->
+    <!-- Vai trò -->
     <td class="px-6 py-4 text-center">
-      <span class="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400 text-[10px] font-bold uppercase italic">
-        N/A
+      <span 
+        v-if="log.userRole"
+        class="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 text-[10px] font-bold uppercase"
+      >
+        {{ USER_ROLE_LABELS[log.userRole] || log.userRole }}
       </span>
+      <span v-else class="text-slate-300">-</span>
     </td>
 
     <!-- Thành viên -->
@@ -21,7 +25,7 @@
         </div>
         <div>
           <p class="text-sm font-bold text-slate-900 dark:text-white truncate max-w-[150px]">{{ log.userEmail || 'Hệ thống' }}</p>
-          <p class="text-xs text-slate-400 mt-0.5 italic">Nhà tuyển dụng</p>
+          <p class="text-xs text-slate-400 mt-0.5 italic">{{ USER_ROLE_LABELS[log.userRole] || 'Nhà tuyển dụng' }}</p>
         </div>
       </div>
     </td>
@@ -88,7 +92,8 @@
 import { 
   LOG_ACTION_TYPE_LABELS, 
   LOG_CATEGORY_LABELS, 
-  SEVERITY_LABELS 
+  SEVERITY_LABELS,
+  USER_ROLE_LABELS
 } from '@/constants/logs.constants'
 
 const props = defineProps<{

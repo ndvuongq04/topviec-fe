@@ -109,6 +109,8 @@ const filters = ref<LogQueryParams>({
   category: '',
   severity: '',
   status: '',
+  keyword: '',
+  userRole: '',
   startDate: '',
   endDate: '',
   page: 0,

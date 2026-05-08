@@ -6,6 +6,7 @@ export interface ResAuditLogDTO {
   id: number
   userId: number
   userEmail: string
+  userRole: string
   action: LogActionType
   category: LogCategory
   severity: Severity
@@ -30,6 +31,7 @@ export interface ResBusinessEventLogDTO {
   id: number
   userId: number
   userEmail: string
+  userRole: string
   action: LogActionType
   category: LogCategory
   targetEntity: string
@@ -53,6 +55,8 @@ export interface LogQueryParams {
   category?: string
   severity?: string
   status?: string
+  keyword?: string
+  userRole?: string
   startDate?: string // YYYY-MM-DD
   endDate?: string   // YYYY-MM-DD
   page?: number

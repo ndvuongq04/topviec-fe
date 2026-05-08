@@ -112,7 +112,8 @@ import ActivityLogDetailNote from '@/components/recruiter/activity-log/activity-
 import { 
   LOG_ACTION_TYPE_LABELS, 
   LOG_CATEGORY_LABELS, 
-  SEVERITY_LABELS 
+  SEVERITY_LABELS,
+  USER_ROLE_LABELS
 } from '@/constants/logs.constants'
 
 const route = useRoute()
@@ -135,7 +136,7 @@ const mappedActor = computed(() => {
   const log = currentLog.value as any
   return {
     name: log.userEmail || 'Hệ thống',
-    role: 'Nhà tuyển dụng',
+    role: USER_ROLE_LABELS[log.userRole] || 'Nhà tuyển dụng',
     avatar: '',
     initials: (log.userEmail?.[0] || 'S').toUpperCase(),
     time: formatDate(log.createdAt),

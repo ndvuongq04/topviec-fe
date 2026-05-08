@@ -102,7 +102,8 @@ import AuditLogDetailNearbyLogs from '@/components/admin/audit-log/audit-log-det
 import { 
   LOG_ACTION_TYPE_LABELS, 
   LOG_CATEGORY_LABELS, 
-  SEVERITY_LABELS 
+  SEVERITY_LABELS,
+  USER_ROLE_LABELS
 } from '@/constants/logs.constants'
 
 const route = useRoute()
@@ -141,7 +142,7 @@ const mappedLog = computed(() => {
       name: item.userEmail || 'System', 
       email: item.userEmail || '-', 
       initials: (item.userEmail?.[0] || 'S').toUpperCase(), 
-      role: 'ADMIN' 
+      role: (item.userRole && USER_ROLE_LABELS[item.userRole]) ? USER_ROLE_LABELS[item.userRole] : (item.userRole || 'ADMIN')
     },
     action: LOG_ACTION_TYPE_LABELS[item.action as keyof typeof LOG_ACTION_TYPE_LABELS] || item.action,
     category: LOG_CATEGORY_LABELS[item.category as keyof typeof LOG_CATEGORY_LABELS] || item.category,

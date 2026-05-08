@@ -10,7 +10,8 @@
           <p class="ald-hero__admin-email">{{ log.admin.email }}</p>
         </div>
       </div>
-      <span class="ald-hero__tag ald-hero__tag--default italic opacity-60">Chưa hỗ trợ (Role)</span>
+      <span v-if="log.admin.role" class="ald-hero__tag ald-hero__tag--default">{{ log.admin.role }}</span>
+      <span v-else class="ald-hero__tag ald-hero__tag--default italic opacity-60">N/A</span>
     </div>
 
     <!-- Action -->

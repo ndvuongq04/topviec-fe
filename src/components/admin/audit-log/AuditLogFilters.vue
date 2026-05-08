@@ -2,23 +2,28 @@
   <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-[#963131]/5 overflow-hidden mb-8">
     <div class="p-4 flex flex-wrap gap-3 items-center">
       
-      <!-- Search (Chưa hỗ trợ Keyword) -->
-      <div class="flex-1 min-w-64 flex items-center bg-slate-50 dark:bg-white/5 rounded-lg px-4 border border-[#963131]/5 opacity-50 cursor-not-allowed">
-        <span class="material-symbols-outlined text-slate-400 text-xl">search_off</span>
+      <!-- Search -->
+      <div class="flex-1 min-w-64 flex items-center bg-slate-50 dark:bg-white/5 rounded-lg px-4 border border-[#963131]/5 focus-within:ring-2 focus-within:ring-[#963131]/20 transition-all">
+        <span class="material-symbols-outlined text-slate-400 text-xl">search</span>
         <input 
+          v-model="localFilters.keyword"
           type="text" 
-          class="bg-transparent border-none focus:ring-0 text-base w-full py-3 outline-none ml-2 cursor-not-allowed" 
-          placeholder="Tìm kiếm (Chưa hỗ trợ Keyword)..."
-          disabled
+          class="bg-transparent border-none focus:ring-0 text-base w-full py-3 outline-none ml-2 text-slate-700 dark:text-slate-300" 
+          placeholder="Tìm kiếm theo Email, Target ID, hoặc Mô tả..."
+          @keyup.enter="handleApply"
         />
       </div>
 
-      <!-- Vai trò (N/A) -->
+      <!-- Vai trò -->
       <select 
-        class="shrink-0 bg-slate-50 dark:bg-white/5 border border-[#963131]/5 rounded-lg text-base pl-4 pr-8 py-2.5 focus:ring-2 focus:ring-[#963131]/20 outline-none cursor-pointer text-slate-700 dark:text-slate-300 opacity-50"
-        disabled
+        v-model="localFilters.userRole"
+        class="shrink-0 bg-slate-50 dark:bg-white/5 border border-[#963131]/5 rounded-lg text-base pl-4 pr-8 py-2.5 focus:ring-2 focus:ring-[#963131]/20 outline-none cursor-pointer text-slate-700 dark:text-slate-300"
+        @change="handleImmediateChange"
       >
-        <option value="">Vai trò (Chưa hỗ trợ)</option>
+        <option value="">Tất cả vai trò</option>
+        <option v-for="opt in USER_ROLE_OPTIONS" :key="opt.value" :value="opt.value">
+          {{ opt.label }}
+        </option>
       </select>
 
       <!-- Danh mục -->
@@ -111,7 +116,8 @@ import {
   LOG_CATEGORY_OPTIONS, 
   LOG_ACTION_TYPE_OPTIONS, 
   SEVERITY_OPTIONS,
-  LOG_STATUS_OPTIONS
+  LOG_STATUS_OPTIONS,
+  USER_ROLE_OPTIONS
 } from '@/constants/logs.constants'
 
 const props = defineProps<{
@@ -124,7 +130,17 @@ const emit = defineEmits<{
   'apply': []
 }>()
 
-const localFilters = ref<LogQueryParams>({ ...props.modelValue })
+const localFilters = ref<LogQueryParams>({ 
+  action: '',
+  category: '',
+  severity: '',
+  status: '',
+  keyword: '',
+  userRole: '',
+  startDate: '',
+  endDate: '',
+  ...props.modelValue 
+})
 
 // Đồng bộ khi props thay đổi (ví dụ reset từ ngoài)
 watch(() => props.modelValue, (newVal) => {
@@ -151,6 +167,8 @@ function handleReset() {
     category: '',
     severity: '',
     status: '',
+    keyword: '',
+    userRole: '',
     startDate: '',
     endDate: '',
     page: 0,

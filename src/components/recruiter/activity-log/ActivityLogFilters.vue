@@ -8,9 +8,10 @@
         <input
           class="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-full py-2.5 pl-[42px] pr-10 text-base outline-none focus:ring-2 focus:ring-primary/20 text-slate-900 dark:text-white placeholder:text-slate-400 transition-shadow italic"
           type="text"
-          placeholder="Tìm kiếm (Chưa hỗ trợ)..."
-          :value="modelValue.search"
-          disabled
+          placeholder="Tìm kiếm theo Email, Target ID, hoặc Nội dung..."
+          :value="modelValue.keyword"
+          @input="update('keyword', ($event.target as HTMLInputElement).value)"
+          @keyup.enter="$emit('apply')"
         />
       </div>
 
@@ -217,6 +218,7 @@ const hasFilters = computed(() => {
          props.modelValue.category || 
          props.modelValue.severity || 
          props.modelValue.status || 
+         props.modelValue.keyword ||
          props.modelValue.startDate || 
          props.modelValue.endDate
 })

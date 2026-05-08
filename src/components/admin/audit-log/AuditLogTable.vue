@@ -8,16 +8,11 @@
             <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">Admin</th>
             <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">
               Vai trò
-              <span class="ml-1 text-[10px] lowercase font-normal text-slate-400">(N/A in API)</span>
             </th>
             <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">Hành động</th>
             <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">Danh mục</th>
             <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">Đối tượng</th>
             <th v-if="type === 'AUDIT'" class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">Mức độ</th>
-            <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">
-              IP
-              <span class="ml-1 text-[10px] lowercase font-normal text-slate-400">(Detail only)</span>
-            </th>
             <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">Log ID</th>
             <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center whitespace-nowrap">Kết quả</th>
             <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center whitespace-nowrap">Thao tác</th>
@@ -43,7 +38,13 @@
               </div>
             </td>
             <td class="px-6 py-4">
-              <span class="text-xs text-slate-400 italic">Chưa hỗ trợ</span>
+              <span 
+                v-if="log.userRole"
+                class="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 text-[10px] font-bold uppercase"
+              >
+                {{ USER_ROLE_LABELS[log.userRole] || log.userRole }}
+              </span>
+              <span v-else class="text-xs text-slate-400 italic">N/A</span>
             </td>
             <td class="px-6 py-4 text-sm font-medium text-slate-700 dark:text-slate-300 whitespace-nowrap">
               {{ LOG_ACTION_TYPE_LABELS[log.action as keyof typeof LOG_ACTION_TYPE_LABELS] || log.action }}
@@ -61,7 +62,6 @@
                 :class="SEVERITY_COLORS[log.severity as keyof typeof SEVERITY_COLORS]"
               >{{ SEVERITY_LABELS[log.severity as keyof typeof SEVERITY_LABELS] || log.severity }}</span>
             </td>
-            <td class="px-6 py-4 text-xs font-mono text-slate-400 italic">Chưa hỗ trợ</td>
             <td class="px-6 py-4 text-sm font-mono text-slate-500 whitespace-nowrap">#{{ log.id }}</td>
             <td class="px-6 py-4 text-center">
               <div 
@@ -95,7 +95,8 @@ import {
   LOG_ACTION_TYPE_LABELS, 
   LOG_CATEGORY_LABELS, 
   SEVERITY_LABELS, 
-  SEVERITY_COLORS 
+  SEVERITY_COLORS,
+  USER_ROLE_LABELS
 } from '@/constants/logs.constants'
 
 defineProps<{

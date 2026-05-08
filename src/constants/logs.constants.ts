@@ -364,6 +364,25 @@ export const LOG_ACTION_TYPE_LABELS: Record<LogActionType, string> = {
   [LogActionType.EXPIRE_COMPANY_BRANDING]: 'Hết hạn quảng bá thương hiệu',
 }
 
+// ─── Role Labels ─────────────────────────────────────────────────────────────
+export const USER_ROLE_LABELS: Record<string, string> = {
+  // Admin Roles
+  'super_admin': 'Super Admin',
+  'content_moderator': 'Content Moderator',
+  'support_admin': 'Support Admin',
+  'finance_admin': 'Finance Admin',
+  // Employer Roles
+  'owner': 'Chủ sở hữu',
+  'manager': 'Quản lý',
+  'recruiter': 'Chuyên viên tuyển dụng',
+  'viewer': 'Người xem',
+}
+
+export const USER_ROLE_OPTIONS = Object.entries(USER_ROLE_LABELS).map(([value, label]) => ({
+  label,
+  value,
+}))
+
 // ─── Select Options ─────────────────────────────────────────────────────────────
 
 export const LOG_CATEGORY_OPTIONS = Object.entries(LOG_CATEGORY_LABELS).map(([value, label]) => ({
