@@ -167,7 +167,7 @@ onMounted(async () => {
     // Locations
     form.locations = job.locations.length
       ? job.locations.map(l => ({
-          provinceId:    l.provinceId,
+          provinceId:    l.provinceId || l.id,
           addressDetail: l.addressDetail ?? '',
           isRemote:      l.isRemote,
         }))
