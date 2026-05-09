@@ -12,28 +12,8 @@
         <div>
           <p class="text-xs font-bold uppercase tracking-wider text-slate-500">{{ stat.label }}</p>
           <h3 class="text-[1.875rem] font-extrabold leading-tight text-slate-900 dark:text-white">{{ stat.value }}</h3>
+          <p v-if="stat.note" class="text-xs text-slate-400 mt-1 font-medium">{{ stat.note }}</p>
         </div>
-      </div>
-      <div class="mt-4 flex items-center gap-2">
-        <template v-if="stat.trend">
-          <span
-            class="text-xs font-bold flex items-center gap-0.5"
-            :class="stat.trendUp === true
-              ? 'text-emerald-500'
-              : stat.trendUp === false
-                ? 'text-rose-500'
-                : 'text-slate-400'"
-          >
-            <span v-if="stat.trendUp !== undefined && stat.trendUp !== null" class="material-symbols-outlined text-xs">
-              {{ stat.trendUp ? 'trending_up' : 'trending_down' }}
-            </span>
-            {{ stat.trend }}
-          </span>
-          <span class="text-slate-400 text-xs" v-if="stat.trendNote">{{ stat.trendNote }}</span>
-        </template>
-        <template v-else-if="stat.sub">
-          <span class="text-slate-400 text-xs">{{ stat.sub }}</span>
-        </template>
       </div>
     </div>
   </div>
@@ -42,9 +22,9 @@
 <script setup lang="ts">
 defineProps<{
   stats: Array<{
-    label: string; value: number; icon: string
+    label: string; value: number | string; icon: string
     iconBg: string; iconColor: string
-    trend?: string; trendUp?: boolean; trendNote?: string; sub?: string
+    note?: string
   }>
 }>()
 </script>

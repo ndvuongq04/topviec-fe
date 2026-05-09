@@ -43,10 +43,12 @@
     <!-- Đối tượng -->
     <td class="px-6 py-4">
       <div class="flex flex-col">
-        <p class="text-sm font-bold text-slate-900 dark:text-white truncate max-w-[180px]">
-          {{ log.targetEntity || 'N/A' }}
+        <p class="text-sm font-bold text-slate-900 dark:text-white truncate max-w-[220px]">
+          {{ log.targetName || log.targetEntity || 'N/A' }}
         </p>
-        <p class="text-[10px] text-slate-400 font-mono mt-0.5">ID: {{ log.targetId || '-' }}</p>
+        <p class="text-[10px] text-slate-400 font-bold uppercase tracking-tight mt-0.5">
+          {{ log.targetEntity }}: {{ log.targetId || '-' }}
+        </p>
       </div>
     </td>
 

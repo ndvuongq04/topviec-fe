@@ -6,6 +6,7 @@ import type {
   ResAuditLogDetailDTO, 
   ResBusinessEventLogDTO, 
   ResBusinessEventLogDetailDTO,
+  ResEmployerLogStatisticsDTO,
   LogQueryParams
 } from '@/types/logs.types'
 import type { PaginationMeta } from '@/types/common.types'
@@ -22,6 +23,8 @@ export const useEmployerLogStore = defineStore('employerLog', () => {
   
   const loading = ref(false)
   const error = ref<string | null>(null)
+
+  const statistics = ref<ResEmployerLogStatisticsDTO | null>(null)
 
   // ─── Helpers ────────────────────────────────────────────────────────────────
   function setError(err: unknown) {
@@ -100,6 +103,15 @@ export const useEmployerLogStore = defineStore('employerLog', () => {
     error.value = null
   }
 
+  /** Statistics */
+  async function fetchLogStatistics() {
+    try {
+      statistics.value = await employerLogService.getLogStatistics()
+    } catch (err) {
+      setError(err)
+    }
+  }
+
   return {
     auditLogs,
     businessLogs,
@@ -107,12 +119,14 @@ export const useEmployerLogStore = defineStore('employerLog', () => {
     selectedBusinessLog,
     auditMeta,
     businessMeta,
+    statistics,
     loading,
     error,
     fetchAuditLogs,
     fetchAuditLogDetail,
     fetchBusinessLogs,
     fetchBusinessLogDetail,
+    fetchLogStatistics,
     reset
   }
 })

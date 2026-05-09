@@ -91,7 +91,7 @@ import AuditLogPagination from '@/components/admin/audit-log/AuditLogPagination.
 
 const router = useRouter()
 const logStore = useAdminLogStore()
-const { auditLogs, businessLogs, auditMeta, businessMeta, loading } = storeToRefs(logStore)
+const { auditLogs, businessLogs, auditMeta, businessMeta, statistics, loading } = storeToRefs(logStore)
 
 const activeLogType = ref<'AUDIT' | 'BUSINESS'>('AUDIT')
 
@@ -133,6 +133,7 @@ async function fetchData() {
 
 onMounted(() => {
   fetchData()
+  logStore.fetchLogStatistics()
 })
 
 function handleTabChange(type: 'AUDIT' | 'BUSINESS') {
@@ -156,11 +157,14 @@ function handleView(id: number) {
   router.push({ name: 'admin-audit-log-detail', params: { id, type: activeLogType.value.toLowerCase() } })
 }
 
-// Mock stats - [NOTE] BE chưa có API cho thống kê này
-const stats = [
-  { label: 'Tổng log hôm nay',     value: '1,284', icon: 'receipt_long', iconBg: '#e4e2dc', iconColor: '#574240', trend: '+12% so với hôm qua', trendVariant: 'up' },
-  { label: 'Hành động rủi ro cao', value: '42',    icon: 'warning',      iconBg: '#ffdad6', iconColor: '#ba1a1a', trend: 'Cần chú ý',           trendVariant: 'warn' },
-  { label: 'Admin hoạt động',      value: '17',    icon: 'group',        iconBg: '#eeedfe', iconColor: '#3c3489', trend: 'Đang online: 8',       trendVariant: 'neutral' },
-  { label: 'Trace lỗi',            value: '29',    icon: 'bug_report',   iconBg: '#faeeda', iconColor: '#633806', trend: '+5 lỗi mới',           trendVariant: 'error' },
-]
+// KPI Stats — mapped from BE API
+const stats = computed(() => {
+  const s = statistics.value
+  return [
+    { label: 'Tổng hoạt động',   value: s ? s.totalLogs.toLocaleString('vi-VN') : '—',    icon: 'analytics',     iconBg: '#f0f9ff', iconColor: '#0ea5e9', note: 'Tổng số bản ghi log hệ thống' },
+    { label: 'Cảnh báo rủi ro',  value: s ? String(s.criticalLogs).padStart(2, '0') : '—', icon: 'gpp_maybe',     iconBg: '#fef2f2', iconColor: '#ef4444', note: 'Hoạt động mức độ nghiêm trọng' },
+    { label: 'Lỗi hệ thống',     value: s ? String(s.systemErrors) : '—',                  icon: 'bug_report',    iconBg: '#fffbeb', iconColor: '#d97706', note: 'Các sự cố kỹ thuật ghi nhận' },
+    { label: 'Admin hoạt động',  value: s ? String(s.activeAdmins) : '—',                  icon: 'person_search', iconBg: '#f5f3ff', iconColor: '#8b5cf6', note: 'Các quản trị viên đang hoạt động' },
+  ]
+})
 </script>

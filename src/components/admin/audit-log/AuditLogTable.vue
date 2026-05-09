@@ -52,8 +52,12 @@
             <td class="px-6 py-4 text-sm font-medium text-slate-700 dark:text-slate-300 whitespace-nowrap">
               {{ LOG_ACTION_TYPE_LABELS[log.action as keyof typeof LOG_ACTION_TYPE_LABELS] || log.action }}
             </td>
-            <td class="px-6 py-4 text-sm font-medium text-slate-700 dark:text-slate-300 whitespace-nowrap">
-              {{ log.targetEntity }}: {{ log.targetId }}
+            <td class="px-6 py-4 text-sm font-medium text-slate-700 dark:text-slate-300">
+              <div class="flex flex-col">
+                <span class="whitespace-nowrap text-[10px] text-slate-400 uppercase tracking-tight">{{ log.targetEntity }}: {{ log.targetId }}</span>
+                <span v-if="log.targetName" class="font-bold text-slate-900 dark:text-white">{{ log.targetName }}</span>
+                <span v-else class="text-xs italic text-slate-400 font-normal">Không có tên đối tượng</span>
+              </div>
             </td>
             <td v-if="type === 'AUDIT'" class="px-6 py-4">
               <span 

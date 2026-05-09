@@ -4,6 +4,7 @@ import type {
   ResAuditLogDetailDTO, 
   ResBusinessEventLogPagination, 
   ResBusinessEventLogDetailDTO,
+  ResEmployerLogStatisticsDTO,
   LogQueryParams
 } from '@/types/logs.types'
 
@@ -51,6 +52,14 @@ const employerLogService = {
    */
   async getBusinessLogDetail(id: number): Promise<ResBusinessEventLogDetailDTO> {
     const response = await axiosInstance.get(`/employer/logs/business/${id}`)
+    return response.data.data
+  },
+
+  /**
+   * GET /employer/logs/statistics
+   */
+  async getLogStatistics(): Promise<ResEmployerLogStatisticsDTO> {
+    const response = await axiosInstance.get('/employer/logs/statistics')
     return response.data.data
   }
 }

@@ -12,6 +12,7 @@ export interface ResAuditLogDTO {
   severity: Severity
   targetEntity: string
   targetId: number
+  targetName?: string
   status: string
   durationMs: number
   createdAt: string
@@ -36,6 +37,7 @@ export interface ResBusinessEventLogDTO {
   category: LogCategory
   targetEntity: string
   targetId: number
+  targetName?: string
   status: string
   durationMs: number
   createdAt: string
@@ -62,4 +64,20 @@ export interface LogQueryParams {
   page?: number
   size?: number
   sort?: string
+}
+
+// ─── Admin Log Statistics ─────────────────────────────────────────
+export interface ResAdminLogStatisticsDTO {
+  totalLogs: number
+  criticalLogs: number
+  systemErrors: number
+  activeAdmins: number
+}
+
+// ─── Employer Log Statistics ──────────────────────────────────────
+export interface ResEmployerLogStatisticsDTO {
+  totalActivity: number
+  candidateProcessing: number
+  dataUpdates: number
+  activeMembers: number
 }

@@ -85,7 +85,7 @@ import ActivityLogPagination from '@/components/recruiter/activity-log/ActivityL
 
 const router = useRouter()
 const logStore = useEmployerLogStore()
-const { auditLogs, businessLogs, auditMeta, businessMeta, loading } = storeToRefs(logStore)
+const { auditLogs, businessLogs, auditMeta, businessMeta, statistics, loading } = storeToRefs(logStore)
 
 const activeLogType = ref<'AUDIT' | 'BUSINESS'>('AUDIT')
 
@@ -126,6 +126,7 @@ async function fetchData() {
 
 onMounted(() => {
   fetchData()
+  logStore.fetchLogStatistics()
 })
 
 function handleTabChange(type: 'AUDIT' | 'BUSINESS') {
@@ -165,10 +166,42 @@ function handleView(id: number) {
   router.push({ name: 'recruiter-activity-log-detail', params: { id, type: activeLogType.value.toLowerCase() } })
 }
 
-const kpiStats = ref([
-  { label: 'Tổng thao tác hôm nay', value: 186, icon: 'local_activity', iconBg: 'bg-primary/10', iconColor: 'text-primary', trend: '+12%', trendUp: true, trendNote: 'so với hôm qua' },
-  { label: 'Thành viên hoạt động', value: 9, icon: 'group', iconBg: 'bg-indigo-100 dark:bg-indigo-900/30', iconColor: 'text-indigo-600 dark:text-indigo-400', sub: 'Trên tổng 12 thành viên' },
-  { label: 'Tin tuyển dụng cập nhật', value: 24, icon: 'work', iconBg: 'bg-blue-100 dark:bg-blue-900/30', iconColor: 'text-blue-600 dark:text-blue-400', sub: 'Hôm nay' },
-  { label: 'Ứng viên được xử lý', value: 53, icon: 'person_check', iconBg: 'bg-emerald-100 dark:bg-emerald-900/30', iconColor: 'text-emerald-600 dark:text-emerald-400', trend: '+5%', trendUp: true, trendNote: 'so với tuần trước' },
-])
+// KPI Stats — mapped from BE API
+const kpiStats = computed(() => {
+  const s = statistics.value
+  return [
+    { 
+      label: 'Tổng hoạt động',      
+      value: s ? s.totalActivity : 0,    
+      icon: 'analytics',    
+      iconBg: 'bg-primary/10', 
+      iconColor: 'text-primary',
+      note: 'Quy mô tương tác chung'
+    },
+    { 
+      label: 'Xử lý hồ sơ',      
+      value: s ? s.candidateProcessing : 0, 
+      icon: 'person_check', 
+      iconBg: 'bg-emerald-100 dark:bg-emerald-900/30', 
+      iconColor: 'text-emerald-600 dark:text-emerald-400',
+      note: 'Duyệt & Chuyển trạng thái'
+    },
+    { 
+      label: 'Cập nhật dữ liệu',     
+      value: s ? s.dataUpdates : 0,         
+      icon: 'edit_document', 
+      iconBg: 'bg-blue-100 dark:bg-blue-900/30', 
+      iconColor: 'text-blue-600 dark:text-blue-400',
+      note: 'Tin tuyển dụng & Công ty'
+    },
+    { 
+      label: 'Thành viên hoạt động', 
+      value: s ? s.activeMembers : 0,       
+      icon: 'group',         
+      iconBg: 'bg-purple-100 dark:bg-purple-900/30', 
+      iconColor: 'text-purple-600 dark:text-purple-400',
+      note: 'Employer trong công ty'
+    },
+  ]
+})
 </script>

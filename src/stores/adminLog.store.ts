@@ -6,6 +6,7 @@ import type {
   ResAuditLogDetailDTO, 
   ResBusinessEventLogDTO, 
   ResBusinessEventLogDetailDTO,
+  ResAdminLogStatisticsDTO,
   LogQueryParams
 } from '@/types/logs.types'
 import type { PaginationMeta } from '@/types/common.types'
@@ -22,6 +23,8 @@ export const useAdminLogStore = defineStore('adminLog', () => {
   
   const loading = ref(false)
   const error = ref<string | null>(null)
+
+  const statistics = ref<ResAdminLogStatisticsDTO | null>(null)
 
   // ─── Helpers ────────────────────────────────────────────────────────────────
   function setError(err: unknown) {
@@ -100,6 +103,15 @@ export const useAdminLogStore = defineStore('adminLog', () => {
     error.value = null
   }
 
+  /** Statistics */
+  async function fetchLogStatistics() {
+    try {
+      statistics.value = await adminLogService.getLogStatistics()
+    } catch (err) {
+      setError(err)
+    }
+  }
+
   return {
     auditLogs,
     businessLogs,
@@ -107,12 +119,14 @@ export const useAdminLogStore = defineStore('adminLog', () => {
     selectedBusinessLog,
     auditMeta,
     businessMeta,
+    statistics,
     loading,
     error,
     fetchAuditLogs,
     fetchAuditLogDetail,
     fetchBusinessLogs,
     fetchBusinessLogDetail,
+    fetchLogStatistics,
     reset
   }
 })

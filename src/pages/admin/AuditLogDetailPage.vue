@@ -150,7 +150,7 @@ const mappedLog = computed(() => {
     severityLabel: SEVERITY_LABELS[(item as any).severity as keyof typeof SEVERITY_LABELS] || (item as any).severity || 'Thấp',
     resource: { 
       type: item.targetEntity || 'N/A', 
-      name: `${item.targetEntity} (ID: ${item.targetId})`, 
+      name: item.targetName || `${item.targetEntity} (ID: ${item.targetId})`, 
       id: String(item.targetId) 
     },
     result: { 
@@ -173,7 +173,8 @@ const mappedLog = computed(() => {
     related: {
       stats: [
         { label: 'Thời gian xử lý', value: `${item.durationMs}ms` },
-        { label: 'Đối tượng tác động', value: item.targetEntity || '-' }
+        { label: 'Tên đối tượng', value: item.targetName || '-' },
+        { label: 'Loại đối tượng', value: item.targetEntity || '-' }
       ],
       links: []
     }

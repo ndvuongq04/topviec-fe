@@ -151,7 +151,7 @@ const mappedTarget = computed(() => {
   const log = currentLog.value
   return {
     type: log.targetEntity || 'N/A',
-    name: log.targetEntity || 'Đối tượng hệ thống',
+    name: log.targetName || log.targetEntity || 'Đối tượng hệ thống',
     targetId: String(log.targetId || '-'),
     subInfo: `Phân loại: ${LOG_CATEGORY_LABELS[log.category as keyof typeof LOG_CATEGORY_LABELS] || log.category}`
   }

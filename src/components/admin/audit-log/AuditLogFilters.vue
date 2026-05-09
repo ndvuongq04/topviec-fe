@@ -22,7 +22,7 @@
         @change="handleImmediateChange"
       >
         <option value="">Tất cả vai trò</option>
-        <option v-for="opt in USER_ROLE_OPTIONS" :key="opt.value" :value="opt.value">
+        <option v-for="opt in filteredRoleOptions" :key="opt.value" :value="opt.value">
           {{ opt.label }}
         </option>
       </select>
@@ -148,6 +148,11 @@ const mappedCategories = computed(() =>
 
 const mappedActions = computed(() => 
   LOG_ACTION_TYPE_OPTIONS.map(opt => ({ id: opt.value, name: opt.label }))
+)
+
+const ADMIN_ROLE_VALUES = ['super_admin', 'content_moderator', 'support_admin', 'finance_admin']
+const filteredRoleOptions = computed(() => 
+  USER_ROLE_OPTIONS.filter(opt => ADMIN_ROLE_VALUES.includes(opt.value))
 )
 
 const currentAdminRole = ref<AdminRole | null>(null)
