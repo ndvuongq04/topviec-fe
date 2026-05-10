@@ -8,7 +8,7 @@
     <div v-else-if="complaint" class="complaint-detail__content">
       <ComplaintDetailHeader
         :complaint="complaint"
-        :show-actions="true"
+        :show-actions="can('report.confirm')"
         @reject="onReject"
         @confirm="onConfirm"
       />
@@ -40,6 +40,7 @@
           :violation-score="detailViolationScore"
           :is-suspended="detailIsSuspended"
           :loading="appealStore.loading"
+          :can-unsuspend="can('employer.unsuspend')"
           @unsuspend="onUnsuspendEmployer"
         />
       </div>
@@ -70,6 +71,7 @@ import { useConfirm } from '@/composables/useConfirm'
 import { useToast } from '@/composables/useToast'
 import { useAdminReportStore } from '@/stores/adminReport.store'
 import { useAdminViolationScoreStore } from '@/stores/adminViolationScore.store'
+import { useAdminPermission } from '@/composables/useAdminPermission'
 import type { ReqUnsuspendAppeal, ResAppeal } from '@/types/appeal.types'
 import type { ReqConfirmReport } from '@/types/report.types'
 
@@ -78,6 +80,7 @@ const store = useAdminReportStore()
 const appealStore = useAdminViolationScoreStore()
 const toast = useToast()
 const { confirm } = useConfirm()
+const { can } = useAdminPermission()
 
 async function submitHeaderDecision(approved: boolean) {
   const id = Number(route.params.id)

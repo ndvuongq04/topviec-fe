@@ -116,6 +116,7 @@
                   <span class="material-symbols-outlined text-xl">notifications</span>
                 </button> -->
                 <button
+                  v-if="can('company.delete')"
                   class="p-1.5 hover:bg-red-50 rounded-lg text-slate-500 hover:text-red-600 transition-colors cursor-pointer"
                   title="Xóa"
                   @click="$emit('delete', company)"
@@ -186,6 +187,9 @@ import {
   COMPANY_STATUS_LABELS,
   VERIFICATION_STATUS_LABELS,
 } from '@/constants/company.constants'
+import { useAdminPermission } from '@/composables/useAdminPermission'
+
+const { can } = useAdminPermission()
 
 const props = defineProps<{
   companies: ResCompanyDTO[]

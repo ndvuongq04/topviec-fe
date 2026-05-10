@@ -51,7 +51,7 @@
     <div class="space-y-6">
 
       <!-- Approval Card -->
-      <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm">
+      <div v-if="can('company.update')" class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm">
         <h3 class="text-lg font-bold mb-4">Phê duyệt yêu cầu</h3>
         <p class="text-sm text-slate-500 mb-6">Xác nhận tính hợp lệ của giấy phép kinh doanh để cho phép NTT hoạt động đầy đủ tính năng.</p>
         <div class="space-y-4">
@@ -93,6 +93,11 @@
           </div>
         </div>
       </div>
+      <!-- Thông báo không có quyền -->
+      <div v-else class="bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-dashed border-slate-300 dark:border-slate-700 p-6 text-center">
+        <span class="material-symbols-outlined text-slate-300 text-4xl block mb-2">lock</span>
+        <p class="text-sm text-slate-400">Bạn không có quyền phê duyệt / từ chối.</p>
+      </div>
 
       <!-- Metadata -->
       <div class="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4 border border-dashed border-slate-300 dark:border-slate-700">
@@ -125,6 +130,9 @@
 import { ref, computed } from 'vue'
 import type { ResCompanyDTO } from '@/types/company.types'
 import { VerificationStatus } from '@/constants/company.constants'
+import { useAdminPermission } from '@/composables/useAdminPermission'
+
+const { can } = useAdminPermission()
 
 const props = defineProps<{
   company: ResCompanyDTO

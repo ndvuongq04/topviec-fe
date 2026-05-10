@@ -100,12 +100,14 @@ import SubscriberRenewalTimeline from '@/components/admin/subscribers/Subscriber
 import { useToast } from '@/composables/useToast'
 import { useAdminCompanyStore } from '@/stores/adminCompany.store'
 import { CompanyStatus } from '@/constants/company.constants'
+import { useAdminPermission } from '@/composables/useAdminPermission'
 import type { StatItem } from '@/components/admin/employers/EmployerStatsCards.vue'
 
 const route = useRoute()
 const router = useRouter()
 const store = useAdminCompanyStore()
 const toast = useToast()
+const { can, canAccessRoute } = useAdminPermission()
 
 const companyId = Number(route.params.id)
 const employerId = computed(() => store.selectedCompany?.createdBy ?? null)
@@ -152,14 +154,22 @@ const stats = computed<StatItem[]>(() => {
 })
 
 const activeTab = ref('profile')
-const tabs = [
-  { key: 'profile', label: 'Hồ sơ công ty' },
-  { key: 'services', label: 'Dịch vụ' },
-  { key: 'orders', label: 'Lịch sử đơn hàng' },
-  { key: 'renewals', label: 'Lịch sử gia hạn' },
-  { key: 'license', label: 'Giấy phép & Xác thực' },
-  { key: 'violation', label: 'Điểm vi phạm' },
-]
+const tabs = computed(() => {
+  const allTabs = [
+    { key: 'profile', label: 'Hồ sơ công ty' },
+    { key: 'services', label: 'Dịch vụ' },
+    { key: 'orders', label: 'Lịch sử đơn hàng' },
+    { key: 'renewals', label: 'Lịch sử gia hạn' },
+    { key: 'license', label: 'Giấy phép & Xác thực' },
+    { key: 'violation', label: 'Điểm vi phạm' },
+  ]
+
+  return allTabs.filter(tab => {
+    if (tab.key === 'orders') return canAccessRoute('admin-orders')
+    if (tab.key === 'violation') return can('violation.view-score')
+    return true
+  })
+})
 
 watch(activeTab, async (newTab) => {
   if (!companyId) return

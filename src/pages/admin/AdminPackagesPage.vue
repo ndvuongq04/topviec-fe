@@ -8,6 +8,7 @@
         <p class="text-slate-500 text-sm mt-1">Quản lý các gói subscription và cấu hình đặc quyền cho từng cấp độ người dùng</p>
       </div>
       <button
+        v-if="can('package.create')"
         class="bg-[#963131] hover:bg-[#963131]/90 text-white px-5 py-2.5 rounded-lg font-bold text-sm flex items-center gap-2 shadow-lg shadow-[#963131]/20 transition-all cursor-pointer"
         @click="showCreateModal = true"
       >
@@ -17,7 +18,7 @@
     </div>
 
     <!-- KPI Cards -->
-    <PackageKpiCards />
+    <PackageKpiCards v-if="can('package.detail')" />
 
     <!-- Filter -->
     <PackageFilters :packages="store.servicePackages" @filter="onFilter" />
@@ -74,6 +75,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { useAdminPermission } from '@/composables/useAdminPermission'
 import PackageFilters from '@/components/admin/packages/PackageFilters.vue'
 import PackageTable from '@/components/admin/packages/PackageTable.vue'
 import PackageKpiCards from '@/components/admin/packages/PackageKpiCards.vue'
@@ -89,6 +91,7 @@ import type { ResServiceDTO } from '@/types/serviceCatalog.types'
 const store = useServicePackageStore()
 const catalogStore = useServiceCatalogStore()
 const toast = useToast()
+const { can } = useAdminPermission()
 
 const showCreateModal = ref(false)
 const creating        = ref(false)

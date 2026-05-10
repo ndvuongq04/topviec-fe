@@ -8,6 +8,7 @@
         <p class="text-slate-500 text-sm mt-1">Quản lý các dịch vụ bán lẻ theo danh mục phân loại.</p>
       </div>
       <button
+        v-if="can('addon.create')"
         class="bg-[#963131] hover:bg-[#963131]/90 text-white px-5 py-2.5 rounded-lg font-bold text-sm flex items-center gap-2 shadow-lg shadow-[#963131]/20 transition-all cursor-pointer"
         @click="showCreateModal = true"
       >
@@ -86,6 +87,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { storeToRefs } from 'pinia'
+import { useAdminPermission } from '@/composables/useAdminPermission'
 import RetailServiceFilters from '@/components/admin/retail-services/RetailServiceFilters.vue'
 import RetailServiceGroup, { type ServiceGroup } from '@/components/admin/retail-services/RetailServiceGroup.vue'
 import AddonPackageCreateModal from '@/components/admin/retail-services/AddonPackageCreateModal.vue'
@@ -100,6 +102,7 @@ import type { ServiceCategory } from '@/constants/serviceCatalog.constants'
 const addonStore = useAddonPackageStore()
 const { addonPackages } = storeToRefs(addonStore)
 const toast = useToast()
+const { can } = useAdminPermission()
 
 const showCreateModal = ref(false)
 const creating        = ref(false)

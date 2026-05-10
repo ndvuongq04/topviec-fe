@@ -43,6 +43,7 @@
           <td class="px-6 py-4">
             <div class="flex items-center justify-center gap-2">
               <button
+                v-if="can('addon.update')"
                 type="button"
                 role="switch"
                 :aria-checked="svc.active"
@@ -68,6 +69,7 @@
           <!-- Thao tác -->
           <td class="px-6 py-4 text-right">
             <button
+              v-if="can('addon.update')"
               class="p-1.5 text-slate-400 hover:text-[#963131] transition-colors cursor-pointer"
               title="Chỉnh sửa"
               @click="$emit('edit', svc)"
@@ -82,6 +84,8 @@
 </template>
 
 <script setup lang="ts">
+import { useAdminPermission } from '@/composables/useAdminPermission'
+
 export interface RetailService {
   id: number
   name: string
@@ -91,6 +95,8 @@ export interface RetailService {
   unit: string
   active: boolean
 }
+
+const { can } = useAdminPermission()
 
 defineProps<{ services: RetailService[]; togglingId?: number | null }>()
 defineEmits<{ edit: [RetailService]; toggle: [RetailService] }>()

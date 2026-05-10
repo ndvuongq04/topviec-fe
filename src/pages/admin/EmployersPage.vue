@@ -8,6 +8,7 @@
         <p class="text-slate-500 text-sm mt-1">Xem và quản lý danh sách các công ty trên nền tảng</p>
       </div>
       <button
+        v-if="can('company.create')"
         class="bg-[#963131] hover:bg-[#963131]/90 text-white px-5 py-2.5 rounded-lg flex items-center gap-2 font-semibold text-sm transition-all shadow-sm cursor-pointer"
         style="box-shadow: 0 4px 14px rgba(150,49,49,0.25)"
         @click="onAddNew"
@@ -52,6 +53,7 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
+import { useAdminPermission } from '@/composables/useAdminPermission'
 import CompanyStatusTabs from '@/components/admin/employers/CompanyStatusTabs.vue'
 import CompanyTable from '@/components/admin/employers/CompanyTable.vue'
 import EmployerCreateModal from '@/components/admin/employers/EmployerCreateModal.vue'
@@ -63,6 +65,7 @@ import type { ReqRegisterEmployerDTO } from '@/types/auth.types'
 const router = useRouter()
 const store = useAdminCompanyStore()
 const toast = useToast()
+const { can } = useAdminPermission()
 
 // ─── State ───────────────────────────────────────────────────────────────────────
 const currentPage     = ref(1)

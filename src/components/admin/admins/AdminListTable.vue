@@ -123,13 +123,15 @@
                   >
                 </button>
                 <button
+                  v-if="can('admin.update')"
                   class="p-1.5 text-slate-400 hover:text-[#963131] transition-colors cursor-pointer"
                   title="Chỉnh sửa"
                   @click="$emit('edit', admin)"
                 >
                   <span class="material-symbols-outlined text-lg">edit</span>
                 </button>
-                <!-- <button
+                <button
+                  v-if="can('admin.toggle-active')"
                   class="p-1.5 transition-colors cursor-pointer"
                   :class="admin.isActive
                     ? 'text-slate-400 hover:text-orange-600'
@@ -140,8 +142,9 @@
                   <span class="material-symbols-outlined text-lg">
                     {{ admin.isActive ? 'lock' : 'lock_open' }}
                   </span>
-                </button> -->
+                </button>
                 <button
+                  v-if="can('admin.delete')"
                   class="p-1.5 text-slate-400 hover:text-red-600 transition-colors cursor-pointer"
                   title="Xóa"
                   @click="$emit('delete', admin)"
@@ -229,6 +232,9 @@ import { computed } from "vue";
 import dayjs from "dayjs";
 import type { ResAdminUser, AdminRole } from "@/types/adminUser.types";
 import { ADMIN_ROLE_LABELS, ADMIN_ROLE_STYLES } from "@/types/adminUser.types";
+import { useAdminPermission } from "@/composables/useAdminPermission"
+
+const { can } = useAdminPermission()
 
 const props = defineProps<{
   admins: ResAdminUser[];

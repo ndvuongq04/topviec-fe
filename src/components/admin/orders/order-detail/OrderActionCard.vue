@@ -1,11 +1,14 @@
 <script setup lang="ts">
+import { useAdminPermission } from '@/composables/useAdminPermission'
+
+const { can } = useAdminPermission()
 const emit = defineEmits<{
   refund: []
 }>()
 </script>
 
 <template>
-  <div class="action-card">
+  <div v-if="can('order.change-status')" class="action-card">
     <button class="btn-action btn-action--danger" @click="emit('refund')">
       <span class="material-symbols-outlined btn-icon">replay</span>
       Hoàn tiền
