@@ -10,6 +10,7 @@ import type {
     EmployerOrderQueryParams,
     EmployerAddonPackageQueryParams,
     ResAdminOrderStatisticsDTO,
+    ReqRefundOrderDTO,
 } from '@/types/order.types'
 import type { ResServicePackageDTO } from '@/types/servicePackage.types'
 import type { ResAddonServiceDTO } from '@/types/serviceCatalog.types'
@@ -231,6 +232,36 @@ export const useEmployerOrderStore = defineStore('employerOrder', () => {
         }
     }
 
+    async function fetchPaymentUrl(id: number): Promise<string> {
+        loading.value = true
+        error.value   = null
+        try {
+            const res = await employerOrderService.getPaymentUrl(id)
+            return res.paymentUrl
+        } catch (err) {
+            error.value = extractErrorMessage(err)
+            throw err
+        } finally {
+            loading.value = false
+        }
+    }
+
+    async function requestRefund(id: number, payload: ReqRefundOrderDTO): Promise<ResOrderDTO> {
+        loading.value = true
+        error.value   = null
+        try {
+            const updated = await employerOrderService.requestRefund(id, payload)
+            _updateInList(updated)
+            if (selectedOrder.value?.id === updated.id) selectedOrder.value = updated
+            return updated
+        } catch (err) {
+            error.value = extractErrorMessage(err)
+            throw err
+        } finally {
+            loading.value = false
+        }
+    }
+
     async function fetchActiveServicePackages() {
         try {
             activeServicePackages.value = await employerPackageService.getActiveServicePackages()
@@ -276,6 +307,8 @@ export const useEmployerOrderStore = defineStore('employerOrder', () => {
         fetchOrderById,
         createOrder,
         cancelOrder,
+        fetchPaymentUrl,
+        requestRefund,
         fetchActiveServicePackages,
         fetchActiveAddonPackages,
         reset,

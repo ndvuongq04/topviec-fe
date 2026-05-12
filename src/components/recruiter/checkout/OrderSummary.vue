@@ -70,7 +70,7 @@ async function handleCheckout() {
     }
 
     // Cast string to enum
-    const paymentMethodEnum = props.paymentMethod as PaymentMethod
+    const paymentMethodEnum = props.paymentMethod.toUpperCase() as PaymentMethod
 
     if (context.type === OrderType.SUBSCRIPTION) {
       // Tạo đơn hàng subscription
@@ -79,35 +79,44 @@ async function handleCheckout() {
         return
       }
       
-      await store.createOrder({
+      const order = await store.createOrder({
         type: OrderType.SUBSCRIPTION,
         packageId: context.packageId,
         quantity: 1,
         paymentMethod: paymentMethodEnum,
+        payNow: true,
       })
+
+      if (order.paymentUrl) {
+        window.location.href = order.paymentUrl
+        return
+      }
     } else {
       // Tạo các đơn hàng addon
-      const results = await Promise.allSettled(
-        store.cartItems.map(item =>
-          store.createOrder({
-            type: OrderType.ADDON,
-            packageId: item.addonServiceId,
-            quantity: item.qty,
-            paymentMethod: paymentMethodEnum,
-          })
-        )
-      )
+      const orders: any[] = []
+      for (const item of store.cartItems) {
+        const order = await store.createOrder({
+          type: OrderType.ADDON,
+          packageId: item.addonServiceId,
+          quantity: item.qty,
+          paymentMethod: paymentMethodEnum,
+          payNow: true,
+        })
+        orders.push(order)
+      }
 
-      // Kiểm tra kết quả
-      const failed = results.filter(r => r.status === 'rejected')
-      if (failed.length > 0) {
-        toast.warning('Cảnh báo', `${failed.length} đơn hàng không thể được xử lý`)
+      // Nếu có paymentUrl (thường là cái đầu tiên hoặc cuối cùng tùy logic BE)
+      // Ở đây ta ưu tiên redirect ngay nếu có bất kỳ URL nào
+      const orderWithUrl = orders.find(o => o.paymentUrl)
+      if (orderWithUrl) {
+        window.location.href = orderWithUrl.paymentUrl
+        return
       }
     }
 
-    // Clear cart và hiển thị thành công
+    // Clear cart và hiển thị thành công (nếu không redirect)
     store.clearCart()
-    toast.success('Thành công', 'Thanh toán đã hoàn tất')
+    toast.success('Thành công', 'Đơn hàng đã được tạo')
     
     // Điều hướng đến trang xác nhận
     router.push('/recruiter/checkout/confirmation')

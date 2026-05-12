@@ -33,6 +33,8 @@
       :meta="store.meta"
       @page-change="onPageChange"
       @view="openDetail"
+      @pay="handlePay"
+      @refund="handleRefund"
     />
 
     <BillingPromoSection />
@@ -42,6 +44,35 @@
       :order-id="selectedOrderId"
       @close="detailVisible = false"
     />
+
+    <!-- Refund Modal -->
+    <GlobalModal
+      :visible="refundVisible"
+      title="Yêu cầu hoàn tiền"
+      subtitle="Vui lòng cung cấp lý do để chúng tôi xem xét yêu cầu của bạn."
+      icon="assignment_return"
+      confirm-text="Gửi yêu cầu"
+      :loading="store.loading"
+      @close="refundVisible = false"
+      @confirm="submitRefund"
+    >
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-bold text-slate-700 mb-2">Lý do hoàn tiền <span class="text-red-500">*</span></label>
+          <textarea
+            v-model="refundReason"
+            rows="3"
+            class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all outline-none resize-none text-sm"
+            placeholder="Ví dụ: Tôi mua nhầm gói dịch vụ này..."
+          ></textarea>
+        </div>
+        <div class="p-4 bg-amber-50 rounded-xl border border-amber-100">
+          <p class="text-[13px] text-amber-700 leading-relaxed">
+            <strong>Lưu ý:</strong> Yêu cầu hoàn tiền sẽ được ban quản trị xem xét trong vòng 24-48 giờ làm việc. Kết quả sẽ được cập nhật trực tiếp tại đây.
+          </p>
+        </div>
+      </div>
+    </GlobalModal>
   </div>
 </template>
 
@@ -53,7 +84,9 @@ import BillingSummaryBar from '@/components/recruiter/billing/BillingSummaryBar.
 import BillingTable from '@/components/recruiter/billing/BillingTable.vue'
 import BillingPromoSection from '@/components/recruiter/billing/BillingPromoSection.vue'
 import OrderDetailModal from '@/components/recruiter/billing/OrderDetailModal.vue'
+import GlobalModal from '@/components/ui/GlobalModal.vue'
 import { useEmployerOrderStore } from '@/stores/order.store'
+import { useToast } from '@/composables/useToast'
 import { OrderStatus } from '@/constants/servicePackage.constants'
 import type { EmployerOrderQueryParams } from '@/types/order.types'
 
@@ -72,6 +105,48 @@ const totalAmountFormatted = computed(() => {
 
 const detailVisible   = ref(false)
 const selectedOrderId = ref<number | null>(null)
+const toast = useToast()
+
+// Refund modal state
+const refundVisible = ref(false)
+const refundReason  = ref('')
+const refundOrderId = ref<number | null>(null)
+
+async function handlePay(id: number) {
+  try {
+    const url = await store.fetchPaymentUrl(id)
+    if (url) {
+      window.location.href = url
+    }
+  } catch (err) {
+    // Error is already handled in store
+  }
+}
+
+async function handleRefund(id: number) {
+  refundOrderId.value = id
+  refundReason.value  = 'Mua nhầm gói dịch vụ'
+  refundVisible.value = true
+}
+
+async function submitRefund() {
+  if (!refundOrderId.value) return
+  
+  if (!refundReason.value.trim()) {
+    toast.warning('Cảnh báo', 'Vui lòng nhập lý do hoàn tiền')
+    return
+  }
+
+  try {
+    await store.requestRefund(refundOrderId.value, { reason: refundReason.value })
+    toast.success('Thành công', 'Đã gửi yêu cầu hoàn tiền')
+    refundVisible.value = false
+    // Tự động reload list
+    store.fetchMyOrders({ ...filterParams.value, page: store.meta.page })
+  } catch (err) {
+    // Error is handled in store
+  }
+}
 
 function openDetail(id: number) {
   selectedOrderId.value = id

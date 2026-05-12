@@ -8,6 +8,12 @@ export const recruiterRoutes: RouteRecordRaw[] = [
     meta: { requiresAuth: true, role: 'EMPLOYER' },
   },
   {
+    path: '/payment/result',
+    name: 'payment-result',
+    component: () => import('@/pages/recruiter/PaymentResultPage.vue'),
+    meta: { requiresAuth: true, role: 'EMPLOYER' },
+  },
+  {
     path: '/recruiter',
     component: () => import('@/layouts/recruiter/RecruiterLayout.vue'),
     meta: { requiresAuth: true, role: 'EMPLOYER' },

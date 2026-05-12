@@ -8,6 +8,8 @@ import type {
     EmployerOrderQueryParams,
     EmployerAddonPackageQueryParams,
     ResAdminOrderStatisticsDTO,
+    ResPaymentUrlDTO,
+    ReqRefundOrderDTO,
 } from '@/types/order.types'
 import type { ResServicePackageDTO } from '@/types/servicePackage.types'
 import type { ResAddonServiceDTO } from '@/types/serviceCatalog.types'
@@ -72,6 +74,16 @@ export const employerOrderService = {
 
     async cancelOrder(id: number): Promise<ResOrderDTO> {
         const res = await axiosInstance.patch<RestResponse<ResOrderDTO>>(`${EMPLOYER_ORDERS_URL}/${id}/cancel`)
+        return res.data.data
+    },
+
+    async getPaymentUrl(id: number): Promise<ResPaymentUrlDTO> {
+        const res = await axiosInstance.post<RestResponse<ResPaymentUrlDTO>>(`${EMPLOYER_ORDERS_URL}/${id}/pay`)
+        return res.data.data
+    },
+
+    async requestRefund(id: number, payload: ReqRefundOrderDTO): Promise<ResOrderDTO> {
+        const res = await axiosInstance.post<RestResponse<ResOrderDTO>>(`${EMPLOYER_ORDERS_URL}/${id}/refund`, payload)
         return res.data.data
     },
 }

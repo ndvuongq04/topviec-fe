@@ -9,7 +9,7 @@
           <th class="table__th table__th--right">Số tiền</th>
           <th class="table__th">Ngày mua</th>
           <th class="table__th">Trạng thái</th>
-          <th class="table__th"></th>
+          <th class="table__th table__th--right">Thao tác</th>
         </tr>
       </thead>
       <tbody>
@@ -32,15 +32,34 @@
             <p class="table__time">{{ formatTime(order.createdAt) }}</p>
           </td>
           <td class="table__td">
-            <span :class="['table__status', `table__status--${order.status.toLowerCase()}`]">
+            <span :class="['table__status', `table__status--${order.status.toLowerCase().replace(/_/g, '-')}`]">
               <span class="table__status-dot"></span>
               {{ ORDER_STATUS_LABELS[order.status] }}
             </span>
           </td>
           <td class="table__td table__td--right">
-            <button class="table__action-btn" @click="$emit('view', order.id)">
-              <span class="material-symbols-outlined">visibility</span>
-            </button>
+            <GlobalDropdown>
+              <template #default="{ close }">
+                <GlobalDropdownItem
+                  label="Xem chi tiết"
+                  icon="visibility"
+                  @click="close(); $emit('view', order.id)"
+                />
+                <GlobalDropdownItem
+                  v-if="order.status === OrderStatus.PENDING"
+                  label="Thanh toán ngay"
+                  icon="payments"
+                  @click="close(); $emit('pay', order.id)"
+                />
+                <GlobalDropdownItem
+                  v-if="order.refundEligible"
+                  label="Yêu cầu hoàn tiền"
+                  icon="assignment_return"
+                  danger
+                  @click="close(); $emit('refund', order.id)"
+                />
+              </template>
+            </GlobalDropdown>
           </td>
         </tr>
       </tbody>
@@ -72,8 +91,11 @@
 import { computed } from 'vue'
 import type { ResOrderDTO } from '@/types/order.types'
 import type { PaginationMeta } from '@/types/common.types'
+import GlobalDropdown from '@/components/ui/GlobalDropdown.vue'
+import GlobalDropdownItem from '@/components/ui/GlobalDropdownItem.vue'
 import {
   OrderType,
+  OrderStatus,
   ORDER_TYPE_LABELS,
   ORDER_STATUS_LABELS,
   PAYMENT_METHOD_LABELS,
@@ -85,7 +107,12 @@ const props = defineProps<{
   meta:   PaginationMeta
 }>()
 
-defineEmits<{ 'page-change': [page: number]; 'view': [id: number] }>()
+defineEmits<{ 
+  'page-change': [page: number]; 
+  'view': [id: number];
+  'pay': [id: number];
+  'refund': [id: number];
+}>()
 
 const rangeStart = computed(() =>
   props.meta.totals === 0 ? 0 : props.meta.page * props.meta.pageSize + 1
@@ -165,7 +192,7 @@ function formatTime(iso: string): string {
 .table__status {
   display: inline-flex; align-items: center; gap: 6px;
   padding: 4px 12px; border-radius: 999px;
-  font-size: 0.75rem; font-weight: 700;
+  font-size: 0.875rem; font-weight: 700;
 }
 .table__status-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
 
@@ -180,11 +207,18 @@ function formatTime(iso: string): string {
 .table__status--cancelled { background: #f8fafc; color: #64748b; border: 1px solid #e2e8f0; }
 .table__status--cancelled .table__status-dot { background: #94a3b8; }
 
+.table__status--refund-requested { background: #eff6ff; color: #2563eb; border: 1px solid #bfdbfe; }
+.table__status--refund-requested .table__status-dot { background: #2563eb; }
+.table__status--refund-rejected  { background: #fff1f2; color: #e11d48; border: 1px solid #fecdd3; }
+.table__status--refund-rejected  .table__status-dot { background: #e11d48; }
+
 .table__action-btn {
   padding: 8px; border: none; background: none;
   color: #94a3b8; border-radius: 0.5rem; cursor: pointer;
   transition: color 0.2s, background 0.2s;
 }
+.table__action-btn:hover { color: #4B9AF6; background: rgba(75,154,246,0.05); }
+
 .table__action-btn:hover { color: #4B9AF6; background: rgba(75,154,246,0.05); }
 
 /* Pagination */
@@ -194,7 +228,7 @@ function formatTime(iso: string): string {
   background: rgba(248,250,252,0.3);
   border-top: 1px solid #f8fafc;
 }
-.pagination__info { font-size: 0.75rem; color: #64748b; font-weight: 500; }
+.pagination__info { font-size: 0.875rem; color: #64748b; font-weight: 500; }
 .pagination__controls { display: flex; align-items: center; gap: 4px; }
 .pagination__btn {
   width: 32px; height: 32px;

@@ -20,6 +20,11 @@ export interface ReqCreateOrderDTO {
     packageId:     number
     quantity:      number
     paymentMethod: PaymentMethod
+    payNow?:       boolean
+}
+
+export interface ReqRefundOrderDTO {
+    reason: string
 }
 
 export interface ReqUpdateOrderStatusDTO {
@@ -57,11 +62,18 @@ export interface ResOrderDTO {
     status:               OrderStatus
     paymentMethod:        PaymentMethod
     paymentTransactionId: string | null
+    paymentUrl?:          string | null
     paidAt:               string | null
     note:                 string | null
     createdAt:            string
     items:                ResOrderItemDTO[]
     company:              ResOrderCompanyInfo | null
+
+    // Refund fields
+    refundEligible?:    boolean
+    refundReason?:      string | null
+    refundRequestedAt?: string | null
+    refundApprovedAt?:  string | null
 }
 
 export type ResOrderPagination = ResultPaginationDTO<ResOrderDTO>
@@ -110,4 +122,8 @@ export interface ResAdminOrderStatisticsDTO {
 
     /** Tổng giá trị tất cả đơn hàng đã thanh toán */
     totalRevenue: number
+}
+
+export interface ResPaymentUrlDTO {
+    paymentUrl: string
 }
