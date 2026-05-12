@@ -73,7 +73,7 @@ async function handleCheckout() {
     const paymentMethodEnum = props.paymentMethod.toUpperCase() as PaymentMethod
 
     if (context.type === OrderType.SUBSCRIPTION) {
-      // Tạo đơn hàng subscription
+      // Tạo đơn hàng subscription (single item – dùng legacy fields)
       if (!context.packageId || !context.billingCycle) {
         toast.error('Lỗi', 'Thông tin gói không hợp lệ')
         return
@@ -92,24 +92,24 @@ async function handleCheckout() {
         return
       }
     } else {
-      // Tạo các đơn hàng addon
-      const orders: any[] = []
-      for (const item of store.cartItems) {
-        const order = await store.createOrder({
-          type: OrderType.ADDON,
-          packageId: item.addonServiceId,
-          quantity: item.qty,
-          paymentMethod: paymentMethodEnum,
-          payNow: true,
-        })
-        orders.push(order)
+      // Tạo 1 đơn hàng addon chứa tất cả dịch vụ lẻ trong giỏ hàng
+      if (!store.cartItems.length) {
+        toast.error('Lỗi', 'Giỏ hàng trống')
+        return
       }
 
-      // Nếu có paymentUrl (thường là cái đầu tiên hoặc cuối cùng tùy logic BE)
-      // Ở đây ta ưu tiên redirect ngay nếu có bất kỳ URL nào
-      const orderWithUrl = orders.find(o => o.paymentUrl)
-      if (orderWithUrl) {
-        window.location.href = orderWithUrl.paymentUrl
+      const order = await store.createOrder({
+        type: OrderType.ADDON,
+        items: store.cartItems.map(item => ({
+          packageId: item.addonServiceId,
+          quantity: item.qty,
+        })),
+        paymentMethod: paymentMethodEnum,
+        payNow: true,
+      })
+
+      if (order.paymentUrl) {
+        window.location.href = order.paymentUrl
         return
       }
     }

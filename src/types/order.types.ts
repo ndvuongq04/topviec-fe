@@ -15,10 +15,16 @@ export type { PaginationMeta, ResultPaginationDTO }
 
 // ─── Request DTOs ─────────────────────────────────────────────────────────────
 
+export interface ReqCreateOrderItemDTO {
+    packageId: number
+    quantity:  number
+}
+
 export interface ReqCreateOrderDTO {
     type:          OrderType
-    packageId:     number
-    quantity:      number
+    packageId?:    number            // Legacy single-item (backward compat)
+    quantity?:     number            // Legacy single-item (backward compat)
+    items?:        ReqCreateOrderItemDTO[]  // New multi-item support
     paymentMethod: PaymentMethod
     payNow?:       boolean
 }
