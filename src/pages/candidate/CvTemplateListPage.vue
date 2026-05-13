@@ -19,72 +19,59 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { computed, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import CvTemplateHero from '@/components/candidate/cv-templates/CvTemplateHero.vue'
 import CvTemplateFilterTabs from '@/components/candidate/cv-templates/CvTemplateFilterTabs.vue'
 import CvTemplateGrid from '@/components/candidate/cv-templates/CvTemplateGrid.vue'
+import { useCvOnlineEditorStore } from '@/stores/cvOnlineEditor.store'
+import { useCvTemplateStore } from '@/stores/cvTemplate.store'
 
 const activeFilter = ref('all')
 const activeLanguage = ref('vi')
+const hasMore = ref(false)
+const router = useRouter()
+const editorStore = useCvOnlineEditorStore()
+const templateStore = useCvTemplateStore()
 
 const filterTabs = [
-  { value: 'all', label: 'Tất cả', icon: 'grid_view' },
-  { value: 'simple', label: 'Đơn giản', icon: 'check_circle' },
-  { value: 'professional', label: 'Chuyên nghiệp', icon: 'work' },
-  { value: 'modern', label: 'Hiện đại', icon: 'bolt' },
-  { value: 'impressive', label: 'Ấn tượng', icon: 'star' },
+  { value: 'all', label: 'Tat ca', icon: 'grid_view' },
+  { value: 'simple', label: 'Don gian', icon: 'check_circle' },
+  { value: 'professional', label: 'Chuyen nghiep', icon: 'work' },
+  { value: 'modern', label: 'Hien dai', icon: 'bolt' },
+  { value: 'impressive', label: 'An tuong', icon: 'star' },
   { value: 'harvard', label: 'Harvard', icon: 'school' },
   { value: 'ats', label: 'ATS', icon: 'fact_check' },
 ]
 
 const languages = [
-  { value: 'vi', label: 'Tiếng Việt', color: '#ba1a1a' },
-  { value: 'en', label: 'Tiếng Anh', color: '#005ea4' },
+  { value: 'vi', label: 'Tieng Viet', color: '#ba1a1a' },
+  { value: 'en', label: 'Tieng Anh', color: '#005ea4' },
 ]
 
-const templates = ref([
-  {
-    id: 1,
-    name: 'Tiêu chuẩn',
-    thumbnail: 'https://example.com/cv1.jpg',
-    tags: ['ATS', 'Đơn giản'],
-    categories: ['all', 'simple', 'ats'],
-    colors: ['#1b1c18', '#707783', '#005ea4'],
-    isNew: false,
-  },
-  {
-    id: 2,
-    name: 'Tiêu chuẩn (ít kinh nghiệm)',
-    thumbnail: 'https://example.com/cv2.jpg',
-    tags: ['ATS', 'Đơn giản', 'Chuyên nghiệp'],
-    categories: ['all', 'simple', 'ats', 'professional'],
-    colors: ['#fff', '#d8e2ff', '#a2c9ff', '#b2c5ff'],
-    isNew: true,
-  },
-  {
-    id: 3,
-    name: 'Thanh lịch',
-    thumbnail: 'https://example.com/cv3.jpg',
-    tags: ['ATS', 'Đơn giản', 'Hiện đại'],
-    categories: ['all', 'simple', 'ats', 'modern'],
-    colors: ['#ba1a1a', '#005ea4', '#006d32', '#f59e0b'],
-    isNew: false,
-  },
-])
-
-const hasMore = ref(true)
+const templates = computed(() => templateStore.templateSummaries)
 
 const filteredTemplates = computed(() => {
-  if (activeFilter.value === 'all') return templates.value
-  return templates.value.filter(t => t.categories.includes(activeFilter.value))
+  return templates.value.filter((template) => {
+    const matchesFilter =
+      activeFilter.value === 'all' || template.categories.includes(activeFilter.value)
+    const matchesLanguage = template.language === activeLanguage.value
+    return matchesFilter && matchesLanguage
+  })
 })
 
 function handleUseTemplate(id: number) {
-  // navigate to CV editor with template id
+  const template = templateStore.getTemplateById(id)
+  const draft = editorStore.createDraft(id, `CV Online - ${template?.name ?? id}`)
+  router.push({
+    name: 'CvOnlineEditor',
+    params: { id: draft.id },
+    query: { templateId: id },
+  })
 }
 
 function handleLoadMore() {
-  // fetch thêm templates từ API
+  // phase 0 uses local template fixtures only
 }
 </script>
 
