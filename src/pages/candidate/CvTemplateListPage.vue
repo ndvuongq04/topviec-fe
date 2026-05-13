@@ -28,7 +28,6 @@ import CvTemplateFilterTabs from '@/components/candidate/cv-templates/CvTemplate
 import CvTemplateGrid from '@/components/candidate/cv-templates/CvTemplateGrid.vue'
 import { useCvOnlineEditorStore } from '@/stores/cvOnlineEditor.store'
 import { useCvTemplateStore } from '@/stores/cvTemplate.store'
-import { createEmptyCvOnlineExtraData } from '@/constants/cvOnline.constants'
 import { useToast } from '@/composables/useToast'
 
 const activeFilter = ref('all')
@@ -70,16 +69,10 @@ onMounted(() => {
 
 async function handleUseTemplate(id: number) {
   try {
-    const template = await templateStore.fetchPublicTemplateById(id)
-    const created = await editorStore.createDraft({
-      title: `CV Online - ${template.name}`,
-      templateId: id,
-      isDefault: false,
-      extraData: createEmptyCvOnlineExtraData(),
-    })
-    router.push({ name: 'CvOnlineEditor', params: { id: created.id } })
+    const draft = await editorStore.createLocalDraftFromTemplate(id)
+    router.push({ name: 'CvOnlineEditor', params: { localDraftId: draft.localDraftId } })
   } catch {
-    toast.error('Khong tao duoc CV online', templateStore.error ?? editorStore.error ?? undefined)
+    toast.error('Khong tao duoc ban nhap CV', templateStore.error ?? editorStore.error ?? undefined)
   }
 }
 </script>

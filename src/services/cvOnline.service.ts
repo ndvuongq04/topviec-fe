@@ -4,12 +4,20 @@ import type {
     ReqChangeOnlineCvTemplate,
     ReqCreateOnlineCv,
     ReqUpdateOnlineCv,
+    ResOnlineCvEditorPayload,
     ResOnlineCv,
 } from '@/types/cvOnline.types'
 
 const BASE_URL = '/cvs/online'
 
 const cvOnlineService = {
+    async getOnlineCvEditorPayloadByTemplateId(templateId: number): Promise<ResOnlineCvEditorPayload> {
+        const res = await axiosInstance.get<RestResponse<ResOnlineCvEditorPayload>>(
+            `${BASE_URL}/editor/template/${templateId}`,
+        )
+        return res.data.data
+    },
+
     async createOnlineCv(payload: ReqCreateOnlineCv): Promise<ResOnlineCv> {
         const res = await axiosInstance.post<RestResponse<ResOnlineCv>>(BASE_URL, payload)
         return res.data.data
@@ -17,6 +25,13 @@ const cvOnlineService = {
 
     async getOnlineCvById(id: number): Promise<ResOnlineCv> {
         const res = await axiosInstance.get<RestResponse<ResOnlineCv>>(`${BASE_URL}/${id}`)
+        return res.data.data
+    },
+
+    async getOnlineCvEditorPayload(id: number): Promise<ResOnlineCvEditorPayload> {
+        const res = await axiosInstance.get<RestResponse<ResOnlineCvEditorPayload>>(
+            `${BASE_URL}/editor/${id}`,
+        )
         return res.data.data
     },
 

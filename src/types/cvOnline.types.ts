@@ -79,6 +79,22 @@ export interface CvOnlineExtraData {
     languages: CvOnlineLanguageItem[]
 }
 
+export type CvOnlineDraftStatus = 'local-only' | 'dirty' | 'synced'
+
+export interface CvOnlineLocalDraft {
+    localDraftId: string
+    serverId: number | null
+    persisted: boolean
+    templateId: number
+    title: string
+    template: CvTemplateDetail
+    status: CvOnlineDraftStatus
+    createdAt: string
+    updatedAt: string
+    lastSyncedAt: string | null
+    extraData: CvOnlineExtraData
+}
+
 export interface CvTemplateListItem {
     id: number
     name: string
@@ -145,6 +161,23 @@ export interface ReqUpdateOnlineCv {
 
 export interface ReqChangeOnlineCvTemplate {
     templateId: number
+}
+
+export interface ResOnlineCvEditorPayload {
+    cvId: number | null
+    persisted: boolean
+    title: string
+    cvType: CvType
+    templateId: number
+    template: CvTemplateDetail
+    extraData: CvOnlineExtraData
+    pdfUrl: string | null
+    isDefault: boolean
+    visibility: CvVisibility
+    parseStatus: CvParseStatus
+    viewCount: number
+    createdAt: string | null
+    updatedAt: string | null
 }
 
 export interface ResOnlineCv {

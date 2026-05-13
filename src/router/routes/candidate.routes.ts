@@ -79,8 +79,14 @@ export const candidateRoutes: RouteRecordRaw[] = [
                 component: () => import('@/pages/candidate/CvTemplateListPage.vue'),
             },
             {
-                path: 'cv-online/:id/edit',
+                path: 'cv-online/draft/:localDraftId',
                 name: 'CvOnlineEditor',
+                component: () => import('@/pages/candidate/CvOnlineEditorPage.vue'),
+                meta: { requiresAuth: true, role: 'CANDIDATE' },
+            },
+            {
+                path: 'cv-online/:id/edit',
+                name: 'CvOnlineEditorLegacy',
                 component: () => import('@/pages/candidate/CvOnlineEditorPage.vue'),
                 meta: { requiresAuth: true, role: 'CANDIDATE' },
             },

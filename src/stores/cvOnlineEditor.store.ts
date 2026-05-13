@@ -12,50 +12,219 @@ import {
 } from '@/constants/cvOnline.constants'
 import type {
     CvOnlineCertificationItem,
+    CvOnlineLocalDraft,
     CvOnlineEducationItem,
     CvOnlineExperienceItem,
     CvOnlineExtraData,
     CvOnlineLanguageItem,
     CvOnlineSkillItem,
-    ReqCreateOnlineCv,
-    ResOnlineCv,
+    CvTemplateDetail,
+    ResOnlineCvEditorPayload,
 } from '@/types/cvOnline.types'
 
+const DRAFT_INDEX_KEY = 'cv_online_draft_index'
+const DRAFT_STORAGE_PREFIX = 'cv_online_draft:'
+const AUTOSAVE_DELAY_MS = 800
+
+function isBrowser() {
+    return typeof window !== 'undefined' && typeof window.localStorage !== 'undefined'
+}
+
+function nowIso() {
+    return new Date().toISOString()
+}
+
+function buildDraftStorageKey(localDraftId: string) {
+    return `${DRAFT_STORAGE_PREFIX}${localDraftId}`
+}
+
+function generateLocalDraftId() {
+    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+        return crypto.randomUUID()
+    }
+    return `cv-draft-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
+}
+
+function readDraftIndex(): string[] {
+    if (!isBrowser()) return []
+    const raw = window.localStorage.getItem(DRAFT_INDEX_KEY)
+    if (!raw) return []
+
+    try {
+        const parsed = JSON.parse(raw)
+        return Array.isArray(parsed) ? parsed.filter((item): item is string => typeof item === 'string') : []
+    } catch {
+        return []
+    }
+}
+
+function writeDraftIndex(localDraftIds: string[]) {
+    if (!isBrowser()) return
+    window.localStorage.setItem(DRAFT_INDEX_KEY, JSON.stringify([...new Set(localDraftIds)]))
+}
+
+function persistDraftToStorage(draft: CvOnlineLocalDraft) {
+    if (!isBrowser()) return
+    window.localStorage.setItem(buildDraftStorageKey(draft.localDraftId), JSON.stringify(draft))
+    writeDraftIndex([...readDraftIndex(), draft.localDraftId])
+}
+
+function removeDraftFromStorage(localDraftId: string) {
+    if (!isBrowser()) return
+    window.localStorage.removeItem(buildDraftStorageKey(localDraftId))
+    writeDraftIndex(readDraftIndex().filter((item) => item !== localDraftId))
+}
+
+function readDraftFromStorage(localDraftId: string): CvOnlineLocalDraft | null {
+    if (!isBrowser()) return null
+    const raw = window.localStorage.getItem(buildDraftStorageKey(localDraftId))
+    if (!raw) return null
+
+    try {
+        const parsed = JSON.parse(raw) as Partial<CvOnlineLocalDraft>
+        if (
+            !parsed.localDraftId ||
+            typeof parsed.templateId !== 'number' ||
+            !parsed.template ||
+            typeof parsed.template.id !== 'number' ||
+            typeof parsed.template.htmlContent !== 'string' ||
+            typeof parsed.template.cssContent !== 'string'
+        ) {
+            return null
+        }
+
+        return {
+            localDraftId: parsed.localDraftId,
+            serverId: typeof parsed.serverId === 'number' ? parsed.serverId : null,
+            persisted: typeof parsed.persisted === 'boolean' ? parsed.persisted : typeof parsed.serverId === 'number',
+            templateId: parsed.templateId,
+            title: parsed.title ?? '',
+            template: parsed.template as CvTemplateDetail,
+            status: parsed.status ?? 'local-only',
+            createdAt: parsed.createdAt ?? nowIso(),
+            updatedAt: parsed.updatedAt ?? nowIso(),
+            lastSyncedAt: parsed.lastSyncedAt ?? null,
+            extraData: normalizeExtraData(parsed.extraData),
+        }
+    } catch {
+        return null
+    }
+}
+
+function mapEditorPayloadToLocalDraft(payload: ResOnlineCvEditorPayload): CvOnlineLocalDraft {
+    const timestamp = nowIso()
+
+    return {
+        localDraftId: generateLocalDraftId(),
+        serverId: payload.cvId,
+        persisted: payload.persisted,
+        templateId: payload.templateId,
+        title: payload.title,
+        template: payload.template,
+        status: payload.persisted ? 'synced' : 'local-only',
+        createdAt: payload.createdAt ?? timestamp,
+        updatedAt: payload.updatedAt ?? timestamp,
+        lastSyncedAt: payload.persisted ? (payload.updatedAt ?? timestamp) : null,
+        extraData: normalizeExtraData(payload.extraData),
+    }
+}
+
 export const useCvOnlineEditorStore = defineStore('cvOnlineEditor', () => {
-    const currentCv = ref<ResOnlineCv | null>(null)
+    const currentDraft = ref<CvOnlineLocalDraft | null>(null)
     const loading = ref(false)
     const saving = ref(false)
+    const switchingTemplate = ref(false)
     const error = ref<string | null>(null)
     const lastSavedAt = ref<string | null>(null)
+    const hasPendingChanges = ref(false)
+    const lastLoadedAt = ref<string | null>(null)
+    const lastLocalSavedAt = ref<string | null>(null)
     let autosaveTimer: ReturnType<typeof setTimeout> | null = null
 
+    const currentCv = computed(() => {
+        if (!currentDraft.value) return null
+
+        return {
+            id: currentDraft.value.serverId,
+            localDraftId: currentDraft.value.localDraftId,
+            title: currentDraft.value.title,
+            templateId: currentDraft.value.templateId,
+            persisted: currentDraft.value.persisted,
+            status: currentDraft.value.status,
+            template: currentDraft.value.template,
+            extraData: currentDraft.value.extraData,
+        }
+    })
+
     const extraData = computed<CvOnlineExtraData>(() =>
-        normalizeExtraData(currentCv.value?.extraData ?? createEmptyCvOnlineExtraData()),
+        normalizeExtraData(currentDraft.value?.extraData ?? createEmptyCvOnlineExtraData()),
     )
+
+    const saveStateLabel = computed(() => {
+        if (switchingTemplate.value) return 'Dang doi template...'
+        if (saving.value) return 'Dang luu len he thong...'
+        if (hasPendingChanges.value) return 'Co thay doi chua luu'
+        if (lastSavedAt.value) {
+            return `Da luu len he thong luc ${new Date(lastSavedAt.value).toLocaleTimeString('vi-VN')}`
+        }
+        if (lastLocalSavedAt.value) {
+            return `Da luu nhap cuc bo luc ${new Date(lastLocalSavedAt.value).toLocaleTimeString('vi-VN')}`
+        }
+        return 'Chua co thay doi'
+    })
 
     function setError(err: unknown) {
         const message = (err as any)?.response?.data?.message
         error.value = typeof message === 'string' ? message : 'Co loi xay ra. Vui long thu lai.'
     }
 
-    function applyCv(nextCv: ResOnlineCv) {
-        currentCv.value = {
-            ...nextCv,
-            extraData: normalizeExtraData(nextCv.extraData),
-        }
-        lastSavedAt.value = nextCv.updatedAt
+    function clearAutosaveTimer() {
+        if (!autosaveTimer) return
+        clearTimeout(autosaveTimer)
+        autosaveTimer = null
     }
 
-    async function createDraft(payload: ReqCreateOnlineCv) {
+    function applyDraft(nextDraft: CvOnlineLocalDraft) {
+        currentDraft.value = {
+            ...nextDraft,
+            extraData: normalizeExtraData(nextDraft.extraData),
+        }
+        lastSavedAt.value = nextDraft.lastSyncedAt
+        lastLocalSavedAt.value = nextDraft.updatedAt
+        hasPendingChanges.value = nextDraft.status !== 'synced'
+    }
+
+    function flushLocalDraft() {
+        if (!currentDraft.value) return
+        clearAutosaveTimer()
+        persistDraftToStorage({
+            ...currentDraft.value,
+            extraData: normalizeExtraData(currentDraft.value.extraData),
+        })
+        lastLocalSavedAt.value = currentDraft.value.updatedAt
+    }
+
+    function markDirty() {
+        if (!currentDraft.value) return
+        currentDraft.value.updatedAt = nowIso()
+        if (currentDraft.value.serverId) {
+            currentDraft.value.status = 'dirty'
+        } else {
+            currentDraft.value.status = 'local-only'
+        }
+        hasPendingChanges.value = true
+    }
+
+    async function createLocalDraftFromTemplate(templateId: number) {
         loading.value = true
         error.value = null
         try {
-            const created = await cvOnlineService.createOnlineCv({
-                ...payload,
-                extraData: normalizeExtraData(payload.extraData),
-            })
-            applyCv(created)
-            return created
+            const payload = await cvOnlineService.getOnlineCvEditorPayloadByTemplateId(templateId)
+            const draft = mapEditorPayloadToLocalDraft(payload)
+            persistDraftToStorage(draft)
+            applyDraft(draft)
+            lastLoadedAt.value = nowIso()
+            return draft
         } catch (err) {
             setError(err)
             throw err
@@ -64,13 +233,40 @@ export const useCvOnlineEditorStore = defineStore('cvOnlineEditor', () => {
         }
     }
 
-    async function fetchDraftById(id: number) {
+    async function loadDraftByLocalId(localDraftId: string) {
         loading.value = true
         error.value = null
         try {
-            const detail = await cvOnlineService.getOnlineCvById(id)
-            applyCv(detail)
-            return detail
+            const draft = readDraftFromStorage(localDraftId)
+            if (!draft) {
+                throw new Error('LOCAL_DRAFT_NOT_FOUND')
+            }
+
+            applyDraft(draft)
+            lastLoadedAt.value = nowIso()
+            return draft
+        } catch (err) {
+            if ((err as Error).message === 'LOCAL_DRAFT_NOT_FOUND') {
+                error.value = 'Khong tim thay ban nhap cuc bo.'
+            } else {
+                setError(err)
+            }
+            throw err
+        } finally {
+            loading.value = false
+        }
+    }
+
+    async function bootstrapDraftFromServerId(id: number) {
+        loading.value = true
+        error.value = null
+        try {
+            const payload = await cvOnlineService.getOnlineCvEditorPayload(id)
+            const draft = mapEditorPayloadToLocalDraft(payload)
+            persistDraftToStorage(draft)
+            applyDraft(draft)
+            lastLoadedAt.value = nowIso()
+            return draft
         } catch (err) {
             setError(err)
             throw err
@@ -80,16 +276,37 @@ export const useCvOnlineEditorStore = defineStore('cvOnlineEditor', () => {
     }
 
     async function saveDraftNow() {
-        if (!currentCv.value) return null
+        if (!currentDraft.value) return null
         saving.value = true
         error.value = null
         try {
-            const updated = await cvOnlineService.updateOnlineCv(currentCv.value.id, {
-                title: currentCv.value.title,
-                extraData: normalizeExtraData(currentCv.value.extraData),
-            })
-            applyCv(updated)
-            return updated
+            const normalizedExtraData = normalizeExtraData(currentDraft.value.extraData)
+            const savedDraft = currentDraft.value
+
+            if (savedDraft.serverId) {
+                await cvOnlineService.updateOnlineCv(savedDraft.serverId, {
+                    title: savedDraft.title,
+                    extraData: normalizedExtraData,
+                })
+            } else {
+                const created = await cvOnlineService.createOnlineCv({
+                    title: savedDraft.title,
+                    templateId: savedDraft.templateId,
+                    isDefault: false,
+                    extraData: normalizedExtraData,
+                })
+                savedDraft.serverId = created.id
+                savedDraft.persisted = true
+            }
+
+            savedDraft.extraData = normalizedExtraData
+            savedDraft.persisted = true
+            savedDraft.status = 'synced'
+            savedDraft.updatedAt = nowIso()
+            savedDraft.lastSyncedAt = savedDraft.updatedAt
+            removeDraftFromStorage(savedDraft.localDraftId)
+            applyDraft(savedDraft)
+            return savedDraft
         } catch (err) {
             setError(err)
             throw err
@@ -99,44 +316,45 @@ export const useCvOnlineEditorStore = defineStore('cvOnlineEditor', () => {
     }
 
     function queueAutosave() {
-        if (autosaveTimer) {
-            clearTimeout(autosaveTimer)
-        }
+        clearAutosaveTimer()
         autosaveTimer = setTimeout(() => {
-            void saveDraftNow()
-        }, 700)
+            flushLocalDraft()
+        }, AUTOSAVE_DELAY_MS)
     }
 
     async function changeTemplate(templateId: number) {
-        if (!currentCv.value) return null
-        saving.value = true
+        if (!currentDraft.value) return null
+        switchingTemplate.value = true
         error.value = null
         try {
-            const updated = await cvOnlineService.changeTemplate(currentCv.value.id, { templateId })
-            applyCv(updated)
-            return updated
+            const templatePayload = await cvOnlineService.getOnlineCvEditorPayloadByTemplateId(templateId)
+            currentDraft.value.templateId = templateId
+            currentDraft.value.template = templatePayload.template
+            markDirty()
+            flushLocalDraft()
+            return templatePayload.template
         } catch (err) {
             setError(err)
             throw err
         } finally {
-            saving.value = false
+            switchingTemplate.value = false
         }
     }
 
     function patchDraftTitle(title: string) {
-        if (!currentCv.value) return
-        currentCv.value.title = title
-        currentCv.value.updatedAt = new Date().toISOString()
+        if (!currentDraft.value) return
+        currentDraft.value.title = title
+        markDirty()
         queueAutosave()
     }
 
     function patchExtraData(patch: Partial<CvOnlineExtraData>) {
-        if (!currentCv.value) return
-        currentCv.value.extraData = normalizeExtraData({
-            ...currentCv.value.extraData,
+        if (!currentDraft.value) return
+        currentDraft.value.extraData = normalizeExtraData({
+            ...currentDraft.value.extraData,
             ...patch,
         })
-        currentCv.value.updatedAt = new Date().toISOString()
+        markDirty()
         queueAutosave()
     }
 
@@ -241,24 +459,37 @@ export const useCvOnlineEditorStore = defineStore('cvOnlineEditor', () => {
     }
 
     function reset() {
-        currentCv.value = null
+        clearAutosaveTimer()
+        currentDraft.value = null
         loading.value = false
         saving.value = false
+        switchingTemplate.value = false
         error.value = null
         lastSavedAt.value = null
+        lastLocalSavedAt.value = null
+        lastLoadedAt.value = null
+        hasPendingChanges.value = false
     }
 
     return {
+        currentDraft,
         currentCv,
         loading,
         saving,
+        switchingTemplate,
         error,
         lastSavedAt,
+        lastLocalSavedAt,
+        lastLoadedAt,
+        hasPendingChanges,
         extraData,
-        createDraft,
-        fetchDraftById,
+        saveStateLabel,
+        createLocalDraftFromTemplate,
+        loadDraftByLocalId,
+        bootstrapDraftFromServerId,
         saveDraftNow,
         queueAutosave,
+        flushLocalDraft,
         changeTemplate,
         patchDraftTitle,
         patchExtraData,

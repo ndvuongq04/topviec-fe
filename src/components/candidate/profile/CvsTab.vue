@@ -121,14 +121,14 @@
               Chia sẻ
             </button>
 
-            <a 
-              :href="cv.pdfUrl || cv.fileUrl" 
-              target="_blank"
+            <button 
               class="flex items-center gap-1.5 px-3 py-1.5 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-text-main dark:text-white hover:bg-slate-50 dark:hover:bg-slate-800 transition-all bg-white dark:bg-slate-900 shadow-sm cursor-pointer"
+              type="button"
+              @click="handleViewCv(cv)"
             >
               <span class="material-symbols-outlined text-[18px]">visibility</span>
               Xem
-            </a>
+            </button>
 
             <a 
               :href="cv.fileUrl" 
@@ -182,8 +182,9 @@
 
 <script setup lang="ts">
 import { ref, computed, reactive } from 'vue'
+import { useRouter } from 'vue-router'
 import { useCvsStore } from '@/stores/cvs.store'
-import { CV_VISIBILITY } from '@/constants/cvs.constants'
+import { CV_TYPE, CV_VISIBILITY } from '@/constants/cvs.constants'
 import { useConfirm } from '@/composables/useConfirm'
 import { useToast } from '@/composables/useToast'
 import GlobalModal from '@/components/ui/GlobalModal.vue'
@@ -191,6 +192,7 @@ import GlobalConfirmModal from '@/components/ui/GlobalConfirmModal.vue'
 import type { ResCv } from '@/types/cvs.types'
 
 const cvStore = useCvsStore()
+const router = useRouter()
 const { confirm } = useConfirm()
 const toast = useToast()
 
@@ -318,6 +320,20 @@ async function setDefault(cv: ResCv) {
     toast.success('Đã đặt làm CV chính', `CV "${cv.title}" hiện là CV mặc định của bạn.`)
   } catch (err: any) {
     toast.error('Thao tác thất bại', err.response?.data?.message || 'Không thể đặt CV mặc định.')
+  }
+}
+
+function handleViewCv(cv: ResCv) {
+  if (cv.cvType === CV_TYPE.ONLINE) {
+    void router.push({ name: 'CvOnlineEditorLegacy', params: { id: cv.id } })
+    return
+  }
+
+  const previewUrl = cv.pdfUrl || cv.fileUrl
+  if (previewUrl) {
+    window.open(previewUrl, '_blank', 'noopener,noreferrer')
+  } else {
+    toast.error('Khong mo duoc CV', 'CV nay hien khong co duong dan xem truoc hop le.')
   }
 }
 
