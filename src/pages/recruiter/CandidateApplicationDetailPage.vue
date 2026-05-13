@@ -9,6 +9,7 @@
       <!-- Left: PDF CV -->
       <CvPreviewPanel
         :candidate-name="application.candidateName"
+        :cv-preview-url="application.cvPreviewUrl"
         :cv-pdf-url="application.cvPdfUrl"
         :cv-file-url="application.cvFileUrl"
       />

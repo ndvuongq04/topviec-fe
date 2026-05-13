@@ -21,8 +21,9 @@ export interface ResCv {
     id: number;
     title: string;
     cvType: CvType;
-    fileUrl: string;
-    pdfUrl: string;
+    fileUrl: string | null;
+    pdfUrl: string | null;
+    templateId?: number | null;
     isDefault: boolean;
     visibility: CvVisibility;
     shareToken: string | null;

@@ -26,8 +26,10 @@ export interface ResEmployerApplicationDTO {
 
   // Thông tin CV
   cvId: number;
-  cvFileUrl: string;
-  cvPdfUrl?: string;
+  cvType?: string;
+  cvFileUrl: string | null;
+  cvPdfUrl?: string | null;
+  cvPreviewUrl?: string | null;
 
   // Thông tin apply
   status: ApplicationStatus;

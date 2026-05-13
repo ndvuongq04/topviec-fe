@@ -54,6 +54,14 @@
               <h4 class="text-base font-bold text-text-main dark:text-white uppercase tracking-tight truncate">
                 {{ cv.title }}
               </h4>
+              <span
+                class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider"
+                :class="cv.cvType === CV_TYPE.ONLINE
+                  ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300'
+                  : 'bg-slate-100 text-slate-600 dark:bg-slate-700/50 dark:text-slate-300'"
+              >
+                {{ cv.cvType === CV_TYPE.ONLINE ? 'CV online' : 'CV tải lên' }}
+              </span>
               <button 
                 class="p-1 text-text-muted hover:text-primary transition-colors hover:bg-slate-100 dark:hover:bg-slate-700 rounded-md cursor-pointer"
                 title="Sửa tên file"
@@ -335,7 +343,7 @@ async function setDefault(cv: ResCv) {
 }
 
 function handleViewCv(cv: ResCv) {
-  const previewUrl = cv.pdfUrl || cv.fileUrl
+  const previewUrl = cv.cvType === CV_TYPE.ONLINE ? cv.pdfUrl : cv.fileUrl || cv.pdfUrl
   if (previewUrl) {
     window.open(previewUrl, '_blank', 'noopener,noreferrer')
   } else {

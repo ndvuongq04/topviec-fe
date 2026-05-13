@@ -187,6 +187,7 @@ import {
 } from '@/constants/application.constants'
 import { useToast } from '@/composables/useToast'
 import { useConfirm } from '@/composables/useConfirm'
+import { CV_TYPE } from '@/constants/cvs.constants'
 import type { ResApplication } from '@/types/application.types'
 import dayjs from 'dayjs'
 
@@ -223,7 +224,11 @@ async function handleViewCv(app: ResApplication) {
   try {
     await cvsStore.fetchCvById(app.cvId)
     const cv = cvsStore.currentCv
-    const url = cv?.fileUrl || cv?.pdfUrl
+    const url = cv
+      ? cv.cvType === CV_TYPE.ONLINE
+        ? cv.pdfUrl
+        : cv.fileUrl || cv.pdfUrl
+      : null
     if (url) {
       window.open(url, '_blank')
     } else {
