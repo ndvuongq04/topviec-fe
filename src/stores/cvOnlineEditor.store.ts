@@ -13,6 +13,7 @@ import {
 import type {
     CvOnlineCertificationItem,
     CvOnlineLocalDraft,
+    CvOnlinePdfState,
     CvOnlineEducationItem,
     CvOnlineExperienceItem,
     CvOnlineExtraData,
@@ -100,6 +101,7 @@ function readDraftFromStorage(localDraftId: string): CvOnlineLocalDraft | null {
             templateId: parsed.templateId,
             title: parsed.title ?? '',
             template: parsed.template as CvTemplateDetail,
+            pdfUrl: parsed.pdfUrl ?? null,
             status: parsed.status ?? 'local-only',
             createdAt: parsed.createdAt ?? nowIso(),
             updatedAt: parsed.updatedAt ?? nowIso(),
@@ -121,6 +123,7 @@ function mapEditorPayloadToLocalDraft(payload: ResOnlineCvEditorPayload): CvOnli
         templateId: payload.templateId,
         title: payload.title,
         template: payload.template,
+        pdfUrl: payload.pdfUrl,
         status: payload.persisted ? 'synced' : 'local-only',
         createdAt: payload.createdAt ?? timestamp,
         updatedAt: payload.updatedAt ?? timestamp,
@@ -135,6 +138,7 @@ export const useCvOnlineEditorStore = defineStore('cvOnlineEditor', () => {
     const saving = ref(false)
     const switchingTemplate = ref(false)
     const error = ref<string | null>(null)
+    const pdfError = ref<string | null>(null)
     const lastSavedAt = ref<string | null>(null)
     const hasPendingChanges = ref(false)
     const lastLoadedAt = ref<string | null>(null)
@@ -152,6 +156,7 @@ export const useCvOnlineEditorStore = defineStore('cvOnlineEditor', () => {
             persisted: currentDraft.value.persisted,
             status: currentDraft.value.status,
             template: currentDraft.value.template,
+            pdfUrl: currentDraft.value.pdfUrl,
             extraData: currentDraft.value.extraData,
         }
     })
@@ -173,6 +178,27 @@ export const useCvOnlineEditorStore = defineStore('cvOnlineEditor', () => {
         return 'Chua co thay doi'
     })
 
+    const pdfState = computed<CvOnlinePdfState>(() => {
+        if (pdfError.value) return 'failed'
+        if (!currentDraft.value?.serverId) return 'unavailable'
+        if (hasPendingChanges.value) return 'stale'
+        if (currentDraft.value.pdfUrl) return 'ready'
+        return 'unavailable'
+    })
+
+    const pdfStateLabel = computed(() => {
+        switch (pdfState.value) {
+            case 'failed':
+                return 'Khong tai duoc PDF'
+            case 'stale':
+                return 'PDF cu da het hieu luc'
+            case 'ready':
+                return 'Da luu va co PDF'
+            default:
+                return 'Chua luu CV'
+        }
+    })
+
     function setError(err: unknown) {
         const message = (err as any)?.response?.data?.message
         error.value = typeof message === 'string' ? message : 'Co loi xay ra. Vui long thu lai.'
@@ -191,6 +217,7 @@ export const useCvOnlineEditorStore = defineStore('cvOnlineEditor', () => {
         }
         lastSavedAt.value = nextDraft.lastSyncedAt
         lastLocalSavedAt.value = nextDraft.updatedAt
+        pdfError.value = null
         hasPendingChanges.value = nextDraft.status !== 'synced'
     }
 
@@ -282,28 +309,29 @@ export const useCvOnlineEditorStore = defineStore('cvOnlineEditor', () => {
         try {
             const normalizedExtraData = normalizeExtraData(currentDraft.value.extraData)
             const savedDraft = currentDraft.value
+            let response
 
             if (savedDraft.serverId) {
-                await cvOnlineService.updateOnlineCv(savedDraft.serverId, {
+                response = await cvOnlineService.updateOnlineCv(savedDraft.serverId, {
                     title: savedDraft.title,
                     extraData: normalizedExtraData,
                 })
             } else {
-                const created = await cvOnlineService.createOnlineCv({
+                response = await cvOnlineService.createOnlineCv({
                     title: savedDraft.title,
                     templateId: savedDraft.templateId,
                     isDefault: false,
                     extraData: normalizedExtraData,
                 })
-                savedDraft.serverId = created.id
-                savedDraft.persisted = true
             }
 
+            savedDraft.serverId = response.id
             savedDraft.extraData = normalizedExtraData
             savedDraft.persisted = true
             savedDraft.status = 'synced'
-            savedDraft.updatedAt = nowIso()
-            savedDraft.lastSyncedAt = savedDraft.updatedAt
+            savedDraft.pdfUrl = response.pdfUrl
+            savedDraft.updatedAt = response.updatedAt
+            savedDraft.lastSyncedAt = response.updatedAt
             removeDraftFromStorage(savedDraft.localDraftId)
             applyDraft(savedDraft)
             return savedDraft
@@ -327,6 +355,23 @@ export const useCvOnlineEditorStore = defineStore('cvOnlineEditor', () => {
         switchingTemplate.value = true
         error.value = null
         try {
+            if (currentDraft.value.serverId) {
+                const response = await cvOnlineService.changeTemplate(currentDraft.value.serverId, { templateId })
+                currentDraft.value.templateId = response.templateId
+                currentDraft.value.template = response.template
+                currentDraft.value.pdfUrl = response.pdfUrl
+                currentDraft.value.persisted = true
+                currentDraft.value.status = 'synced'
+                currentDraft.value.updatedAt = response.updatedAt
+                currentDraft.value.lastSyncedAt = response.updatedAt
+                lastSavedAt.value = response.updatedAt
+                lastLocalSavedAt.value = response.updatedAt
+                pdfError.value = null
+                hasPendingChanges.value = false
+                flushLocalDraft()
+                return response.template
+            }
+
             const templatePayload = await cvOnlineService.getOnlineCvEditorPayloadByTemplateId(templateId)
             currentDraft.value.templateId = templateId
             currentDraft.value.template = templatePayload.template
@@ -338,6 +383,27 @@ export const useCvOnlineEditorStore = defineStore('cvOnlineEditor', () => {
             throw err
         } finally {
             switchingTemplate.value = false
+        }
+    }
+
+    async function downloadPdf() {
+        if (!currentDraft.value?.serverId) return null
+        pdfError.value = null
+        try {
+            const blob = await cvOnlineService.downloadOnlineCvPdf(currentDraft.value.serverId)
+            const url = window.URL.createObjectURL(blob)
+            const anchor = document.createElement('a')
+            anchor.href = url
+            anchor.download = `${currentDraft.value.title || 'cv-online'}.pdf`
+            document.body.appendChild(anchor)
+            anchor.click()
+            anchor.remove()
+            window.URL.revokeObjectURL(url)
+            return true
+        } catch (err) {
+            const message = (err as any)?.response?.data?.message
+            pdfError.value = typeof message === 'string' ? message : 'Khong the tai PDF luc nay.'
+            throw err
         }
     }
 
@@ -465,6 +531,7 @@ export const useCvOnlineEditorStore = defineStore('cvOnlineEditor', () => {
         saving.value = false
         switchingTemplate.value = false
         error.value = null
+        pdfError.value = null
         lastSavedAt.value = null
         lastLocalSavedAt.value = null
         lastLoadedAt.value = null
@@ -478,16 +545,20 @@ export const useCvOnlineEditorStore = defineStore('cvOnlineEditor', () => {
         saving,
         switchingTemplate,
         error,
+        pdfError,
         lastSavedAt,
         lastLocalSavedAt,
         lastLoadedAt,
         hasPendingChanges,
         extraData,
+        pdfState,
+        pdfStateLabel,
         saveStateLabel,
         createLocalDraftFromTemplate,
         loadDraftByLocalId,
         bootstrapDraftFromServerId,
         saveDraftNow,
+        downloadPdf,
         queueAutosave,
         flushLocalDraft,
         changeTemplate,

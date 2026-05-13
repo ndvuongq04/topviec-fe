@@ -49,7 +49,17 @@
                 <h2 class="text-lg font-black text-slate-900">Template va save</h2>
                 <p class="mt-1 text-sm text-slate-500">Doi template ma van giu nguyen editor data hien tai.</p>
               </div>
-              <button class="tv-chip" type="button" :disabled="editorStore.saving" @click="handleManualSave()">Luu ngay</button>
+              <div class="flex flex-wrap justify-end gap-2">
+                <button class="tv-chip" type="button" :disabled="editorStore.saving" @click="handleManualSave()">Luu ngay</button>
+                <button
+                  class="tv-chip tv-chip--ghost"
+                  type="button"
+                  :disabled="!currentCv.id"
+                  @click="handleDownloadPdf()"
+                >
+                  Tai PDF
+                </button>
+              </div>
             </div>
 
             <div class="mt-4 grid gap-3">
@@ -71,6 +81,8 @@
                 <p><strong class="text-slate-900">Lan tai gan nhat:</strong> {{ loadedLabel }}</p>
                 <p><strong class="text-slate-900">Local draft ID:</strong> {{ currentCv.localDraftId }}</p>
                 <p><strong class="text-slate-900">Template slug:</strong> {{ currentCv.template.slug }}</p>
+                <p><strong class="text-slate-900">Trang thai PDF:</strong> {{ editorStore.pdfStateLabel }}</p>
+                <p v-if="editorStore.pdfError" class="text-rose-600">{{ editorStore.pdfError }}</p>
               </div>
             </div>
           </section>
@@ -302,6 +314,20 @@ async function handleManualSave() {
   }
 }
 
+async function handleDownloadPdf() {
+  if (!currentCv.value?.id) {
+    toast.warning('Chua the tai PDF', 'Ban can luu CV len he thong truoc.')
+    return
+  }
+
+  try {
+    await editorStore.downloadPdf()
+    toast.success('Dang tai PDF')
+  } catch {
+    toast.error('Khong tai duoc PDF', editorStore.pdfError ?? undefined)
+  }
+}
+
 async function handleTemplateChange(event: Event) {
   const templateId = Number((event.target as HTMLSelectElement).value)
   if (!Number.isFinite(templateId) || templateId === currentCv.value?.templateId) return
@@ -403,5 +429,11 @@ function updateLanguage(index: number, field: 'name' | 'level' | 'certificate', 
   font-size: 0.875rem;
   font-weight: 700;
   cursor: pointer;
+}
+
+.tv-chip--ghost {
+  background: #fff;
+  color: #0f172a;
+  border: 1px solid #cbd5e1;
 }
 </style>

@@ -130,14 +130,24 @@
               Xem
             </button>
 
-            <a 
-              :href="cv.fileUrl" 
-              download
+            <button
+              v-if="cv.cvType === CV_TYPE.ONLINE"
               class="flex items-center gap-1.5 px-3 py-1.5 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-text-main dark:text-white hover:bg-slate-50 dark:hover:bg-slate-800 transition-all bg-white dark:bg-slate-900 shadow-sm cursor-pointer"
+              type="button"
+              @click="handleEditCv(cv)"
+            >
+              <span class="material-symbols-outlined text-[18px]">edit_square</span>
+              Sua
+            </button>
+
+            <button
+              class="flex items-center gap-1.5 px-3 py-1.5 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-text-main dark:text-white hover:bg-slate-50 dark:hover:bg-slate-800 transition-all bg-white dark:bg-slate-900 shadow-sm cursor-pointer"
+              type="button"
+              @click="handleDownloadCv(cv)"
             >
               <span class="material-symbols-outlined text-[18px]">download</span>
               Tải về
-            </a>
+            </button>
 
             <button 
               class="flex items-center gap-1.5 px-3 py-1.5 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-text-main dark:text-white hover:bg-red-50 hover:text-red-500 hover:border-red-100 dark:hover:bg-red-900/20 transition-all bg-white dark:bg-slate-900 shadow-sm cursor-pointer"
@@ -185,6 +195,7 @@ import { ref, computed, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCvsStore } from '@/stores/cvs.store'
 import { CV_TYPE, CV_VISIBILITY } from '@/constants/cvs.constants'
+import cvOnlineService from '@/services/cvOnline.service'
 import { useConfirm } from '@/composables/useConfirm'
 import { useToast } from '@/composables/useToast'
 import GlobalModal from '@/components/ui/GlobalModal.vue'
@@ -324,17 +335,47 @@ async function setDefault(cv: ResCv) {
 }
 
 function handleViewCv(cv: ResCv) {
-  if (cv.cvType === CV_TYPE.ONLINE) {
-    void router.push({ name: 'CvOnlineEditorLegacy', params: { id: cv.id } })
-    return
-  }
-
   const previewUrl = cv.pdfUrl || cv.fileUrl
   if (previewUrl) {
     window.open(previewUrl, '_blank', 'noopener,noreferrer')
   } else {
     toast.error('Khong mo duoc CV', 'CV nay hien khong co duong dan xem truoc hop le.')
   }
+}
+
+function handleEditCv(cv: ResCv) {
+  void router.push({ name: 'CvOnlineEditorLegacy', params: { id: cv.id } })
+}
+
+async function handleDownloadCv(cv: ResCv) {
+  if (cv.cvType === CV_TYPE.ONLINE) {
+    try {
+      const blob = await cvOnlineService.downloadOnlineCvPdf(cv.id)
+      const url = window.URL.createObjectURL(blob)
+      const anchor = document.createElement('a')
+      anchor.href = url
+      anchor.download = `${cv.title || 'cv-online'}.pdf`
+      document.body.appendChild(anchor)
+      anchor.click()
+      anchor.remove()
+      window.URL.revokeObjectURL(url)
+    } catch (err: any) {
+      toast.error('Khong tai duoc PDF', err?.response?.data?.message || 'Khong the tai file PDF luc nay.')
+    }
+    return
+  }
+
+  if (cv.fileUrl) {
+    const anchor = document.createElement('a')
+    anchor.href = cv.fileUrl
+    anchor.download = cv.title
+    document.body.appendChild(anchor)
+    anchor.click()
+    anchor.remove()
+    return
+  }
+
+  toast.error('Khong tai duoc CV', 'CV nay hien khong co duong dan tai ve hop le.')
 }
 
 async function copyUrl(url: string) {

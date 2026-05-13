@@ -88,12 +88,15 @@ export interface CvOnlineLocalDraft {
     templateId: number
     title: string
     template: CvTemplateDetail
+    pdfUrl: string | null
     status: CvOnlineDraftStatus
     createdAt: string
     updatedAt: string
     lastSyncedAt: string | null
     extraData: CvOnlineExtraData
 }
+
+export type CvOnlinePdfState = 'unavailable' | 'stale' | 'ready' | 'failed'
 
 export interface CvTemplateListItem {
     id: number

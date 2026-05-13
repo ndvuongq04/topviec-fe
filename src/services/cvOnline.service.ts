@@ -40,6 +40,13 @@ const cvOnlineService = {
         return res.data.data
     },
 
+    async downloadOnlineCvPdf(id: number): Promise<Blob> {
+        const res = await axiosInstance.get(`/cvs/${id}/download-pdf`, {
+            responseType: 'blob',
+        })
+        return res.data
+    },
+
     async changeTemplate(id: number, payload: ReqChangeOnlineCvTemplate): Promise<ResOnlineCv> {
         const res = await axiosInstance.patch<RestResponse<ResOnlineCv>>(
             `${BASE_URL}/${id}/template`,
