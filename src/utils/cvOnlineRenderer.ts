@@ -1,4 +1,4 @@
-import type { CvOnlineData } from '@/types/cvOnline.types'
+import type { CvOnlineExtraData } from '@/types/cvOnline.types'
 
 type RecordValue = Record<string, unknown>
 
@@ -21,10 +21,6 @@ function renderCollection(template: string, section: string, items: unknown[]) {
 
         return items
             .map((item) => {
-                if (typeof item === 'string') {
-                    return block.replace(/{{value}}/g, escapeHtml(item))
-                }
-
                 const record = (item ?? {}) as RecordValue
                 return block.replace(/{{(\w+)}}/g, (_match: string, key: string) => {
                     return escapeHtml(record[key])
@@ -34,7 +30,14 @@ function renderCollection(template: string, section: string, items: unknown[]) {
     })
 }
 
-export function renderCvTemplateHtml(templateHtml: string, data: CvOnlineData) {
+function flattenRootPlaceholders(data: CvOnlineExtraData) {
+    return {
+        ...data.personalInfo,
+        careerObjective: data.careerObjective,
+    }
+}
+
+export function renderCvTemplateHtml(templateHtml: string, data: CvOnlineExtraData) {
     let output = templateHtml
 
     output = renderCollection(output, 'experiences', data.experiences)
@@ -43,18 +46,19 @@ export function renderCvTemplateHtml(templateHtml: string, data: CvOnlineData) {
     output = renderCollection(output, 'certifications', data.certifications)
     output = renderCollection(output, 'languages', data.languages)
 
-    output = output.replace(/{{(\w+)}}/g, (_match: string, key: keyof CvOnlineData) => {
-        const value = data[key]
-        if (Array.isArray(value)) {
-            return ''
-        }
-        return escapeHtml(value)
+    const rootValues = flattenRootPlaceholders(data)
+    output = output.replace(/{{(\w+)}}/g, (_match: string, key: keyof typeof rootValues) => {
+        return escapeHtml(rootValues[key])
     })
 
     return output
 }
 
-export function buildCvPreviewDocument(templateHtml: string, templateCss: string, data: CvOnlineData) {
+export function buildCvPreviewDocument(
+    templateHtml: string,
+    templateCss: string,
+    data: CvOnlineExtraData,
+) {
     const renderedHtml = renderCvTemplateHtml(templateHtml, data)
     return `<!DOCTYPE html>
 <html lang="en">

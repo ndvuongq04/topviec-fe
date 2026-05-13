@@ -6,35 +6,42 @@
           <div class="space-y-2">
             <p class="text-xs font-black uppercase tracking-[0.24em] text-orange-600">CV Online Editor</p>
             <input
-              :value="draft?.title ?? ''"
+              :value="currentCv?.title ?? ''"
               class="w-full border-none bg-transparent p-0 text-3xl font-black tracking-tight text-slate-900 outline-none"
               placeholder="Ten CV"
-              @input="editorStore.updateDraftTitle(($event.target as HTMLInputElement).value)"
+              @input="editorStore.patchDraftTitle(($event.target as HTMLInputElement).value)"
             />
             <p class="text-sm text-slate-500">
-              Route phase 0 da duoc chot tai <code>/cv-online/:id/edit</code>, preview dung contract HTML/CSS va autosave local.
+              Phase 1 dang dung draft trong DB qua API <code>/cvs/online</code>, preview van render tu HTML/CSS backend.
             </p>
           </div>
 
           <div class="grid gap-2 text-sm text-slate-600">
-            <span>Template: <strong class="text-slate-900">{{ template?.name ?? 'Unknown' }}</strong></span>
+            <span>Template: <strong class="text-slate-900">{{ currentCv?.template?.name ?? 'Unknown' }}</strong></span>
             <span>Autosave: <strong class="text-slate-900">{{ autosaveLabel }}</strong></span>
-            <span>Placeholder: <strong class="text-slate-900">{{ template?.placeholderCatalog.length ?? 0 }}</strong></span>
+            <span>CV ID: <strong class="text-slate-900">{{ currentCv?.id ?? '-' }}</strong></span>
           </div>
         </div>
       </header>
 
-      <div v-if="draft && template" class="grid gap-6 xl:grid-cols-[420px_minmax(0,1fr)] xl:items-start">
+      <div v-if="currentCv" class="grid gap-6 xl:grid-cols-[420px_minmax(0,1fr)] xl:items-start">
         <aside class="space-y-5 xl:sticky xl:top-6">
           <section class="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm">
             <h2 class="text-lg font-black text-slate-900">Thong tin ca nhan</h2>
             <div class="mt-4 grid gap-3">
-              <input :value="draft.data.fullName" class="tv-input" placeholder="Ho va ten" @input="updateField('fullName', $event)" />
-              <input :value="draft.data.jobTitle" class="tv-input" placeholder="Vi tri mong muon" @input="updateField('jobTitle', $event)" />
-              <input :value="draft.data.email" class="tv-input" placeholder="Email" @input="updateField('email', $event)" />
-              <input :value="draft.data.phone" class="tv-input" placeholder="So dien thoai" @input="updateField('phone', $event)" />
-              <input :value="draft.data.address" class="tv-input" placeholder="Dia chi" @input="updateField('address', $event)" />
-              <textarea :value="draft.data.careerObjective" class="tv-input min-h-28 resize-y" placeholder="Muc tieu nghe nghiep" @input="updateField('careerObjective', $event)" />
+              <input :value="extraData.personalInfo.fullName" class="tv-input" placeholder="Ho va ten" @input="updatePersonal('fullName', $event)" />
+              <input :value="extraData.personalInfo.headline" class="tv-input" placeholder="Headline" @input="updatePersonal('headline', $event)" />
+              <input :value="extraData.personalInfo.email" class="tv-input" placeholder="Email" @input="updatePersonal('email', $event)" />
+              <input :value="extraData.personalInfo.phone" class="tv-input" placeholder="So dien thoai" @input="updatePersonal('phone', $event)" />
+              <input :value="extraData.personalInfo.address" class="tv-input" placeholder="Dia chi" @input="updatePersonal('address', $event)" />
+              <div class="grid grid-cols-2 gap-3">
+                <input :value="extraData.personalInfo.city" class="tv-input" placeholder="Thanh pho" @input="updatePersonal('city', $event)" />
+                <input :value="extraData.personalInfo.country" class="tv-input" placeholder="Quoc gia" @input="updatePersonal('country', $event)" />
+              </div>
+              <input :value="extraData.personalInfo.website" class="tv-input" placeholder="Website" @input="updatePersonal('website', $event)" />
+              <input :value="extraData.personalInfo.linkedin" class="tv-input" placeholder="LinkedIn" @input="updatePersonal('linkedin', $event)" />
+              <input :value="extraData.personalInfo.github" class="tv-input" placeholder="GitHub" @input="updatePersonal('github', $event)" />
+              <textarea :value="extraData.careerObjective" class="tv-input min-h-28 resize-y" placeholder="Muc tieu nghe nghiep" @input="editorStore.updateCareerObjective(($event.target as HTMLTextAreaElement).value)" />
             </div>
           </section>
 
@@ -44,14 +51,19 @@
               <button class="tv-chip" type="button" @click="editorStore.addExperience()">Them</button>
             </div>
             <div class="mt-4 grid gap-4">
-              <article v-for="(item, index) in draft.data.experiences" :key="item.id" class="rounded-2xl border border-slate-200 p-4">
+              <article v-for="(item, index) in extraData.experiences" :key="item.id" class="rounded-2xl border border-slate-200 p-4">
                 <div class="grid gap-3">
-                  <input :value="item.role" class="tv-input" placeholder="Chuc danh" @input="updateExperience(index, 'role', $event)" />
+                  <input :value="item.jobTitle" class="tv-input" placeholder="Chuc danh" @input="updateExperience(index, 'jobTitle', $event)" />
                   <input :value="item.company" class="tv-input" placeholder="Cong ty" @input="updateExperience(index, 'company', $event)" />
+                  <input :value="item.location" class="tv-input" placeholder="Dia diem" @input="updateExperience(index, 'location', $event)" />
                   <div class="grid grid-cols-2 gap-3">
                     <input :value="item.startDate" class="tv-input" placeholder="Bat dau" @input="updateExperience(index, 'startDate', $event)" />
                     <input :value="item.endDate" class="tv-input" placeholder="Ket thuc" @input="updateExperience(index, 'endDate', $event)" />
                   </div>
+                  <label class="flex items-center gap-2 text-sm font-medium text-slate-600">
+                    <input type="checkbox" :checked="item.isCurrent" @change="editorStore.updateExperience(index, { isCurrent: ($event.target as HTMLInputElement).checked })">
+                    Dang lam viec tai day
+                  </label>
                   <textarea :value="item.description" class="tv-input min-h-24 resize-y" placeholder="Mo ta cong viec" @input="updateExperience(index, 'description', $event)" />
                   <button class="tv-link" type="button" @click="editorStore.removeExperience(index)">Xoa muc nay</button>
                 </div>
@@ -65,10 +77,11 @@
               <button class="tv-chip" type="button" @click="editorStore.addEducation()">Them</button>
             </div>
             <div class="mt-4 grid gap-4">
-              <article v-for="(item, index) in draft.data.educations" :key="item.id" class="rounded-2xl border border-slate-200 p-4">
+              <article v-for="(item, index) in extraData.educations" :key="item.id" class="rounded-2xl border border-slate-200 p-4">
                 <div class="grid gap-3">
                   <input :value="item.degree" class="tv-input" placeholder="Bang cap" @input="updateEducation(index, 'degree', $event)" />
                   <input :value="item.school" class="tv-input" placeholder="Truong hoc" @input="updateEducation(index, 'school', $event)" />
+                  <input :value="item.fieldOfStudy" class="tv-input" placeholder="Chuyen nganh" @input="updateEducation(index, 'fieldOfStudy', $event)" />
                   <div class="grid grid-cols-2 gap-3">
                     <input :value="item.startDate" class="tv-input" placeholder="Bat dau" @input="updateEducation(index, 'startDate', $event)" />
                     <input :value="item.endDate" class="tv-input" placeholder="Ket thuc" @input="updateEducation(index, 'endDate', $event)" />
@@ -81,13 +94,20 @@
           </section>
 
           <section class="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm">
-            <h2 class="text-lg font-black text-slate-900">Ky nang</h2>
-            <textarea
-              :value="draft.data.skills.join(', ')"
-              class="tv-input mt-4 min-h-28 resize-y"
-              placeholder="Nhap ky nang, cach nhau boi dau phay"
-              @input="editorStore.updateSkills(($event.target as HTMLTextAreaElement).value)"
-            />
+            <div class="flex items-center justify-between gap-3">
+              <h2 class="text-lg font-black text-slate-900">Ky nang</h2>
+              <button class="tv-chip" type="button" @click="editorStore.addSkill()">Them</button>
+            </div>
+            <div class="mt-4 grid gap-4">
+              <article v-for="(item, index) in extraData.skills" :key="item.id" class="rounded-2xl border border-slate-200 p-4">
+                <div class="grid gap-3">
+                  <input :value="item.name" class="tv-input" placeholder="Ten ky nang" @input="updateSkill(index, 'name', $event)" />
+                  <input :value="item.level" class="tv-input" placeholder="Trinh do" @input="updateSkill(index, 'level', $event)" />
+                  <textarea :value="item.description" class="tv-input min-h-24 resize-y" placeholder="Mo ta" @input="updateSkill(index, 'description', $event)" />
+                  <button class="tv-link" type="button" @click="editorStore.removeSkill(index)">Xoa muc nay</button>
+                </div>
+              </article>
+            </div>
           </section>
 
           <section class="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm">
@@ -96,11 +116,17 @@
               <button class="tv-chip" type="button" @click="editorStore.addCertification()">Them</button>
             </div>
             <div class="mt-4 grid gap-4">
-              <article v-for="(item, index) in draft.data.certifications" :key="item.id" class="rounded-2xl border border-slate-200 p-4">
+              <article v-for="(item, index) in extraData.certifications" :key="item.id" class="rounded-2xl border border-slate-200 p-4">
                 <div class="grid gap-3">
                   <input :value="item.name" class="tv-input" placeholder="Ten chung chi" @input="updateCertification(index, 'name', $event)" />
                   <input :value="item.issuer" class="tv-input" placeholder="Don vi cap" @input="updateCertification(index, 'issuer', $event)" />
-                  <input :value="item.year" class="tv-input" placeholder="Nam" @input="updateCertification(index, 'year', $event)" />
+                  <div class="grid grid-cols-2 gap-3">
+                    <input :value="item.issuedAt" class="tv-input" placeholder="Ngay cap" @input="updateCertification(index, 'issuedAt', $event)" />
+                    <input :value="item.expiresAt" class="tv-input" placeholder="Ngay het han" @input="updateCertification(index, 'expiresAt', $event)" />
+                  </div>
+                  <input :value="item.credentialId" class="tv-input" placeholder="Credential ID" @input="updateCertification(index, 'credentialId', $event)" />
+                  <input :value="item.credentialUrl" class="tv-input" placeholder="Credential URL" @input="updateCertification(index, 'credentialUrl', $event)" />
+                  <textarea :value="item.description" class="tv-input min-h-24 resize-y" placeholder="Mo ta" @input="updateCertification(index, 'description', $event)" />
                   <button class="tv-link" type="button" @click="editorStore.removeCertification(index)">Xoa muc nay</button>
                 </div>
               </article>
@@ -113,10 +139,11 @@
               <button class="tv-chip" type="button" @click="editorStore.addLanguage()">Them</button>
             </div>
             <div class="mt-4 grid gap-4">
-              <article v-for="(item, index) in draft.data.languages" :key="item.id" class="rounded-2xl border border-slate-200 p-4">
+              <article v-for="(item, index) in extraData.languages" :key="item.id" class="rounded-2xl border border-slate-200 p-4">
                 <div class="grid gap-3">
                   <input :value="item.name" class="tv-input" placeholder="Ten ngon ngu" @input="updateLanguage(index, 'name', $event)" />
                   <input :value="item.level" class="tv-input" placeholder="Trinh do" @input="updateLanguage(index, 'level', $event)" />
+                  <input :value="item.certificate" class="tv-input" placeholder="Chung chi" @input="updateLanguage(index, 'certificate', $event)" />
                   <button class="tv-link" type="button" @click="editorStore.removeLanguage(index)">Xoa muc nay</button>
                 </div>
               </article>
@@ -128,19 +155,23 @@
           <div class="flex items-center justify-between rounded-[24px] border border-slate-200 bg-white/80 px-5 py-4">
             <div>
               <p class="text-sm font-bold text-slate-900">Live preview sandbox</p>
-              <p class="text-sm text-slate-500">Renderer bind du lieu vao placeholder va inject CSS qua iframe.</p>
+              <p class="text-sm text-slate-500">Noi dung dang dung html/css tra thang tu backend.</p>
             </div>
             <div class="text-right text-xs text-slate-500">
-              <p>Sections: {{ template.supportedSections.join(', ') }}</p>
-              <p v-if="editorStore.saveError" class="text-rose-600">{{ editorStore.saveError }}</p>
+              <p>Template ID: {{ currentCv.templateId }}</p>
+              <p v-if="editorStore.error" class="text-rose-600">{{ editorStore.error }}</p>
             </div>
           </div>
-          <CvPreviewRenderer :html="template.html" :css="template.css" :data="draft.data" />
+          <CvPreviewRenderer
+            :html="currentCv.template.htmlContent"
+            :css="currentCv.template.cssContent"
+            :data="extraData"
+          />
         </section>
       </div>
 
       <div v-else class="rounded-[28px] border border-amber-200 bg-amber-50 px-5 py-4 text-amber-800">
-        Khong tim thay draft hoac template hop le cho route nay.
+        Khong tim thay draft hop le cho route nay.
       </div>
     </div>
   </div>
@@ -151,75 +182,65 @@ import { computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import CvPreviewRenderer from '@/components/candidate/cv-online/CvPreviewRenderer.vue'
 import { useCvOnlineEditorStore } from '@/stores/cvOnlineEditor.store'
-import { useCvTemplateStore } from '@/stores/cvTemplate.store'
 
 const route = useRoute()
 const editorStore = useCvOnlineEditorStore()
-const templateStore = useCvTemplateStore()
 
-const draft = computed(() => editorStore.activeDraft)
-const template = computed(() => {
-    const templateId = draft.value?.templateId
-    return typeof templateId === 'number' ? templateStore.getTemplateById(templateId) : null
-})
+const currentCv = computed(() => editorStore.currentCv)
+const extraData = computed(() => editorStore.extraData)
 
 const autosaveLabel = computed(() => {
-    if (editorStore.isSaving) return 'Dang luu...'
-    if (editorStore.lastSavedAt) {
-        return `Da luu luc ${new Date(editorStore.lastSavedAt).toLocaleTimeString('vi-VN')}`
-    }
-    return 'Chua co thay doi'
+  if (editorStore.saving) return 'Dang luu...'
+  if (editorStore.lastSavedAt) {
+    return `Da luu luc ${new Date(editorStore.lastSavedAt).toLocaleTimeString('vi-VN')}`
+  }
+  return 'Chua co thay doi'
 })
 
 onMounted(() => {
-    editorStore.hydrate()
-    const routeId = String(route.params.id)
-    const queryTemplateId = Number(route.query.templateId ?? '')
-    const existingDraft = editorStore.drafts[routeId]
-
-    if (existingDraft) {
-        editorStore.setActiveDraft(routeId)
-        return
-    }
-
-    const templateId = Number.isFinite(queryTemplateId) && queryTemplateId > 0 ? queryTemplateId : 1
-    editorStore.ensureDraft(routeId, templateId)
+  const id = Number(route.params.id)
+  if (Number.isFinite(id) && id > 0) {
+    void editorStore.fetchDraftById(id)
+  }
 })
 
-function updateField(
-    field: 'fullName' | 'jobTitle' | 'email' | 'phone' | 'address' | 'careerObjective',
-    event: Event,
+function updatePersonal(
+  field: 'fullName' | 'headline' | 'email' | 'phone' | 'address' | 'city' | 'country' | 'website' | 'linkedin' | 'github',
+  event: Event,
 ) {
-    const value = (event.target as HTMLInputElement | HTMLTextAreaElement).value
-    editorStore.patchDraftData({ [field]: value })
+  editorStore.patchPersonalInfo(field, (event.target as HTMLInputElement).value)
 }
 
 function updateExperience(
-    index: number,
-    field: 'role' | 'company' | 'startDate' | 'endDate' | 'description',
-    event: Event,
+  index: number,
+  field: 'jobTitle' | 'company' | 'location' | 'startDate' | 'endDate' | 'description',
+  event: Event,
 ) {
-    const value = (event.target as HTMLInputElement | HTMLTextAreaElement).value
-    editorStore.updateExperience(index, { [field]: value })
+  editorStore.updateExperience(index, { [field]: (event.target as HTMLInputElement | HTMLTextAreaElement).value })
 }
 
 function updateEducation(
-    index: number,
-    field: 'degree' | 'school' | 'startDate' | 'endDate' | 'description',
-    event: Event,
+  index: number,
+  field: 'degree' | 'school' | 'fieldOfStudy' | 'startDate' | 'endDate' | 'description',
+  event: Event,
 ) {
-    const value = (event.target as HTMLInputElement | HTMLTextAreaElement).value
-    editorStore.updateEducation(index, { [field]: value })
+  editorStore.updateEducation(index, { [field]: (event.target as HTMLInputElement | HTMLTextAreaElement).value })
 }
 
-function updateCertification(index: number, field: 'name' | 'issuer' | 'year', event: Event) {
-    const value = (event.target as HTMLInputElement).value
-    editorStore.updateCertification(index, { [field]: value })
+function updateSkill(index: number, field: 'name' | 'level' | 'description', event: Event) {
+  editorStore.updateSkill(index, { [field]: (event.target as HTMLInputElement | HTMLTextAreaElement).value })
 }
 
-function updateLanguage(index: number, field: 'name' | 'level', event: Event) {
-    const value = (event.target as HTMLInputElement).value
-    editorStore.updateLanguage(index, { [field]: value })
+function updateCertification(
+  index: number,
+  field: 'name' | 'issuer' | 'issuedAt' | 'expiresAt' | 'credentialId' | 'credentialUrl' | 'description',
+  event: Event,
+) {
+  editorStore.updateCertification(index, { [field]: (event.target as HTMLInputElement | HTMLTextAreaElement).value })
+}
+
+function updateLanguage(index: number, field: 'name' | 'level' | 'certificate', event: Event) {
+  editorStore.updateLanguage(index, { [field]: (event.target as HTMLInputElement).value })
 }
 </script>
 

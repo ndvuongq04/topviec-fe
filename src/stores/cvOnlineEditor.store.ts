@@ -1,59 +1,100 @@
 import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
+import cvOnlineService from '@/services/cvOnline.service'
 import {
-    CV_ONLINE_STORAGE_KEY,
-    createEmptyCvOnlineData,
+    createEmptyCertification,
+    createEmptyCvOnlineExtraData,
+    createEmptyEducation,
+    createEmptyExperience,
+    createEmptyLanguage,
+    createEmptySkill,
+    normalizeExtraData,
 } from '@/constants/cvOnline.constants'
 import type {
     CvOnlineCertificationItem,
-    CvOnlineData,
-    CvOnlineDraft,
     CvOnlineEducationItem,
     CvOnlineExperienceItem,
+    CvOnlineExtraData,
     CvOnlineLanguageItem,
+    CvOnlineSkillItem,
+    ReqCreateOnlineCv,
+    ResOnlineCv,
 } from '@/types/cvOnline.types'
 
-function nowIso() {
-    return new Date().toISOString()
-}
-
 export const useCvOnlineEditorStore = defineStore('cvOnlineEditor', () => {
-    const drafts = ref<Record<string, CvOnlineDraft>>({})
-    const activeDraftId = ref<string | null>(null)
-    const isHydrated = ref(false)
-    const isSaving = ref(false)
-    const saveError = ref<string | null>(null)
+    const currentCv = ref<ResOnlineCv | null>(null)
+    const loading = ref(false)
+    const saving = ref(false)
+    const error = ref<string | null>(null)
     const lastSavedAt = ref<string | null>(null)
     let autosaveTimer: ReturnType<typeof setTimeout> | null = null
 
-    const activeDraft = computed(() => {
-        if (!activeDraftId.value) return null
-        return drafts.value[activeDraftId.value] ?? null
-    })
+    const extraData = computed<CvOnlineExtraData>(() =>
+        normalizeExtraData(currentCv.value?.extraData ?? createEmptyCvOnlineExtraData()),
+    )
 
-    function hydrate() {
-        if (isHydrated.value) return
-        const raw = localStorage.getItem(CV_ONLINE_STORAGE_KEY)
-        if (raw) {
-            try {
-                drafts.value = JSON.parse(raw) as Record<string, CvOnlineDraft>
-            } catch {
-                drafts.value = {}
-            }
-        }
-        isHydrated.value = true
+    function setError(err: unknown) {
+        const message = (err as any)?.response?.data?.message
+        error.value = typeof message === 'string' ? message : 'Co loi xay ra. Vui long thu lai.'
     }
 
-    function persistNow() {
-        isSaving.value = true
-        saveError.value = null
+    function applyCv(nextCv: ResOnlineCv) {
+        currentCv.value = {
+            ...nextCv,
+            extraData: normalizeExtraData(nextCv.extraData),
+        }
+        lastSavedAt.value = nextCv.updatedAt
+    }
+
+    async function createDraft(payload: ReqCreateOnlineCv) {
+        loading.value = true
+        error.value = null
         try {
-            localStorage.setItem(CV_ONLINE_STORAGE_KEY, JSON.stringify(drafts.value))
-            lastSavedAt.value = nowIso()
-        } catch (error) {
-            saveError.value = error instanceof Error ? error.message : 'Khong the luu nhap tam.'
+            const created = await cvOnlineService.createOnlineCv({
+                ...payload,
+                extraData: normalizeExtraData(payload.extraData),
+            })
+            applyCv(created)
+            return created
+        } catch (err) {
+            setError(err)
+            throw err
         } finally {
-            isSaving.value = false
+            loading.value = false
+        }
+    }
+
+    async function fetchDraftById(id: number) {
+        loading.value = true
+        error.value = null
+        try {
+            const detail = await cvOnlineService.getOnlineCvById(id)
+            applyCv(detail)
+            return detail
+        } catch (err) {
+            setError(err)
+            throw err
+        } finally {
+            loading.value = false
+        }
+    }
+
+    async function saveDraftNow() {
+        if (!currentCv.value) return null
+        saving.value = true
+        error.value = null
+        try {
+            const updated = await cvOnlineService.updateOnlineCv(currentCv.value.id, {
+                title: currentCv.value.title,
+                extraData: normalizeExtraData(currentCv.value.extraData),
+            })
+            applyCv(updated)
+            return updated
+        } catch (err) {
+            setError(err)
+            throw err
+        } finally {
+            saving.value = false
         }
     }
 
@@ -62,90 +103,69 @@ export const useCvOnlineEditorStore = defineStore('cvOnlineEditor', () => {
             clearTimeout(autosaveTimer)
         }
         autosaveTimer = setTimeout(() => {
-            persistNow()
-        }, 600)
+            void saveDraftNow()
+        }, 700)
     }
 
-    function setActiveDraft(id: string) {
-        hydrate()
-        if (drafts.value[id]) {
-            activeDraftId.value = id
+    async function changeTemplate(templateId: number) {
+        if (!currentCv.value) return null
+        saving.value = true
+        error.value = null
+        try {
+            const updated = await cvOnlineService.changeTemplate(currentCv.value.id, { templateId })
+            applyCv(updated)
+            return updated
+        } catch (err) {
+            setError(err)
+            throw err
+        } finally {
+            saving.value = false
         }
     }
 
-    function createDraft(templateId: number, title?: string) {
-        hydrate()
-        const id = `cv-online-${templateId}-${Date.now()}`
-        const timestamp = nowIso()
-        drafts.value[id] = {
-            id,
-            templateId,
-            title: title ?? `CV Online ${templateId}`,
-            data: createEmptyCvOnlineData(),
-            createdAt: timestamp,
-            updatedAt: timestamp,
-        }
-        activeDraftId.value = id
-        persistNow()
-        return drafts.value[id]
+    function patchDraftTitle(title: string) {
+        if (!currentCv.value) return
+        currentCv.value.title = title
+        currentCv.value.updatedAt = new Date().toISOString()
+        queueAutosave()
     }
 
-    function ensureDraft(id: string, templateId: number) {
-        hydrate()
-        if (!drafts.value[id]) {
-            const timestamp = nowIso()
-            drafts.value[id] = {
-                id,
-                templateId,
-                title: `CV Online ${templateId}`,
-                data: createEmptyCvOnlineData(),
-                createdAt: timestamp,
-                updatedAt: timestamp,
-            }
-            persistNow()
-        }
-        activeDraftId.value = id
-        return drafts.value[id]
-    }
-
-    function patchDraftData(patch: Partial<CvOnlineData>) {
-        if (!activeDraft.value) return
-        activeDraft.value.data = {
-            ...activeDraft.value.data,
+    function patchExtraData(patch: Partial<CvOnlineExtraData>) {
+        if (!currentCv.value) return
+        currentCv.value.extraData = normalizeExtraData({
+            ...currentCv.value.extraData,
             ...patch,
-        }
-        activeDraft.value.updatedAt = nowIso()
+        })
+        currentCv.value.updatedAt = new Date().toISOString()
         queueAutosave()
     }
 
-    function updateDraftTitle(title: string) {
-        if (!activeDraft.value) return
-        activeDraft.value.title = title
-        activeDraft.value.updatedAt = nowIso()
-        queueAutosave()
+    function patchPersonalInfo(field: keyof CvOnlineExtraData['personalInfo'], value: string) {
+        patchExtraData({
+            personalInfo: {
+                ...extraData.value.personalInfo,
+                [field]: value,
+            },
+        })
     }
 
-    function replaceSection<T extends keyof Pick<CvOnlineData, 'experiences' | 'educations' | 'skills' | 'certifications' | 'languages'>>(
+    function replaceSection<T extends keyof Pick<CvOnlineExtraData, 'experiences' | 'educations' | 'skills' | 'certifications' | 'languages'>>(
         section: T,
-        value: CvOnlineData[T],
+        value: CvOnlineExtraData[T],
     ) {
-        if (!activeDraft.value) return
-        activeDraft.value.data[section] = value
-        activeDraft.value.updatedAt = nowIso()
-        queueAutosave()
+        patchExtraData({ [section]: value } as Partial<CvOnlineExtraData>)
+    }
+
+    function updateCareerObjective(value: string) {
+        patchExtraData({ careerObjective: value })
     }
 
     function addExperience() {
-        if (!activeDraft.value) return
-        replaceSection('experiences', [
-            ...activeDraft.value.data.experiences,
-            { id: `exp-${Date.now()}`, company: '', role: '', startDate: '', endDate: '', description: '' },
-        ])
+        replaceSection('experiences', [...extraData.value.experiences, createEmptyExperience()])
     }
 
     function updateExperience(index: number, patch: Partial<CvOnlineExperienceItem>) {
-        if (!activeDraft.value) return
-        const next = [...activeDraft.value.data.experiences]
+        const next = [...extraData.value.experiences]
         const current = next[index]
         if (!current) return
         next[index] = { ...current, ...patch }
@@ -153,21 +173,15 @@ export const useCvOnlineEditorStore = defineStore('cvOnlineEditor', () => {
     }
 
     function removeExperience(index: number) {
-        if (!activeDraft.value) return
-        replaceSection('experiences', activeDraft.value.data.experiences.filter((_, currentIndex) => currentIndex !== index))
+        replaceSection('experiences', extraData.value.experiences.filter((_, currentIndex) => currentIndex !== index))
     }
 
     function addEducation() {
-        if (!activeDraft.value) return
-        replaceSection('educations', [
-            ...activeDraft.value.data.educations,
-            { id: `edu-${Date.now()}`, school: '', degree: '', startDate: '', endDate: '', description: '' },
-        ])
+        replaceSection('educations', [...extraData.value.educations, createEmptyEducation()])
     }
 
     function updateEducation(index: number, patch: Partial<CvOnlineEducationItem>) {
-        if (!activeDraft.value) return
-        const next = [...activeDraft.value.data.educations]
+        const next = [...extraData.value.educations]
         const current = next[index]
         if (!current) return
         next[index] = { ...current, ...patch }
@@ -175,31 +189,31 @@ export const useCvOnlineEditorStore = defineStore('cvOnlineEditor', () => {
     }
 
     function removeEducation(index: number) {
-        if (!activeDraft.value) return
-        replaceSection('educations', activeDraft.value.data.educations.filter((_, currentIndex) => currentIndex !== index))
+        replaceSection('educations', extraData.value.educations.filter((_, currentIndex) => currentIndex !== index))
     }
 
-    function updateSkills(rawValue: string) {
-        replaceSection(
-            'skills',
-            rawValue
-                .split(',')
-                .map((item) => item.trim())
-                .filter(Boolean),
-        )
+    function addSkill() {
+        replaceSection('skills', [...extraData.value.skills, createEmptySkill()])
+    }
+
+    function updateSkill(index: number, patch: Partial<CvOnlineSkillItem>) {
+        const next = [...extraData.value.skills]
+        const current = next[index]
+        if (!current) return
+        next[index] = { ...current, ...patch }
+        replaceSection('skills', next)
+    }
+
+    function removeSkill(index: number) {
+        replaceSection('skills', extraData.value.skills.filter((_, currentIndex) => currentIndex !== index))
     }
 
     function addCertification() {
-        if (!activeDraft.value) return
-        replaceSection('certifications', [
-            ...activeDraft.value.data.certifications,
-            { id: `cert-${Date.now()}`, name: '', issuer: '', year: '' },
-        ])
+        replaceSection('certifications', [...extraData.value.certifications, createEmptyCertification()])
     }
 
     function updateCertification(index: number, patch: Partial<CvOnlineCertificationItem>) {
-        if (!activeDraft.value) return
-        const next = [...activeDraft.value.data.certifications]
+        const next = [...extraData.value.certifications]
         const current = next[index]
         if (!current) return
         next[index] = { ...current, ...patch }
@@ -207,21 +221,15 @@ export const useCvOnlineEditorStore = defineStore('cvOnlineEditor', () => {
     }
 
     function removeCertification(index: number) {
-        if (!activeDraft.value) return
-        replaceSection('certifications', activeDraft.value.data.certifications.filter((_, currentIndex) => currentIndex !== index))
+        replaceSection('certifications', extraData.value.certifications.filter((_, currentIndex) => currentIndex !== index))
     }
 
     function addLanguage() {
-        if (!activeDraft.value) return
-        replaceSection('languages', [
-            ...activeDraft.value.data.languages,
-            { id: `lang-${Date.now()}`, name: '', level: '' },
-        ])
+        replaceSection('languages', [...extraData.value.languages, createEmptyLanguage()])
     }
 
     function updateLanguage(index: number, patch: Partial<CvOnlineLanguageItem>) {
-        if (!activeDraft.value) return
-        const next = [...activeDraft.value.data.languages]
+        const next = [...extraData.value.languages]
         const current = next[index]
         if (!current) return
         next[index] = { ...current, ...patch }
@@ -229,38 +237,48 @@ export const useCvOnlineEditorStore = defineStore('cvOnlineEditor', () => {
     }
 
     function removeLanguage(index: number) {
-        if (!activeDraft.value) return
-        replaceSection('languages', activeDraft.value.data.languages.filter((_, currentIndex) => currentIndex !== index))
+        replaceSection('languages', extraData.value.languages.filter((_, currentIndex) => currentIndex !== index))
+    }
+
+    function reset() {
+        currentCv.value = null
+        loading.value = false
+        saving.value = false
+        error.value = null
+        lastSavedAt.value = null
     }
 
     return {
-        drafts,
-        activeDraftId,
-        activeDraft,
-        isHydrated,
-        isSaving,
-        saveError,
+        currentCv,
+        loading,
+        saving,
+        error,
         lastSavedAt,
-        hydrate,
-        persistNow,
-        queueAutosave,
-        setActiveDraft,
+        extraData,
         createDraft,
-        ensureDraft,
-        patchDraftData,
-        updateDraftTitle,
+        fetchDraftById,
+        saveDraftNow,
+        queueAutosave,
+        changeTemplate,
+        patchDraftTitle,
+        patchExtraData,
+        patchPersonalInfo,
+        updateCareerObjective,
         addExperience,
         updateExperience,
         removeExperience,
         addEducation,
         updateEducation,
         removeEducation,
-        updateSkills,
+        addSkill,
+        updateSkill,
+        removeSkill,
         addCertification,
         updateCertification,
         removeCertification,
         addLanguage,
         updateLanguage,
         removeLanguage,
+        reset,
     }
 })

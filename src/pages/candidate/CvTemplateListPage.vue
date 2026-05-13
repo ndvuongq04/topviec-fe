@@ -8,29 +8,33 @@
       :languages="languages"
     />
     <main class="max-w-[1200px] mx-auto px-6 py-12">
+      <div v-if="templateStore.error" class="mb-6 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+        {{ templateStore.error }}
+      </div>
       <CvTemplateGrid
         :templates="filteredTemplates"
-        :has-more="hasMore"
+        :has-more="false"
         @use="handleUseTemplate"
-        @load-more="handleLoadMore"
       />
     </main>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import CvTemplateHero from '@/components/candidate/cv-templates/CvTemplateHero.vue'
 import CvTemplateFilterTabs from '@/components/candidate/cv-templates/CvTemplateFilterTabs.vue'
 import CvTemplateGrid from '@/components/candidate/cv-templates/CvTemplateGrid.vue'
 import { useCvOnlineEditorStore } from '@/stores/cvOnlineEditor.store'
 import { useCvTemplateStore } from '@/stores/cvTemplate.store'
+import { createEmptyCvOnlineExtraData } from '@/constants/cvOnline.constants'
+import { useToast } from '@/composables/useToast'
 
 const activeFilter = ref('all')
 const activeLanguage = ref('vi')
-const hasMore = ref(false)
 const router = useRouter()
+const toast = useToast()
 const editorStore = useCvOnlineEditorStore()
 const templateStore = useCvTemplateStore()
 
@@ -49,7 +53,7 @@ const languages = [
   { value: 'en', label: 'Tieng Anh', color: '#005ea4' },
 ]
 
-const templates = computed(() => templateStore.templateSummaries)
+const templates = computed(() => templateStore.candidateTemplates)
 
 const filteredTemplates = computed(() => {
   return templates.value.filter((template) => {
@@ -60,18 +64,23 @@ const filteredTemplates = computed(() => {
   })
 })
 
-function handleUseTemplate(id: number) {
-  const template = templateStore.getTemplateById(id)
-  const draft = editorStore.createDraft(id, `CV Online - ${template?.name ?? id}`)
-  router.push({
-    name: 'CvOnlineEditor',
-    params: { id: draft.id },
-    query: { templateId: id },
-  })
-}
+onMounted(() => {
+  void templateStore.fetchPublicTemplates()
+})
 
-function handleLoadMore() {
-  // phase 0 uses local template fixtures only
+async function handleUseTemplate(id: number) {
+  try {
+    const template = await templateStore.fetchPublicTemplateById(id)
+    const created = await editorStore.createDraft({
+      title: `CV Online - ${template.name}`,
+      templateId: id,
+      isDefault: false,
+      extraData: createEmptyCvOnlineExtraData(),
+    })
+    router.push({ name: 'CvOnlineEditor', params: { id: created.id } })
+  } catch {
+    toast.error('Khong tao duoc CV online', templateStore.error ?? editorStore.error ?? undefined)
+  }
 }
 </script>
 

@@ -12,12 +12,12 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { buildCvPreviewDocument } from '@/utils/cvOnlineRenderer'
-import type { CvOnlineData } from '@/types/cvOnline.types'
+import type { CvOnlineExtraData } from '@/types/cvOnline.types'
 
 const props = defineProps<{
   html: string
   css: string
-  data: CvOnlineData
+  data: CvOnlineExtraData
 }>()
 
 const document = computed(() => buildCvPreviewDocument(props.html, props.css, props.data))
