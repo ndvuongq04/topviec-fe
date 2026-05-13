@@ -176,6 +176,7 @@ export function mapTemplateToAdminRow(template: CvTemplateListItem): AdminCvTemp
         thumbnail: template.thumbnailUrl || '',
         name: template.name,
         code: template.slug.toUpperCase(),
+        versionTag: template.versionTag ?? null,
         categories: template.description || 'CV Online Template',
         features: template.isDefault ? ['Default', 'Active'] : ['Active template'],
         tier: template.isDefault ? 'premium' : 'free',

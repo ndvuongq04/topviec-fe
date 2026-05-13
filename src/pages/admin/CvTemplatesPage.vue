@@ -40,6 +40,70 @@
         />
       </div>
     </div>
+
+    <GlobalModal
+      :visible="previewModal.open"
+      :title="previewModal.title || 'Preview template'"
+      :subtitle="previewModal.versionTag ? `Version: <code>${previewModal.versionTag}</code>` : 'Preview CV voi sample data tu backend'"
+      icon="visibility"
+      max-width="5xl"
+      :show-default-footer="false"
+      @close="closePreviewModal"
+    >
+      <div class="space-y-5">
+        <div
+          v-if="templateStore.previewing"
+          class="flex h-[70vh] items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 text-slate-500"
+        >
+          <div class="flex flex-col items-center gap-3">
+            <span class="material-symbols-outlined animate-spin text-3xl">progress_activity</span>
+            <p class="text-sm font-medium">Dang render preview tu backend...</p>
+          </div>
+        </div>
+
+        <iframe
+          v-else-if="previewDocument"
+          :srcdoc="previewDocument"
+          class="h-[70vh] w-full rounded-2xl border border-slate-200 bg-white"
+          sandbox="allow-same-origin"
+          title="Admin template preview"
+        />
+
+        <div
+          v-else
+          class="flex h-[70vh] items-center justify-center rounded-2xl border border-amber-200 bg-amber-50 px-6 text-center text-amber-700"
+        >
+          <div class="flex max-w-md flex-col items-center gap-3">
+            <span class="material-symbols-outlined text-4xl">warning</span>
+            <p class="text-sm font-medium">{{ templateStore.error || 'Khong tao duoc preview cho template nay.' }}</p>
+          </div>
+        </div>
+
+        <div class="grid gap-4 lg:grid-cols-2">
+          <div class="rounded-2xl border border-rose-200 bg-rose-50 p-4">
+            <div class="flex items-center gap-2">
+              <span class="material-symbols-outlined text-[18px] text-rose-600">error</span>
+              <p class="text-sm font-bold text-rose-700">Loi placeholder</p>
+            </div>
+            <ul v-if="previewResult?.placeholderErrors.length" class="mt-3 space-y-2 text-sm text-rose-700">
+              <li v-for="item in previewResult.placeholderErrors" :key="item">{{ item }}</li>
+            </ul>
+            <p v-else class="mt-3 text-sm text-emerald-700">Khong phat hien loi placeholder.</p>
+          </div>
+
+          <div class="rounded-2xl border border-amber-200 bg-amber-50 p-4">
+            <div class="flex items-center gap-2">
+              <span class="material-symbols-outlined text-[18px] text-amber-600">warning</span>
+              <p class="text-sm font-bold text-amber-700">Canh bao CSS</p>
+            </div>
+            <ul v-if="previewResult?.cssWarnings.length" class="mt-3 space-y-2 text-sm text-amber-700">
+              <li v-for="item in previewResult.cssWarnings" :key="item">{{ item }}</li>
+            </ul>
+            <p v-else class="mt-3 text-sm text-emerald-700">Khong co canh bao CSS dang luu y.</p>
+          </div>
+        </div>
+      </div>
+    </GlobalModal>
   </div>
 </template>
 
@@ -50,6 +114,7 @@ import CvTemplateKpiCards from '@/components/admin/cv-templates/CvTemplateKpiCar
 import CvTemplateFilters from '@/components/admin/cv-templates/CvTemplateFilters.vue'
 import CvTemplateTable from '@/components/admin/cv-templates/CvTemplateTable.vue'
 import CvTemplatePagination from '@/components/admin/cv-templates/CvTemplatePagination.vue'
+import GlobalModal from '@/components/ui/GlobalModal.vue'
 import { useCvTemplateStore } from '@/stores/cvTemplate.store'
 import { useToast } from '@/composables/useToast'
 
@@ -58,7 +123,22 @@ const toast = useToast()
 const templateStore = useCvTemplateStore()
 const currentPage = ref(1)
 const perPage = ref(10)
-const filters = ref({ search: '', status: '', tier: '' })
+const filters = ref({ search: '', status: '', tier: '', sort: 'createdAt,desc' })
+const previewModal = ref({
+  open: false,
+  title: '',
+  versionTag: null as string | null,
+})
+
+const previewResult = computed(() => templateStore.adminTemplatePreview)
+const previewDocument = computed(() => {
+  const renderedHtml = previewResult.value?.renderedHtml
+  if (!renderedHtml) return ''
+  if (renderedHtml.includes('<html')) {
+    return renderedHtml
+  }
+  return `<!DOCTYPE html><html><head><meta charset="utf-8" /></head><body>${renderedHtml}</body></html>`
+})
 
 const filteredTemplates = computed(() => {
   return templateStore.adminRows.filter((template) => {
@@ -77,7 +157,7 @@ async function fetchTemplates() {
     page: currentPage.value - 1,
     size: perPage.value,
     keyword: filters.value.search || undefined,
-    sort: 'createdAt,desc',
+    sort: filters.value.sort,
   })
 }
 
@@ -86,11 +166,12 @@ onMounted(() => {
 })
 
 watch(
-  () => filters.value.search,
+  () => ({ ...filters.value }),
   () => {
     currentPage.value = 1
     void fetchTemplates()
   },
+  { deep: true },
 )
 
 function handlePageChange(page: number) {
@@ -102,12 +183,32 @@ function handleAdd() {
   router.push({ name: 'admin-cv-template-create' })
 }
 
-function handlePreview(id: number) {
-  router.push({ name: 'admin-cv-template-edit', params: { id } })
+async function handlePreview(id: number) {
+  previewModal.value.open = true
+  try {
+    if (!templateStore.adminTemplateSampleData) {
+      await templateStore.fetchAdminTemplateSampleData()
+    }
+    const template = await templateStore.fetchAdminTemplateById(id)
+    previewModal.value.title = template.name
+    previewModal.value.versionTag = template.versionTag ?? null
+    await templateStore.previewAdminTemplate({
+      templateId: template.id,
+      htmlContent: template.htmlContent,
+      cssContent: template.cssContent,
+    })
+    previewModal.value.versionTag = templateStore.adminTemplatePreview?.versionTag ?? template.versionTag ?? null
+  } catch {
+    toast.error('Khong mo duoc preview', templateStore.error ?? undefined)
+  }
 }
 
 function handleEdit(id: number) {
   router.push({ name: 'admin-cv-template-edit', params: { id } })
+}
+
+function closePreviewModal() {
+  previewModal.value.open = false
 }
 
 async function handleArchive(id: number) {

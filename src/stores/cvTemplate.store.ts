@@ -7,12 +7,15 @@ import {
     mapTemplateToCandidateCard,
 } from '@/constants/cvOnline.constants'
 import type {
+    CvOnlineExtraData,
     CvTemplateDetail,
     CvTemplateListItem,
+    ReqAdminCvTemplatePreview,
     ReqCreateCvTemplate,
     ReqGetAdminCvTemplates,
     ReqUpdateCvTemplateContent,
     ReqUpdateCvTemplateMetadata,
+    ResAdminCvTemplatePreview,
 } from '@/types/cvOnline.types'
 
 export const useCvTemplateStore = defineStore('cvTemplate', () => {
@@ -21,8 +24,11 @@ export const useCvTemplateStore = defineStore('cvTemplate', () => {
     const adminTemplates = ref<CvTemplateListItem[]>([])
     const adminMeta = ref({ page: 0, pageSize: 10, pages: 0, totals: 0 })
     const currentAdminTemplate = ref<CvTemplateDetail | null>(null)
+    const adminTemplateSampleData = ref<CvOnlineExtraData | null>(null)
+    const adminTemplatePreview = ref<ResAdminCvTemplatePreview | null>(null)
     const loading = ref(false)
     const submitting = ref(false)
+    const previewing = ref(false)
     const error = ref<string | null>(null)
 
     const candidateTemplates = computed(() => publicTemplates.value.map(mapTemplateToCandidateCard))
@@ -122,6 +128,34 @@ export const useCvTemplateStore = defineStore('cvTemplate', () => {
         }
     }
 
+    async function fetchAdminTemplateSampleData() {
+        loading.value = true
+        error.value = null
+        try {
+            adminTemplateSampleData.value = await cvTemplateService.getAdminTemplateSampleData()
+            return adminTemplateSampleData.value
+        } catch (err) {
+            setError(err)
+            throw err
+        } finally {
+            loading.value = false
+        }
+    }
+
+    async function previewAdminTemplate(payload: ReqAdminCvTemplatePreview) {
+        previewing.value = true
+        error.value = null
+        try {
+            adminTemplatePreview.value = await cvTemplateService.previewAdminTemplate(payload)
+            return adminTemplatePreview.value
+        } catch (err) {
+            setError(err)
+            throw err
+        } finally {
+            previewing.value = false
+        }
+    }
+
     async function updateTemplateMetadata(id: number, payload: ReqUpdateCvTemplateMetadata) {
         submitting.value = true
         error.value = null
@@ -201,8 +235,11 @@ export const useCvTemplateStore = defineStore('cvTemplate', () => {
         adminTemplates,
         adminMeta,
         currentAdminTemplate,
+        adminTemplateSampleData,
+        adminTemplatePreview,
         loading,
         submitting,
+        previewing,
         error,
         candidateTemplates,
         adminRows,
@@ -212,6 +249,8 @@ export const useCvTemplateStore = defineStore('cvTemplate', () => {
         getTemplateById,
         fetchAdminTemplates,
         fetchAdminTemplateById,
+        fetchAdminTemplateSampleData,
+        previewAdminTemplate,
         createTemplate,
         updateTemplateMetadata,
         updateTemplateContent,

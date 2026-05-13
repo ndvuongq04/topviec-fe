@@ -3,10 +3,13 @@ import type { RestResponse, ResultPaginationDTO } from '@/types/common.types'
 import type {
     CvTemplateDetail,
     CvTemplateListItem,
+    ReqAdminCvTemplatePreview,
     ReqCreateCvTemplate,
     ReqGetAdminCvTemplates,
     ReqUpdateCvTemplateContent,
     ReqUpdateCvTemplateMetadata,
+    ResAdminCvTemplatePreview,
+    CvOnlineExtraData,
 } from '@/types/cvOnline.types'
 
 const PUBLIC_BASE_URL = '/cv-templates'
@@ -33,6 +36,21 @@ const cvTemplateService = {
 
     async getAdminTemplateById(id: number): Promise<CvTemplateDetail> {
         const res = await axiosInstance.get<RestResponse<CvTemplateDetail>>(`${ADMIN_BASE_URL}/${id}`)
+        return res.data.data
+    },
+
+    async getAdminTemplateSampleData(): Promise<CvOnlineExtraData> {
+        const res = await axiosInstance.get<RestResponse<CvOnlineExtraData>>(
+            `${ADMIN_BASE_URL}/sample-data`,
+        )
+        return res.data.data
+    },
+
+    async previewAdminTemplate(payload: ReqAdminCvTemplatePreview): Promise<ResAdminCvTemplatePreview> {
+        const res = await axiosInstance.post<RestResponse<ResAdminCvTemplatePreview>>(
+            `${ADMIN_BASE_URL}/preview`,
+            payload,
+        )
         return res.data.data
     },
 

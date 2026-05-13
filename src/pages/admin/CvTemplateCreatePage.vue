@@ -10,18 +10,18 @@
           ]"
           class="mb-3"
         />
-        <h2 class="text-[1.875rem] font-black tracking-tight text-slate-900 dark:text-slate-100">
+        <h2 class="text-[1.875rem] font-black tracking-tight text-slate-900">
           {{ isEditMode ? 'Chinh sua mau CV' : 'Them mau CV' }}
         </h2>
         <p class="mt-1 text-[1rem] text-slate-500">
-          Phase 1 ket noi truc tiep voi CRUD template backend, bao gom metadata, HTML/CSS, activate va default.
+          Phase 5 bo sung preview backend, sample data, loi placeholder va canh bao CSS truoc khi publish.
         </p>
       </div>
 
       <div class="flex flex-wrap items-center gap-3">
         <RouterLink
           to="/admin/cv-templates"
-          class="cursor-pointer inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-[1rem] font-bold text-slate-700 shadow-sm transition hover:bg-slate-50"
+          class="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-[1rem] font-bold text-slate-700 shadow-sm transition hover:bg-slate-50"
         >
           <span class="material-symbols-outlined text-[20px]">arrow_back</span>
           Quay lai
@@ -29,7 +29,7 @@
         <button
           v-if="isEditMode"
           type="button"
-          class="cursor-pointer inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-[1rem] font-bold text-slate-700 shadow-sm transition hover:bg-slate-50"
+          class="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-[1rem] font-bold text-slate-700 shadow-sm transition hover:bg-slate-50"
           @click="handleToggleActive"
         >
           <span class="material-symbols-outlined text-[20px]">{{ form.publish.visibility === 'active' ? 'pause_circle' : 'play_circle' }}</span>
@@ -38,7 +38,7 @@
         <button
           v-if="isEditMode && !currentTemplate?.isDefault"
           type="button"
-          class="cursor-pointer inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-[1rem] font-bold text-slate-700 shadow-sm transition hover:bg-slate-50"
+          class="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-[1rem] font-bold text-slate-700 shadow-sm transition hover:bg-slate-50"
           @click="handleSetDefault"
         >
           <span class="material-symbols-outlined text-[20px]">workspace_premium</span>
@@ -46,7 +46,7 @@
         </button>
         <button
           type="button"
-          class="cursor-pointer inline-flex items-center gap-2 rounded-xl bg-[#963131] px-4 py-2.5 text-[1rem] font-bold text-white shadow-sm transition hover:bg-[#963131]/90"
+          class="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-[#963131] px-4 py-2.5 text-[1rem] font-bold text-white shadow-sm transition hover:bg-[#963131]/90"
           :disabled="templateStore.submitting"
           @click="handleSubmit"
         >
@@ -69,7 +69,7 @@
       <p>{{ feedback.message }}</p>
     </div>
 
-    <div class="grid gap-8 xl:grid-cols-[minmax(0,1fr)_360px]">
+    <div class="grid gap-8 xl:grid-cols-[minmax(0,1fr)_420px]">
       <div class="space-y-6">
         <CvTemplateCreateBasicInfoSection :form="form.basic" @update="updateBasic" />
         <CvTemplateCreateMediaSection
@@ -118,9 +118,28 @@
         </section>
 
         <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <div class="space-y-2">
-            <h3 class="text-lg font-black text-slate-900">HTML va CSS template</h3>
-            <p class="text-sm text-slate-500">Backend phase 1 validate placeholder contract ngay tai API content.</p>
+          <div class="flex flex-wrap items-start justify-between gap-4">
+            <div class="space-y-2">
+              <h3 class="text-lg font-black text-slate-900">HTML va CSS template</h3>
+              <p class="text-sm text-slate-500">Preview phase 5 render truc tiep tu backend de admin thay loi placeholder va canh bao CSS som.</p>
+            </div>
+            <div class="flex flex-wrap items-center gap-2">
+              <span
+                v-if="versionTag"
+                class="rounded-full bg-slate-100 px-3 py-1 font-mono text-xs font-bold text-slate-700"
+              >
+                {{ versionTag }}
+              </span>
+              <button
+                type="button"
+                class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700 transition hover:bg-slate-50"
+                :disabled="templateStore.previewing"
+                @click="runPreview"
+              >
+                <span class="material-symbols-outlined text-[18px]">preview</span>
+                {{ templateStore.previewing ? 'Dang render...' : 'Xem preview' }}
+              </button>
+            </div>
           </div>
           <div class="mt-5 grid gap-5">
             <label class="space-y-2">
@@ -145,13 +164,19 @@
         </section>
       </div>
 
-      <CvTemplateCreatePreviewSidebar :form="previewForm" />
+      <CvTemplateCreatePreviewSidebar
+        :preview="templatePreview"
+        :sample-data="sampleData"
+        :previewing="templateStore.previewing"
+        @preview="runPreview"
+        @reload-sample-data="reloadSampleData"
+      />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import Breadcrumb from '@/components/ui/Breadcrumb.vue'
 import CvTemplateCreateBasicInfoSection from '@/components/admin/cv-templates/CvTemplateCreateBasicInfoSection.vue'
@@ -164,7 +189,10 @@ const route = useRoute()
 const router = useRouter()
 const toast = useToast()
 const templateStore = useCvTemplateStore()
+
 const selectedThumbnailFile = ref<File | null>(null)
+const feedback = ref<{ type: 'success' | 'warning'; message: string } | null>(null)
+let previewTimer: ReturnType<typeof setTimeout> | null = null
 
 const form = reactive({
   basic: { name: '', code: '', slug: '', description: '' },
@@ -185,33 +213,54 @@ const form = reactive({
   content: { htmlContent: '', cssContent: '' },
 })
 
-const feedback = ref<{ type: 'success' | 'warning'; message: string } | null>(null)
 const isEditMode = computed(() => Boolean(route.params.id))
 const currentTemplate = computed(() => templateStore.currentAdminTemplate)
-const previewForm = computed(() => ({
-  basic: form.basic,
-  media: form.media,
-  classification: form.classification,
-  settings: form.settings,
-  publish: form.publish,
-}))
+const sampleData = computed(() => templateStore.adminTemplateSampleData)
+const templatePreview = computed(() => templateStore.adminTemplatePreview)
+const versionTag = computed(() => templatePreview.value?.versionTag ?? currentTemplate.value?.versionTag ?? null)
 
 onMounted(async () => {
-  if (!isEditMode.value) return
-  const id = Number(route.params.id)
-  if (!Number.isFinite(id)) return
-  await templateStore.fetchAdminTemplateById(id)
-  const initialForm = templateStore.getCurrentTemplateForm()
-  if (!initialForm) return
-  Object.assign(form.basic, initialForm.basic)
-  Object.assign(form.media, initialForm.media)
-  Object.assign(form.classification, initialForm.classification)
-  Object.assign(form.settings, initialForm.settings)
-  Object.assign(form.publish, initialForm.publish)
-  form.flags.isActive = initialForm.publish.visibility === 'active'
-  form.flags.isDefault = Boolean(currentTemplate.value?.isDefault)
-  Object.assign(form.content, initialForm.content)
+  try {
+    await templateStore.fetchAdminTemplateSampleData()
+
+    if (!isEditMode.value) {
+      queuePreview()
+      return
+    }
+
+    const id = Number(route.params.id)
+    if (!Number.isFinite(id)) return
+
+    await templateStore.fetchAdminTemplateById(id)
+    const initialForm = templateStore.getCurrentTemplateForm()
+    if (!initialForm) return
+
+    Object.assign(form.basic, initialForm.basic)
+    Object.assign(form.media, initialForm.media)
+    Object.assign(form.classification, initialForm.classification)
+    Object.assign(form.settings, initialForm.settings)
+    Object.assign(form.publish, initialForm.publish)
+    form.flags.isActive = initialForm.publish.visibility === 'active'
+    form.flags.isDefault = Boolean(currentTemplate.value?.isDefault)
+    Object.assign(form.content, initialForm.content)
+    queuePreview()
+  } catch {
+    toast.error('Khong tai duoc du lieu template', templateStore.error ?? undefined)
+  }
 })
+
+onBeforeUnmount(() => {
+  if (!previewTimer) return
+  clearTimeout(previewTimer)
+  previewTimer = null
+})
+
+watch(
+  () => [form.content.htmlContent, form.content.cssContent],
+  () => {
+    queuePreview()
+  },
+)
 
 function updateBasic(field: 'name' | 'code' | 'slug' | 'description', value: string) {
   form.basic[field] = value
@@ -240,11 +289,46 @@ function validateForm() {
     return false
   }
   if (!form.content.htmlContent || !form.content.cssContent) {
-    feedback.value = { type: 'warning', message: 'HTML Content va CSS Content la bat buoc theo API phase 1.' }
+    feedback.value = { type: 'warning', message: 'HTML Content va CSS Content la bat buoc.' }
+    return false
+  }
+  if (templatePreview.value && !templatePreview.value.valid) {
+    feedback.value = { type: 'warning', message: 'Template dang co loi placeholder. Can sua truoc khi luu.' }
     return false
   }
   feedback.value = null
   return true
+}
+
+function queuePreview() {
+  if (!form.content.htmlContent || !form.content.cssContent || !sampleData.value) return
+  if (previewTimer) clearTimeout(previewTimer)
+  previewTimer = setTimeout(() => {
+    void runPreview()
+  }, 700)
+}
+
+async function runPreview() {
+  if (!form.content.htmlContent || !form.content.cssContent) return
+  try {
+    await templateStore.previewAdminTemplate({
+      templateId: isEditMode.value ? Number(route.params.id) : undefined,
+      htmlContent: form.content.htmlContent,
+      cssContent: form.content.cssContent,
+    })
+  } catch {
+    feedback.value = { type: 'warning', message: templateStore.error ?? 'Khong render duoc preview template.' }
+  }
+}
+
+async function reloadSampleData() {
+  try {
+    await templateStore.fetchAdminTemplateSampleData()
+    toast.success('Da tai lai sample data')
+    queuePreview()
+  } catch {
+    toast.error('Khong tai duoc sample data', templateStore.error ?? undefined)
+  }
 }
 
 async function handleSubmit() {
@@ -263,7 +347,12 @@ async function handleSubmit() {
       })
       feedback.value = { type: 'success', message: 'Da tao template thanh cong.' }
       toast.success('Da tao template CV')
-      router.replace({ name: 'admin-cv-template-edit', params: { id: created.id } })
+      await templateStore.previewAdminTemplate({
+        templateId: created.id,
+        htmlContent: form.content.htmlContent,
+        cssContent: form.content.cssContent,
+      })
+      await router.replace({ name: 'admin-cv-template-edit', params: { id: created.id } })
       return
     }
 
@@ -278,10 +367,9 @@ async function handleSubmit() {
       htmlContent: form.content.htmlContent,
       cssContent: form.content.cssContent,
     })
-    form.publish.visibility = form.flags.isActive ? 'active' : 'inactive'
-    form.publish.status = form.flags.isActive ? 'published' : 'draft'
     feedback.value = { type: 'success', message: 'Da cap nhat metadata va content template.' }
     toast.success('Da cap nhat template CV')
+    await runPreview()
   } catch {
     feedback.value = { type: 'warning', message: templateStore.error ?? 'Khong luu duoc template.' }
     toast.error('Khong luu duoc template', templateStore.error ?? undefined)

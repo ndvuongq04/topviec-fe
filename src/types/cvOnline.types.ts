@@ -106,6 +106,7 @@ export interface CvTemplateListItem {
     thumbnailUrl: string | null
     isActive: boolean
     isDefault: boolean
+    versionTag?: string | null
     createdAt: string
     updatedAt: string
 }
@@ -113,6 +114,25 @@ export interface CvTemplateListItem {
 export interface CvTemplateDetail extends CvTemplateListItem {
     htmlContent: string
     cssContent: string
+}
+
+export interface ReqAdminCvTemplatePreview {
+    templateId?: number
+    htmlContent: string
+    cssContent: string
+}
+
+export interface ResAdminCvTemplatePreview {
+    templateId: number | null
+    versionTag: string | null
+    renderedHtml: string
+    renderedXhtml: string
+    sampleData: CvOnlineExtraData
+    valid: boolean
+    rootPlaceholders: string[]
+    sections: string[]
+    placeholderErrors: string[]
+    cssWarnings: string[]
 }
 
 export interface CvTemplateAdminListResponse {
@@ -216,6 +236,7 @@ export interface AdminCvTemplateRowVM {
     thumbnail: string
     name: string
     code: string
+    versionTag: string | null
     categories: string
     features: string[]
     tier: 'free' | 'pro' | 'premium'
