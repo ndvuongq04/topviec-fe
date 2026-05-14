@@ -218,6 +218,19 @@ function isPatchableSection(section: keyof CvOnlineExtraData): section is CvOnli
     return SECTION_SAVE_ORDER.includes(section as CvOnlinePatchableSection)
 }
 
+type CvOnlineListSection = keyof Pick<
+    CvOnlineExtraData,
+    | 'experiences'
+    | 'educations'
+    | 'skills'
+    | 'certifications'
+    | 'languages'
+    | 'projects'
+    | 'hobbies'
+    | 'awards'
+    | 'customSections'
+>
+
 export const useCvOnlineEditorStore = defineStore('cvOnlineEditor', () => {
     const currentDraft = ref<CvOnlineLocalDraft | null>(null)
     const loading = ref(false)
@@ -593,18 +606,7 @@ export const useCvOnlineEditorStore = defineStore('cvOnlineEditor', () => {
         }, 'personalInfo')
     }
 
-    function replaceSection<T extends keyof Pick<
-        CvOnlineExtraData,
-        | 'experiences'
-        | 'educations'
-        | 'skills'
-        | 'certifications'
-        | 'languages'
-        | 'projects'
-        | 'hobbies'
-        | 'awards'
-        | 'customSections'
-    >>(
+    function replaceSection<T extends CvOnlineListSection>(
         section: T,
         value: CvOnlineExtraData[T],
     ) {
@@ -612,6 +614,20 @@ export const useCvOnlineEditorStore = defineStore('cvOnlineEditor', () => {
             { [section]: value } as Partial<CvOnlineExtraData>,
             isPatchableSection(section) ? section : 'full',
         )
+    }
+
+    function moveItemInSection<T extends CvOnlineListSection>(
+        section: T,
+        fromIdx: number,
+        toIdx: number,
+    ) {
+        const items = [...extraData.value[section]] as CvOnlineExtraData[T] & unknown[]
+        if (fromIdx < 0 || fromIdx >= items.length) return
+        if (toIdx < 0 || toIdx >= items.length) return
+
+        const [moved] = items.splice(fromIdx, 1)
+        items.splice(toIdx, 0, moved)
+        replaceSection(section, items as CvOnlineExtraData[T])
     }
 
     function updateCareerObjective(value: string) {
@@ -818,6 +834,7 @@ export const useCvOnlineEditorStore = defineStore('cvOnlineEditor', () => {
         patchDraftTitle,
         patchExtraData,
         patchPersonalInfo,
+        moveItemInSection,
         updateCareerObjective,
         addExperience,
         updateExperience,
