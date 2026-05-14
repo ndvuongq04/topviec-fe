@@ -26,6 +26,7 @@ const toast = useToast()
 const selectedCvId = ref<number | null>(null)
 const acceptedTerms = ref(false)
 const isUploading = ref(false)
+const openingCvId = ref<number | null>(null)
 const fileInput = ref<HTMLInputElement | null>(null)
 
 const selectedCv = computed(() => cvsStore.cvs.find((cv) => cv.id === selectedCvId.value) ?? null)
@@ -42,10 +43,6 @@ onMounted(async () => {
 })
 
 function getCvPreviewUrl(cv: ResCv) {
-  if (cv.cvType === CV_TYPE.ONLINE) {
-    return cv.pdfUrl
-  }
-
   return cv.fileUrl || cv.pdfUrl
 }
 
@@ -55,19 +52,18 @@ function getCvTypeLabel(cv: ResCv) {
 
 function handleFileSelect(event: Event) {
   const target = event.target as HTMLInputElement
-  if (target.files && target.files.length > 0) {
-    void uploadCv(target.files[0])
+  const file = target.files?.item(0)
+  if (file) {
+    void uploadCv(file)
   }
 }
 
 async function uploadCv(file: File) {
   isUploading.value = true
   try {
-    await cvsStore.uploadCv(file, { title: file.name })
+    const uploadedCv = await cvsStore.uploadCv(file, { title: file.name })
     toast.success('Thành công', 'Đã tải CV lên thành công')
-    if (cvsStore.cvs.length > 0) {
-      selectedCvId.value = cvsStore.cvs[0].id
-    }
+    selectedCvId.value = uploadedCv.id
   } catch {
     toast.error('Lỗi', 'Không thể tải CV lên')
   } finally {
@@ -88,7 +84,30 @@ function formatUpdateTime(dateStr: string) {
   })
 }
 
-function openCv(cv: ResCv) {
+async function openCv(cv: ResCv) {
+  if (cv.cvType === CV_TYPE.ONLINE) {
+    openingCvId.value = cv.id
+    const previewWindow = window.open('', '_blank')
+    try {
+      const exported = await cvsStore.exportPdf(cv.id)
+      if (!exported.pdfUrl) {
+        throw new Error('PDF_URL_EMPTY')
+      }
+      if (previewWindow) {
+        previewWindow.opener = null
+        previewWindow.location.href = exported.pdfUrl
+      } else {
+        window.open(exported.pdfUrl, '_blank')
+      }
+    } catch (err: any) {
+      previewWindow?.close()
+      toast.error('Lỗi', err?.response?.data?.message || 'Không thể tạo bản PDF mới.')
+    } finally {
+      openingCvId.value = null
+    }
+    return
+  }
+
   const url = getCvPreviewUrl(cv)
   if (url) {
     window.open(url, '_blank')
@@ -242,9 +261,12 @@ function handleConfirm() {
 
                   <button
                     class="ml-auto flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate-400 transition-all hover:bg-slate-100 hover:text-primary dark:hover:bg-slate-700"
+                    :disabled="openingCvId === cv.id"
                     @click.stop="openCv(cv)"
                   >
-                    <span class="material-symbols-outlined text-[20px]">visibility</span>
+                    <span class="material-symbols-outlined text-[20px]" :class="{ 'animate-spin': openingCvId === cv.id }">
+                      {{ openingCvId === cv.id ? 'progress_activity' : 'visibility' }}
+                    </span>
                   </button>
                 </div>
               </template>
@@ -269,7 +291,7 @@ function handleConfirm() {
                   <span class="font-semibold">{{ getCvTypeLabel(selectedCv) }}</span>
                 </p>
                 <p v-if="selectedCv.cvType === CV_TYPE.ONLINE" class="mt-1 text-orange-700">
-                  CV online sẽ được preview bằng bản PDF đã lưu trên hệ thống.
+                  CV online sẽ được tạo/cập nhật PDF khi bạn bấm xem hoặc tải.
                 </p>
               </div>
 

@@ -1,14 +1,26 @@
 import axiosInstance from './axios'
 import type { RestResponse } from '@/types/common.types'
+import type { ResCvPdfExport } from '@/types/cvs.types'
 import type {
     ReqChangeOnlineCvTemplate,
     ReqCreateOnlineCv,
+    ReqUpdateOnlineCvSectionMap,
     ReqUpdateOnlineCv,
+    CvOnlinePatchableSection,
     ResOnlineCvEditorPayload,
     ResOnlineCv,
+    ResOnlineCvSectionUpdate,
 } from '@/types/cvOnline.types'
 
 const BASE_URL = '/cvs/online'
+const SECTION_ENDPOINTS: Record<CvOnlinePatchableSection, string> = {
+    personalInfo: 'personal-info',
+    experiences: 'experiences',
+    educations: 'educations',
+    skills: 'skills',
+    certifications: 'certifications',
+    languages: 'languages',
+}
 
 const cvOnlineService = {
     async getOnlineCvEditorPayloadByTemplateId(templateId: number): Promise<ResOnlineCvEditorPayload> {
@@ -40,11 +52,28 @@ const cvOnlineService = {
         return res.data.data
     },
 
+    async updateOnlineCvSection<T extends CvOnlinePatchableSection>(
+        id: number,
+        section: T,
+        payload: ReqUpdateOnlineCvSectionMap[T],
+    ): Promise<ResOnlineCvSectionUpdate> {
+        const res = await axiosInstance.patch<RestResponse<ResOnlineCvSectionUpdate>>(
+            `${BASE_URL}/${id}/sections/${SECTION_ENDPOINTS[section]}`,
+            payload,
+        )
+        return res.data.data
+    },
+
     async downloadOnlineCvPdf(id: number): Promise<Blob> {
         const res = await axiosInstance.get(`/cvs/${id}/download-pdf`, {
             responseType: 'blob',
         })
         return res.data
+    },
+
+    async exportOnlineCvPdf(id: number): Promise<ResCvPdfExport> {
+        const res = await axiosInstance.post<RestResponse<ResCvPdfExport>>(`/cvs/${id}/export-pdf`)
+        return res.data.data
     },
 
     async changeTemplate(id: number, payload: ReqChangeOnlineCvTemplate): Promise<ResOnlineCv> {

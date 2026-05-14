@@ -14,6 +14,14 @@ export type CvOnlineSupportedSection =
     | 'awards'
     | 'customSections'
 
+export type CvOnlinePatchableSection =
+    | 'personalInfo'
+    | 'experiences'
+    | 'educations'
+    | 'skills'
+    | 'certifications'
+    | 'languages'
+
 export interface CvOnlinePersonalInfo {
     fullName: string
     headline: string
@@ -131,6 +139,7 @@ export interface CvOnlineLocalDraft {
     title: string
     template: CvTemplateDetail
     pdfUrl: string | null
+    pdfDirty: boolean
     status: CvOnlineDraftStatus
     createdAt: string
     updatedAt: string
@@ -228,6 +237,21 @@ export interface ReqChangeOnlineCvTemplate {
     templateId: number
 }
 
+export type ReqUpdateOnlineCvExperienceSectionItem = Omit<CvOnlineExperienceItem, 'id'>
+export type ReqUpdateOnlineCvEducationSectionItem = Omit<CvOnlineEducationItem, 'id'>
+export type ReqUpdateOnlineCvSkillSectionItem = Omit<CvOnlineSkillItem, 'id'>
+export type ReqUpdateOnlineCvCertificationSectionItem = Omit<CvOnlineCertificationItem, 'id'>
+export type ReqUpdateOnlineCvLanguageSectionItem = Omit<CvOnlineLanguageItem, 'id'>
+
+export interface ReqUpdateOnlineCvSectionMap {
+    personalInfo: CvOnlinePersonalInfo
+    experiences: ReqUpdateOnlineCvExperienceSectionItem[]
+    educations: ReqUpdateOnlineCvEducationSectionItem[]
+    skills: ReqUpdateOnlineCvSkillSectionItem[]
+    certifications: ReqUpdateOnlineCvCertificationSectionItem[]
+    languages: ReqUpdateOnlineCvLanguageSectionItem[]
+}
+
 export interface ResOnlineCvEditorPayload {
     cvId: number | null
     persisted: boolean
@@ -237,6 +261,7 @@ export interface ResOnlineCvEditorPayload {
     template: CvTemplateDetail
     extraData: CvOnlineExtraData
     pdfUrl: string | null
+    pdfDirty: boolean
     isDefault: boolean
     visibility: CvVisibility
     parseStatus: CvParseStatus
@@ -253,6 +278,7 @@ export interface ResOnlineCv {
     template: CvTemplateDetail
     extraData: CvOnlineExtraData
     pdfUrl: string | null
+    pdfDirty: boolean
     fileUrl?: string | null
     isDefault: boolean
     visibility: CvVisibility
@@ -260,6 +286,18 @@ export interface ResOnlineCv {
     viewCount: number
     createdAt: string
     updatedAt: string
+}
+
+export type ResOnlineCvSectionUpdate = Partial<ResOnlineCv> & {
+    id: number
+    title: string
+    cvType: CvType
+    templateId: number
+    extraData: CvOnlineExtraData
+    pdfUrl: string | null
+    pdfDirty: boolean
+    isDefault: boolean
+    visibility: CvVisibility
 }
 
 export interface CandidateTemplateCardVM {

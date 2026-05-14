@@ -226,7 +226,7 @@ async function handleViewCv(app: ResApplication) {
     const cv = cvsStore.currentCv
     const url = cv
       ? cv.cvType === CV_TYPE.ONLINE
-        ? cv.pdfUrl
+        ? (await cvsStore.exportPdf(cv.id)).pdfUrl
         : cv.fileUrl || cv.pdfUrl
       : null
     if (url) {

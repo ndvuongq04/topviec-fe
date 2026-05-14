@@ -19,6 +19,7 @@ import type {
     CvOnlineCertificationItem,
     CvOnlineCustomSectionItem,
     CvOnlineLocalDraft,
+    CvOnlinePatchableSection,
     CvOnlinePdfState,
     CvOnlineEducationItem,
     CvOnlineExperienceItem,
@@ -28,12 +29,23 @@ import type {
     CvOnlineProjectItem,
     CvOnlineSkillItem,
     CvTemplateDetail,
+    ReqUpdateOnlineCvSectionMap,
+    ResOnlineCv,
     ResOnlineCvEditorPayload,
+    ResOnlineCvSectionUpdate,
 } from '@/types/cvOnline.types'
 
 const DRAFT_INDEX_KEY = 'cv_online_draft_index'
 const DRAFT_STORAGE_PREFIX = 'cv_online_draft:'
 const AUTOSAVE_DELAY_MS = 800
+const SECTION_SAVE_ORDER: CvOnlinePatchableSection[] = [
+    'personalInfo',
+    'experiences',
+    'educations',
+    'skills',
+    'certifications',
+    'languages',
+]
 
 function isBrowser() {
     return typeof window !== 'undefined' && typeof window.localStorage !== 'undefined'
@@ -110,6 +122,7 @@ function readDraftFromStorage(localDraftId: string): CvOnlineLocalDraft | null {
             title: parsed.title ?? '',
             template: parsed.template as CvTemplateDetail,
             pdfUrl: parsed.pdfUrl ?? null,
+            pdfDirty: parsed.pdfDirty ?? false,
             status: parsed.status ?? 'local-only',
             createdAt: parsed.createdAt ?? nowIso(),
             updatedAt: parsed.updatedAt ?? nowIso(),
@@ -149,6 +162,7 @@ function mapEditorPayloadToLocalDraft(payload: ResOnlineCvEditorPayload): CvOnli
         title: payload.title,
         template: payload.template,
         pdfUrl: payload.pdfUrl,
+        pdfDirty: payload.pdfDirty ?? false,
         status: payload.persisted ? 'synced' : 'local-only',
         createdAt: payload.createdAt ?? timestamp,
         updatedAt: payload.updatedAt ?? timestamp,
@@ -176,6 +190,34 @@ function extractApiErrorMessage(err: unknown, fallback: string) {
     return fallback
 }
 
+function stripLocalId<T extends { id: string }>(items: T[]) {
+    return items.map(({ id: _id, ...item }) => item)
+}
+
+function buildSectionPayload<T extends CvOnlinePatchableSection>(
+    section: T,
+    extraData: CvOnlineExtraData,
+): ReqUpdateOnlineCvSectionMap[T] {
+    switch (section) {
+        case 'personalInfo':
+            return { ...extraData.personalInfo } as ReqUpdateOnlineCvSectionMap[T]
+        case 'experiences':
+            return stripLocalId(extraData.experiences) as ReqUpdateOnlineCvSectionMap[T]
+        case 'educations':
+            return stripLocalId(extraData.educations) as ReqUpdateOnlineCvSectionMap[T]
+        case 'skills':
+            return stripLocalId(extraData.skills) as ReqUpdateOnlineCvSectionMap[T]
+        case 'certifications':
+            return stripLocalId(extraData.certifications) as ReqUpdateOnlineCvSectionMap[T]
+        case 'languages':
+            return stripLocalId(extraData.languages) as ReqUpdateOnlineCvSectionMap[T]
+    }
+}
+
+function isPatchableSection(section: keyof CvOnlineExtraData): section is CvOnlinePatchableSection {
+    return SECTION_SAVE_ORDER.includes(section as CvOnlinePatchableSection)
+}
+
 export const useCvOnlineEditorStore = defineStore('cvOnlineEditor', () => {
     const currentDraft = ref<CvOnlineLocalDraft | null>(null)
     const loading = ref(false)
@@ -187,6 +229,8 @@ export const useCvOnlineEditorStore = defineStore('cvOnlineEditor', () => {
     const hasPendingChanges = ref(false)
     const lastLoadedAt = ref<string | null>(null)
     const lastLocalSavedAt = ref<string | null>(null)
+    const dirtySectionKeys = ref<CvOnlinePatchableSection[]>([])
+    const fullSaveRequired = ref(false)
     let autosaveTimer: ReturnType<typeof setTimeout> | null = null
 
     const currentCv = computed(() => {
@@ -201,6 +245,7 @@ export const useCvOnlineEditorStore = defineStore('cvOnlineEditor', () => {
             status: currentDraft.value.status,
             template: currentDraft.value.template,
             pdfUrl: currentDraft.value.pdfUrl,
+            pdfDirty: currentDraft.value.pdfDirty,
             extraData: currentDraft.value.extraData,
         }
     })
@@ -225,7 +270,7 @@ export const useCvOnlineEditorStore = defineStore('cvOnlineEditor', () => {
     const pdfState = computed<CvOnlinePdfState>(() => {
         if (pdfError.value) return 'failed'
         if (!currentDraft.value?.serverId) return 'unavailable'
-        if (hasPendingChanges.value) return 'stale'
+        if (hasPendingChanges.value || currentDraft.value.pdfDirty) return 'stale'
         if (currentDraft.value.pdfUrl) return 'ready'
         return 'unavailable'
     })
@@ -235,16 +280,27 @@ export const useCvOnlineEditorStore = defineStore('cvOnlineEditor', () => {
             case 'failed':
                 return 'Khong tai duoc PDF'
             case 'stale':
-                return 'PDF cu da het hieu luc'
+                return 'PDF se duoc tao/cap nhat khi xem hoac tai'
             case 'ready':
-                return 'Da luu va co PDF'
+                return 'PDF hien tai da moi nhat'
             default:
-                return 'Chua luu CV'
+                return currentDraft.value?.serverId ? 'Chua co PDF' : 'Chua luu CV'
         }
     })
 
     function setError(err: unknown) {
         error.value = extractApiErrorMessage(err, 'Co loi xay ra. Vui long thu lai.')
+    }
+
+    function clearDirtyTracking() {
+        dirtySectionKeys.value = []
+        fullSaveRequired.value = false
+    }
+
+    function markSectionDirty(section: CvOnlinePatchableSection) {
+        if (!dirtySectionKeys.value.includes(section)) {
+            dirtySectionKeys.value = [...dirtySectionKeys.value, section]
+        }
     }
 
     function clearAutosaveTimer() {
@@ -262,6 +318,10 @@ export const useCvOnlineEditorStore = defineStore('cvOnlineEditor', () => {
         lastLocalSavedAt.value = nextDraft.updatedAt
         pdfError.value = null
         hasPendingChanges.value = nextDraft.status !== 'synced'
+        clearDirtyTracking()
+        if (nextDraft.status !== 'synced') {
+            fullSaveRequired.value = true
+        }
     }
 
     function flushLocalDraft() {
@@ -274,14 +334,21 @@ export const useCvOnlineEditorStore = defineStore('cvOnlineEditor', () => {
         lastLocalSavedAt.value = currentDraft.value.updatedAt
     }
 
-    function markDirty() {
+    function markDirty(scope: CvOnlinePatchableSection | 'full' = 'full') {
         if (!currentDraft.value) return
         currentDraft.value.updatedAt = nowIso()
         if (currentDraft.value.serverId) {
             currentDraft.value.status = 'dirty'
+            if (scope === 'full') {
+                fullSaveRequired.value = true
+            } else {
+                markSectionDirty(scope)
+            }
         } else {
             currentDraft.value.status = 'local-only'
+            fullSaveRequired.value = true
         }
+        currentDraft.value.pdfDirty = true
         hasPendingChanges.value = true
     }
 
@@ -352,6 +419,43 @@ export const useCvOnlineEditorStore = defineStore('cvOnlineEditor', () => {
         }
     }
 
+    function applySavedResponseToDraft(
+        savedDraft: CvOnlineLocalDraft,
+        response: ResOnlineCv | ResOnlineCvSectionUpdate,
+        fallbackExtraData: CvOnlineExtraData,
+    ) {
+        const syncedAt = response.updatedAt ?? nowIso()
+
+        savedDraft.serverId = response.id
+        savedDraft.title = response.title ?? savedDraft.title
+        savedDraft.templateId = response.templateId ?? savedDraft.templateId
+        savedDraft.template = response.template ?? savedDraft.template
+        savedDraft.extraData = normalizeExtraData(response.extraData ?? fallbackExtraData)
+        savedDraft.persisted = true
+        savedDraft.status = 'synced'
+        savedDraft.pdfUrl = response.pdfUrl ?? savedDraft.pdfUrl
+        savedDraft.pdfDirty = response.pdfDirty ?? true
+        savedDraft.updatedAt = syncedAt
+        savedDraft.lastSyncedAt = syncedAt
+    }
+
+    async function saveDirtySections(savedDraft: CvOnlineLocalDraft, normalizedExtraData: CvOnlineExtraData) {
+        if (!savedDraft.serverId) return null
+
+        let response: ResOnlineCvSectionUpdate | null = null
+        const orderedDirtySections = SECTION_SAVE_ORDER.filter((section) => dirtySectionKeys.value.includes(section))
+
+        for (const section of orderedDirtySections) {
+            response = await cvOnlineService.updateOnlineCvSection(
+                savedDraft.serverId,
+                section,
+                buildSectionPayload(section, normalizedExtraData),
+            )
+        }
+
+        return response
+    }
+
     async function saveDraftNow() {
         if (!currentDraft.value) return null
         saving.value = true
@@ -359,9 +463,11 @@ export const useCvOnlineEditorStore = defineStore('cvOnlineEditor', () => {
         try {
             const normalizedExtraData = normalizeExtraData(currentDraft.value.extraData)
             const savedDraft = currentDraft.value
-            let response
+            let response: ResOnlineCv | ResOnlineCvSectionUpdate
 
-            if (savedDraft.serverId) {
+            if (savedDraft.serverId && !fullSaveRequired.value && dirtySectionKeys.value.length > 0) {
+                response = await saveDirtySections(savedDraft, normalizedExtraData) as ResOnlineCvSectionUpdate
+            } else if (savedDraft.serverId) {
                 response = await cvOnlineService.updateOnlineCv(savedDraft.serverId, {
                     title: savedDraft.title,
                     extraData: normalizedExtraData,
@@ -375,14 +481,9 @@ export const useCvOnlineEditorStore = defineStore('cvOnlineEditor', () => {
                 })
             }
 
-            savedDraft.serverId = response.id
-            savedDraft.extraData = normalizedExtraData
-            savedDraft.persisted = true
-            savedDraft.status = 'synced'
-            savedDraft.pdfUrl = response.pdfUrl
-            savedDraft.updatedAt = response.updatedAt
-            savedDraft.lastSyncedAt = response.updatedAt
+            applySavedResponseToDraft(savedDraft, response, normalizedExtraData)
             removeDraftFromStorage(savedDraft.localDraftId)
+            clearDirtyTracking()
             applyDraft(savedDraft)
             return savedDraft
         } catch (err) {
@@ -416,6 +517,7 @@ export const useCvOnlineEditorStore = defineStore('cvOnlineEditor', () => {
                 currentDraft.value.template = response.template
                 currentDraft.value.extraData = normalizeExtraData(response.extraData ?? currentDraft.value.extraData)
                 currentDraft.value.pdfUrl = response.pdfUrl
+                currentDraft.value.pdfDirty = response.pdfDirty ?? true
                 currentDraft.value.persisted = true
                 currentDraft.value.status = 'synced'
                 currentDraft.value.updatedAt = response.updatedAt
@@ -446,6 +548,9 @@ export const useCvOnlineEditorStore = defineStore('cvOnlineEditor', () => {
         if (!currentDraft.value?.serverId) return null
         pdfError.value = null
         try {
+            const exported = await cvOnlineService.exportOnlineCvPdf(currentDraft.value.serverId)
+            currentDraft.value.pdfUrl = exported.pdfUrl ?? currentDraft.value.pdfUrl
+            currentDraft.value.pdfDirty = exported.pdfDirty ?? false
             const blob = await cvOnlineService.downloadOnlineCvPdf(currentDraft.value.serverId)
             const url = window.URL.createObjectURL(blob)
             const anchor = document.createElement('a')
@@ -465,17 +570,17 @@ export const useCvOnlineEditorStore = defineStore('cvOnlineEditor', () => {
     function patchDraftTitle(title: string) {
         if (!currentDraft.value) return
         currentDraft.value.title = title
-        markDirty()
+        markDirty('full')
         queueAutosave()
     }
 
-    function patchExtraData(patch: Partial<CvOnlineExtraData>) {
+    function patchExtraData(patch: Partial<CvOnlineExtraData>, scope: CvOnlinePatchableSection | 'full' = 'full') {
         if (!currentDraft.value) return
         currentDraft.value.extraData = normalizeExtraData({
             ...currentDraft.value.extraData,
             ...patch,
         })
-        markDirty()
+        markDirty(scope)
         queueAutosave()
     }
 
@@ -485,7 +590,7 @@ export const useCvOnlineEditorStore = defineStore('cvOnlineEditor', () => {
                 ...extraData.value.personalInfo,
                 [field]: value,
             },
-        })
+        }, 'personalInfo')
     }
 
     function replaceSection<T extends keyof Pick<
@@ -503,11 +608,14 @@ export const useCvOnlineEditorStore = defineStore('cvOnlineEditor', () => {
         section: T,
         value: CvOnlineExtraData[T],
     ) {
-        patchExtraData({ [section]: value } as Partial<CvOnlineExtraData>)
+        patchExtraData(
+            { [section]: value } as Partial<CvOnlineExtraData>,
+            isPatchableSection(section) ? section : 'full',
+        )
     }
 
     function updateCareerObjective(value: string) {
-        patchExtraData({ careerObjective: value })
+        patchExtraData({ careerObjective: value }, 'full')
     }
 
     function addExperience() {
@@ -680,6 +788,7 @@ export const useCvOnlineEditorStore = defineStore('cvOnlineEditor', () => {
         lastLocalSavedAt.value = null
         lastLoadedAt.value = null
         hasPendingChanges.value = false
+        clearDirtyTracking()
     }
 
     return {

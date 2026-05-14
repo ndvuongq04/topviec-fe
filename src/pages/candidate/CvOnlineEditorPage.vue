@@ -387,7 +387,7 @@ async function handleManualSave() {
       skipNextLocalFlush = true
       await router.replace({ name: 'CandidateProfile', query: { tab: 'cvs' } })
     }
-    toast.success('Da luu CV online')
+    toast.success('Da luu CV online', 'PDF se duoc tao/cap nhat khi ban xem hoac tai.')
   } catch {
     toast.error('Khong luu duoc CV online', editorStore.error ?? undefined)
   }
@@ -400,6 +400,9 @@ async function handleDownloadPdf() {
   }
 
   try {
+    if (editorStore.hasPendingChanges) {
+      await editorStore.saveDraftNow()
+    }
     await editorStore.downloadPdf()
     toast.success('Dang tai PDF')
   } catch {
