@@ -4,10 +4,11 @@
       <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-xl text-slate-400">search</span>
       <input
         type="text"
-        placeholder="Tim kiem theo ten, ma template..."
+        placeholder="Nhap tu khoa, nhan Enter de tim..."
         class="w-full rounded-lg border border-[#963131]/5 bg-slate-50 py-2.5 pl-10 pr-4 text-base text-slate-700 outline-none transition-all placeholder:text-slate-400 focus:ring-2 focus:ring-[#963131]/20"
-        :value="modelValue.search"
-        @input="update('search', ($event.target as HTMLInputElement).value)"
+        :value="searchDraft"
+        @input="searchDraft = ($event.target as HTMLInputElement).value"
+        @keydown.enter.prevent="commitSearch"
       />
     </div>
 
@@ -48,6 +49,8 @@
 </template>
 
 <script setup lang="ts">
+import { ref, watch } from 'vue'
+
 const props = defineProps<{
   modelValue: { search: string; status: string; tier: string; sort: string }
 }>()
@@ -55,6 +58,23 @@ const props = defineProps<{
 const emit = defineEmits<{
   'update:modelValue': [value: typeof props.modelValue]
 }>()
+
+const searchDraft = ref(props.modelValue.search)
+
+watch(
+  () => props.modelValue.search,
+  (value) => {
+    if (value !== searchDraft.value) {
+      searchDraft.value = value
+    }
+  },
+)
+
+function commitSearch() {
+  const keyword = searchDraft.value.trim()
+  if (keyword === props.modelValue.search) return
+  update('search', keyword)
+}
 
 function update(key: keyof typeof props.modelValue, value: string) {
   emit('update:modelValue', { ...props.modelValue, [key]: value })

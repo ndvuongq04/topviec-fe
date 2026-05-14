@@ -201,10 +201,6 @@ defineEmits<{
 }>()
 
 const previewDocument = computed(() => {
-  if (!props.preview?.renderedHtml) return ''
-  if (props.preview.renderedHtml.includes('<html')) {
-    return props.preview.renderedHtml
-  }
-  return `<!DOCTYPE html><html><head><meta charset="utf-8" /></head><body>${props.preview.renderedHtml}</body></html>`
+  return props.preview?.renderedHtml ?? ''
 })
 </script>

@@ -132,12 +132,7 @@ const previewModal = ref({
 
 const previewResult = computed(() => templateStore.adminTemplatePreview)
 const previewDocument = computed(() => {
-  const renderedHtml = previewResult.value?.renderedHtml
-  if (!renderedHtml) return ''
-  if (renderedHtml.includes('<html')) {
-    return renderedHtml
-  }
-  return `<!DOCTYPE html><html><head><meta charset="utf-8" /></head><body>${renderedHtml}</body></html>`
+  return previewResult.value?.renderedHtml ?? ''
 })
 
 const filteredTemplates = computed(() => {
@@ -166,12 +161,11 @@ onMounted(() => {
 })
 
 watch(
-  () => ({ ...filters.value }),
+  () => [filters.value.search, filters.value.sort],
   () => {
     currentPage.value = 1
     void fetchTemplates()
   },
-  { deep: true },
 )
 
 function handlePageChange(page: number) {

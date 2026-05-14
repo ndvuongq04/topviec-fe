@@ -157,6 +157,25 @@ function mapEditorPayloadToLocalDraft(payload: ResOnlineCvEditorPayload): CvOnli
     }
 }
 
+function extractApiErrorMessage(err: unknown, fallback: string) {
+    const message = (err as any)?.response?.data?.message
+
+    if (typeof message === 'string') {
+        return message
+    }
+
+    if (Array.isArray(message)) {
+        return message.filter((item): item is string => typeof item === 'string').join('\n') || fallback
+    }
+
+    if (message && typeof message === 'object') {
+        const firstMessage = Object.values(message).find((value): value is string => typeof value === 'string')
+        return firstMessage ?? fallback
+    }
+
+    return fallback
+}
+
 export const useCvOnlineEditorStore = defineStore('cvOnlineEditor', () => {
     const currentDraft = ref<CvOnlineLocalDraft | null>(null)
     const loading = ref(false)
@@ -225,8 +244,7 @@ export const useCvOnlineEditorStore = defineStore('cvOnlineEditor', () => {
     })
 
     function setError(err: unknown) {
-        const message = (err as any)?.response?.data?.message
-        error.value = typeof message === 'string' ? message : 'Co loi xay ra. Vui long thu lai.'
+        error.value = extractApiErrorMessage(err, 'Co loi xay ra. Vui long thu lai.')
     }
 
     function clearAutosaveTimer() {
@@ -439,8 +457,7 @@ export const useCvOnlineEditorStore = defineStore('cvOnlineEditor', () => {
             window.URL.revokeObjectURL(url)
             return true
         } catch (err) {
-            const message = (err as any)?.response?.data?.message
-            pdfError.value = typeof message === 'string' ? message : 'Khong the tai PDF luc nay.'
+            pdfError.value = extractApiErrorMessage(err, 'Khong the tai PDF luc nay.')
             throw err
         }
     }
