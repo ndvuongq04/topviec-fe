@@ -7,6 +7,7 @@ import type {
   ReqProcessReport,
   ResReportDetail,
   ResReportPagination,
+  ResAdminReportStatisticsDTO,
 } from '@/types/report.types';
 import type { ResAppeal } from '@/types/appeal.types';
 
@@ -48,6 +49,14 @@ const adminReportService = {
     const res = await axiosInstance.patch<RestResponse<ResReportDetail>>(
       `${BASE_URL}/${id}/process`,
       data,
+    );
+    return res.data.data;
+  },
+
+  /** GET /admin/reports/statistics */
+  async getStatistics(): Promise<ResAdminReportStatisticsDTO> {
+    const res = await axiosInstance.get<RestResponse<ResAdminReportStatisticsDTO>>(
+      `${BASE_URL}/statistics`
     );
     return res.data.data;
   },

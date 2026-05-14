@@ -6,7 +6,7 @@
       <!-- Header -->
       <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
         <h3 class="text-lg font-bold text-slate-900">Đổi tên hành động</h3>
-        <button class="text-slate-400 hover:text-slate-600 transition-colors" @click="$emit('close')">
+        <button class="text-slate-400 hover:text-slate-600 transition-colors cursor-pointer" @click="$emit('close')">
           <span class="material-symbols-outlined">close</span>
         </button>
       </div>
@@ -40,13 +40,13 @@
       <!-- Footer -->
       <div class="px-6 py-4 border-t border-slate-100 bg-slate-50 flex justify-end gap-3 rounded-b-2xl">
         <button
-          class="px-4 py-2 text-sm font-semibold text-slate-600 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 shadow-sm transition-colors"
+          class="px-4 py-2 text-sm font-semibold text-slate-600 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 shadow-sm transition-colors cursor-pointer"
           @click="$emit('close')"
         >
           Huỷ
         </button>
         <button
-          class="px-4 py-2 text-sm font-semibold text-white bg-[#963131] rounded-lg hover:opacity-90 shadow-md shadow-[#963131]/20 transition-all"
+          class="px-4 py-2 text-sm font-semibold text-white bg-[#963131] rounded-lg hover:opacity-90 shadow-md shadow-[#963131]/20 transition-all cursor-pointer"
           @click="handleSubmit"
         >
           Lưu tên mới

@@ -13,7 +13,7 @@
           <p class="perm-page__subtitle">Thiết lập các quyền hạn mặc định cho từng vai trò trong hệ thống Nhà Tuyển Dụng</p>
         </div>
         <div class="perm-page__actions">
-          <button class="perm-page__btn perm-page__btn--ghost" @click="isModalVisible = true">
+          <button class="perm-page__btn perm-page__btn--ghost cursor-pointer" @click="isModalVisible = true">
             <span class="material-symbols-outlined">add</span>
             Thêm mới hành động
           </button>

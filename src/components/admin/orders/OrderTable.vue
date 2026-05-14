@@ -103,7 +103,7 @@
               <td class="px-6 py-4">
                 <div class="flex items-center justify-center gap-1">
                   <button
-                    class="p-1.5 text-slate-400 hover:text-[#963131] transition-colors"
+                    class="p-1.5 text-slate-400 hover:text-[#963131] transition-colors cursor-pointer"
                     title="Xem chi tiết"
                     @click="router.push({ name: 'admin-order-detail', params: { id: order.id } })"
                   >
@@ -127,7 +127,7 @@
         <div class="flex items-center gap-2">
           <!-- Prev -->
           <button
-            class="size-8 flex items-center justify-center rounded-lg border border-slate-200 dark:border-slate-700 text-slate-400 hover:bg-slate-50 disabled:opacity-30"
+            class="size-8 flex items-center justify-center rounded-lg border border-slate-200 dark:border-slate-700 text-slate-400 hover:bg-slate-50 disabled:opacity-30 cursor-pointer"
             :disabled="meta.page === 0"
             @click="$emit('page-change', meta.page - 1)"
           >
@@ -139,7 +139,7 @@
             <span v-if="p === '...'" class="px-1 text-slate-400 text-sm">...</span>
             <button
               v-else
-              class="size-8 flex items-center justify-center rounded-lg text-xs font-bold transition-colors"
+              class="size-8 flex items-center justify-center rounded-lg text-xs font-bold transition-colors cursor-pointer"
               :class="meta.page === (p as number)
                 ? 'bg-[#963131] text-white shadow-sm'
                 : 'border border-slate-200 dark:border-slate-700 text-slate-600 hover:bg-slate-50'"
@@ -149,7 +149,7 @@
 
           <!-- Next -->
           <button
-            class="size-8 flex items-center justify-center rounded-lg border border-slate-200 dark:border-slate-700 text-slate-400 hover:bg-slate-50 disabled:opacity-30"
+            class="size-8 flex items-center justify-center rounded-lg border border-slate-200 dark:border-slate-700 text-slate-400 hover:bg-slate-50 disabled:opacity-30 cursor-pointer"
             :disabled="meta.page >= meta.pages - 1"
             @click="$emit('page-change', meta.page + 1)"
           >

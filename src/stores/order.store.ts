@@ -9,6 +9,8 @@ import type {
     AdminOrderQueryParams,
     EmployerOrderQueryParams,
     EmployerAddonPackageQueryParams,
+    ResAdminOrderStatisticsDTO,
+    ReqRefundOrderDTO,
 } from '@/types/order.types'
 import type { ResServicePackageDTO } from '@/types/servicePackage.types'
 import type { ResAddonServiceDTO } from '@/types/serviceCatalog.types'
@@ -46,6 +48,7 @@ function extractErrorMessage(err: unknown): string {
 export const useAdminOrderStore = defineStore('adminOrder', () => {
     const orders        = ref<ResOrderDTO[]>([])
     const selectedOrder = ref<ResOrderDTO | null>(null)
+    const orderStatistics = ref<ResAdminOrderStatisticsDTO | null>(null)
     const meta          = ref<PaginationMeta>({ page: 0, pageSize: 10, pages: 0, totals: 0 })
     const loading       = ref(false)
     const error         = ref<string | null>(null)
@@ -97,9 +100,22 @@ export const useAdminOrderStore = defineStore('adminOrder', () => {
         }
     }
 
+    async function fetchStatistics() {
+        loading.value = true
+        error.value   = null
+        try {
+            orderStatistics.value = await adminOrderService.getStatistics()
+        } catch (err) {
+            error.value = extractErrorMessage(err)
+        } finally {
+            loading.value = false
+        }
+    }
+
     function reset() {
         orders.value        = []
         selectedOrder.value = null
+        orderStatistics.value = null
         meta.value          = { page: 0, pageSize: 10, pages: 0, totals: 0 }
         loading.value       = false
         error.value         = null
@@ -108,12 +124,14 @@ export const useAdminOrderStore = defineStore('adminOrder', () => {
     return {
         orders,
         selectedOrder,
+        orderStatistics,
         meta,
         loading,
         error,
         fetchOrders,
         fetchOrderById,
         updateOrderStatus,
+        fetchStatistics,
         reset,
     }
 })
@@ -214,6 +232,36 @@ export const useEmployerOrderStore = defineStore('employerOrder', () => {
         }
     }
 
+    async function fetchPaymentUrl(id: number): Promise<string> {
+        loading.value = true
+        error.value   = null
+        try {
+            const res = await employerOrderService.getPaymentUrl(id)
+            return res.paymentUrl
+        } catch (err) {
+            error.value = extractErrorMessage(err)
+            throw err
+        } finally {
+            loading.value = false
+        }
+    }
+
+    async function requestRefund(id: number, payload: ReqRefundOrderDTO): Promise<ResOrderDTO> {
+        loading.value = true
+        error.value   = null
+        try {
+            const updated = await employerOrderService.requestRefund(id, payload)
+            _updateInList(updated)
+            if (selectedOrder.value?.id === updated.id) selectedOrder.value = updated
+            return updated
+        } catch (err) {
+            error.value = extractErrorMessage(err)
+            throw err
+        } finally {
+            loading.value = false
+        }
+    }
+
     async function fetchActiveServicePackages() {
         try {
             activeServicePackages.value = await employerPackageService.getActiveServicePackages()
@@ -259,6 +307,8 @@ export const useEmployerOrderStore = defineStore('employerOrder', () => {
         fetchOrderById,
         createOrder,
         cancelOrder,
+        fetchPaymentUrl,
+        requestRefund,
         fetchActiveServicePackages,
         fetchActiveAddonPackages,
         reset,

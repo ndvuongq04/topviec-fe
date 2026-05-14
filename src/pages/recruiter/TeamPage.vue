@@ -82,6 +82,7 @@ const { confirm } = useConfirm()
 
 onMounted(() => {
   fetchMembers()
+  memberStore.fetchStatistics()
   roleStore.fetchEmployerRoles()
 })
 
@@ -102,38 +103,51 @@ watch([currentPage, searchQuery, filterRole, filterStatus], () => {
 
 const totalMembers = computed(() => memberStore.members?.meta.totals ?? 0)
 
-const stats = computed(() => [
-  {
-    icon: 'groups',
-    label: 'Tổng số thành viên',
-    value: totalMembers.value,
-    trend: '+0%',
-    trendUp: true,
-    trendNote: 'cập nhật mới nhất',
-    iconBg: 'bg-primary/10',
-    iconColor: 'text-primary',
-  },
-  {
-    icon: 'check_circle',
-    label: 'Đang hoạt động',
-    value: memberStore.members?.result.filter(m => m.status === MEMBER_STATUS.ACTIVE).length ?? 0,
-    trend: '0%',
-    trendUp: null,
-    trendNote: 'hiện tại',
-    iconBg: 'bg-emerald-100',
-    iconColor: 'text-emerald-600',
-  },
-  {
-    icon: 'hourglass_empty',
-    label: 'Chờ xác nhận',
-    value: memberStore.members?.result.filter(m => m.status === MEMBER_STATUS.PENDING).length ?? 0,
-    trend: '0%',
-    trendUp: false,
-    trendNote: 'đang chờ',
-    iconBg: 'bg-amber-100',
-    iconColor: 'text-amber-600',
-  },
-])
+const stats = computed(() => {
+  const s = memberStore.memberStatistics
+  return [
+    {
+      icon: 'groups',
+      label: 'Tổng số thành viên',
+      value: s?.totalMembers ?? 0,
+      trend: '+0%',
+      trendUp: true,
+      trendNote: 'cập nhật mới nhất',
+      iconBg: 'bg-primary/10',
+      iconColor: 'text-primary',
+    },
+    {
+      icon: 'check_circle',
+      label: 'Đang hoạt động',
+      value: s?.activeMembers ?? 0,
+      trend: '0%',
+      trendUp: null,
+      trendNote: 'hiện tại',
+      iconBg: 'bg-emerald-100',
+      iconColor: 'text-emerald-600',
+    },
+    {
+      icon: 'hourglass_empty',
+      label: 'Chờ xác nhận',
+      value: s?.pendingMembers ?? 0,
+      trend: '0%',
+      trendUp: false,
+      trendNote: 'đang chờ',
+      iconBg: 'bg-amber-100',
+      iconColor: 'text-amber-600',
+    },
+    {
+      icon: 'lock',
+      label: 'Bị khóa',
+      value: s?.lockedMembers ?? 0,
+      trend: '0%',
+      trendUp: false,
+      trendNote: 'ngừng hoạt động',
+      iconBg: 'bg-rose-100',
+      iconColor: 'text-rose-600',
+    },
+  ]
+})
 
 // Mapping backend Response to TeamTable's expected TeamMember interface
 const tableMembers = computed(() => {

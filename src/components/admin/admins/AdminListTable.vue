@@ -114,7 +114,7 @@
             <td class="px-6 py-4 text-right">
               <div class="flex items-center justify-end gap-1">
                 <button
-                  class="p-1.5 text-slate-400 hover:text-[#963131] transition-colors"
+                  class="p-1.5 text-slate-400 hover:text-[#963131] transition-colors cursor-pointer"
                   title="Xem chi tiết"
                   @click="$emit('view', admin)"
                 >
@@ -123,14 +123,16 @@
                   >
                 </button>
                 <button
-                  class="p-1.5 text-slate-400 hover:text-[#963131] transition-colors"
+                  v-if="can('admin.update')"
+                  class="p-1.5 text-slate-400 hover:text-[#963131] transition-colors cursor-pointer"
                   title="Chỉnh sửa"
                   @click="$emit('edit', admin)"
                 >
                   <span class="material-symbols-outlined text-lg">edit</span>
                 </button>
-                <!-- <button
-                  class="p-1.5 transition-colors"
+                <button
+                  v-if="can('admin.toggle-active')"
+                  class="p-1.5 transition-colors cursor-pointer"
                   :class="admin.isActive
                     ? 'text-slate-400 hover:text-orange-600'
                     : 'text-green-600 hover:bg-green-50 rounded'"
@@ -140,9 +142,10 @@
                   <span class="material-symbols-outlined text-lg">
                     {{ admin.isActive ? 'lock' : 'lock_open' }}
                   </span>
-                </button> -->
+                </button>
                 <button
-                  class="p-1.5 text-slate-400 hover:text-red-600 transition-colors"
+                  v-if="can('admin.delete')"
+                  class="p-1.5 text-slate-400 hover:text-red-600 transition-colors cursor-pointer"
                   title="Xóa"
                   @click="$emit('delete', admin)"
                 >
@@ -183,7 +186,7 @@
       </p>
       <div class="flex items-center gap-2">
         <button
-          class="size-8 flex items-center justify-center rounded-lg border border-slate-200 dark:border-slate-700 text-slate-400 hover:bg-slate-50 disabled:opacity-50"
+          class="size-8 flex items-center justify-center rounded-lg border border-slate-200 dark:border-slate-700 text-slate-400 hover:bg-slate-50 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
           :disabled="currentPage <= 1"
           @click="$emit('page-change', currentPage - 1)"
         >
@@ -198,7 +201,7 @@
           >
           <button
             v-else
-            class="size-8 flex items-center justify-center rounded-lg text-xs font-bold transition-colors"
+            class="size-8 flex items-center justify-center rounded-lg text-xs font-bold transition-colors cursor-pointer"
             :class="
               page === currentPage
                 ? 'bg-[#963131] text-white shadow-sm'
@@ -211,7 +214,7 @@
         </template>
 
         <button
-          class="size-8 flex items-center justify-center rounded-lg border border-slate-200 dark:border-slate-700 text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+          class="size-8 flex items-center justify-center rounded-lg border border-slate-200 dark:border-slate-700 text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer disabled:cursor-not-allowed"
           :disabled="currentPage >= totalPages"
           @click="$emit('page-change', currentPage + 1)"
         >
@@ -229,6 +232,9 @@ import { computed } from "vue";
 import dayjs from "dayjs";
 import type { ResAdminUser, AdminRole } from "@/types/adminUser.types";
 import { ADMIN_ROLE_LABELS, ADMIN_ROLE_STYLES } from "@/types/adminUser.types";
+import { useAdminPermission } from "@/composables/useAdminPermission"
+
+const { can } = useAdminPermission()
 
 const props = defineProps<{
   admins: ResAdminUser[];

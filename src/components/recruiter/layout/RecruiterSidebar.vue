@@ -12,7 +12,7 @@
     </div>
 
     <!-- Nav -->
-    <nav class="flex-1 px-4 space-y-1">
+    <nav class="flex-1 px-4 space-y-1 overflow-y-auto custom-scrollbar">
       <router-link
         v-for="item in navItems"
         :key="item.to"
@@ -163,13 +163,49 @@ const navItems = [
   // { to: '/recruiter/offers', icon: 'handshake', label: 'Mời làm việc' },
   // { to: '/recruiter/search-cv', icon: 'person_search', label: 'Tìm CV' },
   // { to: '/recruiter/reports', icon: 'bar_chart', label: 'Báo cáo' },
-  { to: '/recruiter/team', icon: 'manage_accounts', label: 'Quản lý nhóm' },
+  { to: '/recruiter/team',       icon: 'manage_accounts',     label: 'Quản lý nhóm' },
+  { to: '/recruiter/assignment', icon: 'assignment_ind',      label: 'Quản lý phân công' },
   { to: '/recruiter/permissions', icon: 'admin_panel_settings', label: 'Phân quyền' },
   { to: '/recruiter/permissions/log', icon: 'history', label: 'Lịch sử phân quyền' },
   { to: '/recruiter/company-profile', icon: 'business', label: 'Thông tin công ty' },
   { to: '/recruiter/messages', icon: 'chat', label: 'Tin nhắn' },
+  { to: '/recruiter/activity-log', icon: 'local_activity', label: 'Nhật kí hoạt động' },
   { to: '/recruiter/complaints', icon: 'flag', label: 'Báo cáo vi phạm' },
   { to: '/recruiter/services', icon: 'diamond', label: 'Dịch vụ' },
   { to: '/recruiter/billing', icon: 'receipt_long', label: 'Lịch sử đơn hàng' },
 ]
 </script>
+
+<style scoped>
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: #cbd5e1;
+  border-radius: 20px;
+}
+.dark .custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: #334155;
+}
+
+/* Hide scrollbar by default, show on hover */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
+
+.custom-scrollbar:hover {
+  scrollbar-color: #cbd5e1 transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: transparent;
+}
+
+.custom-scrollbar:hover::-webkit-scrollbar-thumb {
+  background-color: #cbd5e1;
+}
+</style>

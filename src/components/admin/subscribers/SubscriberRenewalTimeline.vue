@@ -1,34 +1,31 @@
 <script setup lang="ts">
-const events = [
-  {
-    title: 'Nâng cấp lên Gói Pro',
-    date: '14/01/2025',
-    orderCode: '#ORD-00189',
-    amount: '8.000.000 đ',
-    opacity: 1,
-  },
-  {
-    title: 'Gia hạn Gói Basic',
-    date: '10/01/2024',
-    orderCode: '#ORD-00042',
-    amount: '2.556.000 đ',
-    opacity: 0.6,
-  },
-  {
-    title: 'Khởi tạo tài khoản',
-    date: '01/01/2024',
-    orderCode: '',
-    amount: '',
-    note: 'Đăng ký mới',
-    opacity: 0.3,
-  },
-]
+import { computed } from 'vue'
+import { useAdminCompanyStore } from '@/stores/adminCompany.store'
+
+const store = useAdminCompanyStore()
+
+const formatCurrency = (amount: number) => amount.toLocaleString('vi-VN') + ' đ'
+
+const events = computed(() => {
+  const items = store.companySubscriptions?.result || []
+  return items.map((sub, index) => {
+    const isFirst = index === 0
+    return {
+      title: 'Đăng ký ' + sub.packageName,
+      date: sub.purchasedAt ? new Date(sub.purchasedAt).toLocaleDateString('vi-VN') : 'N/A',
+      orderCode: sub.orderId ? `#ORD-${sub.orderId.toString().padStart(5, '0')}` : '',
+      amount: sub.packagePrice != null ? formatCurrency(sub.packagePrice) : '',
+      note: sub.status === 'ACTIVE' ? 'Đang sử dụng' : 'Đã hết hạn',
+      opacity: isFirst ? 1 : 0.6,
+    }
+  })
+})
 </script>
 
 <template>
   <section class="timeline-section">
     <h3 class="section-heading">Lịch sử gia hạn gói</h3>
-    <div class="timeline-card">
+    <div v-if="events.length" class="timeline-card">
       <div class="timeline-line"></div>
       <div class="timeline-items">
         <div v-for="(e, i) in events" :key="i" class="timeline-item">
@@ -47,6 +44,9 @@ const events = [
           </div>
         </div>
       </div>
+    </div>
+    <div v-else class="timeline-card empty-state text-center text-slate-500 py-8">
+      Không có lịch sử gia hạn
     </div>
   </section>
 </template>

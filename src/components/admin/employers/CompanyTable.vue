@@ -90,7 +90,7 @@
             <td class="px-6 py-4">
               <div class="flex items-center justify-center gap-2">
                 <button
-                  class="p-1.5 hover:bg-[#963131]/10 rounded-lg text-slate-500 hover:text-[#963131] transition-colors"
+                  class="p-1.5 hover:bg-[#963131]/10 rounded-lg text-slate-500 hover:text-[#963131] transition-colors cursor-pointer"
                   title="Xem chi tiết"
                   @click="$emit('view', company)"
                 >
@@ -116,7 +116,8 @@
                   <span class="material-symbols-outlined text-xl">notifications</span>
                 </button> -->
                 <button
-                  class="p-1.5 hover:bg-red-50 rounded-lg text-slate-500 hover:text-red-600 transition-colors"
+                  v-if="can('company.delete')"
+                  class="p-1.5 hover:bg-red-50 rounded-lg text-slate-500 hover:text-red-600 transition-colors cursor-pointer"
                   title="Xóa"
                   @click="$emit('delete', company)"
                 >
@@ -144,7 +145,7 @@
       </p>
       <div class="flex items-center gap-2">
         <button
-          class="size-9 flex items-center justify-center rounded-lg border border-[#963131]/10 hover:bg-white text-slate-400 hover:text-[#963131] transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+          class="size-9 flex items-center justify-center rounded-lg border border-[#963131]/10 hover:bg-white text-slate-400 hover:text-[#963131] transition-all disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
           :disabled="currentPage <= 1"
           @click="$emit('page-change', currentPage - 1)"
         >
@@ -155,7 +156,7 @@
           <span v-if="page === '...'" class="px-2 text-slate-400">...</span>
           <button
             v-else
-            class="size-9 flex items-center justify-center rounded-lg font-bold text-sm transition-all"
+            class="size-9 flex items-center justify-center rounded-lg font-bold text-sm transition-all cursor-pointer"
             :class="page === currentPage
               ? 'bg-[#963131] text-white shadow-md'
               : 'border border-[#963131]/10 hover:bg-white text-slate-600 hover:text-[#963131]'"
@@ -166,7 +167,7 @@
         </template>
 
         <button
-          class="size-9 flex items-center justify-center rounded-lg border border-[#963131]/10 hover:bg-white text-slate-400 hover:text-[#963131] transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+          class="size-9 flex items-center justify-center rounded-lg border border-[#963131]/10 hover:bg-white text-slate-400 hover:text-[#963131] transition-all disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
           :disabled="currentPage >= totalPages"
           @click="$emit('page-change', currentPage + 1)"
         >
@@ -186,6 +187,9 @@ import {
   COMPANY_STATUS_LABELS,
   VERIFICATION_STATUS_LABELS,
 } from '@/constants/company.constants'
+import { useAdminPermission } from '@/composables/useAdminPermission'
+
+const { can } = useAdminPermission()
 
 const props = defineProps<{
   companies: ResCompanyDTO[]

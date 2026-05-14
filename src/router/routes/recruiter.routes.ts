@@ -8,6 +8,12 @@ export const recruiterRoutes: RouteRecordRaw[] = [
     meta: { requiresAuth: true, role: 'EMPLOYER' },
   },
   {
+    path: '/payment/result',
+    name: 'payment-result',
+    component: () => import('@/pages/recruiter/PaymentResultPage.vue'),
+    meta: { requiresAuth: true, role: 'EMPLOYER' },
+  },
+  {
     path: '/recruiter',
     component: () => import('@/layouts/recruiter/RecruiterLayout.vue'),
     meta: { requiresAuth: true, role: 'EMPLOYER' },
@@ -26,6 +32,11 @@ export const recruiterRoutes: RouteRecordRaw[] = [
         path: 'team',
         name: 'recruiter-team',
         component: () => import('@/pages/recruiter/TeamPage.vue'),
+      },
+      {
+        path: 'assignment',
+        name: 'recruiter-assignment',
+        component: () => import('@/pages/recruiter/AssignmentPage.vue'),
       },
       {
         path: 'permissions',
@@ -162,6 +173,16 @@ export const recruiterRoutes: RouteRecordRaw[] = [
         path: 'complaints/:id',
         name: 'recruiter-complaint-detail',
         component: () => import('@/pages/recruiter/ComplaintDetailPage.vue'),
+      },
+      {
+        path: 'activity-log',
+        name: 'recruiter-activity-log',
+        component: () => import('@/pages/recruiter/ActivityLogPage.vue'),
+      },
+      {
+        path: 'activity-log/:type/:id',
+        name: 'recruiter-activity-log-detail',
+        component: () => import('@/pages/recruiter/ActivityLogDetailPage.vue'),
       },
     ],
   },

@@ -23,7 +23,7 @@
         <span class="total-label">Tổng thanh toán</span>
         <span class="total-value">{{ formatTotal }}đ</span>
       </div>
-      <button class="checkout-btn" @click="$emit('checkout')">
+      <button class="checkout-btn" :disabled="!items.length" @click="$emit('checkout')">
         Thanh toán ngay
         <span class="material-symbols-outlined">arrow_forward</span>
       </button>
@@ -124,6 +124,12 @@ const formatTotal = computed(() =>
 }
 .checkout-btn:hover { background: #2563eb; }
 .checkout-btn:active { transform: scale(0.97); }
+.checkout-btn:disabled {
+  background: #cbd5e1;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
 .checkout-btn .material-symbols-outlined { font-size: 18px; }
 
 .terms { font-size: 0.75rem; color: #94a3b8; text-align: center; margin-top: 12px; }

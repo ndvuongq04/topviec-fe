@@ -8,7 +8,7 @@
         <p class="text-slate-500 text-sm mt-1">Xem và quản lý danh sách ứng viên trên hệ thống</p>
       </div>
       <button
-        class="bg-[#963131] hover:bg-[#963131]/90 text-white px-5 py-2.5 rounded-lg flex items-center gap-2 font-semibold text-sm transition-all shadow-sm"
+        class="bg-[#963131] hover:bg-[#963131]/90 text-white px-5 py-2.5 rounded-lg flex items-center gap-2 font-semibold text-sm transition-all shadow-sm cursor-pointer"
         style="box-shadow: 0 4px 14px rgba(150,49,49,0.25)"
         @click="onAddNew"
       >

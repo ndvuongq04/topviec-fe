@@ -38,6 +38,7 @@
         @delete="handleDelete"
         @restore="handleRestore"
         @applications="handleViewApplications"
+        @assign="handleAssign"
       />
       <JobPostingPagination
         v-model:currentPage="currentPage"
@@ -153,21 +154,33 @@
       </div>
     </GlobalModal>
 
+    <!-- ── Assign Recruiter Modal ─────────────────────────── -->
+    <JobAssignmentModal
+      ref="assignModalRef"
+      :visible="isAssignModalVisible"
+      :job="assigningJob"
+      @close="isAssignModalVisible = false"
+      @assigned="handleAssignSuccess"
+    />
+
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted } from 'vue'
+import { ref, watch, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { employerJobPostingService } from '@/services/employerJobPosting.service'
 import employerInterviewService from '@/services/employerInterview.service'
 import { useToast } from '@/composables/useToast'
+import { useEmployerJobPostingStore } from '@/stores/employerJobPosting.store'
+import { useEmployerJobAssignmentStore } from '@/stores/employerJobAssignment.store'
 import { JobPostingStatus } from '@/constants/jobPosting.constants'
 import type { ResJobPostingDetail } from '@/types/jobPosting.types'
 import JobPostingStatsGrid  from '@/components/recruiter/jobs/JobPostingStatsGrid.vue'
 import JobPostingFilters    from '@/components/recruiter/jobs/JobPostingFilters.vue'
 import JobPostingTable      from '@/components/recruiter/jobs/JobPostingTable.vue'
 import JobPostingPagination from '@/components/recruiter/jobs/JobPostingPagination.vue'
+import JobAssignmentModal   from '@/components/recruiter/jobs/JobAssignmentModal.vue'
 import GlobalModal          from '@/components/ui/GlobalModal.vue'
 import type { JobPostingFilterTab } from '@/components/recruiter/jobs/JobPostingFilters.vue'
 import type { JobPostingRow, JobPostingStats } from '@/types/employerJobPosting.types'
@@ -178,10 +191,17 @@ const currentPage  = ref(0)
 const searchValue  = ref('')
 const router = useRouter()
 const toast  = useToast()
+const store  = useEmployerJobPostingStore()
+const assignmentStore = useEmployerJobAssignmentStore()
 
 const jobs      = ref<JobPostingRow[]>([])
 const totalJobs = ref(0)
-const stats     = ref<JobPostingStats>({ total: 0, active: 0, pending: 0, expiring: 0 })
+const stats     = computed<JobPostingStats>(() => ({
+  total:    store.jobStatistics?.totalJobPosts ?? 0,
+  active:   store.jobStatistics?.activeJobPosts ?? 0,
+  pending:  store.jobStatistics?.pendingJobPosts ?? 0,
+  expiring: store.jobStatistics?.expiringJobPosts ?? 0,
+}))
 
 // Extend Modal State
 const isExtendModalVisible = ref(false)
@@ -204,6 +224,11 @@ const deletingJob          = ref<{ id: number; title: string } | null>(null)
 const isInterviewModalVisible = ref(false)
 const isInterviewLoading      = ref(false)
 const interviewingJob         = ref<{ id: number; title: string } | null>(null)
+
+// Assign Modal State
+const isAssignModalVisible = ref(false)
+const assigningJob         = ref<{ id: number; title: string; code?: string } | null>(null)
+const assignModalRef       = ref<any>(null)
 
 // ── Status mapping ───────────────────────────────────────
 const tabToStatus: Partial<Record<JobPostingFilterTab, JobPostingStatus>> = {
@@ -261,6 +286,8 @@ function mapToRow(job: ResJobPostingDetail): JobPostingRow {
     isUrgent:   job.isUrgent,
     isFeatured: job.isFeatured,
     isHot:      job.isHot,
+    rawStatus:  job.status,
+    assignedRecruiter: (job as any).assignedRecruiter ?? null,
   }
 }
 
@@ -277,17 +304,7 @@ async function fetchJobs() {
 }
 
 async function fetchStats() {
-  const [allRes, activeRes, pendingRes] = await Promise.all([
-    employerJobPostingService.getList({ size: 1 }),
-    employerJobPostingService.getList({ status: JobPostingStatus.PUBLISHED, size: 1 }),
-    employerJobPostingService.getList({ status: JobPostingStatus.PENDING_APPROVAL, size: 1 }),
-  ])
-  stats.value = {
-    total:   allRes.meta.totals,
-    active:  activeRes.meta.totals,
-    pending: pendingRes.meta.totals,
-    expiring: 0,
-  }
+  await store.fetchStatistics()
 }
 
 // ── Watchers ─────────────────────────────────────────────
@@ -536,6 +553,27 @@ const confirmStartInterviewing = async () => {
   } finally {
     isInterviewLoading.value = false
   }
+}
+
+const handleAssign = (id: number) => {
+  const job = jobs.value.find(j => j.id === id)
+  if (!job) return
+  assigningJob.value = {
+    id: job.id,
+    title: job.title,
+    code: job.code,
+    assignedRecruiter: (job as any).assignedRecruiter ?? null,
+  }
+  isAssignModalVisible.value = true
+}
+
+/**
+ * Gọi sau khi JobAssignmentModal emit 'assigned'
+ * Reload lại trang hiện tại để cập nhật cột assignedRecruiter
+ */
+async function handleAssignSuccess() {
+  isAssignModalVisible.value = false
+  await fetchJobs()
 }
 </script>
 

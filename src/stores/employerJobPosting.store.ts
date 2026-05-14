@@ -8,12 +8,14 @@ import type {
     ResJobPostingDetail,
     EmployerJobPostingQueryParams,
     PaginationMeta,
+    ResEmployerJobStatisticsDTO,
 } from '@/types/jobPosting.types'
 
 export const useEmployerJobPostingStore = defineStore('employerJobPosting', () => {
     // ─── State ──────────────────────────────────────────────────────────────────
     const jobs = ref<ResJobPostingDetail[]>([])
     const selectedJob = ref<ResJobPostingDetail | null>(null)
+    const jobStatistics = ref<ResEmployerJobStatisticsDTO | null>(null)
     const meta = ref<PaginationMeta>({ page: 0, pageSize: 10, pages: 0, totals: 0 })
     const loading = ref(false)
     const error = ref<string | null>(null)
@@ -228,6 +230,19 @@ export const useEmployerJobPostingStore = defineStore('employerJobPosting', () =
         }
     }
 
+    /** Lấy thống kê tin tuyển dụng */
+    async function fetchStatistics() {
+        loading.value = true
+        error.value = null
+        try {
+            jobStatistics.value = await employerJobPostingService.getJobStatistics()
+        } catch (err) {
+            setError(err)
+        } finally {
+            loading.value = false
+        }
+    }
+
     /** Reset store (dùng khi logout) */
     function reset() {
         jobs.value = []
@@ -257,6 +272,8 @@ export const useEmployerJobPostingStore = defineStore('employerJobPosting', () =
         refreshJob,
         deleteJob,
         restoreJob,
+        fetchStatistics,
+        jobStatistics,
         reset,
     }
 })

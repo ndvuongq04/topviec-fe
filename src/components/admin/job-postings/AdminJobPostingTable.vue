@@ -79,7 +79,7 @@
             <td class="px-6 py-4 text-right">
               <div class="flex items-center justify-end gap-1">
                 <button
-                  class="p-1.5 text-slate-400 hover:text-[#963131] transition-colors"
+                  class="p-1.5 text-slate-400 hover:text-[#963131] transition-colors cursor-pointer"
                   title="Xem chi tiết"
                   @click="$emit('view', job)"
                 >
@@ -88,7 +88,7 @@
                 
                 <button
                   v-if="job.status === JobPostingStatus.PENDING_APPROVAL"
-                  class="p-1.5 text-[#963131] hover:bg-[#963131]/10 rounded transition-colors"
+                  class="p-1.5 text-[#963131] hover:bg-[#963131]/10 rounded transition-colors cursor-pointer"
                   title="Duyệt đăng"
                   @click="$emit('approve', job)"
                 >
@@ -97,7 +97,7 @@
 
                 <button
                   v-if="job.status === JobPostingStatus.PENDING_APPROVAL"
-                  class="p-1.5 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/10 rounded transition-colors"
+                  class="p-1.5 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/10 rounded transition-colors cursor-pointer"
                   title="Từ chối"
                   @click="$emit('reject', job)"
                 >
@@ -106,7 +106,7 @@
 
                 <button
                   v-if="[JobPostingStatus.PUBLISHED, JobPostingStatus.PAUSED].includes(job.status)"
-                  class="p-1.5 text-red-600 hover:bg-red-50 rounded transition-colors"
+                  class="p-1.5 text-red-600 hover:bg-red-50 rounded transition-colors cursor-pointer"
                   title="Gỡ bài"
                   @click="$emit('takedown', job)"
                 >
@@ -134,7 +134,7 @@
       </p>
       <div class="flex items-center gap-2">
         <button
-          class="size-8 flex items-center justify-center rounded-lg border border-slate-200 dark:border-slate-700 text-slate-400 hover:bg-slate-50 disabled:opacity-50"
+          class="size-8 flex items-center justify-center rounded-lg border border-slate-200 dark:border-slate-700 text-slate-400 hover:bg-slate-50 disabled:opacity-50 cursor-pointer"
           :disabled="currentPage <= 1"
           @click="$emit('page-change', currentPage - 1)"
         >
@@ -145,7 +145,7 @@
           <span v-if="page === '...'" class="px-1 text-slate-400 text-sm">...</span>
           <button
             v-else
-            class="size-8 flex items-center justify-center rounded-lg text-xs font-bold transition-colors"
+            class="size-8 flex items-center justify-center rounded-lg text-xs font-bold transition-colors cursor-pointer"
             :class="page === currentPage
               ? 'bg-[#963131] text-white shadow-sm'
               : 'border border-slate-200 dark:border-slate-700 text-slate-600 hover:bg-slate-50'"
@@ -156,7 +156,7 @@
         </template>
 
         <button
-          class="size-8 flex items-center justify-center rounded-lg border border-slate-200 dark:border-slate-700 text-slate-400 hover:bg-slate-50 disabled:opacity-50 transition-colors"
+          class="size-8 flex items-center justify-center rounded-lg border border-slate-200 dark:border-slate-700 text-slate-400 hover:bg-slate-50 disabled:opacity-50 transition-colors cursor-pointer"
           :disabled="currentPage >= totalPages"
           @click="$emit('page-change', currentPage + 1)"
         >

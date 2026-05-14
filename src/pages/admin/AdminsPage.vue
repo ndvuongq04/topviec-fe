@@ -8,7 +8,8 @@
         <p class="text-slate-500 text-sm mt-1">Quản lý phân quyền và giám sát hoạt động của các nhân sự vận hành hệ thống.</p>
       </div>
       <button
-        class="bg-[#963131] hover:bg-[#963131]/90 text-white px-5 py-2.5 rounded-lg font-bold text-sm flex items-center gap-2 shadow-lg shadow-[#963131]/20 transition-all"
+        v-if="can('admin.create')"
+        class="bg-[#963131] hover:bg-[#963131]/90 text-white px-5 py-2.5 rounded-lg font-bold text-sm flex items-center gap-2 shadow-lg shadow-[#963131]/20 transition-all cursor-pointer"
         @click="showCreateModal = true"
       >
         <span class="material-symbols-outlined text-lg">person_add</span>
@@ -76,6 +77,7 @@ import { useRouter } from 'vue-router'
 import { useAdminUserStore } from '@/stores/adminUser.store'
 import { useToast } from '@/composables/useToast'
 import { useConfirm } from '@/composables/useConfirm'
+import { useAdminPermission } from '@/composables/useAdminPermission'
 import AdminListFilters from '@/components/admin/admins/AdminListFilters.vue'
 import AdminListTable from '@/components/admin/admins/AdminListTable.vue'
 import AdminCreateModal from '@/components/admin/admins/AdminCreateModal.vue'
@@ -85,6 +87,7 @@ const router = useRouter()
 const store = useAdminUserStore()
 const toast = useToast()
 const { confirm } = useConfirm()
+const { can } = useAdminPermission()
 
 const pageSize = ref(10)
 const currentPage = ref(1)
@@ -146,7 +149,7 @@ async function onToggleLock(admin: ResAdminUser) {
     title: `Xác nhận ${action.toLowerCase()} tài khoản`,
     message: `Bạn có chắc muốn ${action.toLowerCase()} tài khoản "${admin.fullName}" không?`,
     confirmText: action,
-    confirmColor: admin.isActive ? 'red' : 'danger',
+    confirmColor: admin.isActive ? 'red' : 'primary',
     icon: admin.isActive ? 'block' : 'lock_open'
   })
   if (!isConfirmed) return

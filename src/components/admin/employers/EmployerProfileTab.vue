@@ -170,15 +170,8 @@ const props = defineProps<{
 }>()
 
 // ─── Constants for UI Mapping ────────────────────────────────────────────────────
-// TODO: Replace with actual industry lookup when available
-const INDUSTRY_MAP: Record<number, string> = {
-  1: 'Công nghệ phần mềm / IT',
-  2: 'Bán lẻ / Tiêu dùng',
-  3: 'Tài chính / Ngân hàng',
-}
-
 const companyIndustryLabel = computed(() => {
-  return props.company.industryId ? INDUSTRY_MAP[props.company.industryId] : null
+  return props.company.industryName || null
 })
 
 // ─── Format Helpers ──────────────────────────────────────────────────────────────

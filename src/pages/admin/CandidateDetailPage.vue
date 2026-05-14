@@ -65,7 +65,7 @@
           <!-- Right: Action buttons -->
           <div class="flex flex-wrap gap-3 shrink-0">
             <button
-              class="px-5 py-2.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-[1rem] font-bold flex items-center gap-2 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+              class="px-5 py-2.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-[1rem] font-bold flex items-center gap-2 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors cursor-pointer"
               @click="handleResetPassword"
             >
               <span class="material-symbols-outlined text-[1.125rem]">lock_reset</span>
@@ -73,7 +73,7 @@
             </button>
             <button
               v-if="candidate.status === UserStatus.LOCKED_PERM"
-              class="px-5 py-2.5 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-[1rem] font-bold flex items-center gap-2 hover:bg-emerald-200 transition-colors"
+              class="px-5 py-2.5 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-[1rem] font-bold flex items-center gap-2 hover:bg-emerald-200 transition-colors cursor-pointer"
               @click="handleLockAccount"
             >
               <span class="material-symbols-outlined text-[1.125rem]">lock_open</span>
@@ -81,7 +81,7 @@
             </button>
             <button
               v-else
-              class="px-5 py-2.5 rounded-lg bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 text-[1rem] font-bold flex items-center gap-2 hover:bg-red-200 transition-colors"
+              class="px-5 py-2.5 rounded-lg bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 text-[1rem] font-bold flex items-center gap-2 hover:bg-red-200 transition-colors cursor-pointer"
               @click="handleLockAccount"
             >
               <span class="material-symbols-outlined text-[1.125rem]">block</span>
@@ -110,7 +110,7 @@
           <button
             v-for="tab in tabs"
             :key="tab.key"
-            class="pb-4 text-[0.875rem] font-bold transition-colors relative"
+            class="pb-4 text-[0.875rem] font-bold transition-colors relative cursor-pointer"
             :class="activeTab === tab.key ? 'text-[#963131]' : 'text-slate-500 hover:text-slate-700'"
             @click="activeTab = tab.key"
           >

@@ -1,14 +1,11 @@
 <template>
   <div class="space-y-6">
-
-    <!-- Thông tin cơ bản -->
     <section class="bg-white dark:bg-surface-dark p-6 md:p-8 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm">
       <h3 class="text-lg font-bold text-text-main dark:text-white flex items-center gap-2 mb-6">
         <span class="material-symbols-outlined text-primary">person</span>
         Thông tin cơ bản
       </h3>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-
         <div class="space-y-2">
           <label class="text-sm font-bold text-text-muted uppercase tracking-wider">Họ và tên</label>
           <input
@@ -82,11 +79,9 @@
             placeholder="https://yourwebsite.com"
           />
         </div>
-
       </div>
     </section>
 
-    <!-- Giới thiệu bản thân -->
     <section class="bg-white dark:bg-surface-dark p-6 md:p-8 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm">
       <h3 class="text-lg font-bold text-text-main dark:text-white flex items-center gap-2 mb-6">
         <span class="material-symbols-outlined text-primary">format_quote</span>
@@ -106,15 +101,12 @@
       </div>
     </section>
 
-    <!-- Kỳ vọng công việc -->
     <section class="bg-white dark:bg-surface-dark p-6 md:p-8 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm">
       <h3 class="text-lg font-bold text-text-main dark:text-white flex items-center gap-2 mb-6">
         <span class="material-symbols-outlined text-primary">work_history</span>
         Kỳ vọng công việc
       </h3>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-
-        <!-- Vị trí làm việc mong muốn -->
         <div class="space-y-2 md:col-span-2">
           <label class="text-sm font-bold text-text-muted uppercase tracking-wider">Vị trí làm việc mong muốn</label>
           <input
@@ -126,13 +118,11 @@
           />
         </div>
 
-        <!-- Mức lương -->
         <div class="space-y-2 md:col-span-2">
           <label class="text-sm font-bold text-text-muted uppercase tracking-wider">
             Mức lương mong muốn (VNĐ/tháng)
           </label>
           <div class="flex items-center gap-3">
-            <!-- Lương tối thiểu -->
             <div class="relative w-full">
               <input
                 :value="salaryMinDisplay"
@@ -145,7 +135,6 @@
               <span class="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-text-muted font-medium pointer-events-none">VNĐ</span>
             </div>
             <span class="text-text-muted font-medium shrink-0">—</span>
-            <!-- Lương tối đa -->
             <div class="relative w-full">
               <input
                 :value="salaryMaxDisplay"
@@ -164,7 +153,6 @@
           </label>
         </div>
 
-        <!-- Hình thức làm việc -->
         <div class="space-y-2">
           <label class="text-sm font-bold text-text-muted uppercase tracking-wider">Hình thức làm việc</label>
           <select
@@ -179,7 +167,6 @@
           </select>
         </div>
 
-        <!-- Địa điểm -->
         <div class="space-y-2">
           <label class="text-sm font-bold text-text-muted uppercase tracking-wider">Địa điểm mong muốn</label>
           <SearchableSelect
@@ -189,7 +176,6 @@
           />
         </div>
 
-        <!-- Trạng thái tìm việc -->
         <div class="space-y-3 md:col-span-2">
           <label class="text-sm font-bold text-text-muted uppercase tracking-wider">Trạng thái tìm việc</label>
           <div class="flex flex-wrap gap-3">
@@ -201,11 +187,9 @@
             </label>
           </div>
         </div>
-
       </div>
     </section>
 
-    <!-- Toast thông báo -->
     <Transition name="fade">
       <div
         v-if="toast.show"
@@ -219,7 +203,6 @@
       </div>
     </Transition>
 
-    <!-- Nút hành động -->
     <div class="flex justify-end gap-3 pt-2">
       <button
         type="button"
@@ -239,32 +222,25 @@
         {{ store.loading ? 'Đang lưu...' : 'Lưu thay đổi' }}
       </button>
     </div>
-
   </div>
 </template>
 
 <script setup lang="ts">
-import { reactive, watch, ref, computed, onMounted } from 'vue'
-import { JobSeekingStatus, PreferredWorkType } from '@/constants/candidateProfile.constants'
-import { useCandidateProfileStore } from '@/stores/candidateProfile.store'
-import { locationService } from '@/services/location.service'
-import type { ResLocationDTO } from '@/types/masterData.types'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
 import SearchableSelect from '@/components/ui/SearchableSelect.vue'
+import { JobSeekingStatus, PreferredWorkType } from '@/constants/candidateProfile.constants'
+import { FILE_UPLOAD_TYPE } from '@/constants/fileUpload.constants'
+import fileUploadService from '@/services/fileUpload.service'
+import { locationService } from '@/services/location.service'
+import { useCandidateProfileStore } from '@/stores/candidateProfile.store'
+import type { ResLocationDTO } from '@/types/masterData.types'
 
 const store = useCandidateProfileStore()
-
-// ─── Locations từ API ─────────────────────────────────────────────────────────
 const locations = ref<ResLocationDTO[]>([])
-const locationOptions = computed(() => locations.value.map(l => ({ id: l.id, name: l.name })))
+const toast = ref({ show: false, type: 'success' as 'success' | 'error', message: '' })
 
-onMounted(async () => {
-  try {
-    const res = await locationService.getLocations({ size: 100 })
-    locations.value = res.result
-  } catch {}
-})
+const locationOptions = computed(() => locations.value.map((location) => ({ id: location.id, name: location.name })))
 
-// ─── Form state ──────────────────────────────────────────────────────────────
 const form = reactive({
   fullName: '',
   phoneDisplay: '',
@@ -283,13 +259,18 @@ const form = reactive({
   jobSeekingStatus: JobSeekingStatus.ACTIVE,
 })
 
-// ─── Phone formatting ────────────────────────────────────────────────────────
-// Format: 0xxx xxx xxx  (10 số) hoặc +84 xxx xxx xxx
+onMounted(async () => {
+  try {
+    const res = await locationService.getLocations({ size: 100 })
+    locations.value = res.result
+  } catch {
+    // Optional supporting data.
+  }
+})
+
 function formatPhone(raw: string): string {
-  // Chỉ giữ số và dấu +
   const digits = raw.replace(/[^\d+]/g, '')
 
-  // Nếu bắt đầu bằng +84
   if (digits.startsWith('+84')) {
     const num = digits.slice(3).replace(/\D/g, '')
     if (num.length <= 3) return `+84 ${num}`
@@ -297,23 +278,18 @@ function formatPhone(raw: string): string {
     return `+84 ${num.slice(0, 3)} ${num.slice(3, 6)} ${num.slice(6, 9)}`
   }
 
-  // Số nội địa 10 chữ số: 0xxx xxx xxx
   const num = digits.replace(/\D/g, '')
   if (num.length <= 4) return num
   if (num.length <= 7) return `${num.slice(0, 4)} ${num.slice(4)}`
   return `${num.slice(0, 4)} ${num.slice(4, 7)} ${num.slice(7, 10)}`
 }
 
-function onPhoneInput(e: Event) {
-  const input = e.target as HTMLInputElement
+function onPhoneInput(event: Event) {
+  const input = event.target as HTMLInputElement
   const formatted = formatPhone(input.value)
   form.phoneDisplay = formatted
   input.value = formatted
 }
-
-// ─── Salary formatting ───────────────────────────────────────────────────────
-// Hiển thị: số nguyên với dấu chấm phân cách hàng nghìn (VD: 1.500.000)
-// Lưu: number nguyên (1500000)
 
 function formatVND(value: number | null): string {
   if (value === null || value === undefined) return ''
@@ -321,7 +297,6 @@ function formatVND(value: number | null): string {
 }
 
 function parseVND(display: string): number | null {
-  // Xóa tất cả ký tự không phải số
   const raw = display.replace(/\D/g, '')
   if (!raw) return null
   return parseInt(raw, 10)
@@ -330,98 +305,100 @@ function parseVND(display: string): number | null {
 const salaryMinDisplay = computed(() => formatVND(form.expectedSalaryMin))
 const salaryMaxDisplay = computed(() => formatVND(form.expectedSalaryMax))
 
-function onSalaryMinInput(e: Event) {
-  const input = e.target as HTMLInputElement
+function onSalaryMinInput(event: Event) {
+  const input = event.target as HTMLInputElement
   const num = parseVND(input.value)
   form.expectedSalaryMin = num
-  // Reformat hiển thị, giữ cursor ở cuối
-  const formatted = formatVND(num)
-  input.value = formatted
+  input.value = formatVND(num)
 }
 
-function onSalaryMaxInput(e: Event) {
-  const input = e.target as HTMLInputElement
+function onSalaryMaxInput(event: Event) {
+  const input = event.target as HTMLInputElement
   const num = parseVND(input.value)
   form.expectedSalaryMax = num
-  const formatted = formatVND(num)
-  input.value = formatted
+  input.value = formatVND(num)
 }
-
-// ─── Toast ───────────────────────────────────────────────────────────────────
-const toast = ref({ show: false, type: 'success' as 'success' | 'error', message: '' })
 
 function showToast(type: 'success' | 'error', message: string) {
   toast.value = { show: true, type, message }
-  setTimeout(() => { toast.value.show = false }, 3000)
+  setTimeout(() => {
+    toast.value.show = false
+  }, 3000)
 }
 
-// ─── Sync form ← store ───────────────────────────────────────────────────────
 function syncFromStore() {
-  const p = store.profile
-  if (!p) return
-  form.fullName            = p.fullName ?? ''
-  form.phoneDisplay        = p.phoneDisplay ? formatPhone(p.phoneDisplay) : ''
-  form.dateOfBirth         = p.dateOfBirth ?? ''
-  form.gender              = (p.gender ?? '') as typeof form.gender
-  form.linkedinUrl         = p.linkedinUrl ?? ''
-  form.githubUrl           = p.githubUrl ?? ''
-  form.personalWebsite     = p.personalWebsite ?? ''
-  form.bio                 = p.bio ?? ''
-  form.expectedSalaryMin   = p.expectedSalaryMin
-  form.expectedSalaryMax   = p.expectedSalaryMax
-  form.salaryNegotiable    = p.salaryNegotiable ?? false
-  form.preferredJobTitle   = p.preferredJobTitle ?? ''
-  form.preferredWorkType   = (p.preferredWorkType ?? '') as typeof form.preferredWorkType
-  form.preferredLocationId = p.preferredLocationId
-  form.jobSeekingStatus    = p.jobSeekingStatus ?? JobSeekingStatus.ACTIVE
+  const profile = store.profile
+  if (!profile) return
+
+  form.fullName = profile.fullName ?? ''
+  form.phoneDisplay = profile.phoneDisplay ? formatPhone(profile.phoneDisplay) : ''
+  form.dateOfBirth = profile.dateOfBirth ?? ''
+  form.gender = (profile.gender ?? '') as typeof form.gender
+  form.linkedinUrl = profile.linkedinUrl ?? ''
+  form.githubUrl = profile.githubUrl ?? ''
+  form.personalWebsite = profile.personalWebsite ?? ''
+  form.bio = profile.bio ?? ''
+  form.expectedSalaryMin = profile.expectedSalaryMin
+  form.expectedSalaryMax = profile.expectedSalaryMax
+  form.salaryNegotiable = profile.salaryNegotiable ?? false
+  form.preferredJobTitle = profile.preferredJobTitle ?? ''
+  form.preferredWorkType = (profile.preferredWorkType ?? '') as typeof form.preferredWorkType
+  form.preferredLocationId = profile.preferredLocationId
+  form.jobSeekingStatus = profile.jobSeekingStatus ?? JobSeekingStatus.ACTIVE
 }
 
 syncFromStore()
 watch(() => store.profile, syncFromStore)
 
-// ─── Options ─────────────────────────────────────────────────────────────────
 const jobStatusOptions = [
-  { value: JobSeekingStatus.ACTIVE,      label: 'Đang tìm việc gấp' },
-  { value: JobSeekingStatus.PASSIVE,     label: 'Sẵn sàng nếu có cơ hội tốt' },
+  { value: JobSeekingStatus.ACTIVE, label: 'Đang tìm việc gấp' },
+  { value: JobSeekingStatus.PASSIVE, label: 'Sẵn sàng nếu có cơ hội tốt' },
   { value: JobSeekingStatus.NOT_LOOKING, label: 'Không tìm việc' },
 ]
 
-// ─── Actions ─────────────────────────────────────────────────────────────────
 function resetForm() {
+  store.clearPendingAvatar()
   syncFromStore()
 }
 
 async function saveChanges() {
-  // Lấy số thuần từ phoneDisplay (bỏ spaces, +84 giữ nguyên)
   const rawPhone = form.phoneDisplay.replace(/\s/g, '') || null
-
-  const payload = {
-    fullName:            form.fullName,
-    phoneDisplay:        rawPhone,
-    dateOfBirth:         form.dateOfBirth || null,
-    gender:              (form.gender || null) as 'male' | 'female' | 'other' | null,
-    linkedinUrl:         form.linkedinUrl || null,
-    githubUrl:           form.githubUrl || null,
-    personalWebsite:     form.personalWebsite || null,
-    bio:                 form.bio || null,
-    expectedSalaryMin:   form.expectedSalaryMin,
-    expectedSalaryMax:   form.expectedSalaryMax,
-    salaryNegotiable:    form.salaryNegotiable,
-    preferredJobTitle:   form.preferredJobTitle || null,
-    preferredWorkType:   (form.preferredWorkType || null) as PreferredWorkType | null,
-    preferredLocationId: form.preferredLocationId,
-    jobSeekingStatus:    form.jobSeekingStatus,
-  }
+  let avatarUrl = store.profile?.avatarUrl ?? null
 
   try {
+    if (store.pendingAvatarFile) {
+      const res = await fileUploadService.uploadFile(store.pendingAvatarFile, FILE_UPLOAD_TYPE.AVATAR)
+      avatarUrl = res.fileUrl
+    }
+
+    const payload = {
+      fullName: form.fullName,
+      avatarUrl,
+      phoneDisplay: rawPhone,
+      dateOfBirth: form.dateOfBirth || null,
+      gender: (form.gender || null) as 'male' | 'female' | 'other' | null,
+      linkedinUrl: form.linkedinUrl || null,
+      githubUrl: form.githubUrl || null,
+      personalWebsite: form.personalWebsite || null,
+      bio: form.bio || null,
+      expectedSalaryMin: form.expectedSalaryMin,
+      expectedSalaryMax: form.expectedSalaryMax,
+      salaryNegotiable: form.salaryNegotiable,
+      preferredJobTitle: form.preferredJobTitle || null,
+      preferredWorkType: (form.preferredWorkType || null) as PreferredWorkType | null,
+      preferredLocationId: form.preferredLocationId,
+      jobSeekingStatus: form.jobSeekingStatus,
+    }
+
     if (store.profile) {
       await store.updateProfile(payload)
     } else {
       await store.createProfile(payload)
     }
+
     showToast('success', 'Lưu thông tin thành công!')
-  } catch {
-    showToast('error', store.error ?? 'Lưu thất bại, vui lòng thử lại.')
+  } catch (err: any) {
+    showToast('error', err?.response?.data?.message || store.error || 'Lưu thất bại, vui lòng thử lại.')
   }
 }
 </script>

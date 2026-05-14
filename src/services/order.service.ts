@@ -7,6 +7,9 @@ import type {
     AdminOrderQueryParams,
     EmployerOrderQueryParams,
     EmployerAddonPackageQueryParams,
+    ResAdminOrderStatisticsDTO,
+    ResPaymentUrlDTO,
+    ReqRefundOrderDTO,
 } from '@/types/order.types'
 import type { ResServicePackageDTO } from '@/types/servicePackage.types'
 import type { ResAddonServiceDTO } from '@/types/serviceCatalog.types'
@@ -28,6 +31,23 @@ export const adminOrderService = {
 
     async updateStatus(id: number, payload: ReqUpdateOrderStatusDTO): Promise<ResOrderDTO> {
         const res = await axiosInstance.patch<RestResponse<ResOrderDTO>>(`${ADMIN_ORDERS_URL}/${id}/status`, payload)
+        return res.data.data
+    },
+
+    /** GET /admin/orders/statistics */
+    async getStatistics(): Promise<ResAdminOrderStatisticsDTO> {
+        const res = await axiosInstance.get<RestResponse<ResAdminOrderStatisticsDTO>>(
+            `${ADMIN_ORDERS_URL}/statistics`
+        )
+        return res.data.data
+    },
+
+    /** GET /admin/orders/company/{companyId} */
+    async getOrdersByCompanyId(companyId: number, params?: { page?: number; size?: number; sort?: string }): Promise<ResultPaginationDTO<ResOrderDTO>> {
+        const res = await axiosInstance.get<RestResponse<ResultPaginationDTO<ResOrderDTO>>>(
+            `${ADMIN_ORDERS_URL}/company/${companyId}`,
+            { params }
+        )
         return res.data.data
     },
 }
@@ -54,6 +74,16 @@ export const employerOrderService = {
 
     async cancelOrder(id: number): Promise<ResOrderDTO> {
         const res = await axiosInstance.patch<RestResponse<ResOrderDTO>>(`${EMPLOYER_ORDERS_URL}/${id}/cancel`)
+        return res.data.data
+    },
+
+    async getPaymentUrl(id: number): Promise<ResPaymentUrlDTO> {
+        const res = await axiosInstance.post<RestResponse<ResPaymentUrlDTO>>(`${EMPLOYER_ORDERS_URL}/${id}/pay`)
+        return res.data.data
+    },
+
+    async requestRefund(id: number, payload: ReqRefundOrderDTO): Promise<ResOrderDTO> {
+        const res = await axiosInstance.post<RestResponse<ResOrderDTO>>(`${EMPLOYER_ORDERS_URL}/${id}/refund`, payload)
         return res.data.data
     },
 }

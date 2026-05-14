@@ -101,6 +101,31 @@ export const adminRoutes: RouteRecordRaw[] = [
                 name: 'admin-settings-permissions',
                 component: () => import('@/pages/admin/PermissionConfigPage.vue'),
             },
+            {
+                path: 'cv-templates',
+                name: 'admin-cv-templates',
+                component: () => import('@/pages/admin/CvTemplatesPage.vue'),
+            },
+            {
+                path: 'cv-templates/create',
+                name: 'admin-cv-template-create',
+                component: () => import('@/pages/admin/CvTemplateCreatePage.vue'),
+            },
+            {
+                path: 'cv-templates/:id/edit',
+                name: 'admin-cv-template-edit',
+                component: () => import('@/pages/admin/CvTemplateCreatePage.vue'),
+            },
+            {
+                path: 'audit-logs',
+                name: 'admin-audit-logs',
+                component: () => import('@/pages/admin/AuditLogPage.vue'),
+            },
+            {
+                path: 'audit-logs/:type/:id',
+                name: 'admin-audit-log-detail',
+                component: () => import('@/pages/admin/AuditLogDetailPage.vue'),
+            },
         ],
     },
 ]

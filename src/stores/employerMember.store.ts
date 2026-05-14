@@ -1,7 +1,7 @@
 import { ref } from 'vue';
 import { defineStore } from 'pinia';
 import { employerMemberService } from '@/services/employerMember.service';
-import type { ResCompanyMember, ReqAddMember, ReqUpdatePermission, ResMemberPermissionDetail, ResPermissionChangeLogDTO } from '@/types/companyMember.types';
+import type { ResCompanyMember, ReqAddMember, ReqUpdatePermission, ResMemberPermissionDetail, ResPermissionChangeLogDTO, ResEmployerMemberStatisticsDTO } from '@/types/companyMember.types';
 import type { ResultPaginationDTO } from '@/types/common.types';
 
 export const useEmployerMemberStore = defineStore('employerMember', () => {
@@ -11,6 +11,7 @@ export const useEmployerMemberStore = defineStore('employerMember', () => {
     const myPermissions = ref<ResMemberPermissionDetail | null>(null);
     const companyPermissionHistory = ref<ResultPaginationDTO<ResPermissionChangeLogDTO> | null>(null);
     const memberPermissionHistory = ref<ResPermissionChangeLogDTO[]>([]);
+    const memberStatistics = ref<ResEmployerMemberStatisticsDTO | null>(null);
     const loading = ref(false);
     const error = ref<string | null>(null);
 
@@ -153,6 +154,22 @@ export const useEmployerMemberStore = defineStore('employerMember', () => {
         }
     }
 
+    /**
+     * Lấy thống kê thành viên
+     */
+    async function fetchStatistics() {
+        loading.value = true;
+        error.value = null;
+        try {
+            const data = await employerMemberService.getMemberStatistics();
+            memberStatistics.value = data;
+        } catch (err: any) {
+            error.value = err.response?.data?.message || 'Không thể tải thống kê thành viên';
+        } finally {
+            loading.value = false;
+        }
+    }
+
     function reset() {
         members.value = null;
         memberPermissions.value = [];
@@ -182,6 +199,8 @@ export const useEmployerMemberStore = defineStore('employerMember', () => {
         getMyPermissions,
         getCompanyPermissionHistory,
         getMemberPermissionHistory,
+        fetchStatistics,
+        memberStatistics,
         reset
     };
 });

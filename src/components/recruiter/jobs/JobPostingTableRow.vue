@@ -22,6 +22,40 @@
       </div>
     </td>
 
+    <!-- Assignee -->
+    <td class="td">
+      <div 
+        v-if="(job as any).assignedRecruiter" 
+        class="group flex items-center gap-3 p-1.5 -ml-1.5 rounded-lg transition-colors"
+        :class="canAssign ? 'cursor-pointer hover:bg-slate-50' : 'cursor-not-allowed opacity-75'"
+        @click="canAssign && $emit('assign', job.id)"
+        :title="!canAssign ? 'Cho phép: published, paused, renewed, interviewing, scheduled, closed' : 'Đổi người phụ trách'"
+      >
+        <div class="relative">
+          <div class="w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs bg-primary/10 text-primary border border-primary/20 shrink-0">
+            {{ (job as any).assignedRecruiter.email?.split('@')[0].slice(0, 2).toUpperCase() || 'U' }}
+          </div>
+        </div>
+        <div>
+          <p class="font-bold text-slate-900 text-[13px] leading-tight group-hover:text-primary transition-colors">
+            {{ (job as any).assignedRecruiter.email?.split('@')[0] }}
+          </p>
+          <p class="text-[11px] text-slate-400 leading-tight">{{ (job as any).assignedRecruiter.email }}</p>
+        </div>
+      </div>
+      <button 
+        v-else
+        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary/10 text-primary transition-colors font-bold text-xs border border-primary/20"
+        :class="canAssign ? 'hover:bg-primary hover:text-white cursor-pointer' : 'opacity-50 cursor-not-allowed'"
+        :disabled="!canAssign"
+        :title="!canAssign ? 'Cho phép: published, paused, renewed, interviewing, scheduled, closed' : undefined"
+        @click="canAssign && $emit('assign', job.id)"
+      >
+        <span class="material-symbols-outlined text-[14px]">person_add</span>
+        Giao việc
+      </button>
+    </td>
+
     <!-- Status -->
     <td class="td">
       <span class="status-chip" :class="statusChipClass">
@@ -79,6 +113,15 @@
               :disabled="!canViewApplications"
               :tooltip="!canViewApplications ? 'Tin nháp chưa có ứng viên nộp đơn' : undefined"
               @click="handleAction('applications', job.id, close)"
+            />
+            <!-- Phân công: tất cả trạng thái trừ xóa -->
+            <GlobalDropdownItem
+              v-if="job.status !== 'deleted'"
+              icon="person_add"
+              :label="(job as any).assignedRecruiter ? 'Đổi người phụ trách' : 'Phân công'"
+              :disabled="!canAssign"
+              :tooltip="!canAssign ? 'Cho phép: published, paused, renewed, interviewing, scheduled, closed' : undefined"
+              @click="handleAction('assign', job.id, close)"
             />
             <div class="dropdown-divider-v2" />
             <!-- Chỉnh sửa: DRAFT/REJECTED/RENEWED luôn được; PUBLISHED chỉ khi editCount < 1 -->
@@ -182,6 +225,7 @@ import { computed } from 'vue'
 import GlobalDropdown from '@/components/ui/GlobalDropdown.vue'
 import GlobalDropdownItem from '@/components/ui/GlobalDropdownItem.vue'
 import type { JobPostingRow } from '@/types/employerJobPosting.types'
+import { JobPostingStatus } from '@/constants/jobPosting.constants'
 
 const props = defineProps<{ job: JobPostingRow }>()
 
@@ -199,12 +243,25 @@ const emit = defineEmits<{
   delete:    [id: number]
   restore:   [id: number]
   applications: [id: number]
+  assign:    [id: number]
 }>()
 
 function handleAction(event: any, id: number, close: () => void) {
   close()
   emit(event, id)
 }
+
+const canAssign = computed(() => {
+  const allowed = [
+    JobPostingStatus.PUBLISHED,
+    JobPostingStatus.PAUSED,
+    JobPostingStatus.RENEWED,
+    JobPostingStatus.INTERVIEWING,
+    JobPostingStatus.SCHEDULED,
+    JobPostingStatus.CLOSED
+  ]
+  return allowed.includes(props.job.rawStatus as JobPostingStatus)
+})
 
 // Xem chi tiết: luôn bật — không cần computed
 

@@ -85,10 +85,10 @@
               </button>
 
               <button
-                v-if="c.cvFileUrl"
+                v-if="c.cvPreviewUrl || c.cvPdfUrl || c.cvFileUrl"
                 class="action-btn"
                 title="Tải CV"
-                @click.stop="downloadCv(c.cvFileUrl)"
+                @click.stop="downloadCv(c.cvPreviewUrl || c.cvPdfUrl || c.cvFileUrl || '')"
               >
                 <span class="material-symbols-outlined">download</span>
               </button>

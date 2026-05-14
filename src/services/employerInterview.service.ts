@@ -16,7 +16,8 @@ import type {
   ReqExtendDeadlineDTO,
   ReqForceScheduleDTO,
   ReqOfferResultDTO,
-  ReqCompleteRecruitmentDTO
+  ReqCompleteRecruitmentDTO,
+  ResEmployerInterviewStatisticsDTO
 } from '@/types/interview.types';
 import type { ResEmployerApplicationDTO } from '@/types/employerApplication.types';
 
@@ -173,6 +174,17 @@ const employerInterviewService = {
 
   async remindConfirmSchedule(scheduleId: number): Promise<void> {
     await axiosInstance.post(`${BASE_URL}/interview-schedules/${scheduleId}/remind`);
+  },
+
+  /**
+   * GET /employer/interviews/interview-statistics
+   * Lấy thống kê phỏng vấn của công ty.
+   */
+  async getInterviewStatistics(): Promise<ResEmployerInterviewStatisticsDTO> {
+    const res = await axiosInstance.get<RestResponse<ResEmployerInterviewStatisticsDTO>>(
+      `${BASE_URL}/interview-statistics`
+    );
+    return res.data.data;
   },
 };
 
