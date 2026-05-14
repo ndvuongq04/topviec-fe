@@ -44,6 +44,60 @@
       <!-- CV List -->
       <div v-else class="flex flex-col gap-6">
         <div
+          v-if="recoverableLocalDrafts.length"
+          class="rounded-2xl border border-amber-200 bg-amber-50 p-5 dark:border-amber-900/50 dark:bg-amber-900/10"
+        >
+          <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <h4 class="text-sm font-black uppercase tracking-[0.14em] text-amber-800 dark:text-amber-300">
+                Ban nhap CV online dang cho khoi phuc
+              </h4>
+              <p class="mt-1 text-sm text-amber-700 dark:text-amber-200">
+                Cac ban nhap nay duoc autosave tren may hien tai va chua duoc dong bo hoan tat.
+              </p>
+            </div>
+            <span class="rounded-full bg-white/70 px-3 py-1 text-xs font-bold text-amber-700 dark:bg-slate-900/40 dark:text-amber-200">
+              {{ recoverableLocalDrafts.length }} draft
+            </span>
+          </div>
+
+          <div class="mt-4 grid gap-3">
+            <article
+              v-for="draft in recoverableLocalDrafts"
+              :key="draft.localDraftId"
+              class="flex flex-col gap-3 rounded-xl border border-amber-200 bg-white p-4 dark:border-amber-900/40 dark:bg-slate-900 sm:flex-row sm:items-center sm:justify-between"
+            >
+              <div class="min-w-0">
+                <p class="truncate text-sm font-bold text-text-main dark:text-white">
+                  {{ draft.title || 'CV online chua dat ten' }}
+                </p>
+                <p class="mt-1 text-xs text-text-muted">
+                  {{ draft.template.name }} - Cap nhat {{ formatDate(draft.updatedAt) }}
+                </p>
+              </div>
+              <div class="flex shrink-0 flex-wrap gap-2">
+                <button
+                  class="flex items-center gap-1.5 rounded-xl bg-primary px-3 py-1.5 text-xs font-bold text-white shadow-sm transition hover:bg-primary-hover"
+                  type="button"
+                  @click="handleResumeDraft(draft)"
+                >
+                  <span class="material-symbols-outlined text-[18px]">edit_square</span>
+                  Tiep tuc
+                </button>
+                <button
+                  class="flex items-center gap-1.5 rounded-xl border border-amber-200 bg-white px-3 py-1.5 text-xs font-bold text-amber-800 shadow-sm transition hover:bg-amber-100 dark:bg-slate-900 dark:text-amber-200"
+                  type="button"
+                  @click="handleDiscardDraft(draft)"
+                >
+                  <span class="material-symbols-outlined text-[18px]">delete</span>
+                  Bo ban nhap
+                </button>
+              </div>
+            </article>
+          </div>
+        </div>
+
+        <div
           v-for="cv in cvs"
           :key="cv.id"
           class="bg-white dark:bg-slate-800/20 border border-slate-200 dark:border-slate-700/50 rounded-2xl p-6 transition-all hover:shadow-md"
@@ -149,6 +203,19 @@
             </button>
 
             <button
+              v-if="cv.cvType === CV_TYPE.ONLINE"
+              class="flex items-center gap-1.5 px-3 py-1.5 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-text-main dark:text-white hover:bg-slate-50 dark:hover:bg-slate-800 transition-all bg-white dark:bg-slate-900 shadow-sm cursor-pointer disabled:opacity-60"
+              type="button"
+              :disabled="duplicatingCvId === cv.id"
+              @click="handleDuplicateCv(cv)"
+            >
+              <span class="material-symbols-outlined text-[18px]">
+                {{ duplicatingCvId === cv.id ? 'progress_activity' : 'content_copy' }}
+              </span>
+              Nhan ban
+            </button>
+
+            <button
               class="flex items-center gap-1.5 px-3 py-1.5 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-text-main dark:text-white hover:bg-slate-50 dark:hover:bg-slate-800 transition-all bg-white dark:bg-slate-900 shadow-sm cursor-pointer"
               type="button"
               @click="handleDownloadCv(cv)"
@@ -202,15 +269,18 @@
 import { ref, computed, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCvsStore } from '@/stores/cvs.store'
+import { useCvOnlineEditorStore } from '@/stores/cvOnlineEditor.store'
 import { CV_TYPE, CV_VISIBILITY } from '@/constants/cvs.constants'
 import cvOnlineService from '@/services/cvOnline.service'
 import { useConfirm } from '@/composables/useConfirm'
 import { useToast } from '@/composables/useToast'
 import GlobalModal from '@/components/ui/GlobalModal.vue'
 import GlobalConfirmModal from '@/components/ui/GlobalConfirmModal.vue'
+import type { CvOnlineLocalDraft } from '@/types/cvOnline.types'
 import type { ResCv } from '@/types/cvs.types'
 
 const cvStore = useCvsStore()
+const editorStore = useCvOnlineEditorStore()
 const router = useRouter()
 const { confirm } = useConfirm()
 const toast = useToast()
@@ -222,6 +292,11 @@ const cvsStore = cvStore
 const fileInput = ref<HTMLInputElement | null>(null)
 const uploading = ref(false)
 const actionLoading = ref<number | null>(null)
+const duplicatingCvId = ref<number | null>(null)
+const localDrafts = ref<CvOnlineLocalDraft[]>(editorStore.listLocalDrafts())
+const recoverableLocalDrafts = computed(() =>
+  localDrafts.value.filter((draft) => !draft.persisted || draft.status !== 'synced'),
+)
 
 // ─── Formatting ──────────────────────────────────────────────────────────────
 function formatDate(dateStr: string) {
@@ -355,6 +430,38 @@ function handleEditCv(cv: ResCv) {
   void router.push({ name: 'CvOnlineEditorLegacy', params: { id: cv.id } })
 }
 
+async function handleDuplicateCv(cv: ResCv) {
+  duplicatingCvId.value = cv.id
+  try {
+    const duplicated = await cvsStore.duplicateCv(cv.id)
+    toast.success('Da nhan ban CV online', `Da tao ban sao "${duplicated?.title ?? cv.title}".`)
+  } catch (err: any) {
+    toast.error('Khong nhan ban duoc CV', err.response?.data?.message || 'Vui long thu lai sau.')
+  } finally {
+    duplicatingCvId.value = null
+  }
+}
+
+function handleResumeDraft(draft: CvOnlineLocalDraft) {
+  void router.push({ name: 'CvOnlineEditor', params: { localDraftId: draft.localDraftId } })
+}
+
+async function handleDiscardDraft(draft: CvOnlineLocalDraft) {
+  const ok = await confirm({
+    title: 'Bo ban nhap?',
+    message: `Ban co chac muon bo ban nhap "${draft.title || 'CV online chua dat ten'}"?`,
+    confirmText: 'Bo ban nhap',
+    cancelText: 'Huy',
+    confirmColor: 'red',
+    icon: 'delete',
+  })
+
+  if (!ok) return
+  editorStore.discardLocalDraft(draft.localDraftId)
+  localDrafts.value = editorStore.listLocalDrafts()
+  toast.success('Da bo ban nhap cuc bo')
+}
+
 async function handleDownloadCv(cv: ResCv) {
   if (cv.cvType === CV_TYPE.ONLINE) {
     try {
@@ -394,4 +501,6 @@ async function copyUrl(url: string) {
     toast.error('Lỗi sao chép', 'Không thể truy cập bộ nhớ tạm.')
   }
 }
+
+void copyUrl
 </script>

@@ -45,6 +45,10 @@ export function renderCvTemplateHtml(templateHtml: string, data: CvOnlineExtraDa
     output = renderCollection(output, 'skills', data.skills)
     output = renderCollection(output, 'certifications', data.certifications)
     output = renderCollection(output, 'languages', data.languages)
+    output = renderCollection(output, 'projects', data.projects)
+    output = renderCollection(output, 'hobbies', data.hobbies)
+    output = renderCollection(output, 'awards', data.awards)
+    output = renderCollection(output, 'customSections', data.customSections)
 
     const rootValues = flattenRootPlaceholders(data)
     output = output.replace(/{{(\w+)}}/g, (_match: string, key: keyof typeof rootValues) => {

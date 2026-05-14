@@ -1,12 +1,16 @@
 import type {
     AdminCvTemplateRowVM,
     CandidateTemplateCardVM,
+    CvOnlineAwardItem,
     CvOnlineCertificationItem,
+    CvOnlineCustomSectionItem,
     CvOnlineEducationItem,
     CvOnlineExperienceItem,
     CvOnlineExtraData,
+    CvOnlineHobbyItem,
     CvOnlineLanguageItem,
     CvOnlinePersonalInfo,
+    CvOnlineProjectItem,
     CvOnlineSkillItem,
     CvTemplateDetail,
     CvTemplateListItem,
@@ -29,6 +33,10 @@ export const CV_ONLINE_PLACEHOLDERS = [
     '{{#skills}}...{{/skills}}',
     '{{#certifications}}...{{/certifications}}',
     '{{#languages}}...{{/languages}}',
+    '{{#projects}}...{{/projects}}',
+    '{{#hobbies}}...{{/hobbies}}',
+    '{{#awards}}...{{/awards}}',
+    '{{#customSections}}...{{/customSections}}',
 ] as const
 
 export function createEmptyPersonalInfo(): CvOnlinePersonalInfo {
@@ -102,6 +110,48 @@ export function createEmptyLanguage(): CvOnlineLanguageItem {
     }
 }
 
+export function createEmptyProject(): CvOnlineProjectItem {
+    return {
+        id: `project-${Date.now()}`,
+        name: '',
+        role: '',
+        organization: '',
+        startDate: '',
+        endDate: '',
+        projectUrl: '',
+        description: '',
+    }
+}
+
+export function createEmptyHobby(): CvOnlineHobbyItem {
+    return {
+        id: `hobby-${Date.now()}`,
+        name: '',
+        description: '',
+    }
+}
+
+export function createEmptyAward(): CvOnlineAwardItem {
+    return {
+        id: `award-${Date.now()}`,
+        title: '',
+        issuer: '',
+        awardedAt: '',
+        description: '',
+    }
+}
+
+export function createEmptyCustomSection(): CvOnlineCustomSectionItem {
+    return {
+        id: `custom-${Date.now()}`,
+        sectionTitle: '',
+        itemTitle: '',
+        itemSubtitle: '',
+        itemMeta: '',
+        description: '',
+    }
+}
+
 export function createEmptyCvOnlineExtraData(): CvOnlineExtraData {
     return {
         personalInfo: createEmptyPersonalInfo(),
@@ -111,6 +161,10 @@ export function createEmptyCvOnlineExtraData(): CvOnlineExtraData {
         skills: [],
         certifications: [],
         languages: [],
+        projects: [],
+        hobbies: [],
+        awards: [],
+        customSections: [],
     }
 }
 
@@ -148,6 +202,26 @@ export function normalizeExtraData(extraData?: Partial<CvOnlineExtraData> | null
             ...createEmptyLanguage(),
             ...item,
             id: item.id || `lang-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        })),
+        projects: (source.projects ?? []).map((item) => ({
+            ...createEmptyProject(),
+            ...item,
+            id: item.id || `project-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        })),
+        hobbies: (source.hobbies ?? []).map((item) => ({
+            ...createEmptyHobby(),
+            ...item,
+            id: item.id || `hobby-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        })),
+        awards: (source.awards ?? []).map((item) => ({
+            ...createEmptyAward(),
+            ...item,
+            id: item.id || `award-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        })),
+        customSections: (source.customSections ?? []).map((item) => ({
+            ...createEmptyCustomSection(),
+            ...item,
+            id: item.id || `custom-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
         })),
     }
 }

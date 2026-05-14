@@ -85,7 +85,8 @@ export const useCvsStore = defineStore('cvs', () => {
         error.value = null
         try {
             const duplicated = await cvsService.duplicateCv(id)
-            cvs.value.push(duplicated)
+            cvs.value.unshift(duplicated)
+            return duplicated
         } catch (err) {
             setError(err)
             throw err

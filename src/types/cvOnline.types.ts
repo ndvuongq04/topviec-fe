@@ -9,6 +9,10 @@ export type CvOnlineSupportedSection =
     | 'skills'
     | 'certifications'
     | 'languages'
+    | 'projects'
+    | 'hobbies'
+    | 'awards'
+    | 'customSections'
 
 export interface CvOnlinePersonalInfo {
     fullName: string
@@ -69,6 +73,40 @@ export interface CvOnlineLanguageItem {
     certificate: string
 }
 
+export interface CvOnlineProjectItem {
+    id: string
+    name: string
+    role: string
+    organization: string
+    startDate: string
+    endDate: string
+    projectUrl: string
+    description: string
+}
+
+export interface CvOnlineHobbyItem {
+    id: string
+    name: string
+    description: string
+}
+
+export interface CvOnlineAwardItem {
+    id: string
+    title: string
+    issuer: string
+    awardedAt: string
+    description: string
+}
+
+export interface CvOnlineCustomSectionItem {
+    id: string
+    sectionTitle: string
+    itemTitle: string
+    itemSubtitle: string
+    itemMeta: string
+    description: string
+}
+
 export interface CvOnlineExtraData {
     personalInfo: CvOnlinePersonalInfo
     careerObjective: string
@@ -77,6 +115,10 @@ export interface CvOnlineExtraData {
     skills: CvOnlineSkillItem[]
     certifications: CvOnlineCertificationItem[]
     languages: CvOnlineLanguageItem[]
+    projects: CvOnlineProjectItem[]
+    hobbies: CvOnlineHobbyItem[]
+    awards: CvOnlineAwardItem[]
+    customSections: CvOnlineCustomSectionItem[]
 }
 
 export type CvOnlineDraftStatus = 'local-only' | 'dirty' | 'synced'

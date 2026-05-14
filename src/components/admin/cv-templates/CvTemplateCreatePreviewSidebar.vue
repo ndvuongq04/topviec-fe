@@ -163,6 +163,22 @@
           <span>Ky nang</span>
           <span class="font-semibold text-slate-900">{{ sampleData.skills.length }} muc</span>
         </div>
+        <div class="flex items-center justify-between gap-3">
+          <span>Du an</span>
+          <span class="font-semibold text-slate-900">{{ sampleData.projects?.length ?? 0 }} muc</span>
+        </div>
+        <div class="flex items-center justify-between gap-3">
+          <span>So thich</span>
+          <span class="font-semibold text-slate-900">{{ sampleData.hobbies?.length ?? 0 }} muc</span>
+        </div>
+        <div class="flex items-center justify-between gap-3">
+          <span>Giai thuong</span>
+          <span class="font-semibold text-slate-900">{{ sampleData.awards?.length ?? 0 }} muc</span>
+        </div>
+        <div class="flex items-center justify-between gap-3">
+          <span>Section tuy bien</span>
+          <span class="font-semibold text-slate-900">{{ sampleData.customSections?.length ?? 0 }} muc</span>
+        </div>
       </div>
       <p v-else class="mt-4 text-sm text-slate-400">Chua tai duoc sample data tu backend.</p>
     </div>

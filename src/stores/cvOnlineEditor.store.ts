@@ -2,22 +2,30 @@ import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
 import cvOnlineService from '@/services/cvOnline.service'
 import {
+    createEmptyAward,
     createEmptyCertification,
+    createEmptyCustomSection,
     createEmptyCvOnlineExtraData,
     createEmptyEducation,
     createEmptyExperience,
+    createEmptyHobby,
     createEmptyLanguage,
+    createEmptyProject,
     createEmptySkill,
     normalizeExtraData,
 } from '@/constants/cvOnline.constants'
 import type {
+    CvOnlineAwardItem,
     CvOnlineCertificationItem,
+    CvOnlineCustomSectionItem,
     CvOnlineLocalDraft,
     CvOnlinePdfState,
     CvOnlineEducationItem,
     CvOnlineExperienceItem,
     CvOnlineExtraData,
+    CvOnlineHobbyItem,
     CvOnlineLanguageItem,
+    CvOnlineProjectItem,
     CvOnlineSkillItem,
     CvTemplateDetail,
     ResOnlineCvEditorPayload,
@@ -111,6 +119,23 @@ function readDraftFromStorage(localDraftId: string): CvOnlineLocalDraft | null {
     } catch {
         return null
     }
+}
+
+function readAllDraftsFromStorage(): CvOnlineLocalDraft[] {
+    return readDraftIndex()
+        .map((localDraftId) => readDraftFromStorage(localDraftId))
+        .filter((draft): draft is CvOnlineLocalDraft => Boolean(draft))
+        .sort((left, right) => new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime())
+}
+
+function findRecoverableDraftForPayload(payload: ResOnlineCvEditorPayload) {
+    if (!payload.cvId) return null
+
+    const serverUpdatedAt = payload.updatedAt ? new Date(payload.updatedAt).getTime() : 0
+    return readAllDraftsFromStorage().find((draft) => {
+        if (draft.serverId !== payload.cvId || draft.status === 'synced') return false
+        return new Date(draft.updatedAt).getTime() > serverUpdatedAt
+    }) ?? null
 }
 
 function mapEditorPayloadToLocalDraft(payload: ResOnlineCvEditorPayload): CvOnlineLocalDraft {
@@ -289,6 +314,13 @@ export const useCvOnlineEditorStore = defineStore('cvOnlineEditor', () => {
         error.value = null
         try {
             const payload = await cvOnlineService.getOnlineCvEditorPayload(id)
+            const recoverableDraft = findRecoverableDraftForPayload(payload)
+            if (recoverableDraft) {
+                applyDraft(recoverableDraft)
+                lastLoadedAt.value = nowIso()
+                return recoverableDraft
+            }
+
             const draft = mapEditorPayloadToLocalDraft(payload)
             persistDraftToStorage(draft)
             applyDraft(draft)
@@ -356,9 +388,15 @@ export const useCvOnlineEditorStore = defineStore('cvOnlineEditor', () => {
         error.value = null
         try {
             if (currentDraft.value.serverId) {
+                if (hasPendingChanges.value) {
+                    await saveDraftNow()
+                }
+                if (!currentDraft.value?.serverId) return null
+
                 const response = await cvOnlineService.changeTemplate(currentDraft.value.serverId, { templateId })
                 currentDraft.value.templateId = response.templateId
                 currentDraft.value.template = response.template
+                currentDraft.value.extraData = normalizeExtraData(response.extraData ?? currentDraft.value.extraData)
                 currentDraft.value.pdfUrl = response.pdfUrl
                 currentDraft.value.persisted = true
                 currentDraft.value.status = 'synced'
@@ -433,7 +471,18 @@ export const useCvOnlineEditorStore = defineStore('cvOnlineEditor', () => {
         })
     }
 
-    function replaceSection<T extends keyof Pick<CvOnlineExtraData, 'experiences' | 'educations' | 'skills' | 'certifications' | 'languages'>>(
+    function replaceSection<T extends keyof Pick<
+        CvOnlineExtraData,
+        | 'experiences'
+        | 'educations'
+        | 'skills'
+        | 'certifications'
+        | 'languages'
+        | 'projects'
+        | 'hobbies'
+        | 'awards'
+        | 'customSections'
+    >>(
         section: T,
         value: CvOnlineExtraData[T],
     ) {
@@ -524,6 +573,84 @@ export const useCvOnlineEditorStore = defineStore('cvOnlineEditor', () => {
         replaceSection('languages', extraData.value.languages.filter((_, currentIndex) => currentIndex !== index))
     }
 
+    function addProject() {
+        replaceSection('projects', [...extraData.value.projects, createEmptyProject()])
+    }
+
+    function updateProject(index: number, patch: Partial<CvOnlineProjectItem>) {
+        const next = [...extraData.value.projects]
+        const current = next[index]
+        if (!current) return
+        next[index] = { ...current, ...patch }
+        replaceSection('projects', next)
+    }
+
+    function removeProject(index: number) {
+        replaceSection('projects', extraData.value.projects.filter((_, currentIndex) => currentIndex !== index))
+    }
+
+    function addHobby() {
+        replaceSection('hobbies', [...extraData.value.hobbies, createEmptyHobby()])
+    }
+
+    function updateHobby(index: number, patch: Partial<CvOnlineHobbyItem>) {
+        const next = [...extraData.value.hobbies]
+        const current = next[index]
+        if (!current) return
+        next[index] = { ...current, ...patch }
+        replaceSection('hobbies', next)
+    }
+
+    function removeHobby(index: number) {
+        replaceSection('hobbies', extraData.value.hobbies.filter((_, currentIndex) => currentIndex !== index))
+    }
+
+    function addAward() {
+        replaceSection('awards', [...extraData.value.awards, createEmptyAward()])
+    }
+
+    function updateAward(index: number, patch: Partial<CvOnlineAwardItem>) {
+        const next = [...extraData.value.awards]
+        const current = next[index]
+        if (!current) return
+        next[index] = { ...current, ...patch }
+        replaceSection('awards', next)
+    }
+
+    function removeAward(index: number) {
+        replaceSection('awards', extraData.value.awards.filter((_, currentIndex) => currentIndex !== index))
+    }
+
+    function addCustomSection() {
+        replaceSection('customSections', [...extraData.value.customSections, createEmptyCustomSection()])
+    }
+
+    function updateCustomSection(index: number, patch: Partial<CvOnlineCustomSectionItem>) {
+        const next = [...extraData.value.customSections]
+        const current = next[index]
+        if (!current) return
+        next[index] = { ...current, ...patch }
+        replaceSection('customSections', next)
+    }
+
+    function removeCustomSection(index: number) {
+        replaceSection(
+            'customSections',
+            extraData.value.customSections.filter((_, currentIndex) => currentIndex !== index),
+        )
+    }
+
+    function listLocalDrafts() {
+        return readAllDraftsFromStorage()
+    }
+
+    function discardLocalDraft(localDraftId: string) {
+        removeDraftFromStorage(localDraftId)
+        if (currentDraft.value?.localDraftId === localDraftId) {
+            reset()
+        }
+    }
+
     function reset() {
         clearAutosaveTimer()
         currentDraft.value = null
@@ -581,6 +708,20 @@ export const useCvOnlineEditorStore = defineStore('cvOnlineEditor', () => {
         addLanguage,
         updateLanguage,
         removeLanguage,
+        addProject,
+        updateProject,
+        removeProject,
+        addHobby,
+        updateHobby,
+        removeHobby,
+        addAward,
+        updateAward,
+        removeAward,
+        addCustomSection,
+        updateCustomSection,
+        removeCustomSection,
+        listLocalDrafts,
+        discardLocalDraft,
         reset,
     }
 })

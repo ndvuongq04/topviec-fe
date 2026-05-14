@@ -210,17 +210,96 @@
               </article>
             </div>
           </section>
+
+          <section class="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm">
+            <div class="flex items-center justify-between gap-3">
+              <h2 class="text-lg font-black text-slate-900">Du an</h2>
+              <button class="tv-chip" type="button" @click="editorStore.addProject()">Them</button>
+            </div>
+            <div class="mt-4 grid gap-4">
+              <article v-for="(item, index) in extraData.projects" :key="item.id" class="rounded-2xl border border-slate-200 p-4">
+                <div class="grid gap-3">
+                  <input :value="item.name" class="tv-input" placeholder="Ten du an" @input="updateProject(index, 'name', $event)" />
+                  <input :value="item.role" class="tv-input" placeholder="Vai tro" @input="updateProject(index, 'role', $event)" />
+                  <input :value="item.organization" class="tv-input" placeholder="To chuc / khach hang" @input="updateProject(index, 'organization', $event)" />
+                  <div class="grid grid-cols-2 gap-3">
+                    <input :value="item.startDate" class="tv-input" placeholder="Bat dau" @input="updateProject(index, 'startDate', $event)" />
+                    <input :value="item.endDate" class="tv-input" placeholder="Ket thuc" @input="updateProject(index, 'endDate', $event)" />
+                  </div>
+                  <input :value="item.projectUrl" class="tv-input" placeholder="Project URL" @input="updateProject(index, 'projectUrl', $event)" />
+                  <textarea :value="item.description" class="tv-input min-h-24 resize-y" placeholder="Mo ta du an" @input="updateProject(index, 'description', $event)" />
+                  <button class="tv-link" type="button" @click="editorStore.removeProject(index)">Xoa muc nay</button>
+                </div>
+              </article>
+            </div>
+          </section>
+
+          <section class="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm">
+            <div class="flex items-center justify-between gap-3">
+              <h2 class="text-lg font-black text-slate-900">So thich</h2>
+              <button class="tv-chip" type="button" @click="editorStore.addHobby()">Them</button>
+            </div>
+            <div class="mt-4 grid gap-4">
+              <article v-for="(item, index) in extraData.hobbies" :key="item.id" class="rounded-2xl border border-slate-200 p-4">
+                <div class="grid gap-3">
+                  <input :value="item.name" class="tv-input" placeholder="Ten so thich" @input="updateHobby(index, 'name', $event)" />
+                  <textarea :value="item.description" class="tv-input min-h-24 resize-y" placeholder="Mo ta" @input="updateHobby(index, 'description', $event)" />
+                  <button class="tv-link" type="button" @click="editorStore.removeHobby(index)">Xoa muc nay</button>
+                </div>
+              </article>
+            </div>
+          </section>
+
+          <section class="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm">
+            <div class="flex items-center justify-between gap-3">
+              <h2 class="text-lg font-black text-slate-900">Giai thuong</h2>
+              <button class="tv-chip" type="button" @click="editorStore.addAward()">Them</button>
+            </div>
+            <div class="mt-4 grid gap-4">
+              <article v-for="(item, index) in extraData.awards" :key="item.id" class="rounded-2xl border border-slate-200 p-4">
+                <div class="grid gap-3">
+                  <input :value="item.title" class="tv-input" placeholder="Ten giai thuong / thanh tich" @input="updateAward(index, 'title', $event)" />
+                  <input :value="item.issuer" class="tv-input" placeholder="Don vi trao" @input="updateAward(index, 'issuer', $event)" />
+                  <input :value="item.awardedAt" class="tv-input" placeholder="Thoi gian nhan" @input="updateAward(index, 'awardedAt', $event)" />
+                  <textarea :value="item.description" class="tv-input min-h-24 resize-y" placeholder="Mo ta" @input="updateAward(index, 'description', $event)" />
+                  <button class="tv-link" type="button" @click="editorStore.removeAward(index)">Xoa muc nay</button>
+                </div>
+              </article>
+            </div>
+          </section>
+
+          <section class="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm">
+            <div class="flex items-center justify-between gap-3">
+              <div>
+                <h2 class="text-lg font-black text-slate-900">Section tuy bien</h2>
+                <p class="mt-1 text-sm text-slate-500">Moi record la mot item phang; dung cung section title de nhom tren template.</p>
+              </div>
+              <button class="tv-chip" type="button" @click="editorStore.addCustomSection()">Them</button>
+            </div>
+            <div class="mt-4 grid gap-4">
+              <article v-for="(item, index) in extraData.customSections" :key="item.id" class="rounded-2xl border border-slate-200 p-4">
+                <div class="grid gap-3">
+                  <input :value="item.sectionTitle" class="tv-input" placeholder="Ten section, vi du Volunteer" @input="updateCustomSection(index, 'sectionTitle', $event)" />
+                  <input :value="item.itemTitle" class="tv-input" placeholder="Tieu de item" @input="updateCustomSection(index, 'itemTitle', $event)" />
+                  <input :value="item.itemSubtitle" class="tv-input" placeholder="Phu de" @input="updateCustomSection(index, 'itemSubtitle', $event)" />
+                  <input :value="item.itemMeta" class="tv-input" placeholder="Meta / thoi gian" @input="updateCustomSection(index, 'itemMeta', $event)" />
+                  <textarea :value="item.description" class="tv-input min-h-24 resize-y" placeholder="Mo ta" @input="updateCustomSection(index, 'description', $event)" />
+                  <button class="tv-link" type="button" @click="editorStore.removeCustomSection(index)">Xoa muc nay</button>
+                </div>
+              </article>
+            </div>
+          </section>
         </aside>
 
         <section class="space-y-4">
           <div class="flex items-center justify-between rounded-[24px] border border-slate-200 bg-white/80 px-5 py-4">
             <div>
               <p class="text-sm font-bold text-slate-900">Live preview sandbox</p>
-              <p class="text-sm text-slate-500">Preview client-side tu html/css template, binding dung contract phase 2.</p>
+              <p class="text-sm text-slate-500">Preview client-side tu html/css template, binding dung contract phase 6.</p>
             </div>
             <div class="text-right text-xs text-slate-500">
               <p>Template ID: {{ currentCv.templateId }}</p>
-              <p>Sections MVP: personal, objective, experience, education, skills, certifications, languages</p>
+              <p>Sections: MVP + projects, hobbies, awards, custom sections</p>
             </div>
           </div>
           <CvPreviewRenderer
@@ -387,6 +466,34 @@ function updateCertification(
 
 function updateLanguage(index: number, field: 'name' | 'level' | 'certificate', event: Event) {
   editorStore.updateLanguage(index, { [field]: (event.target as HTMLInputElement).value })
+}
+
+function updateProject(
+  index: number,
+  field: 'name' | 'role' | 'organization' | 'startDate' | 'endDate' | 'projectUrl' | 'description',
+  event: Event,
+) {
+  editorStore.updateProject(index, { [field]: (event.target as HTMLInputElement | HTMLTextAreaElement).value })
+}
+
+function updateHobby(index: number, field: 'name' | 'description', event: Event) {
+  editorStore.updateHobby(index, { [field]: (event.target as HTMLInputElement | HTMLTextAreaElement).value })
+}
+
+function updateAward(
+  index: number,
+  field: 'title' | 'issuer' | 'awardedAt' | 'description',
+  event: Event,
+) {
+  editorStore.updateAward(index, { [field]: (event.target as HTMLInputElement | HTMLTextAreaElement).value })
+}
+
+function updateCustomSection(
+  index: number,
+  field: 'sectionTitle' | 'itemTitle' | 'itemSubtitle' | 'itemMeta' | 'description',
+  event: Event,
+) {
+  editorStore.updateCustomSection(index, { [field]: (event.target as HTMLInputElement | HTMLTextAreaElement).value })
 }
 </script>
 
