@@ -25,10 +25,10 @@
             class="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors group"
           >
             <td class="px-6 py-4">
-              <span class="font-bold text-slate-700 dark:text-slate-200 text-sm">{{ item.candidateName }}</span>
+              <span class="font-bold text-slate-700 dark:text-slate-200 text-sm">{{ item.candidateName || '-' }}</span>
             </td>
             <td class="px-6 py-4">
-              <span class="text-slate-600 dark:text-slate-400 text-sm line-clamp-1">{{ item.jobTitle }}</span>
+              <span class="text-slate-600 dark:text-slate-400 text-sm line-clamp-1">{{ item.jobTitle || '-' }}</span>
             </td>
             <td class="px-6 py-4">
               <span class="px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-tight" 
@@ -75,8 +75,6 @@ const statusClass = (status: string) => {
 };
 
 const onView = (item: PendingCandidateDTO) => {
-  // In reality, we need jobPostId to navigate correctly
-  // Assuming jobId is available or handle via a different route
-  router.push(`/recruiter/applications/${item.applicationId}`);
+  router.push(`/recruiter/jobs/${item.jobPostId}/applications/${item.applicationId}`);
 };
 </script>

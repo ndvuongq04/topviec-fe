@@ -24,14 +24,24 @@ export interface ResManagerDashboardDTO {
   activeJobs: number;
   pendingApplications: number;
   upcomingInterviews: number;
-  applicationsByStatus: Record<string, number>;
+  applicationsByStatus: EmployerApplicationStatusCounts;
   pendingCandidates: PendingCandidateDTO[];
+}
+
+export interface EmployerApplicationStatusCounts {
+  pending: number;
+  seen: number;
+  cv_passed: number;
+  interviewing: number;
+  hired: number;
+  rejected: number;
 }
 
 export interface PendingCandidateDTO {
   applicationId: number;
-  candidateName: string;
-  jobTitle: string;
+  candidateName: string | null;
+  jobTitle: string | null;
+  jobPostId: number;
   status: string;
   createdAt: string;
 }
@@ -46,7 +56,7 @@ export interface ResRecruiterDashboardDTO {
 
 export interface JobApplicationCount {
   jobId: number;
-  jobTitle: string;
+  jobTitle: string | null;
   applicationCount: number;
 }
 

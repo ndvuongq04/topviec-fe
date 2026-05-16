@@ -22,21 +22,22 @@
           <tr 
             v-for="item in candidates" 
             :key="item.applicationId" 
-            class="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors"
+            @click="onView(item)"
+            class="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors cursor-pointer"
           >
             <td class="px-6 py-4">
               <div class="flex items-center gap-3">
                 <div class="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-500/10 flex items-center justify-center text-blue-600 font-black text-xs">
-                  {{ item.candidateName.charAt(0) }}
+                  {{ candidateInitial(item.candidateName) }}
                 </div>
                 <span class="font-bold text-slate-700 dark:text-slate-200 text-sm">
-                  {{ item.candidateName }}
+                  {{ item.candidateName || '-' }}
                 </span>
               </div>
             </td>
             <td class="px-6 py-4">
               <span class="text-slate-600 dark:text-slate-400 text-sm line-clamp-1">
-                {{ item.jobTitle }}
+                {{ item.jobTitle || '-' }}
               </span>
             </td>
             <td class="px-6 py-4">
@@ -56,14 +57,22 @@
 </template>
 
 <script setup lang="ts">
+import { useRouter } from 'vue-router';
 import type { PendingCandidateDTO } from '@/types/employerDashboard.types';
 
 defineProps<{
   candidates: PendingCandidateDTO[];
 }>();
 
+const router = useRouter();
+
 const formatDate = (dateStr: string) => {
   return new Date(dateStr).toLocaleDateString('vi-VN');
+};
+
+const candidateInitial = (name: string | null) => {
+  const normalizedName = (name || '').trim();
+  return normalizedName ? normalizedName.charAt(0).toUpperCase() : '?';
 };
 
 const statusClass = (status: string) => {
@@ -73,5 +82,9 @@ const statusClass = (status: string) => {
     case 'cv_passed': return 'bg-emerald-100 text-emerald-600';
     default: return 'bg-slate-100 text-slate-500';
   }
+};
+
+const onView = (item: PendingCandidateDTO) => {
+  router.push(`/recruiter/jobs/${item.jobPostId}/applications/${item.applicationId}`);
 };
 </script>

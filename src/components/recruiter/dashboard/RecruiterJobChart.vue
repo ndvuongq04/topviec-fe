@@ -5,7 +5,7 @@
     <div class="space-y-4">
       <div v-for="(item, i) in data" :key="item.jobId" class="space-y-2">
         <div class="flex justify-between text-xs font-bold">
-          <span class="text-slate-600 dark:text-slate-400 truncate max-w-[80%]">{{ item.jobTitle }}</span>
+          <span class="text-slate-600 dark:text-slate-400 truncate max-w-[80%]">{{ item.jobTitle || 'Tin tuyển dụng' }}</span>
           <span class="text-blue-600">{{ item.applicationCount }} UV</span>
         </div>
         

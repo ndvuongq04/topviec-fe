@@ -29,12 +29,15 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
+import type { EmployerApplicationStatusCounts } from '@/types/employerDashboard.types';
 
 const props = defineProps<{
-  data: Record<string, number>;
+  data: EmployerApplicationStatusCounts;
 }>();
 
-const STATUS_CONFIG: Record<string, { label: string, color: string }> = {
+type StatusConfig = { label: string, color: string };
+
+const STATUS_CONFIG: Record<keyof EmployerApplicationStatusCounts, StatusConfig> = {
   pending: { label: 'Chờ xử lý', color: '#3b82f6' },
   seen: { label: 'Đã xem', color: '#8b5cf6' },
   cv_passed: { label: 'Duyệt CV', color: '#22c55e' },
@@ -46,7 +49,7 @@ const STATUS_CONFIG: Record<string, { label: string, color: string }> = {
 const totalCount = computed(() => Object.values(props.data).reduce((a, b) => a + b, 0));
 
 const statusList = computed(() => {
-  return Object.entries(STATUS_CONFIG).map(([key, config]) => ({
+  return (Object.entries(STATUS_CONFIG) as Array<[keyof EmployerApplicationStatusCounts, StatusConfig]>).map(([key, config]) => ({
     key,
     ...config,
     value: props.data[key] || 0
