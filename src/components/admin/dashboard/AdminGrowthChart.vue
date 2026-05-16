@@ -78,7 +78,10 @@ const linePath = computed(() =>
 
 const areaPath = computed(() => {
   const pts = points.value
+  if (pts.length === 0) return ''
   const line = pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' ')
-  return `${line} L${pts[pts.length - 1].x},100 L0,100 Z`
+  const lastPoint = pts[pts.length - 1]
+  if (!lastPoint) return ''
+  return `${line} L${lastPoint.x},100 L0,100 Z`
 })
 </script>
