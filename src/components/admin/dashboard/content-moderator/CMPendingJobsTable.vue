@@ -25,7 +25,7 @@
               <span class="font-bold text-slate-700 dark:text-slate-200 text-sm line-clamp-1">{{ job.title }}</span>
             </td>
             <td class="px-6 py-4">
-              <span class="text-slate-600 dark:text-slate-400 text-sm">{{ job.companyName }}</span>
+              <span class="text-slate-600 dark:text-slate-400 text-sm">{{ job.companyName || '-' }}</span>
             </td>
             <td class="px-6 py-4">
               <span class="text-slate-400 text-xs">{{ formatDate(job.createdAt) }}</span>

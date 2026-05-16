@@ -35,7 +35,7 @@
               <span class="text-slate-600 dark:text-slate-400 text-sm">{{ item.complaintType }}</span>
             </td>
             <td class="px-6 py-4">
-              <span class="text-slate-600 dark:text-slate-400 text-sm font-medium">{{ item.companyName }}</span>
+              <span class="text-slate-600 dark:text-slate-400 text-sm font-medium">{{ item.companyName || '-' }}</span>
             </td>
             <td class="px-6 py-4">
               <span class="text-slate-400 text-xs">{{ item.waitingHours }} giờ</span>

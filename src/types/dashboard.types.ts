@@ -20,10 +20,10 @@ export interface MonthlyRevenue {
 }
 
 export interface RecentAdminActivity {
-  id: number;
+  id?: number;
   adminName: string;
   action: string;
-  targetEntity: string;
+  targetEntity: string | null;
   createdAt: string;
 }
 
@@ -44,7 +44,7 @@ export interface DailyModerationStat {
 export interface OldestPendingJob {
   jobId: number;
   title: string;
-  companyName: string;
+  companyName: string | null;
   createdAt: string;
   waitingDays: number;
 }
@@ -53,16 +53,25 @@ export interface ResSupportAdminDashboardDTO {
   pendingComplaints: number;
   pendingAppeals: number;
   restrictedEmployers: number;
-  complaintsByStatus: Record<string, number>;
+  complaintsByStatus: ComplaintStatusCounts;
   urgentComplaints: UrgentComplaint[];
+}
+
+export interface ComplaintStatusCounts {
+  pending: number;
+  processing: number;
+  waiting_employer: number;
+  resolved: number;
+  rejected: number;
+  auto_closed: number;
 }
 
 export interface UrgentComplaint {
   complaintId: number;
   reportCode: string;
-  priority: 'urgent' | 'important' | 'normal';
+  priority: string;
   complaintType: string;
-  companyName: string;
+  companyName: string | null;
   waitingHours: number;
   createdAt: string;
 }
@@ -78,8 +87,8 @@ export interface ResFinanceAdminDashboardDTO {
 export interface ActionableOrder {
   orderId: number;
   orderCode: string;
-  companyName: string;
+  companyName: string | null;
   totalAmount: number;
-  status: 'PENDING' | 'REFUND_REQUESTED' | 'PAID' | 'REFUNDED' | 'CANCELLED';
+  status: 'pending' | 'refund_requested';
   createdAt: string;
 }

@@ -19,7 +19,7 @@
           </tr>
         </thead>
         <tbody class="divide-y divide-slate-100 dark:divide-white/10">
-          <tr v-for="item in activities" :key="item.id" class="hover:bg-slate-50/50 dark:hover:bg-white/5 transition-colors">
+          <tr v-for="(item, index) in activities" :key="`${item.createdAt}-${item.action}-${index}`" class="hover:bg-slate-50/50 dark:hover:bg-white/5 transition-colors">
             <td class="px-6 py-4">
               <div class="flex items-center gap-3">
                 <div class="w-8 h-8 rounded-full bg-slate-100 dark:bg-white/10 flex items-center justify-center text-slate-500 font-bold text-xs">
@@ -34,7 +34,7 @@
               </span>
             </td>
             <td class="px-6 py-4">
-              <span class="text-slate-600 dark:text-slate-400 text-sm">{{ item.targetEntity }}</span>
+              <span class="text-slate-600 dark:text-slate-400 text-sm">{{ item.targetEntity || '-' }}</span>
             </td>
             <td class="px-6 py-4">
               <span class="text-slate-400 text-xs">{{ formatRelativeTime(item.createdAt) }}</span>

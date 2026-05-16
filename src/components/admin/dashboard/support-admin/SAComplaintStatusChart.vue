@@ -53,6 +53,12 @@ const statusList = computed(() => {
 });
 
 const donutStyle = computed(() => {
+  if (totalCount.value === 0) {
+    return {
+      background: 'conic-gradient(#e2e8f0 0% 100%)',
+    };
+  }
+
   let currentPercentage = 0;
   const gradients = statusList.value
     .filter(s => s.value > 0)

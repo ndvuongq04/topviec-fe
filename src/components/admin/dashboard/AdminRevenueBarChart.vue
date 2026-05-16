@@ -45,13 +45,13 @@ const props = defineProps<{
 }>();
 
 const maxRevenue = computed(() => {
-  const max = Math.max(...props.data.map(d => d.totalAmount), 0);
+  const max = Math.max(...props.data.map(d => d.totalAmount), 1);
   return max * 1.2; // Add some padding
 });
 
 const formatMonth = (monthStr: string) => {
-  const [year, month] = monthStr.split('-');
-  return `Tháng ${parseInt(month)}`;
+  const month = monthStr.split('-')[1] ?? monthStr;
+  return `Tháng ${Number.parseInt(month, 10) || month}`;
 };
 
 const formatShortCurrency = (val: number) => {

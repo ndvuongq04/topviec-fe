@@ -44,7 +44,7 @@
         <div v-for="(item, i) in data" :key="i" 
           class="absolute text-[9px] font-bold text-slate-500 dark:text-slate-400 -translate-x-1/2"
           :style="{ 
-            left: `${(i / (data.length - 1)) * 100}%`, 
+            left: `${pointLeft(i)}%`, 
             top: `${(100 - (item.totalAmount / maxRevenue) * 90) - 15}%` 
           }">
           {{ formatShortCurrency(item.totalAmount) }}
@@ -73,8 +73,9 @@ const maxRevenue = computed(() => {
 
 const points = computed(() => {
   if (props.data.length === 0) return [];
+  const denominator = Math.max(props.data.length - 1, 1);
   return props.data.map((d, i) => ({
-    x: (i / (props.data.length - 1)) * 400,
+    x: (i / denominator) * 400,
     y: 100 - (d.totalAmount / maxRevenue.value) * 90,
   }));
 });
@@ -86,12 +87,19 @@ const linePath = computed(() =>
 const areaPath = computed(() => {
   if (points.value.length === 0) return '';
   const line = linePath.value;
-  return `${line} L${points.value[points.value.length - 1].x},100 L0,100 Z`;
+  const lastPoint = points.value[points.value.length - 1];
+  if (!lastPoint) return '';
+  return `${line} L${lastPoint.x},100 L0,100 Z`;
 });
 
 const formatMonth = (monthStr: string) => {
-  const [year, month] = monthStr.split('-');
+  const [year = '', month = monthStr] = monthStr.split('-');
   return `${month}/${year.substring(2)}`;
+};
+
+const pointLeft = (index: number) => {
+  const denominator = Math.max(props.data.length - 1, 1);
+  return (index / denominator) * 100;
 };
 
 const formatShortCurrency = (val: number) => {

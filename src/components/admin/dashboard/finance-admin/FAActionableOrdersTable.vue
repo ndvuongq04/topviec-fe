@@ -26,7 +26,7 @@
               <span class="font-bold text-slate-700 dark:text-slate-200 text-sm">{{ order.orderCode }}</span>
             </td>
             <td class="px-6 py-4">
-              <span class="text-slate-600 dark:text-slate-400 text-sm line-clamp-1">{{ order.companyName }}</span>
+              <span class="text-slate-600 dark:text-slate-400 text-sm line-clamp-1">{{ order.companyName || '-' }}</span>
             </td>
             <td class="px-6 py-4">
               <span class="font-bold text-emerald-600 dark:text-emerald-400 text-sm">{{ formatCurrency(order.totalAmount) }}</span>
@@ -34,7 +34,7 @@
             <td class="px-6 py-4">
               <span class="px-2 py-1 rounded text-[10px] font-bold uppercase" 
                 :class="statusClass(order.status)">
-                {{ order.status }}
+                {{ statusLabel(order.status) }}
               </span>
             </td>
             <td class="px-6 py-4">
@@ -73,10 +73,17 @@ const formatDate = (dateStr: string) => {
 
 const statusClass = (status: string) => {
   switch (status) {
-    case 'PENDING': return 'bg-amber-100 text-amber-600';
-    case 'REFUND_REQUESTED': return 'bg-rose-100 text-rose-600';
-    case 'PAID': return 'bg-emerald-100 text-emerald-600';
+    case 'pending': return 'bg-amber-100 text-amber-600';
+    case 'refund_requested': return 'bg-rose-100 text-rose-600';
     default: return 'bg-slate-100 text-slate-600';
+  }
+};
+
+const statusLabel = (status: string) => {
+  switch (status) {
+    case 'pending': return 'Pending';
+    case 'refund_requested': return 'Refund requested';
+    default: return status;
   }
 };
 

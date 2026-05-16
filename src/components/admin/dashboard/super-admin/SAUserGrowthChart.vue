@@ -70,8 +70,9 @@ const maxVal = computed(() => {
 
 const getPoints = (key: 'candidateCount' | 'employerCount') => {
   if (props.data.length === 0) return [];
+  const denominator = Math.max(props.data.length - 1, 1);
   return props.data.map((d, i) => ({
-    x: (i / (props.data.length - 1)) * 400,
+    x: (i / denominator) * 400,
     y: 100 - (d[key] / maxVal.value) * 90,
   }));
 };
@@ -85,7 +86,9 @@ const getLinePath = (pts: {x: number, y: number}[]) =>
 const getAreaPath = (pts: {x: number, y: number}[]) => {
   if (pts.length === 0) return '';
   const line = getLinePath(pts);
-  return `${line} L${pts[pts.length - 1].x},100 L0,100 Z`;
+  const lastPoint = pts[pts.length - 1];
+  if (!lastPoint) return '';
+  return `${line} L${lastPoint.x},100 L0,100 Z`;
 };
 
 const candidateLinePath = computed(() => getLinePath(candidatePoints.value));
