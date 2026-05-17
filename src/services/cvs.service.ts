@@ -1,7 +1,7 @@
 // src/services/cvs.service.ts
 import axiosInstance from './axios'
 import type { RestResponse } from '@/types/common.types'
-import type { ReqRenameCv, ReqShareCv, ReqUploadCv, ResCv } from '@/types/cvs.types'
+import type { ReqRenameCv, ReqShareCv, ReqUploadCv, ResCv, ResCvPdfExport } from '@/types/cvs.types'
 
 const BASE_URL = '/cvs'
 
@@ -99,6 +99,18 @@ const cvsService = {
     async getCvById(id: number): Promise<ResCv> {
         const res = await axiosInstance.get<RestResponse<ResCv>>(`${BASE_URL}/${id}`)
         return res.data.data
+    },
+
+    async exportPdf(id: number): Promise<ResCvPdfExport> {
+        const res = await axiosInstance.post<RestResponse<ResCvPdfExport>>(`${BASE_URL}/${id}/export-pdf`)
+        return res.data.data
+    },
+
+    async downloadPdf(id: number): Promise<Blob> {
+        const res = await axiosInstance.get(`${BASE_URL}/${id}/download-pdf`, {
+            responseType: 'blob',
+        })
+        return res.data
     },
 }
 

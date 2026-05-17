@@ -112,6 +112,11 @@ export const adminRoutes: RouteRecordRaw[] = [
                 component: () => import('@/pages/admin/CvTemplateCreatePage.vue'),
             },
             {
+                path: 'cv-templates/:id/edit',
+                name: 'admin-cv-template-edit',
+                component: () => import('@/pages/admin/CvTemplateCreatePage.vue'),
+            },
+            {
                 path: 'audit-logs',
                 name: 'admin-audit-logs',
                 component: () => import('@/pages/admin/AuditLogPage.vue'),

@@ -8,83 +8,72 @@
       :languages="languages"
     />
     <main class="max-w-[1200px] mx-auto px-6 py-12">
+      <div v-if="templateStore.error" class="mb-6 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+        {{ templateStore.error }}
+      </div>
       <CvTemplateGrid
         :templates="filteredTemplates"
-        :has-more="hasMore"
+        :has-more="false"
         @use="handleUseTemplate"
-        @load-more="handleLoadMore"
       />
     </main>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { computed, onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import CvTemplateHero from '@/components/candidate/cv-templates/CvTemplateHero.vue'
 import CvTemplateFilterTabs from '@/components/candidate/cv-templates/CvTemplateFilterTabs.vue'
 import CvTemplateGrid from '@/components/candidate/cv-templates/CvTemplateGrid.vue'
+import { useCvOnlineEditorStore } from '@/stores/cvOnlineEditor.store'
+import { useCvTemplateStore } from '@/stores/cvTemplate.store'
+import { useToast } from '@/composables/useToast'
 
 const activeFilter = ref('all')
 const activeLanguage = ref('vi')
+const router = useRouter()
+const toast = useToast()
+const editorStore = useCvOnlineEditorStore()
+const templateStore = useCvTemplateStore()
 
 const filterTabs = [
-  { value: 'all', label: 'Tất cả', icon: 'grid_view' },
-  { value: 'simple', label: 'Đơn giản', icon: 'check_circle' },
-  { value: 'professional', label: 'Chuyên nghiệp', icon: 'work' },
-  { value: 'modern', label: 'Hiện đại', icon: 'bolt' },
-  { value: 'impressive', label: 'Ấn tượng', icon: 'star' },
+  { value: 'all', label: 'Tat ca', icon: 'grid_view' },
+  { value: 'simple', label: 'Don gian', icon: 'check_circle' },
+  { value: 'professional', label: 'Chuyen nghiep', icon: 'work' },
+  { value: 'modern', label: 'Hien dai', icon: 'bolt' },
+  { value: 'impressive', label: 'An tuong', icon: 'star' },
   { value: 'harvard', label: 'Harvard', icon: 'school' },
   { value: 'ats', label: 'ATS', icon: 'fact_check' },
 ]
 
 const languages = [
-  { value: 'vi', label: 'Tiếng Việt', color: '#ba1a1a' },
-  { value: 'en', label: 'Tiếng Anh', color: '#005ea4' },
+  { value: 'vi', label: 'Tieng Viet', color: '#ba1a1a' },
+  { value: 'en', label: 'Tieng Anh', color: '#005ea4' },
 ]
 
-const templates = ref([
-  {
-    id: 1,
-    name: 'Tiêu chuẩn',
-    thumbnail: 'https://example.com/cv1.jpg',
-    tags: ['ATS', 'Đơn giản'],
-    categories: ['all', 'simple', 'ats'],
-    colors: ['#1b1c18', '#707783', '#005ea4'],
-    isNew: false,
-  },
-  {
-    id: 2,
-    name: 'Tiêu chuẩn (ít kinh nghiệm)',
-    thumbnail: 'https://example.com/cv2.jpg',
-    tags: ['ATS', 'Đơn giản', 'Chuyên nghiệp'],
-    categories: ['all', 'simple', 'ats', 'professional'],
-    colors: ['#fff', '#d8e2ff', '#a2c9ff', '#b2c5ff'],
-    isNew: true,
-  },
-  {
-    id: 3,
-    name: 'Thanh lịch',
-    thumbnail: 'https://example.com/cv3.jpg',
-    tags: ['ATS', 'Đơn giản', 'Hiện đại'],
-    categories: ['all', 'simple', 'ats', 'modern'],
-    colors: ['#ba1a1a', '#005ea4', '#006d32', '#f59e0b'],
-    isNew: false,
-  },
-])
-
-const hasMore = ref(true)
+const templates = computed(() => templateStore.candidateTemplates)
 
 const filteredTemplates = computed(() => {
-  if (activeFilter.value === 'all') return templates.value
-  return templates.value.filter(t => t.categories.includes(activeFilter.value))
+  return templates.value.filter((template) => {
+    const matchesFilter =
+      activeFilter.value === 'all' || template.categories.includes(activeFilter.value)
+    const matchesLanguage = template.language === activeLanguage.value
+    return matchesFilter && matchesLanguage
+  })
 })
 
-function handleUseTemplate(id: number) {
-  // navigate to CV editor with template id
-}
+onMounted(() => {
+  void templateStore.fetchPublicTemplates()
+})
 
-function handleLoadMore() {
-  // fetch thêm templates từ API
+async function handleUseTemplate(id: number) {
+  try {
+    const draft = await editorStore.createLocalDraftFromTemplate(id)
+    router.push({ name: 'CvOnlineEditor', params: { localDraftId: draft.localDraftId } })
+  } catch {
+    toast.error('Khong tao duoc ban nhap CV', templateStore.error ?? editorStore.error ?? undefined)
+  }
 }
 </script>
 

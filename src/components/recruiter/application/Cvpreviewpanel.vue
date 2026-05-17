@@ -4,11 +4,11 @@
     <div class="panel-header">
       <Breadcrumb :items="breadcrumbItems" :hide-home="true" />
       <div class="panel-actions">
-        <button class="btn-action" :disabled="!cvFileUrl" @click="handleDownload">
+        <button class="btn-action" :disabled="!downloadUrl" @click="handleDownload">
           <span class="material-symbols-outlined">download</span>
           Tải CV
         </button>
-        <button class="btn-action" :disabled="!cvPdfUrl" @click="handlePrint">
+        <button class="btn-action" :disabled="!pdfSrc" @click="handlePrint">
           <span class="material-symbols-outlined">print</span>
           In
         </button>
@@ -43,7 +43,7 @@
         <div v-if="iframeError" class="pdf-fallback">
           <span class="material-symbols-outlined" style="font-size:3rem;color:#94a3b8">broken_image</span>
           <p>Không thể hiển thị PDF trong trình duyệt.</p>
-          <a :href="cvFileUrl" target="_blank" class="btn-open-pdf">
+          <a :href="downloadUrl || pdfSrc" target="_blank" class="btn-open-pdf">
             <span class="material-symbols-outlined">open_in_new</span>
             Mở CV trong tab mới
           </a>
@@ -60,6 +60,7 @@ import Breadcrumb from '@/components/ui/Breadcrumb.vue'
 
 const props = defineProps<{
   candidateName: string
+  cvPreviewUrl?: string
   cvPdfUrl?: string
   cvFileUrl?: string
 }>()
@@ -82,7 +83,8 @@ const breadcrumbItems = computed(() => [
 ])
 
 // Dùng pdfUrl nếu có, fallback sang fileUrl
-const pdfSrc = computed(() => props.cvPdfUrl || props.cvFileUrl || '')
+const pdfSrc = computed(() => props.cvPreviewUrl || props.cvPdfUrl || props.cvFileUrl || '')
+const downloadUrl = computed(() => props.cvFileUrl || props.cvPreviewUrl || props.cvPdfUrl || '')
 
 // Reset khi URL thay đổi
 watch(pdfSrc, () => {
@@ -96,11 +98,11 @@ function onIframeError() {
 }
 
 function handleDownload() {
-  if (props.cvFileUrl) window.open(props.cvFileUrl, '_blank')
+  if (downloadUrl.value) window.open(downloadUrl.value, '_blank')
 }
 
 function handlePrint() {
-  if (props.cvPdfUrl) {
+  if (pdfSrc.value) {
     const iframe = document.querySelector('.pdf-iframe') as HTMLIFrameElement
     iframe?.contentWindow?.print()
   }
