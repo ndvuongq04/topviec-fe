@@ -1,18 +1,35 @@
 <script setup lang="ts">
-const plan = {
-  tier: 'Pro',
-  expiresAt: '14/06/2025',
-  daysLeft: 62,
-  billingCycle: 'Hàng năm',
-  activatedAt: '14/01/2025',
-  orderCode: '#ORD-00189',
-}
+import { computed } from 'vue'
+import { useAdminCompanyStore } from '@/stores/adminCompany.store'
+import { BILLING_CYCLE_LABELS, BillingCycle } from '@/constants/servicePackage.constants'
+
+const store = useAdminCompanyStore()
+
+const plan = computed(() => {
+  const current = store.companyPlan?.currentPackage
+  if (!current) return null
+
+  const expiredDate = new Date(current.expiredAt)
+  const diffTime = Math.max(0, expiredDate.getTime() - new Date().getTime())
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+
+  return {
+    tier: current.packageName,
+    expiresAt: expiredDate.toLocaleDateString('vi-VN'),
+    daysLeft: diffDays,
+    billingCycle: BILLING_CYCLE_LABELS[(current.billingCycle || '').toLowerCase() as BillingCycle] || current.billingCycle || 'N/A',
+    activatedAt: new Date(current.startedAt).toLocaleDateString('vi-VN'),
+    orderCode: current.orderCode || '#N/A',
+    orderId: current.orderId,
+  }
+})
 </script>
 
 <template>
   <section class="plan-section">
     <h3 class="section-heading">Gói dịch vụ hiện tại</h3>
-    <div class="plan-card">
+    
+    <div v-if="plan" class="plan-card">
       <div class="plan-glow"></div>
 
       <div class="plan-top">
@@ -37,8 +54,21 @@ const plan = {
 
       <div class="plan-order-link">
         <span class="material-symbols-outlined link-icon">link</span>
-        <span>Mã đơn gốc: <a href="#" class="order-link">{{ plan.orderCode }}</a></span>
+        <span>Mã đơn gốc: 
+          <router-link
+            v-if="plan.orderId"
+            :to="{ name: 'admin-order-detail', params: { id: plan.orderId } }"
+            class="order-link"
+          >
+            {{ plan.orderCode }}
+          </router-link>
+          <span v-else class="order-link">{{ plan.orderCode }}</span>
+        </span>
       </div>
+    </div>
+    
+    <div v-else class="plan-card empty-card text-center">
+      <p>Chưa đăng ký gói dịch vụ nào</p>
     </div>
   </section>
 </template>
@@ -176,5 +206,14 @@ const plan = {
 
 .order-link:hover {
   text-decoration: underline;
+}
+
+.empty-card {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #574240;
+  font-weight: 500;
+  min-height: 200px;
 }
 </style>

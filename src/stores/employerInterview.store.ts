@@ -16,7 +16,8 @@ import type {
   ReqExtendDeadlineDTO,
   ReqForceScheduleDTO,
   ReqOfferResultDTO,
-  ReqCompleteRecruitmentDTO
+  ReqCompleteRecruitmentDTO,
+  ResEmployerInterviewStatisticsDTO
 } from '@/types/interview.types';
 
 export const useEmployerInterviewStore = defineStore('employerInterview', () => {
@@ -26,6 +27,7 @@ export const useEmployerInterviewStore = defineStore('employerInterview', () => 
   const currentResult = ref<ResInterviewResultDTO | null>(null);
   const interviewHistory = ref<ResInterviewHistoryDTO | null>(null);
   const overdueApplications = ref<ResOverdueApplicationDTO[]>([]);
+  const interviewStatistics = ref<ResEmployerInterviewStatisticsDTO | null>(null);
   const loading = ref(false);
   const error = ref<string | null>(null);
 
@@ -302,6 +304,19 @@ export const useEmployerInterviewStore = defineStore('employerInterview', () => 
     }
   }
 
+  /** Lấy thống kê phỏng vấn */
+  async function fetchStatistics() {
+    loading.value = true;
+    error.value = null;
+    try {
+      interviewStatistics.value = await employerInterviewService.getInterviewStatistics();
+    } catch (err) {
+      setError(err);
+    } finally {
+      loading.value = false;
+    }
+  }
+
   function reset() {
     rounds.value = [];
     schedules.value = [];
@@ -341,6 +356,8 @@ export const useEmployerInterviewStore = defineStore('employerInterview', () => 
     startInterviewing,
     completeRecruitment,
     remindConfirmSchedule,
+    fetchStatistics,
+    interviewStatistics,
     reset
   };
 });

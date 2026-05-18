@@ -111,7 +111,7 @@ async function handleLogout() {
         <!-- CV Online button -->
         <button
           class="flex items-center justify-center rounded-3xl h-10 px-5 bg-primary hover:bg-blue-600 text-white text-base font-bold transition-colors shadow-lg shadow-blue-500/30 cursor-pointer"
-          @click="router.push('/my-cvs')"
+          @click="router.push('/cv-templates')"
         >
           CV online
         </button>

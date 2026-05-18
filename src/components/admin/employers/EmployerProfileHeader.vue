@@ -69,21 +69,16 @@
       <!-- Right: Action buttons -->
       <div class="flex flex-wrap gap-3 shrink-0">
         <button
-          class="px-4 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-sm font-bold flex items-center gap-2 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
-          @click="$emit('reset-password')"
+          v-if="can('company.update') && company.status === CompanyStatus.SUSPENDED"
+          class="px-4 py-2 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-sm font-bold flex items-center gap-2 hover:bg-emerald-200 transition-colors cursor-pointer"
+          @click="$emit('suspend')"
         >
-          <span class="material-symbols-outlined text-sm">lock_reset</span>
-          Reset mật khẩu
+          <span class="material-symbols-outlined text-sm">lock_open</span>
+          Mở khóa tài khoản
         </button>
         <button
-          class="px-4 py-2 rounded-lg bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 text-sm font-bold flex items-center gap-2 hover:bg-amber-200 transition-colors"
-          @click="$emit('warn')"
-        >
-          <span class="material-symbols-outlined text-sm">report_problem</span>
-          Gửi cảnh báo
-        </button>
-        <button
-          class="px-4 py-2 rounded-lg bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 text-sm font-bold flex items-center gap-2 hover:bg-red-200 transition-colors"
+          v-else-if="can('company.update')"
+          class="px-4 py-2 rounded-lg bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 text-sm font-bold flex items-center gap-2 hover:bg-red-200 transition-colors cursor-pointer"
           @click="$emit('suspend')"
         >
           <span class="material-symbols-outlined text-sm">block</span>
@@ -97,9 +92,11 @@
 
 <script setup lang="ts">
 import type { ResCompanyDTO } from '@/types/company.types'
-import { VerificationStatus } from '@/constants/company.constants'
-
+import { CompanyStatus, VerificationStatus } from '@/constants/company.constants'
+import { useAdminPermission } from '@/composables/useAdminPermission'
 import { computed } from 'vue'
+
+const { can } = useAdminPermission()
 
 const props = defineProps<{
   company: ResCompanyDTO

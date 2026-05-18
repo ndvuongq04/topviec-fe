@@ -82,8 +82,9 @@ const chartPoints = computed(() => {
   const w = 500
   const h = 180 // leave 20px bottom for labels
   const maxVal = Math.max(...data)
+  const denominator = Math.max(data.length - 1, 1)
   return data.map((v, i) => ({
-    x: (i / (data.length - 1)) * w,
+    x: (i / denominator) * w,
     y: h - (v / maxVal) * h,
   }))
 })
@@ -95,7 +96,10 @@ const linePath = computed(() => {
 
 const areaPath = computed(() => {
   const pts = chartPoints.value
+  if (pts.length === 0) return ''
   const line = pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' ')
-  return `${line} L${pts[pts.length - 1].x},200 L0,200 Z`
+  const lastPoint = pts[pts.length - 1]
+  if (!lastPoint) return ''
+  return `${line} L${lastPoint.x},200 L0,200 Z`
 })
 </script>

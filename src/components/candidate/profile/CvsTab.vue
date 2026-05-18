@@ -54,6 +54,25 @@
               <h4 class="text-base font-bold text-text-main dark:text-white uppercase tracking-tight truncate">
                 {{ cv.title }}
               </h4>
+              <span
+                class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider"
+                :class="cv.cvType === CV_TYPE.ONLINE
+                  ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300'
+                  : 'bg-slate-100 text-slate-600 dark:bg-slate-700/50 dark:text-slate-300'"
+              >
+                {{ cv.cvType === CV_TYPE.ONLINE ? 'CV online' : 'CV tải lên' }}
+              </span>
+              <span
+                v-if="cv.cvType === CV_TYPE.ONLINE"
+                class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider"
+                :class="cv.pdfDirty
+                  ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300'
+                  : cv.pdfUrl
+                    ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300'
+                    : 'bg-slate-100 text-slate-500 dark:bg-slate-700/50 dark:text-slate-400'"
+              >
+                {{ getOnlinePdfStatusLabel(cv) }}
+              </span>
               <button 
                 class="p-1 text-text-muted hover:text-primary transition-colors hover:bg-slate-100 dark:hover:bg-slate-700 rounded-md cursor-pointer"
                 title="Sửa tên file"
@@ -121,23 +140,52 @@
               Chia sẻ
             </button>
 
-            <a 
-              :href="cv.pdfUrl || cv.fileUrl" 
-              target="_blank"
+            <button 
               class="flex items-center gap-1.5 px-3 py-1.5 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-text-main dark:text-white hover:bg-slate-50 dark:hover:bg-slate-800 transition-all bg-white dark:bg-slate-900 shadow-sm cursor-pointer"
+              type="button"
+              :disabled="viewingCvId === cv.id"
+              @click="handleViewCv(cv)"
             >
-              <span class="material-symbols-outlined text-[18px]">visibility</span>
-              Xem
-            </a>
+              <span class="material-symbols-outlined text-[18px]" :class="{ 'animate-spin': viewingCvId === cv.id }">
+                {{ viewingCvId === cv.id ? 'progress_activity' : 'visibility' }}
+              </span>
+              {{ viewingCvId === cv.id ? 'Dang tao PDF' : 'Xem' }}
+            </button>
 
-            <a 
-              :href="cv.fileUrl" 
-              download
+            <button
+              v-if="cv.cvType === CV_TYPE.ONLINE"
               class="flex items-center gap-1.5 px-3 py-1.5 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-text-main dark:text-white hover:bg-slate-50 dark:hover:bg-slate-800 transition-all bg-white dark:bg-slate-900 shadow-sm cursor-pointer"
+              type="button"
+              @click="handleEditCv(cv)"
             >
-              <span class="material-symbols-outlined text-[18px]">download</span>
+              <span class="material-symbols-outlined text-[18px]">edit_square</span>
+              Sua
+            </button>
+
+            <button
+              v-if="cv.cvType === CV_TYPE.ONLINE"
+              class="flex items-center gap-1.5 px-3 py-1.5 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-text-main dark:text-white hover:bg-slate-50 dark:hover:bg-slate-800 transition-all bg-white dark:bg-slate-900 shadow-sm cursor-pointer disabled:opacity-60"
+              type="button"
+              :disabled="duplicatingCvId === cv.id"
+              @click="handleDuplicateCv(cv)"
+            >
+              <span class="material-symbols-outlined text-[18px]">
+                {{ duplicatingCvId === cv.id ? 'progress_activity' : 'content_copy' }}
+              </span>
+              Nhan ban
+            </button>
+
+            <button
+              class="flex items-center gap-1.5 px-3 py-1.5 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-text-main dark:text-white hover:bg-slate-50 dark:hover:bg-slate-800 transition-all bg-white dark:bg-slate-900 shadow-sm cursor-pointer"
+              type="button"
+              :disabled="downloadingCvId === cv.id"
+              @click="handleDownloadCv(cv)"
+            >
+              <span class="material-symbols-outlined text-[18px]" :class="{ 'animate-spin': downloadingCvId === cv.id }">
+                {{ downloadingCvId === cv.id ? 'progress_activity' : 'download' }}
+              </span>
               Tải về
-            </a>
+            </button>
 
             <button 
               class="flex items-center gap-1.5 px-3 py-1.5 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-text-main dark:text-white hover:bg-red-50 hover:text-red-500 hover:border-red-100 dark:hover:bg-red-900/20 transition-all bg-white dark:bg-slate-900 shadow-sm cursor-pointer"
@@ -182,8 +230,9 @@
 
 <script setup lang="ts">
 import { ref, computed, reactive } from 'vue'
+import { useRouter } from 'vue-router'
 import { useCvsStore } from '@/stores/cvs.store'
-import { CV_VISIBILITY } from '@/constants/cvs.constants'
+import { CV_TYPE, CV_VISIBILITY } from '@/constants/cvs.constants'
 import { useConfirm } from '@/composables/useConfirm'
 import { useToast } from '@/composables/useToast'
 import GlobalModal from '@/components/ui/GlobalModal.vue'
@@ -191,6 +240,7 @@ import GlobalConfirmModal from '@/components/ui/GlobalConfirmModal.vue'
 import type { ResCv } from '@/types/cvs.types'
 
 const cvStore = useCvsStore()
+const router = useRouter()
 const { confirm } = useConfirm()
 const toast = useToast()
 
@@ -201,6 +251,9 @@ const cvsStore = cvStore
 const fileInput = ref<HTMLInputElement | null>(null)
 const uploading = ref(false)
 const actionLoading = ref<number | null>(null)
+const duplicatingCvId = ref<number | null>(null)
+const viewingCvId = ref<number | null>(null)
+const downloadingCvId = ref<number | null>(null)
 
 // ─── Formatting ──────────────────────────────────────────────────────────────
 function formatDate(dateStr: string) {
@@ -321,6 +374,95 @@ async function setDefault(cv: ResCv) {
   }
 }
 
+function getOnlinePdfStatusLabel(cv: ResCv) {
+  if (cv.pdfDirty) return 'PDF can cap nhat'
+  if (cv.pdfUrl) return 'PDF moi nhat'
+  return 'Chua tao PDF'
+}
+
+async function handleViewCv(cv: ResCv) {
+  if (cv.cvType !== CV_TYPE.ONLINE) {
+    const previewUrl = cv.fileUrl || cv.pdfUrl
+    if (previewUrl) {
+      window.open(previewUrl, '_blank', 'noopener,noreferrer')
+    } else {
+      toast.error('Khong mo duoc CV', 'CV nay hien khong co duong dan xem truoc hop le.')
+    }
+    return
+  }
+
+  viewingCvId.value = cv.id
+  const previewWindow = window.open('', '_blank')
+  try {
+    const exported = await cvsStore.exportPdf(cv.id)
+    if (!exported.pdfUrl) {
+      throw new Error('PDF_URL_EMPTY')
+    }
+    if (previewWindow) {
+      previewWindow.opener = null
+      previewWindow.location.href = exported.pdfUrl
+    } else {
+      window.open(exported.pdfUrl, '_blank', 'noopener,noreferrer')
+    }
+  } catch (err: any) {
+    previewWindow?.close()
+    toast.error('Khong mo duoc CV', err?.response?.data?.message || 'Khong the tao ban PDF moi luc nay.')
+  } finally {
+    viewingCvId.value = null
+  }
+}
+
+function handleEditCv(cv: ResCv) {
+  void router.push({ name: 'CvOnlineEditorLegacy', params: { id: cv.id } })
+}
+
+async function handleDuplicateCv(cv: ResCv) {
+  duplicatingCvId.value = cv.id
+  try {
+    const duplicated = await cvsStore.duplicateCv(cv.id)
+    toast.success('Da nhan ban CV online', `Da tao ban sao "${duplicated?.title ?? cv.title}".`)
+  } catch (err: any) {
+    toast.error('Khong nhan ban duoc CV', err.response?.data?.message || 'Vui long thu lai sau.')
+  } finally {
+    duplicatingCvId.value = null
+  }
+}
+
+async function handleDownloadCv(cv: ResCv) {
+  if (cv.cvType === CV_TYPE.ONLINE) {
+    downloadingCvId.value = cv.id
+    try {
+      await cvsStore.exportPdf(cv.id)
+      const blob = await cvsStore.downloadPdf(cv.id)
+      const url = window.URL.createObjectURL(blob)
+      const anchor = document.createElement('a')
+      anchor.href = url
+      anchor.download = `${cv.title || 'cv-online'}.pdf`
+      document.body.appendChild(anchor)
+      anchor.click()
+      anchor.remove()
+      window.URL.revokeObjectURL(url)
+    } catch (err: any) {
+      toast.error('Khong tai duoc PDF', err?.response?.data?.message || 'Khong the tai file PDF luc nay.')
+    } finally {
+      downloadingCvId.value = null
+    }
+    return
+  }
+
+  if (cv.fileUrl) {
+    const anchor = document.createElement('a')
+    anchor.href = cv.fileUrl
+    anchor.download = cv.title
+    document.body.appendChild(anchor)
+    anchor.click()
+    anchor.remove()
+    return
+  }
+
+  toast.error('Khong tai duoc CV', 'CV nay hien khong co duong dan tai ve hop le.')
+}
+
 async function copyUrl(url: string) {
   try {
     await navigator.clipboard.writeText(url)
@@ -329,4 +471,6 @@ async function copyUrl(url: string) {
     toast.error('Lỗi sao chép', 'Không thể truy cập bộ nhớ tạm.')
   }
 }
+
+void copyUrl
 </script>

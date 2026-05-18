@@ -72,8 +72,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { useEmployerInterviewStore } from '@/stores/employerInterview.store'
 
 import InterviewPageHeader from '@/components/recruiter/interviews/InterviewPageHeader.vue'
 import InterviewStatsCards from '@/components/recruiter/interviews/InterviewStatsCards.vue'
@@ -88,6 +89,7 @@ const tabs: { label: string; value: FilterTab }[] = [
 ]
 
 const router = useRouter()
+const store  = useEmployerInterviewStore()
 
 // ── Filter & Search ──────────────────────────────────────
 const activeFilter   = ref<FilterTab>('interviewing')
@@ -135,6 +137,10 @@ function clearSearch() {
 function handleCreate()  { router.push('/recruiter/create-job') }
 function handleExport()  { console.log('TODO: export report') }
 function handleInvite()  { router.push('/recruiter/job-applications') }
+
+onMounted(() => {
+  store.fetchStatistics()
+})
 </script>
 
 <style scoped>

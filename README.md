@@ -1,379 +1,208 @@
-package com.topviec.topviec_be.controller;
+# Chuyển đổi từ Cloudinary sang Local File Storage
 
-import com.topviec.topviec_be.dto.request.ReqAdjustViolationScoreDTO;
-import com.topviec.topviec_be.dto.request.ReqResetViolationScoreDTO;
-import com.topviec.topviec_be.dto.response.ResAppealDTO;
-import com.topviec.topviec_be.dto.response.ResViolationScoreDTO;
-import com.topviec.topviec_be.enums.adminUsers.AdminRoleConstants;
-import com.topviec.topviec_be.service.AppealService;
-import com.topviec.topviec_be.service.ViolationScoreService;
-import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.oauth2.jwt.Jwt;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+## Mô tả
 
-import java.util.List;
+Hiện tại dự án đang sử dụng Cloudinary để lưu trữ file (CV, avatar, ảnh bìa công ty). Mục tiêu là chuyển sang lưu file trực tiếp trên server (local filesystem), tổ chức thư mục rõ ràng theo module, và tạo util/service để dễ dàng sử dụng.
 
-/**
- * Admin quản lý điểm vi phạm của NTD.
- * Base URL: /admin/employers/{employerId}/violation-score
- */
-@RestController
-@RequestMapping("/admin/employers")
-@RequiredArgsConstructor
-@PreAuthorize("hasRole('ADMIN')")
-public class AdminViolationScoreController {
+## Phân tích hiện trạng
 
-    private final ViolationScoreService violationScoreService;
-    private final AppealService appealService;
+### Cloudinary đang được sử dụng ở đâu?
 
-    /**
-     * GET /admin/employers/{employerId}/violation-score
-     * Xem tổng điểm vi phạm hiện tại và lịch sử vi phạm của NTD.
-     */
-    @GetMapping("/{employerId}/violation-score")
-    @PreAuthorize("@adminSecurity.hasAnyRole(authentication, '"
-            + AdminRoleConstants.SUPER_ADMIN + "', '"
-            + AdminRoleConstants.CONTENT_MODERATOR + "', '"
-            + AdminRoleConstants.SUPPORT_ADMIN + "')")
-    public ResponseEntity<ResViolationScoreDTO> getScore(@PathVariable Long employerId) {
-        return ResponseEntity.ok(violationScoreService.getScore(employerId));
-    }
+| File | Mục đích | Chi tiết |
+|------|----------|----------|
+| [CloudinaryConfig.java](file:///d:/01_Workspace/TopViec/topviec-be/src/main/java/com/topviec/topviec_be/config/CloudinaryConfig.java) | Config bean Cloudinary | Đọc credentials từ env |
+| [CloudinaryService.java](file:///d:/01_Workspace/TopViec/topviec-be/src/main/java/com/topviec/topviec_be/service/CloudinaryService.java) | Interface `uploadFile()` + `deleteFile()` | 2 methods |
+| [CloudinaryServiceImpl.java](file:///d:/01_Workspace/TopViec/topviec-be/src/main/java/com/topviec/topviec_be/service/impl/CloudinaryServiceImpl.java) | Implementation upload/delete Cloudinary | Upload bytes, delete by publicId |
+| [CvServiceImpl.java](file:///d:/01_Workspace/TopViec/topviec-be/src/main/java/com/topviec/topviec_be/service/impl/CvServiceImpl.java#L60-L61) | Upload CV | `cloudinaryService.uploadFile(file, userId, FileUploadType.CV)` |
+| [CandidateProfileServiceImpl.java](file:///d:/01_Workspace/TopViec/topviec-be/src/main/java/com/topviec/topviec_be/service/impl/CandidateProfileServiceImpl.java#L57) | Lưu avatar URL | Nhận `avatarUrl` string từ FE (không upload qua BE) |
+| [CompanyServiceImpl.java](file:///d:/01_Workspace/TopViec/topviec-be/src/main/java/com/topviec/topviec_be/service/impl/CompanyServiceImpl.java#L259) | Lưu cover/logo URL | Nhận `coverUrl`, `logoUrl` string từ FE (không upload qua BE) |
 
-    /**
-     * POST /admin/employers/{employerId}/violation-score/reset
-     * Reset điểm về 0.
-     * Điều kiện: NTD không tái phạm nhóm B trong vòng 6 tháng gần nhất.
-     */
-    @PostMapping("/{employerId}/violation-score/reset")
-    @PreAuthorize("@adminSecurity.hasAnyRole(authentication, '"
-            + AdminRoleConstants.SUPER_ADMIN + "', '"
-            + AdminRoleConstants.CONTENT_MODERATOR + "')")
-    public ResponseEntity<ResViolationScoreDTO> resetScore(
-            @AuthenticationPrincipal Jwt jwt,
-            @PathVariable Long employerId,
-            @Valid @RequestBody ReqResetViolationScoreDTO request) {
+> [!IMPORTANT]
+> Hiện chỉ có **CV upload** đi qua `CloudinaryService`. Avatar và Company Cover/Logo được FE truyền URL trực tiếp (có thể FE upload trực tiếp lên Cloudinary). Sau khi chuyển sang local storage, tất cả file upload sẽ đi qua BE.
 
-        return ResponseEntity.ok(violationScoreService.resetScore(extractUserId(jwt), employerId, request));
-    }
+---
 
-    /**
-     * PATCH /admin/employers/{employerId}/violation-score/adjust
-     * Giảm điểm vi phạm thủ công khi NTD chủ động khắc phục hậu quả.
-     */
-    @PatchMapping("/{employerId}/violation-score/adjust")
-    @PreAuthorize("@adminSecurity.hasAnyRole(authentication, '"
-            + AdminRoleConstants.SUPER_ADMIN + "', '"
-            + AdminRoleConstants.CONTENT_MODERATOR + "')")
-    public ResponseEntity<ResViolationScoreDTO> adjustScore(
-            @AuthenticationPrincipal Jwt jwt,
-            @PathVariable Long employerId,
-            @Valid @RequestBody ReqAdjustViolationScoreDTO request) {
+## Cấu trúc thư mục lưu trữ
 
-        return ResponseEntity.ok(violationScoreService.adjustScore(extractUserId(jwt), employerId, request));
-    }
+```
+uploads/                          ← Root folder (ngoài src, cùng cấp build.gradle)
+├── images/                       ← Tất cả file ảnh
+│   ├── avatars/                  ← Ảnh đại diện ứng viên
+│   │   └── user_{userId}/        ← Phân theo user
+│   ├── company-logos/            ← Logo công ty
+│   │   └── company_{companyId}/
+│   ├── company-covers/           ← Ảnh bìa công ty
+│   │   └── company_{companyId}/
+│   └── business-licenses/        ← Giấy phép kinh doanh
+│       └── company_{companyId}/
+├── files/                        ← Tất cả file tài liệu
+│   └── cvs/                      ← CV (PDF, DOCX)
+│       └── user_{userId}/
+```
 
-    /**
-     * GET /admin/employers/{employerId}/appeals
-     * Xem toàn bộ danh sách kháng cáo của một NTD.
-     */
-    @GetMapping("/{employerId}/appeals")
-    @PreAuthorize("@adminSecurity.hasAnyRole(authentication, '"
-            + AdminRoleConstants.SUPER_ADMIN + "', '"
-            + AdminRoleConstants.CONTENT_MODERATOR + "', '"
-            + AdminRoleConstants.SUPPORT_ADMIN + "')")
-    public ResponseEntity<List<ResAppealDTO>> getAppeals(@PathVariable Long employerId) {
-        return ResponseEntity.ok(appealService.getByEmployer(employerId));
-    }
+---
 
-    private Long extractUserId(Jwt jwt) {
-        return Long.parseLong(jwt.getSubject());
-    }
-}
-package com.topviec.topviec_be.controller;
+## Proposed Changes
 
-import com.topviec.topviec_be.dto.request.ReqCreateAppealDTO;
-import com.topviec.topviec_be.dto.response.ResAppealDTO;
-import com.topviec.topviec_be.service.AppealService;
-import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.oauth2.jwt.Jwt;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+### 1. Configuration — `FileStorageConfig`
 
-/**
- * NTD nộp kháng cáo sau khi bị xử lý vi phạm nhóm B.
- * Base URL: /employer/appeals
- */
-@RestController
-@RequestMapping("/employer/appeals")
-@RequiredArgsConstructor
-@PreAuthorize("hasRole('EMPLOYER')")
-public class EmployerAppealController {
+#### [NEW] [FileStorageConfig.java](file:///d:/01_Workspace/TopViec/topviec-be/src/main/java/com/topviec/topviec_be/config/FileStorageConfig.java)
 
-    private final AppealService appealService;
+- Config class đọc `app.storage.*` properties từ `application.yaml`
+- Properties: `upload-dir` (root path), `base-url` (URL prefix cho client truy cập)
+- Khởi tạo tự động thư mục lưu trữ khi app start (`@PostConstruct`)
 
-    /**
-     * POST /employer/appeals
-     * NTD nộp kháng cáo cho một báo cáo nhóm B đã bị xử lý (resolved).
-     * Chỉ được kháng cáo 1 lần mỗi báo cáo.
-     */
-    @PostMapping
-    public ResponseEntity<ResAppealDTO> create(
-            @AuthenticationPrincipal Jwt jwt,
-            @Valid @RequestBody ReqCreateAppealDTO request) {
+#### [MODIFY] [application.yaml](file:///d:/01_Workspace/TopViec/topviec-be/src/main/resources/application.yaml)
 
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(appealService.create(extractUserId(jwt), request));
-    }
+- Thêm cấu hình `app.storage`:
+  ```yaml
+  app:
+    storage:
+      upload-dir: ${UPLOAD_DIR:uploads}
+      base-url: ${STORAGE_BASE_URL:http://localhost:8080/api/v1/files}
+  ```
 
-    private Long extractUserId(Jwt jwt) {
-        return Long.parseLong(jwt.getSubject());
-    }
-}
-package com.topviec.topviec_be.dto.request;
+---
 
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+### 2. WebMvc — Serve static files
 
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-public class ReqAdjustViolationScoreDTO {
+#### [NEW] [WebMvcConfig.java](file:///d:/01_Workspace/TopViec/topviec-be/src/main/java/com/topviec/topviec_be/config/WebMvcConfig.java)
 
-    @NotNull(message = "Số điểm giảm không được để trống")
-    @Min(value = 1, message = "Số điểm giảm phải lớn hơn 0")
-    private Integer pointsToDecrease;
+- Implement `WebMvcConfigurer`, override `addResourceHandlers()`
+- Map URL `/files/**` → filesystem `uploads/`
+- Cho phép client truy cập file đã upload qua URL, ví dụ: `http://localhost:8080/api/v1/files/images/avatars/user_1/abc.jpg`
 
-    @NotBlank(message = "Lý do giảm điểm không được để trống")
-    @Size(max = 500, message = "Lý do không được vượt quá 500 ký tự")
-    private String note;
-}
-package com.topviec.topviec_be.dto.request;
+#### [MODIFY] [SecurityConfig.java](file:///d:/01_Workspace/TopViec/topviec-be/src/main/java/com/topviec/topviec_be/config/SecurityConfig.java)
 
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+- Thêm `/files/**` vào `PUBLIC_URLS` để cho phép truy cập file không cần auth
 
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-public class ReqCreateAppealDTO {
+---
 
-    @NotNull(message = "ID báo cáo không được để trống")
-    private Long complaintId;
+### 3. Enum — Mở rộng `FileUploadType`
 
-    @NotBlank(message = "Nội dung kháng cáo không được để trống")
-    @Size(max = 2000, message = "Nội dung kháng cáo không được vượt quá 2000 ký tự")
-    private String content;
-}
-package com.topviec.topviec_be.dto.request;
+#### [MODIFY] [FileUploadType.java](file:///d:/01_Workspace/TopViec/topviec-be/src/main/java/com/topviec/topviec_be/enums/cvs/FileUploadType.java)
 
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+- Thêm các type mới: `COMPANY_LOGO`, `BUSINESS_LICENSE`
+- Thêm field `subDir` để map type → thư mục con tương ứng (ví dụ: `AVATAR → "images/avatars"`)
 
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-public class ReqResetViolationScoreDTO {
+---
 
-    @NotBlank(message = "Lý do reset không được để trống")
-    @Size(max = 500, message = "Lý do không được vượt quá 500 ký tự")
-    private String note;
-}
-package com.topviec.topviec_be.dto.response;
+### 4. Service — `FileStorageService` (thay thế `CloudinaryService`)
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+#### [NEW] [FileStorageService.java](file:///d:/01_Workspace/TopViec/topviec-be/src/main/java/com/topviec/topviec_be/service/FileStorageService.java)
 
-import java.time.LocalDateTime;
+- Interface mới, methods giống `CloudinaryService` nhưng generic hơn:
+  - `String uploadFile(MultipartFile file, Long ownerId, FileUploadType type)` → trả về URL đầy đủ
+  - `void deleteFile(String fileUrl, FileUploadType type)` → xóa file từ filesystem
+  - `Resource loadFile(String fileUrl)` → load file để download (tuỳ chọn)
 
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
-public class ResAppealDTO {
+#### [NEW] [FileStorageServiceImpl.java](file:///d:/01_Workspace/TopViec/topviec-be/src/main/java/com/topviec/topviec_be/service/impl/FileStorageServiceImpl.java)
 
-    private Long id;
-    private Long employerId;
+- Implementation lưu file vào filesystem:
+  - Tạo thư mục nếu chưa tồn tại
+  - Generate unique filename: `UUID + original extension`
+  - Lưu file vào đường dẫn: `{upload-dir}/{subDir}/{ownerPrefix}_{ownerId}/{uuid}.{ext}`
+  - Trả về URL: `{base-url}/{subDir}/{ownerPrefix}_{ownerId}/{uuid}.{ext}`
+  - Delete: parse URL → resolve path → xóa file
 
-    /** Thông tin báo cáo bị kháng cáo */
-    private ComplaintInfo complaint;
+---
 
-    private String content;
+### 5. Controller — Upload endpoint tổng hợp
 
-    /**
-     * Trạng thái kháng cáo.
-     * Giá trị hợp lệ: {@code pending} | {@code approved} | {@code rejected}
-     */
-    private String status;
+#### [NEW] [FileUploadController.java](file:///d:/01_Workspace/TopViec/topviec-be/src/main/java/com/topviec/topviec_be/controller/FileUploadController.java)
 
-    /** Ghi chú Admin khi xử lý kháng cáo. NULL nếu chưa xử lý */
-    private String adminNote;
+- Endpoint: `POST /files/upload`
+- Nhận `MultipartFile file` + `FileUploadType type`
+- Validate file (dùng `FileValidator` hiện có)
+- Upload qua `FileStorageService`
+- Trả về URL cho FE sử dụng
+- Hỗ trợ cả authenticated user (UV upload avatar) và employer (upload logo, cover)
 
-    /** Admin đã xử lý kháng cáo */
-    private AdminInfo reviewedByAdmin;
+---
 
-    private LocalDateTime reviewedAt;
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
+### 6. Cập nhật các service đang dùng Cloudinary
 
-    @Getter
-    @Setter
-    @NoArgsConstructor
-    @AllArgsConstructor
-    @Builder
-    public static class ComplaintInfo {
-        private Long id;
-        private String reportCode;
-        /** Giá trị hợp lệ: {@code fraudulent} | {@code payment_issue} | ... */
-        private String complaintType;
-        /** Giá trị hợp lệ: {@code A} | {@code B} */
-        private String violationGroup;
-        private String status;
-        private Long jobPostId;
-        private String jobPostTitle;
-        private String companyName;
-        private LocalDateTime createdAt;
-    }
+#### [MODIFY] [CvServiceImpl.java](file:///d:/01_Workspace/TopViec/topviec-be/src/main/java/com/topviec/topviec_be/service/impl/CvServiceImpl.java)
 
-    @Getter
-    @Setter
-    @NoArgsConstructor
-    @AllArgsConstructor
-    @Builder
-    public static class AdminInfo {
-        private Long adminUserId;
-        private String fullName;
-    }
-}
-package com.topviec.topviec_be.dto.response;
+- Thay `CloudinaryService` → `FileStorageService`
+- `cloudinaryService.uploadFile(...)` → `fileStorageService.uploadFile(...)`
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+---
 
-import java.time.LocalDateTime;
-import java.util.List;
+### 7. Cập nhật `FileValidator`
 
-/**
- * Response trả về khi Admin xem điểm vi phạm của một NTD.
- * Bao gồm thông tin tổng hợp và lịch sử từng lần vi phạm.
- */
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
-public class ResViolationScoreDTO {
+#### [MODIFY] [FileValidator.java](file:///d:/01_Workspace/TopViec/topviec-be/src/main/java/com/topviec/topviec_be/util/FileValidator.java)
 
-    private Long employerId;
-    private String employerEmail;
+- Thêm validation cho `COMPANY_LOGO` và `BUSINESS_LICENSE` (MIME types, size limits, extensions)
 
-    private CompanyInfo company;
-    private ScoreInfo score;
+---
 
-    /** Lịch sử vi phạm sắp xếp mới nhất trước */
-    private List<ViolationLogInfo> history;
+### 8. Cleanup Cloudinary (tùy chọn)
 
-    @Getter
-    @Setter
-    @NoArgsConstructor
-    @AllArgsConstructor
-    @Builder
-    public static class CompanyInfo {
-        private Long id;
-        private String name;
-        private String logoUrl;
-        /** Giá trị hợp lệ: {@code pending} | {@code active} | {@code suspended} | {@code deleted} */
-        private String status;
-    }
+> [!WARNING]
+> Sau khi chuyển sang local storage thành công, các file Cloudinary cũ cần:
+> - Giữ lại dependency `cloudinary-http44` tạm thời nếu cần backward-compatible
+> - Hoặc xóa hẳn dependency + config nếu không cần
 
-    @Getter
-    @Setter
-    @NoArgsConstructor
-    @AllArgsConstructor
-    @Builder
-    public static class ScoreInfo {
-        private Integer totalScore;
+#### [DELETE] [CloudinaryConfig.java](file:///d:/01_Workspace/TopViec/topviec-be/src/main/java/com/topviec/topviec_be/config/CloudinaryConfig.java)
+#### [DELETE] [CloudinaryService.java](file:///d:/01_Workspace/TopViec/topviec-be/src/main/java/com/topviec/topviec_be/service/CloudinaryService.java)
+#### [DELETE] [CloudinaryServiceImpl.java](file:///d:/01_Workspace/TopViec/topviec-be/src/main/java/com/topviec/topviec_be/service/impl/CloudinaryServiceImpl.java)
 
-        /**
-         * Mức độ vi phạm hiện tại dựa trên tổng điểm.
-         * Giá trị: {@code normal} (0–19) | {@code limited} (20–49) | {@code suspended} (≥50)
-         */
-        private String scoreLevel;
+#### [MODIFY] [build.gradle](file:///d:/01_Workspace/TopViec/topviec-be/build.gradle)
+- Xóa dependency `com.cloudinary:cloudinary-http44`
 
-        /** Thời điểm vi phạm nhóm B gần nhất — dùng để kiểm tra điều kiện reset 6 tháng */
-        private LocalDateTime lastGroupBViolationAt;
+#### [MODIFY] [application.yaml](file:///d:/01_Workspace/TopViec/topviec-be/src/main/resources/application.yaml)
+- Xóa block `app.cloudinary.*`
 
-        /** Thời điểm Admin reset điểm về 0 gần nhất */
-        private LocalDateTime lastResetAt;
+#### [MODIFY] [.gitignore](file:///d:/01_Workspace/TopViec/topviec-be/.gitignore)
+- Thêm `uploads/` để không commit file upload lên git
 
-        /** Tên Admin đã thực hiện reset gần nhất */
-        private String resetByAdminName;
+---
 
-        /**
-         * Admin có thể reset điểm về 0 không.
-         * true nếu chưa từng vi phạm nhóm B hoặc vi phạm nhóm B gần nhất đã qua 6 tháng.
-         */
-        private Boolean canResetScore;
-    }
+## Open Questions
 
-    @Getter
-    @Setter
-    @NoArgsConstructor
-    @AllArgsConstructor
-    @Builder
-    public static class ViolationLogInfo {
-        private Long id;
-        /** Khớp với {@code complaint_type}: fraudulent | spam | wrong_info | ... */
-        private String violationType;
-        private Integer points;
-        /** Nguồn phát hiện: {@code admin} | {@code system} | {@code complaint} */
-        private String source;
-        /** ID báo cáo liên quan. NULL nếu vi phạm do system phát hiện */
-        private Long complaintId;
-        private String note;
-        /** Tên Admin tạo log. NULL nếu do system */
-        private String createdByAdminName;
-        private LocalDateTime createdAt;
-    }
-}
+> [!IMPORTANT]
+> **1. Xóa Cloudinary ngay hay giữ lại?**
+> Bạn muốn xóa hẳn Cloudinary (dependency, config, service) ngay lập tức? Hay giữ lại tạm thời để backward-compatible với các URL ảnh cũ đã lưu trong DB?
+
+> [!IMPORTANT]
+> **2. Avatar & Company Logo/Cover — Upload flow**
+> Hiện tại FE đang truyền `avatarUrl`, `logoUrl`, `coverUrl` dưới dạng string URL (có thể đang upload trực tiếp lên Cloudinary từ FE). Sau khi chuyển sang local storage:
+> - **Phương án A**: FE gọi `POST /files/upload` trước → nhận URL → gửi URL khi update profile/company (giống flow hiện tại, chỉ đổi endpoint upload)
+> - **Phương án B**: Nhúng upload file vào API update profile/company luôn (multipart/form-data)
+> 
+> Tôi sẽ triển khai **Phương án A** (tạo endpoint upload riêng) vì ít thay đổi nhất. Bạn có đồng ý không?
+
+---
+
+## Verification Plan
+
+### Build & Compile
+- Chạy `./gradlew build` để đảm bảo compile thành công
+
+### Manual Verification
+1. Start server → kiểm tra thư mục `uploads/` được tạo tự động
+2. Upload CV qua API → kiểm tra file xuất hiện đúng thư mục `uploads/files/cvs/user_{id}/`
+3. Upload avatar qua `POST /files/upload` → kiểm tra `uploads/images/avatars/user_{id}/`
+4. Truy cập URL file → kiểm tra trả về đúng file
+5. Xóa file → kiểm tra file bị xóa khỏi filesystem
+
+### Tổng kết file thay đổi
+
+| Action | File |
+|--------|------|
+| **NEW** | `FileStorageConfig.java` |
+| **NEW** | `WebMvcConfig.java` |
+| **NEW** | `FileStorageService.java` |
+| **NEW** | `FileStorageServiceImpl.java` |
+| **NEW** | `FileUploadController.java` |
+| **MODIFY** | `application.yaml` |
+| **MODIFY** | `SecurityConfig.java` |
+| **MODIFY** | `FileUploadType.java` |
+| **MODIFY** | `FileValidator.java` |
+| **MODIFY** | `CvServiceImpl.java` |
+| **MODIFY** | `.gitignore` |
+| **MODIFY** | `build.gradle` |
+| **DELETE** | `CloudinaryConfig.java` |
+| **DELETE** | `CloudinaryService.java` |
+| **DELETE** | `CloudinaryServiceImpl.java` |

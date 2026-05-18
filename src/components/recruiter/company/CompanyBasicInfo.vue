@@ -4,13 +4,9 @@
       <h3 class="font-bold text-[1.125rem]">Thông tin cơ bản</h3>
     </div>
     <div class="p-6 space-y-6">
-
-      <!-- Cover + Logo -->
       <div class="space-y-2">
         <label class="text-sm font-semibold text-slate-700 dark:text-slate-300">Hình ảnh công ty</label>
         <div class="relative group">
-
-          <!-- Cover photo -->
           <div
             class="w-full h-48 bg-slate-100 dark:bg-slate-800 rounded-xl overflow-hidden border-2 border-dashed border-slate-300 dark:border-slate-700 flex items-center justify-center relative cursor-pointer"
             @click="triggerCoverUpload"
@@ -37,7 +33,6 @@
             <input ref="coverInput" type="file" accept="image/*" class="hidden" @change="onCoverChange" />
           </div>
 
-          <!-- Logo -->
           <div class="absolute -bottom-6 left-8">
             <div
               class="w-24 h-24 bg-white dark:bg-slate-800 rounded-2xl border-4 border-white dark:border-slate-900 shadow-xl flex items-center justify-center relative overflow-hidden cursor-pointer group/logo"
@@ -54,10 +49,7 @@
         </div>
       </div>
 
-      <!-- Fields -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-8">
-        
-        <!-- Tên công ty -->
         <div class="space-y-2 md:col-span-2">
           <label class="text-sm font-semibold text-slate-700 dark:text-slate-300">Tên công ty</label>
           <input
@@ -71,7 +63,6 @@
           <p v-if="errors?.companyName" class="text-xs text-red-500 mt-1">{{ errors.companyName }}</p>
         </div>
 
-        <!-- Lĩnh vực -->
         <div class="space-y-2">
           <label class="text-sm font-semibold text-slate-700 dark:text-slate-300">Lĩnh vực</label>
           <SearchableSelect
@@ -83,7 +74,6 @@
           <p v-if="errors?.industry" class="text-xs text-red-500 mt-1">{{ errors.industry }}</p>
         </div>
 
-        <!-- Quy mȏ nhȃn sự -->
         <div class="space-y-2">
           <label class="text-sm font-semibold text-slate-700 dark:text-slate-300">Quy mô nhân sự</label>
           <SearchableSelect
@@ -95,7 +85,6 @@
           <p v-if="errors?.companySize" class="text-xs text-red-500 mt-1">{{ errors.companySize }}</p>
         </div>
 
-        <!-- Mã số thuế -->
         <div class="space-y-2">
           <label class="text-sm font-semibold text-slate-700 dark:text-slate-300">Mã số thuế</label>
           <input
@@ -109,7 +98,6 @@
           <p v-if="errors?.taxCode" class="text-xs text-red-500 mt-1">{{ errors.taxCode }}</p>
         </div>
 
-        <!-- Năm thành lập -->
         <div class="space-y-2">
           <label class="text-sm font-semibold text-slate-700 dark:text-slate-300">Năm thành lập</label>
           <input
@@ -123,24 +111,22 @@
           />
           <p v-if="errors?.foundedYear" class="text-xs text-red-500 mt-1">{{ errors.foundedYear }}</p>
         </div>
-
       </div>
-
     </div>
   </section>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
-import { CompanySize } from '@/types/company.types'
+import { computed, onMounted, ref } from 'vue'
 import SearchableSelect from '@/components/ui/SearchableSelect.vue'
+import { useToast } from '@/composables/useToast'
 import { useIndustryStore } from '@/stores/industry.store'
+import { CompanySize } from '@/types/company.types'
 
 const industryStore = useIndustryStore()
+const toast = useToast()
 
-const industryOptions = computed(() => {
-  return industryStore.industries.map(i => ({ id: i.id.toString(), name: i.name }))
-})
+const industryOptions = computed(() => industryStore.industries.map((item) => ({ id: item.id.toString(), name: item.name })))
 
 onMounted(() => {
   if (industryStore.industries.length === 0) {
@@ -152,7 +138,7 @@ const companySizeOptions = [
   { id: '1-50', name: '1-50 nhân viên' },
   { id: '51-200', name: '51-200 nhân viên' },
   { id: '201-500', name: '201-500 nhân viên' },
-  { id: '500+', name: 'Trên 500 nhân viên' }
+  { id: '500+', name: 'Trên 500 nhân viên' },
 ]
 
 defineProps<{
@@ -174,25 +160,40 @@ const emit = defineEmits<{
   'update:foundedYear': [value: number | '']
   'update:coverUrl': [value: string]
   'update:logoUrl': [value: string]
+  'cover-file-change': [value: File | null]
+  'logo-file-change': [value: File | null]
 }>()
 
 const coverInput = ref<HTMLInputElement | null>(null)
-const logoInput  = ref<HTMLInputElement | null>(null)
+const logoInput = ref<HTMLInputElement | null>(null)
 
-function triggerCoverUpload() { coverInput.value?.click() }
-function triggerLogoUpload()  { logoInput.value?.click() }
-
-function onCoverChange(e: Event) {
-  const file = (e.target as HTMLInputElement).files?.[0]
-  if (!file) return
-  emit('update:coverUrl', URL.createObjectURL(file))
-  // TODO: upload lên server
+function triggerCoverUpload() {
+  coverInput.value?.click()
 }
 
-function onLogoChange(e: Event) {
-  const file = (e.target as HTMLInputElement).files?.[0]
+function triggerLogoUpload() {
+  logoInput.value?.click()
+}
+
+function onCoverChange(event: Event) {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
   if (!file) return
+
+  emit('update:coverUrl', URL.createObjectURL(file))
+  emit('cover-file-change', file)
+  input.value = ''
+  toast.success('Đã chọn ảnh bìa', 'Ảnh sẽ được lưu khi bạn bấm "Lưu thay đổi".')
+}
+
+function onLogoChange(event: Event) {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  if (!file) return
+
   emit('update:logoUrl', URL.createObjectURL(file))
-  // TODO: upload lên server
+  emit('logo-file-change', file)
+  input.value = ''
+  toast.success('Đã chọn logo', 'Ảnh sẽ được lưu khi bạn bấm "Lưu thay đổi".')
 }
 </script>

@@ -1,31 +1,46 @@
 <script setup lang="ts">
-const addons = [
-  {
-    name: 'Lọc hồ sơ nâng cao',
-    group: 'RECRUITMENT',
-    groupBg: '#b0efdb',
-    groupColor: '#095041',
-    used: 45,
-    total: 100,
-    expiresAt: '30/08/2025',
-    status: 'Hiệu lực',
-    statusClass: 'active',
-    orderCode: '#ORD-00210',
-  },
-  {
-    name: 'Gói 100 tin nhắn ứng viên',
-    group: 'MESSAGING',
-    groupBg: '#EEEDFE',
-    groupColor: '#3C3489',
-    used: 0,
-    total: 100,
-    expiresAt: 'Đã hết hạn',
-    expiredText: true,
-    status: 'Hết hạn',
-    statusClass: 'expired',
-    orderCode: '#ORD-00155',
-  },
-]
+import { computed } from 'vue'
+import { useAdminCompanyStore } from '@/stores/adminCompany.store'
+
+const store = useAdminCompanyStore()
+
+const addons = computed(() => {
+  const items = store.companyPlan?.currentAddons || []
+  return items.map(a => {
+    const expiredDate = new Date(a.expiredAt)
+    const isExpired = expiredDate.getTime() < new Date().getTime()
+
+    // Determine group based on serviceCategory
+    let group = a.serviceCategoryName || 'DỊCH VỤ'
+    let groupBg = '#e5e7eb'
+    let groupColor = '#374151'
+    if (a.serviceCategory === 'RECRUITMENT' || a.addonCode?.includes('CV')) {
+      groupBg = '#b0efdb'
+      groupColor = '#095041'
+    } else if (a.serviceCategory === 'MESSAGING' || a.addonCode?.includes('MSG')) {
+      groupBg = '#EEEDFE'
+      groupColor = '#3C3489'
+    } else if (a.serviceCategory === 'BRANDING' || a.addonCode?.includes('BANNER') || a.addonCode?.includes('URGENT')) {
+      groupBg = '#FAEEDA'
+      groupColor = '#633806'
+    }
+
+    return {
+      name: a.addonName,
+      group,
+      groupBg,
+      groupColor,
+      used: a.used,
+      total: a.total,
+      expiresAt: isExpired ? 'Đã hết hạn' : expiredDate.toLocaleDateString('vi-VN'),
+      expiredText: isExpired,
+      status: a.status === 'ACTIVE' && !isExpired ? 'Hiệu lực' : 'Hết hạn',
+      statusClass: a.status === 'ACTIVE' && !isExpired ? 'active' : 'expired',
+      orderCode: a.orderCode || '#N/A',
+      orderId: a.orderId
+    }
+  })
+})
 
 const percent = (u: number, t: number) => (t > 0 ? Math.round((u / t) * 100) : 0)
 </script>
@@ -50,6 +65,9 @@ const percent = (u: number, t: number) => (t > 0 ? Math.round((u / t) * 100) : 0
           </tr>
         </thead>
         <tbody>
+          <tr v-if="!addons.length">
+            <td colspan="6" class="text-center py-8 text-slate-500">Chưa mua dịch vụ lẻ nào</td>
+          </tr>
           <tr v-for="(a, i) in addons" :key="i">
             <td>
               <p class="addon-name">{{ a.name }}</p>
@@ -72,7 +90,16 @@ const percent = (u: number, t: number) => (t > 0 ? Math.round((u / t) * 100) : 0
               <span class="status-tag" :class="a.statusClass">{{ a.status }}</span>
             </td>
             <td class="text-right">
-              <a href="#" class="order-link">{{ a.orderCode }}</a>
+              <div class="addon-actions">
+                <router-link
+                  v-if="a.orderId"
+                  :to="{ name: 'admin-order-detail', params: { id: a.orderId } }"
+                  class="order-link"
+                >
+                  {{ a.orderCode }}
+                </router-link>
+                <span v-else class="text-sm font-medium text-slate-500">{{ a.orderCode }}</span>
+              </div>
             </td>
           </tr>
         </tbody>

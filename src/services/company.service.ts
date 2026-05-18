@@ -5,6 +5,9 @@ import type {
     ReqUpdateCompanyDTO,
     ReqAdminUpdateCompanyDTO,
     ResCompanyDTO,
+    ResAdminCompanyStatisticsDTO,
+    ResCompanyPlanDTO,
+    ResSubscriptionHistoryDTO,
     ResultPaginationDTO,
 } from '@/types/company.types'
 import type { ReqRegisterEmployerDTO } from '@/types/auth.types'
@@ -99,6 +102,40 @@ const adminCompanyService = {
      */
     async deleteCompany(id: number): Promise<void> {
         await axiosInstance.delete<RestResponse<null>>(`/admin/companies/${id}`)
+    },
+    
+    /**
+     * GET /admin/companies/{id}/statistics
+     * Lấy thống kê của 1 công ty.
+     */
+    async getCompanyStatistics(id: number): Promise<ResAdminCompanyStatisticsDTO> {
+        const res = await axiosInstance.get<RestResponse<ResAdminCompanyStatisticsDTO>>(
+            `/admin/companies/${id}/statistics`
+        )
+        return res.data.data
+    },
+
+    /**
+     * GET /admin/companies/{id}/plan
+     * Lấy thông tin gói dịch vụ hiện tại của công ty.
+     */
+    async getCompanyPlan(id: number): Promise<ResCompanyPlanDTO> {
+        const res = await axiosInstance.get<RestResponse<ResCompanyPlanDTO>>(
+            `/admin/companies/${id}/plan`
+        )
+        return res.data.data
+    },
+
+    /**
+     * GET /admin/companies/{id}/subscriptions
+     * Lấy lịch sử gia hạn gói dịch vụ của công ty.
+     */
+    async getSubscriptionHistory(id: number, params?: { page?: number; size?: number; sort?: string }): Promise<ResultPaginationDTO<ResSubscriptionHistoryDTO>> {
+        const res = await axiosInstance.get<RestResponse<ResultPaginationDTO<ResSubscriptionHistoryDTO>>>(
+            `/admin/companies/${id}/subscriptions`,
+            { params }
+        )
+        return res.data.data
     },
 }
 

@@ -7,6 +7,7 @@ import type {
   ResJobPostingDetail,
   ResJobPostingDetailPagination,
   EmployerJobPostingQueryParams,
+  ResEmployerJobStatisticsDTO,
 } from '@/types/jobPosting.types'
 
 const BASE_URL = '/employer/job-postings'
@@ -107,6 +108,17 @@ export const employerJobPostingService = {
    */
   async restoreJob(id: number | string): Promise<ResJobPostingDetail> {
     const res = await axiosInstance.patch<RestResponse<ResJobPostingDetail>>(`${BASE_URL}/${id}/restore`)
+    return res.data.data
+  },
+
+  /**
+   * GET /employer/company/job-statistics
+   * Lấy thống kê tin tuyển dụng.
+   */
+  async getJobStatistics(): Promise<ResEmployerJobStatisticsDTO> {
+    const res = await axiosInstance.get<RestResponse<ResEmployerJobStatisticsDTO>>(
+      '/employer/company/job-statistics'
+    )
     return res.data.data
   },
 }

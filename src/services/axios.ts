@@ -17,19 +17,34 @@ const PUBLIC_URLS = [
   '/auth/refresh',
   '/auth/forgot-password',
   '/auth/reset-password',
+  '/auth/logout',
 ]
 
-// REQUEST INTERCEPTOR - Gắn token vào header
-axiosInstance.interceptors.request.use((config) => {
-  const token = localStorage.getItem('accessToken')
+const isPublicRequest = (url?: string) => PUBLIC_URLS.some((publicUrl) => url?.includes(publicUrl))
 
-  // Chỉ gắn khi token thực sự hợp lệ, tránh gửi "Bearer undefined"
-  if (token && token !== 'undefined' && token !== 'null') {
-    config.headers.Authorization = `Bearer ${token}`
+const isValidStoredToken = (token: string | null): token is string =>
+  !!token && token !== 'undefined' && token !== 'null'
+
+const parseJwtExp = (token: string): number | null => {
+  try {
+    const payload = token.split('.')[1]
+    if (!payload) return null
+
+    const normalized = payload.replace(/-/g, '+').replace(/_/g, '/')
+    const decoded = atob(normalized.padEnd(normalized.length + ((4 - normalized.length % 4) % 4), '='))
+    const parsed = JSON.parse(decoded) as { exp?: number }
+
+    return typeof parsed.exp === 'number' ? parsed.exp : null
+  } catch {
+    return null
   }
+}
 
-  return config
-})
+const isTokenExpired = (token: string, skewSeconds = 30) => {
+  const exp = parseJwtExp(token)
+  if (!exp) return false
+  return exp * 1000 <= Date.now() + skewSeconds * 1000
+}
 
 // RESPONSE INTERCEPTOR - Tự động refresh khi 401
 let isRefreshing = false
@@ -43,6 +58,59 @@ const processQueue = (error: unknown, token: string | null = null) => {
   failedQueue = []
 }
 
+const refreshAccessToken = async () => {
+  if (isRefreshing) {
+    return new Promise<string>((resolve, reject) => {
+      failedQueue.push({ resolve, reject })
+    })
+  }
+
+  isRefreshing = true
+
+  try {
+    const authStore = useAuthStore()
+    await authStore.refreshToken()
+    const newToken = authStore.accessToken
+
+    if (!newToken) {
+      throw new Error('Refresh succeeded but no access token was returned.')
+    }
+
+    processQueue(null, newToken)
+    return newToken
+  } catch (refreshError) {
+    processQueue(refreshError, null)
+    throw refreshError
+  } finally {
+    isRefreshing = false
+  }
+}
+
+// REQUEST INTERCEPTOR - Gắn token vào header, refresh trước nếu token đã hết hạn
+axiosInstance.interceptors.request.use(async (config) => {
+  if (isPublicRequest(config.url)) {
+    return config
+  }
+
+  let token = localStorage.getItem('accessToken')
+
+  if (isValidStoredToken(token) && isTokenExpired(token)) {
+    try {
+      token = await refreshAccessToken()
+    } catch {
+      const authStore = useAuthStore()
+      await authStore.logout()
+      throw new axios.Cancel('Unable to refresh expired access token before request.')
+    }
+  }
+
+  if (isValidStoredToken(token)) {
+    config.headers.Authorization = `Bearer ${token}`
+  }
+
+  return config
+})
+
 axiosInstance.interceptors.response.use(
   (response) => response,
 
@@ -50,7 +118,7 @@ axiosInstance.interceptors.response.use(
     const originalRequest = error.config
 
     // Bỏ qua interceptor cho các public routes
-    if (PUBLIC_URLS.some((url) => originalRequest.url?.includes(url))) {
+    if (isPublicRequest(originalRequest.url)) {
       return Promise.reject(error)
     }
 
@@ -61,41 +129,22 @@ axiosInstance.interceptors.response.use(
 
     // Nếu không có accessToken thì user chưa đăng nhập → không cần refresh, bỏ qua
     const token = localStorage.getItem('accessToken')
-    if (!token || token === 'undefined' || token === 'null') {
+    if (!isValidStoredToken(token)) {
       return Promise.reject(error)
     }
 
-    // Đang refresh → đưa vào hàng đợi chờ token mới
-    if (isRefreshing) {
-      return new Promise((resolve, reject) => {
-        failedQueue.push({ resolve, reject })
-      }).then((token) => {
-        originalRequest.headers.Authorization = `Bearer ${token}`
-        return axiosInstance(originalRequest)
-      })
-    }
-
     originalRequest._retry = true
-    isRefreshing = true
 
     try {
-      const authStore = useAuthStore()
-      await authStore.refreshToken()
-      const newToken = authStore.accessToken!
-
+      const newToken = await refreshAccessToken()
       originalRequest.headers.Authorization = `Bearer ${newToken}`
-      processQueue(null, newToken)
-
       return axiosInstance(originalRequest)
     } catch (refreshError) {
-      processQueue(refreshError, null)
       const authStore = useAuthStore()
       await authStore.logout()
       // Sau khi refresh thất bại, về trang chủ (không force về login)
       router.push({ name: 'home' })
       return Promise.reject(refreshError)
-    } finally {
-      isRefreshing = false
     }
   }
 )

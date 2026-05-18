@@ -7,14 +7,23 @@ import type {
     ResultPaginationDTO,
     PaginationMeta,
     ReqCreateCompanyDTO,
+    ResAdminCompanyStatisticsDTO,
+    ResCompanyPlanDTO,
+    ResSubscriptionHistoryDTO,
 } from '@/types/company.types'
 import type { ReqRegisterEmployerDTO } from '@/types/auth.types'
+import type { ResOrderDTO } from '@/types/order.types'
+import { adminOrderService } from '@/services/order.service'
 
 export const useAdminCompanyStore = defineStore('adminCompany', () => {
     // ─── State ──────────────────────────────────────────────────────────────────
     const companies = ref<ResCompanyDTO[]>([])
-    const selectedCompany = ref<ResCompanyDTO | null>(null)
     const meta = ref<PaginationMeta>({ page: 0, pageSize: 10, pages: 0, totals: 0 })
+    const selectedCompany = ref<ResCompanyDTO | null>(null)
+    const companyStatistics = ref<ResAdminCompanyStatisticsDTO | null>(null)
+    const companyPlan = ref<ResCompanyPlanDTO | null>(null)
+    const companySubscriptions = ref<ResultPaginationDTO<ResSubscriptionHistoryDTO> | null>(null)
+    const companyOrders = ref<ResultPaginationDTO<ResOrderDTO> | null>(null)
     const loading = ref(false)
     const error = ref<string | null>(null)
 
@@ -176,6 +185,58 @@ export const useAdminCompanyStore = defineStore('adminCompany', () => {
         }
     }
 
+    /** GET /admin/companies/{id}/statistics */
+    async function fetchStatistics(id: number) {
+        loading.value = true
+        error.value = null
+        try {
+            companyStatistics.value = await adminCompanyService.getCompanyStatistics(id)
+        } catch (err) {
+            setError(err)
+        } finally {
+            loading.value = false
+        }
+    }
+
+    /** GET /admin/companies/{id}/plan */
+    async function fetchCompanyPlan(id: number) {
+        loading.value = true
+        error.value = null
+        try {
+            companyPlan.value = await adminCompanyService.getCompanyPlan(id)
+        } catch (err) {
+            setError(err)
+        } finally {
+            loading.value = false
+        }
+    }
+
+    /** GET /admin/companies/{id}/subscriptions */
+    async function fetchCompanySubscriptions(id: number, params?: { page?: number; size?: number }) {
+        loading.value = true
+        error.value = null
+        try {
+            companySubscriptions.value = await adminCompanyService.getSubscriptionHistory(id, params)
+        } catch (err) {
+            setError(err)
+        } finally {
+            loading.value = false
+        }
+    }
+
+    /** GET /admin/orders/company/{companyId} */
+    async function fetchCompanyOrders(companyId: number, params?: { page?: number; size?: number }) {
+        loading.value = true
+        error.value = null
+        try {
+            companyOrders.value = await adminOrderService.getOrdersByCompanyId(companyId, params)
+        } catch (err) {
+            setError(err)
+        } finally {
+            loading.value = false
+        }
+    }
+
     // ─── Private helpers ─────────────────────────────────────────────────────────
     function _updateInList(updated: ResCompanyDTO) {
         const idx = companies.value.findIndex(c => c.id === updated.id)
@@ -185,6 +246,10 @@ export const useAdminCompanyStore = defineStore('adminCompany', () => {
     function reset() {
         companies.value = []
         selectedCompany.value = null
+        companyStatistics.value = null
+        companyPlan.value = null
+        companySubscriptions.value = null
+        companyOrders.value = null
         meta.value = { page: 0, pageSize: 10, pages: 0, totals: 0 }
         loading.value = false
         error.value = null
@@ -193,6 +258,10 @@ export const useAdminCompanyStore = defineStore('adminCompany', () => {
     return {
         companies,
         selectedCompany,
+        companyStatistics,
+        companyPlan,
+        companySubscriptions,
+        companyOrders,
         meta,
         loading,
         error,
@@ -204,6 +273,10 @@ export const useAdminCompanyStore = defineStore('adminCompany', () => {
         unsuspendCompany,
         adminUpdateCompany,
         deleteCompany,
+        fetchStatistics,
+        fetchCompanyPlan,
+        fetchCompanySubscriptions,
+        fetchCompanyOrders,
         reset,
     }
 })

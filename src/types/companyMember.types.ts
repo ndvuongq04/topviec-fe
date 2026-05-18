@@ -83,3 +83,18 @@ export interface ResMemberPermissionDetail {
     customPermissions: Record<string, boolean>;
     effectivePermissions: ActionItem[];
 }
+
+/** GET /employer/member/statistics */
+export interface ResEmployerMemberStatisticsDTO {
+    /** Tổng số thành viên trong công ty */
+    totalMembers: number
+
+    /** Tổng số thành viên đang hoạt động (active) */
+    activeMembers: number
+
+    /** Tổng số thành viên chờ xác nhận (pending) */
+    pendingMembers: number
+
+    /** Tổng số thành viên đang bị khóa (deactivated) */
+    lockedMembers: number
+}

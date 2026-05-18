@@ -7,6 +7,7 @@
       </div>
       <!-- Trend badge -->
       <span
+        v-if="trend !== undefined"
         class="text-sm font-bold flex items-center px-2 py-1 rounded-lg"
         :class="trend >= 0
           ? 'text-green-500 bg-green-50 dark:bg-green-900/20'
@@ -30,7 +31,7 @@ const props = withDefaults(defineProps<{
   icon: string
   label: string
   value: number | string
-  trend: number
+  trend?: number
   iconBgClass?: string
   iconColorClass?: string
 }>(), {

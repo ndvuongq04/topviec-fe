@@ -70,44 +70,53 @@ async function handleCheckout() {
     }
 
     // Cast string to enum
-    const paymentMethodEnum = props.paymentMethod as PaymentMethod
+    const paymentMethodEnum = props.paymentMethod.toUpperCase() as PaymentMethod
 
     if (context.type === OrderType.SUBSCRIPTION) {
-      // Tạo đơn hàng subscription
+      // Tạo đơn hàng subscription (single item – dùng legacy fields)
       if (!context.packageId || !context.billingCycle) {
         toast.error('Lỗi', 'Thông tin gói không hợp lệ')
         return
       }
       
-      await store.createOrder({
+      const order = await store.createOrder({
         type: OrderType.SUBSCRIPTION,
         packageId: context.packageId,
         quantity: 1,
         paymentMethod: paymentMethodEnum,
+        payNow: true,
       })
-    } else {
-      // Tạo các đơn hàng addon
-      const results = await Promise.allSettled(
-        store.cartItems.map(item =>
-          store.createOrder({
-            type: OrderType.ADDON,
-            packageId: item.addonServiceId,
-            quantity: item.qty,
-            paymentMethod: paymentMethodEnum,
-          })
-        )
-      )
 
-      // Kiểm tra kết quả
-      const failed = results.filter(r => r.status === 'rejected')
-      if (failed.length > 0) {
-        toast.warning('Cảnh báo', `${failed.length} đơn hàng không thể được xử lý`)
+      if (order.paymentUrl) {
+        window.location.href = order.paymentUrl
+        return
+      }
+    } else {
+      // Tạo 1 đơn hàng addon chứa tất cả dịch vụ lẻ trong giỏ hàng
+      if (!store.cartItems.length) {
+        toast.error('Lỗi', 'Giỏ hàng trống')
+        return
+      }
+
+      const order = await store.createOrder({
+        type: OrderType.ADDON,
+        items: store.cartItems.map(item => ({
+          packageId: item.addonServiceId,
+          quantity: item.qty,
+        })),
+        paymentMethod: paymentMethodEnum,
+        payNow: true,
+      })
+
+      if (order.paymentUrl) {
+        window.location.href = order.paymentUrl
+        return
       }
     }
 
-    // Clear cart và hiển thị thành công
+    // Clear cart và hiển thị thành công (nếu không redirect)
     store.clearCart()
-    toast.success('Thành công', 'Thanh toán đã hoàn tất')
+    toast.success('Thành công', 'Đơn hàng đã được tạo')
     
     // Điều hướng đến trang xác nhận
     router.push('/recruiter/checkout/confirmation')

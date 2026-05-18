@@ -64,8 +64,10 @@ onMounted(async () => {
 const headerLocation = computed(() => {
   const locs = job.value?.locations ?? []
   if (!locs.length) return ''
-  if (locs[0].isRemote) return 'Remote'
-  return locs[0].addressDetail ?? ''
+  const first = locs[0]
+  if (first.isRemote) return 'Remote'
+  const namePart = first.name ? `${first.name}: ` : ''
+  return namePart + (first.addressDetail ?? '')
 })
 
 // ── Stats cards ──────────────────────────────────────────

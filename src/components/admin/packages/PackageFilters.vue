@@ -6,7 +6,7 @@
       <button
         v-for="tab in tabs"
         :key="tab.value"
-        class="px-6 py-4 text-sm font-medium transition-colors whitespace-nowrap"
+        class="px-6 py-4 text-sm font-medium transition-colors whitespace-nowrap cursor-pointer"
         :class="activeTab === tab.value
           ? 'font-bold border-b-2 border-[#963131] text-[#963131] bg-[#963131]/5'
           : 'text-slate-500 hover:text-[#963131]'"

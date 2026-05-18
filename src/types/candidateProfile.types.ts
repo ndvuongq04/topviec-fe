@@ -16,6 +16,7 @@ export interface ReqCreateCandidateProfileDTO {
     expectedSalaryMax?: number | null
     salaryNegotiable?: boolean
     jobSeekingStatus?: JobSeekingStatus
+    preferredJobTitle?: string | null
     preferredWorkType?: PreferredWorkType | null
     preferredLocationId?: number | null
     isCvPublic?: boolean
@@ -39,6 +40,7 @@ export interface ReqUpdateCandidateProfileDTO {
     expectedSalaryMax?: number | null
     salaryNegotiable?: boolean | null
     jobSeekingStatus?: JobSeekingStatus | null
+    preferredJobTitle?: string | null
     preferredWorkType?: PreferredWorkType | null
     preferredLocationId?: number | null
     cvPublic?: boolean | null
@@ -73,6 +75,7 @@ export interface ResCandidateProfileDTO {
     expectedSalaryMax: number | null    // BE: Double
     salaryNegotiable: boolean
     jobSeekingStatus: JobSeekingStatus
+    preferredJobTitle: string | null
     preferredWorkType: PreferredWorkType | null
     preferredLocationId: number | null  // BE: Integer
     profileCompletionPct: number | null // BE tính sẵn, dùng trực tiếp

@@ -1,13 +1,14 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { serviceCatalogService } from '@/services/serviceCatalog.service'
-import type { ResServiceDTO, AdminServiceQueryParams } from '@/types/serviceCatalog.types'
+import type { ResServiceDTO, AdminServiceQueryParams, ResAdminServiceStatisticsDTO } from '@/types/serviceCatalog.types'
 import type { PaginationMeta } from '@/types/common.types'
 
 export const useServiceCatalogStore = defineStore('serviceCatalog', () => {
     const services = ref<ResServiceDTO[]>([])
     const meta = ref<PaginationMeta | null>(null)
     const currentService = ref<ResServiceDTO | null>(null)
+    const serviceStatistics = ref<ResAdminServiceStatisticsDTO | null>(null)
     const loading = ref(false)
     const error = ref<string | null>(null)
 
@@ -76,6 +77,19 @@ export const useServiceCatalogStore = defineStore('serviceCatalog', () => {
         }
     }
 
+    async function fetchStatistics() {
+        loading.value = true
+        error.value = null
+        try {
+            serviceStatistics.value = await serviceCatalogService.getStatistics()
+        } catch (err: any) {
+            error.value = err.response?.data?.message || 'Không thể tải thống kê dịch vụ'
+            throw err
+        } finally {
+            loading.value = false
+        }
+    }
+
     return {
         services,
         meta,
@@ -85,6 +99,8 @@ export const useServiceCatalogStore = defineStore('serviceCatalog', () => {
         fetchServices,
         fetchServiceById,
         createService,
-        updateService
+        updateService,
+        fetchStatistics,
+        serviceStatistics
     }
 })
