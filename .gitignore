@@ -29,3 +29,10 @@ dist-ssr
 .env.development
 .env.production
 .env.staging
+
+# LLM Skills Guide (Do not sync with Git)
+skill-font.md
+skill-Progressive_Disclosure.md
+skill-dropdown.md
+skill-Pagination.md
+skill-designer.md

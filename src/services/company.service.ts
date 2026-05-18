@@ -106,6 +106,28 @@ const adminCompanyService = {
 
 const publicCompanyService = {
     /**
+     * GET /companies
+     * Lấy danh sách công ty công khai (có hỗ trợ filter keyword, provinceId, industryId).
+     */
+    async getPublicCompanies(params?: {
+        keyword?: string
+        provinceId?: number
+        industryId?: number
+        isBanner?: boolean
+        isTopEmployer?: boolean
+        isBrandVerified?: boolean
+        page?: number
+        size?: number
+        sort?: string
+    }): Promise<ResultPaginationDTO<ResCompanyDTO>> {
+        const res = await axiosInstance.get<RestResponse<ResultPaginationDTO<ResCompanyDTO>>>(
+            '/companies',
+            { params }
+        )
+        return res.data.data
+    },
+
+    /**
      * GET /companies/{slug}
      * Lấy thông tin công ty theo slug (không cần đăng nhập).
      */

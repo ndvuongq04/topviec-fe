@@ -1,46 +1,32 @@
 <template>
   <section class="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800">
     <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-800">
-      <h3 class="font-bold text-lg">Giới thiệu & Văn hóa công ty</h3>
+      <h3 class="font-bold text-[1.125rem]">Giới thiệu & Văn hóa công ty</h3>
     </div>
     <div class="p-6 space-y-6">
 
       <!-- Mô tả -->
       <div class="space-y-2">
         <label class="text-sm font-semibold text-slate-700 dark:text-slate-300">Giới thiệu công ty</label>
-        <textarea
-          :value="description"
-          rows="4"
-          class="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-transparent focus:ring-2 focus:ring-primary focus:border-transparent outline-none text-sm resize-none leading-relaxed trans-all"
-          :class="{ '!border-red-500 !ring-red-500/20': errors?.description }"
+        <TipTapEditor
+          :model-value="description"
           placeholder="Mô tả sứ mệnh, lịch sử và tổng quan công ty..."
-          maxlength="2000"
-          @input="$emit('update:description', ($event.target as HTMLTextAreaElement).value)"
-        ></textarea>
-        <div class="flex justify-between items-center mt-1">
-          <p v-if="errors?.description" class="text-[11px] text-red-500">{{ errors.description }}</p>
-          <div v-else></div>
-          <span class="text-xs text-slate-400">{{ description.length }} / 2000 ký tự</span>
-        </div>
+          :has-error="!!errors?.description"
+          @update:model-value="$emit('update:description', $event)"
+        />
+        <p v-if="errors?.description" class="text-xs text-red-500 mt-1">{{ errors.description }}</p>
       </div>
 
       <!-- Văn hóa -->
       <div class="space-y-2">
         <label class="text-sm font-semibold text-slate-700 dark:text-slate-300">Văn hóa & Môi trường làm việc</label>
-        <textarea
-          :value="culture"
-          rows="4"
-          class="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-transparent focus:ring-2 focus:ring-primary focus:border-transparent outline-none text-sm resize-none leading-relaxed trans-all"
-          :class="{ '!border-red-500 !ring-red-500/20': errors?.culture }"
+        <TipTapEditor
+          :model-value="culture"
           placeholder="Chia sẻ về văn hóa làm việc, môi trường và con người tại công ty..."
-          maxlength="2000"
-          @input="$emit('update:culture', ($event.target as HTMLTextAreaElement).value)"
-        ></textarea>
-        <div class="flex justify-between items-center mt-1">
-          <p v-if="errors?.culture" class="text-[11px] text-red-500">{{ errors.culture }}</p>
-          <div v-else></div>
-          <span class="text-xs text-slate-400">{{ culture?.length || 0 }} / 2000 ký tự</span>
-        </div>
+          :has-error="!!errors?.culture"
+          @update:model-value="$emit('update:culture', $event)"
+        />
+        <p v-if="errors?.culture" class="text-xs text-red-500 mt-1">{{ errors.culture }}</p>
       </div>
 
       <!-- Phúc lợi -->
@@ -54,7 +40,7 @@
           >
             {{ benefit }}
             <button
-              class="material-symbols-outlined text-sm leading-none hover:text-red-500 transition-colors"
+              class="material-symbols-outlined text-sm leading-none hover:text-red-500 transition-colors cursor-pointer"
               @click="removeBenefit(benefit)"
             >close</button>
           </span>
@@ -62,7 +48,7 @@
           <!-- Thêm phúc lợi -->
           <template v-if="!showInput">
             <button
-              class="px-3 py-1 border border-dashed border-primary text-primary rounded-full text-xs font-bold flex items-center gap-1 hover:bg-primary/5 transition-colors"
+              class="px-3 py-1 border border-dashed border-primary text-primary rounded-full text-xs font-bold flex items-center gap-1 hover:bg-primary/5 transition-colors cursor-pointer"
               @click="showInput = true"
             >
               <span class="material-symbols-outlined text-sm">add</span>
@@ -81,10 +67,10 @@
                 @keydown.enter="addBenefit"
                 @keydown.esc="cancelAdd"
               />
-              <button class="text-primary hover:text-primary/80" @click="addBenefit">
+              <button class="text-primary hover:text-primary/80 cursor-pointer" @click="addBenefit">
                 <span class="material-symbols-outlined text-sm">check</span>
               </button>
-              <button class="text-slate-400 hover:text-slate-600" @click="cancelAdd">
+              <button class="text-slate-400 hover:text-slate-600 cursor-pointer" @click="cancelAdd">
                 <span class="material-symbols-outlined text-sm">close</span>
               </button>
             </div>
@@ -98,6 +84,7 @@
 
 <script setup lang="ts">
 import { ref, nextTick } from 'vue'
+import TipTapEditor from '@/components/common/TipTapEditor.vue'
 
 const props = defineProps<{
   description: string

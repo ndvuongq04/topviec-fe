@@ -1,259 +1,150 @@
 <template>
-  <div v-if="loading" class="pt-20 flex justify-center">
-    <span class="material-symbols-outlined animate-spin text-4xl text-primary">autorenew</span>
-  </div>
-  <div v-else-if="job" class="pt-6">
-    <!-- Breadcrumbs -->
-    <nav class="flex items-center gap-2 text-xs text-slate-500 mb-6">
-      <router-link to="/recruiter/jobs" class="hover:text-primary cursor-pointer transition-colors">
-        Quản lý tin tuyển dụng
-      </router-link>
-      <span class="material-symbols-outlined text-[10px]">chevron_right</span>
-      <span class="text-slate-900 dark:text-slate-100 font-medium">Chi tiết tin</span>
-    </nav>
+  <div class="page-wrapper">
+    <div class="page-inner">
 
-    <!-- Header -->
-    <JobDetailHeader
-      :title="job.title"
-      :location="locationString"
-      :status="job.status"
-      :is-featured="job.isFeatured"
-      :is-urgent="job.isUrgent"
-      @edit="onEdit"
-      @pause="onPause"
-      @resume="onResume"
-      @close="onClose"
-    />
+      <template v-if="job">
+        <JobDetailHeader :title="job.title" :location="headerLocation" :status="String(job.status)" />
+        <JobDetailStats  :stats="statCards" />
+        <div class="body-grid">
+          <div class="col-main">
+            <JobDetailContent
+              :description="job.description"
+              :requirements="job.requirements"
+              :benefits-html="job.benefits"
+            />
+          </div>
+          <div class="col-side">
+            <JobDetailSideInfo
+              :info-items="infoItems"
+              :timeline="timeline"
+              :conversion-percent="conversionPercent"
+            />
+          </div>
+        </div>
 
-    <!-- Stats -->
-    <JobDetailStats :stats="stats" />
+        <!-- Footer: Dịch vụ áp dụng cho tin -->
+        <JobServicePanel :job-posting-id="Number(route.params.id)" />
+      </template>
 
-    <!-- Content: 2/3 + 1/3 Grid -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-      <JobDetailDescription
-        :description="job.description"
-        :description-list="[]"
-        :requirements="requirementsList"
-        :benefits="benefitsList"
-        :skills="skillsList"
-      />
-      <JobDetailSidebar
-        :general-info="generalInfo"
-        :timeline="timeline"
-        :conversion-rate="'--'"
-        :progress-width="'0%'"
-        :conversion-note="'Chưa có thống kê ứng viên cho tin này.'"
-      />
+      <!-- Loading skeleton -->
+      <div v-else-if="isLoading" class="loading">Đang tải...</div>
+
+      <!-- Error -->
+      <div v-else class="loading">Không tìm thấy tin tuyển dụng.</div>
+
     </div>
-  </div>
-  <div v-else class="pt-20 text-center text-slate-500">
-    <p>Không tìm thấy tin tuyển dụng.</p>
-    <button @click="$router.push('/recruiter/jobs')" class="mt-4 text-primary hover:underline">Quay lại danh sách</button>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import { useToast } from '@/composables/useToast'
-import { useConfirm } from '@/composables/useConfirm'
-import { useEmployerJobPostingStore } from '@/stores/employerJobPosting.store'
-import { employerJobPostingService } from '@/services/jobPosting.service'
+import { useRoute } from 'vue-router'
+import { publicJobPostingService } from '@/services/jobPosting.service'
 import type { ResJobPostingDetail } from '@/types/jobPosting.types'
+import { WORK_TYPE_LABELS } from '@/constants/jobPosting.constants'
+import JobDetailHeader   from '@/components/recruiter/jobs/JobDetailHeader.vue'
+import JobDetailStats    from '@/components/recruiter/jobs/JobDetailStats.vue'
+import JobDetailContent  from '@/components/recruiter/jobs/JobDetailContent.vue'
+import JobDetailSideInfo from '@/components/recruiter/jobs/JobDetailSideInfo.vue'
+import JobServicePanel   from '@/components/recruiter/jobs/JobServicePanel.vue'
 
-import JobDetailHeader from '@/components/recruiter/jobs/JobDetailHeader.vue'
-import JobDetailStats from '@/components/recruiter/jobs/JobDetailStats.vue'
-import JobDetailDescription from '@/components/recruiter/jobs/JobDetailDescription.vue'
-import JobDetailSidebar from '@/components/recruiter/jobs/JobDetailSidebar.vue'
-import type { JobStat } from '@/components/recruiter/jobs/JobDetailStats.vue'
-import type { BenefitItem } from '@/components/recruiter/jobs/JobDetailDescription.vue'
-import type { GeneralInfoItem, TimelineEvent } from '@/components/recruiter/jobs/JobDetailSidebar.vue'
+const route     = useRoute()
+const job       = ref<ResJobPostingDetail | null>(null)
+const isLoading = ref(true)
 
-const route = useRoute()
-const router = useRouter()
-const toast = useToast()
-const { confirm } = useConfirm()
-const jobStore = useEmployerJobPostingStore()
-const jobId = route.params.id as string
-
-const job = ref<ResJobPostingDetail | null>(null)
-const loading = ref(true)
-
-async function fetchJob() {
+onMounted(async () => {
   try {
-    loading.value = true
-    job.value = await employerJobPostingService.getById(jobId)
-  } catch (error: any) {
-    toast.error('Lỗi', 'Không thể tải thông tin tin tuyển dụng')
+    job.value = await publicJobPostingService.getById(Number(route.params.id))
   } finally {
-    loading.value = false
+    isLoading.value = false
   }
-}
-
-onMounted(() => {
-  fetchJob()
 })
 
-const provinceMap: Record<number, string> = {
-  1: 'Hà Nội',
-  2: 'TP. Hồ Chí Minh',
-  3: 'Đà Nẵng',
-  4: 'Hải Phòng',
-  5: 'Cần Thơ',
-  6: 'Bình Dương',
-  7: 'Đồng Nai'
-}
-
-const locationString = computed(() => {
-  if (!job.value?.locations?.length) return 'Chưa cập nhật'
-  return job.value.locations.map(l => {
-    let str = ''
-    if (l.addressDetail) str += l.addressDetail + ', '
-    str += l.provinceName || provinceMap[l.provinceId] || `Tỉnh ID: ${l.provinceId}`
-    return str
-  }).join(' • ')
+// ── Header ───────────────────────────────────────────────
+const headerLocation = computed(() => {
+  const locs = job.value?.locations ?? []
+  if (!locs.length) return ''
+  if (locs[0].isRemote) return 'Remote'
+  return locs[0].addressDetail ?? ''
 })
 
-const requirementsList = computed(() => {
-  if (!job.value?.requirements) return []
-  return job.value.requirements.split('\n').filter(r => r.trim() !== '')
-})
-
-const benefitsList = computed<BenefitItem[]>(() => {
-  if (!job.value?.benefits) return []
-  const lines = job.value.benefits.split('\n').filter(b => b.trim() !== '')
-  return lines.map(line => ({
-    icon: 'check_circle',
-    text: line.replace(/^- /, '')
-  }))
-})
-
-const skillsList = computed(() => {
-  if (!job.value?.skills) return []
-  return job.value.skills.map(s => s.skillName || `Kỹ năng - ID ${s.skillId}`)
-})
-
-const stats = computed<JobStat[]>(() => {
-  if (!job.value) return []
-  // Calculate remaining days
-  const now = new Date()
-  const deadline = new Date(job.value.deadline)
-  const diffTime = Math.max(0, deadline.getTime() - now.getTime())
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-
+// ── Stats cards ──────────────────────────────────────────
+const statCards = computed(() => {
+  const j = job.value!
+  const deadline = j.deadline ? new Date(j.deadline) : null
+  const daysLeft = deadline
+    ? Math.max(0, Math.ceil((deadline.getTime() - Date.now()) / 86_400_000))
+    : 0
   return [
-    { icon: 'visibility', label: 'Lượt xem', value: job.value.viewCount?.toLocaleString('vi-VN') || '0', bgClass: 'bg-blue-50 dark:bg-blue-900/20', iconClass: 'text-blue-600 dark:text-blue-400' },
-    { icon: 'groups', label: 'Ứng viên', value: '0', bgClass: 'bg-orange-50 dark:bg-orange-900/20', iconClass: 'text-orange-600 dark:text-orange-400' },
-    { icon: 'history_edu', label: 'Lần chỉnh sửa', value: `${job.value.editCount || 0}`, bgClass: 'bg-purple-50 dark:bg-purple-900/20', iconClass: 'text-purple-600 dark:text-purple-400' },
-    { icon: 'schedule', label: 'Ngày còn lại', value: diffDays > 0 ? `${diffDays} ngày` : 'Đã hết hạn', bgClass: 'bg-red-50 dark:bg-red-900/20', iconClass: 'text-red-600 dark:text-red-400' },
+    { label: 'Lượt xem',     value: String(j.viewCount ?? 0),         icon: 'visibility',  iconBg: '#eff6ff', iconColor: '#2563eb' },
+    { label: 'Ứng viên',     value: String(j.applicationCount ?? 0),  icon: 'groups',      iconBg: '#fff7ed', iconColor: '#ea580c' },
+    { label: 'Số lần sửa',   value: `${j.editCount ?? 0}/1`,          icon: 'history_edu', iconBg: '#f5f3ff', iconColor: '#7c3aed' },
+    { label: 'Ngày còn lại', value: `${daysLeft} ngày`,               icon: 'schedule',    iconBg: '#fef2f2', iconColor: '#dc2626' },
   ]
 })
 
-const generalInfo = computed<GeneralInfoItem[]>(() => {
-  if (!job.value) return []
-  
-  const industryMap: Record<number, string> = {
-    1: 'Công nghệ thông tin',
-    2: 'Marketing',
-    3: 'Tài chính - Ngân hàng',
-    4: 'Thiết kế - Đồ họa',
-    5: 'Kinh doanh - Bán hàng',
-    6: 'Nhân sự'
-  }
-  
-  const levelMap: Record<number, string> = {
-    1: 'Nhân viên',
-    2: 'Trưởng nhóm / Senior',
-    3: 'Quản lý / Manager',
-    4: 'Giám đốc / Executive'
-  }
-  
-  const industryName = industryMap[job.value.industryId] || `Ngành ID: ${job.value.industryId}`
-  const levelName = levelMap[job.value.levelId] || `Cấp bậc ID: ${job.value.levelId}`
+// ── Side info ────────────────────────────────────────────
+const infoItems = computed(() => {
+  const j = job.value!
+  const salary = j.salaryNegotiable || (!j.salaryMin && !j.salaryMax)
+    ? 'Thỏa thuận'
+    : `${((j.salaryMin ?? 0) / 1_000_000).toFixed(0)} – ${((j.salaryMax ?? 0) / 1_000_000).toFixed(0)} triệu`
 
-  const expStr = job.value.experienceYearsMax 
-    ? `${job.value.experienceYearsMin} - ${job.value.experienceYearsMax} năm` 
-    : `${job.value.experienceYearsMin} năm trở lên`
-
-  const formatCurrency = (val: number) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(val)
-  let salaryStr = 'Thỏa thuận'
-  if (!job.value.salaryNegotiable && (job.value.salaryMin || job.value.salaryMax)) {
-    if (job.value.salaryMin && job.value.salaryMax) {
-      salaryStr = `${formatCurrency(job.value.salaryMin)} - ${formatCurrency(job.value.salaryMax)}`
-    } else if (job.value.salaryMin) {
-      salaryStr = `Từ ${formatCurrency(job.value.salaryMin)}`
-    } else {
-      salaryStr = `Đến ${formatCurrency(job.value.salaryMax as number)}`
-    }
-  }
+  const exp = j.experienceYearsMax
+    ? `${j.experienceYearsMin} – ${j.experienceYearsMax} năm`
+    : `${j.experienceYearsMin} năm trở lên`
 
   return [
-    { icon: 'category', label: 'Ngành nghề', value: industryName }, 
-    { icon: 'military_tech', label: 'Cấp bậc', value: levelName },
-    { icon: 'history', label: 'Kinh nghiệm', value: expStr },
-    { icon: 'monetization_on', label: 'Mức lương', value: salaryStr, valueClass: 'text-primary font-bold' },
-    { icon: 'work', label: 'Hình thức', value: job.value.workType },
-    { icon: 'person_add', label: 'Số lượng', value: `${job.value.headcount} người` },
+    { label: 'Ngành nghề',  value: j.industry?.name ?? '',                               icon: 'category' },
+    { label: 'Cấp độ',      value: j.level?.name ?? '',                                  icon: 'bar_chart' },
+    { label: 'Kinh nghiệm', value: exp,                                                   icon: 'history' },
+    { label: 'Mức lương',   value: salary,                                                icon: 'monetization_on', highlight: true },
+    { label: 'Hình thức',   value: WORK_TYPE_LABELS[j.workType as keyof typeof WORK_TYPE_LABELS] ?? j.workType,    icon: 'work' },
+    { label: 'Số lượng',    value: `${j.headcount} người`,                               icon: 'person_add' },
   ]
 })
 
-const timeline = computed<TimelineEvent[]>(() => {
-  if (!job.value) return []
-  const formatDate = (dateStr: string) => {
-    if (!dateStr) return '--'
-    const d = new Date(dateStr)
-    return d.toLocaleDateString('vi-VN') + ' ' + d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })
-  }
-  const onlyDate = (dateStr: string) => {
-    if (!dateStr) return '--'
-    return new Date(dateStr).toLocaleDateString('vi-VN')
-  }
-
-  return [
-    { label: 'Ngày tạo', value: formatDate(job.value.createdAt) },
-    { label: 'Ngày đăng', value: formatDate(job.value.publishedAt || job.value.createdAt) },
-    { label: 'Hạn cuối', value: onlyDate(job.value.deadline), dotClass: 'bg-red-500', valueClass: 'font-bold text-red-500' },
-  ]
+const timeline = computed(() => {
+  const j = job.value!
+  const fmt = (d: string) => new Date(d).toLocaleDateString('vi-VN')
+  const events = []
+  if (j.createdAt)   events.push({ label: 'Ngày tạo',  date: fmt(j.createdAt) })
+  if (j.publishedAt) events.push({ label: 'Ngày đăng', date: fmt(j.publishedAt) })
+  if (j.deadline)    events.push({ label: 'Hạn cuối',  date: fmt(j.deadline), isDeadline: true })
+  return events
 })
 
-function onEdit() {
-  router.push(`/recruiter/jobs/${jobId}/edit`)
-}
-async function onPause() {
-  try {
-    await jobStore.pauseJob(jobId)
-    toast.success('Thành công', 'Đã tạm dừng tin tuyển dụng')
-    fetchJob()
-  } catch (error: any) {
-    toast.error('Lỗi', jobStore.error || 'Không thể tạm dừng tin')
-  }
-}
-async function onResume() {
-  try {
-    await jobStore.resumeJob(jobId)
-    toast.success('Thành công', 'Đã mở lại tin tuyển dụng')
-    fetchJob()
-  } catch (error: any) {
-    toast.error('Lỗi', jobStore.error || 'Không thể mở lại tin')
-  }
-}
-async function onClose() {
-  const isConfirmed = await confirm({
-    title: 'Xác nhận đóng tin',
-    message: `Bạn có chắc chắn muốn đóng tin "${job.value?.title}" không? Tác vụ này không thể hoàn tác.`,
-    confirmText: 'Đóng tin',
-    cancelText: 'Hủy bỏ',
-    confirmColor: 'red',
-    icon: 'warning'
-  })
-  if (!isConfirmed) return
-  
-  try {
-    await jobStore.closeJob(jobId)
-    toast.success('Thành công', 'Đã đóng tin tuyển dụng')
-    fetchJob()
-  } catch (error: any) {
-    toast.error('Lỗi', jobStore.error || 'Không thể đóng tin')
-  }
-}
+const conversionPercent = computed(() => {
+  const j = job.value!
+  if (!j.headcount || !j.applicationCount) return 0
+  return Math.min(100, Math.round((j.applicationCount / (j.headcount * 30)) * 100))
+})
 </script>
+
+<style scoped>
+.page-wrapper {
+  /* Bỏ padding hoàn toàn vì RecruiterLayout parent đã có px-8 pb-8 */
+  width: 100%;
+}
+
+.page-inner {
+  width: 100%;
+  /* Bỏ max-width để full màn hình tĩnh 100% giống JobPostingsPage */
+}
+
+/* Two-col body */
+.body-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2rem;
+  margin-top: 2rem;
+}
+@media (min-width: 1024px) {
+  .body-grid {
+    grid-template-columns: 2fr 1fr;
+  }
+}
+
+.col-main { min-width: 0; }
+.col-side  { min-width: 0; }
+</style>

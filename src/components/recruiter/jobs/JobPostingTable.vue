@@ -1,124 +1,36 @@
 <template>
-  <div class="bg-white dark:bg-slate-900 rounded-xl border border-primary/10 shadow-sm overflow-hidden">
-    <table class="w-full text-left border-collapse">
+  <div class="table-wrapper">
+    <table class="job-table">
       <thead>
-        <tr class="bg-slate-50 dark:bg-slate-800/50 border-b border-primary/10">
-          <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Vị trí tuyển dụng</th>
-          <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Trạng thái</th>
-          <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Lượt xem</th>
-          <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Ứng tuyển</th>
-          <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Ngày hết hạn</th>
-          <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Thao tác</th>
+        <tr>
+          <th class="col-left">Thông tin tin tuyển dụng</th>
+          <th class="col-left">Trạng thái</th>
+          <th class="col-center">Hiệu suất</th>
+          <th class="col-left">Hạn nộp</th>
+          <th class="col-right">Thao tác</th>
         </tr>
       </thead>
-      <tbody class="divide-y divide-primary/5">
-        <tr
+      <tbody>
+        <JobPostingTableRow
           v-for="job in jobs"
           :key="job.id"
-          class="hover:bg-slate-50/80 dark:hover:bg-slate-800/30 transition-colors"
-          :class="job.status?.toLowerCase() === 'expired' ? 'bg-slate-50/30 dark:bg-slate-800/10' : ''"
-        >
-          <!-- Vị trí -->
-          <td class="px-6 py-5">
-            <div class="flex flex-col">
-              <span
-                class="font-bold"
-                :class="job.status?.toLowerCase() === 'expired'
-                  ? 'text-slate-400 dark:text-slate-500 line-through'
-                  : 'text-slate-800 dark:text-slate-200'"
-              >
-                {{ job.title }}
-              </span>
-              <span class="text-xs text-slate-500">ID: TV-{{ job.id }} • {{ job.workType }}</span>
-            </div>
-          </td>
-
-          <!-- Trạng thái -->
-          <td class="px-6 py-5">
-            <span
-              class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold"
-              :class="statusClass(job.status)"
-            >
-              {{ statusLabel(job.status) }}
-            </span>
-          </td>
-
-          <!-- Lượt xem -->
-          <td class="px-6 py-5 text-sm text-slate-600 dark:text-slate-400">
-            {{ job.viewCount ? job.viewCount.toLocaleString('vi-VN') : '0' }}
-          </td>
-
-          <!-- Ứng tuyển -->
-          <td class="px-6 py-5">
-            <div class="flex items-center gap-1">
-              <span class="font-bold text-primary">0</span> <!-- Backend missing applications count yet -->
-              <span class="text-xs text-slate-400">ứng viên</span>
-            </div>
-          </td>
-
-          <!-- Ngày hết hạn -->
-          <td class="px-6 py-5 text-sm text-slate-600 dark:text-slate-400">
-            {{ job.deadline ? new Date(job.deadline).toLocaleDateString('vi-VN') : 'N/A' }}
-          </td>
-
-          <!-- Thao tác -->
-          <td class="px-6 py-5 text-right">
-            <div class="flex items-center justify-end gap-2">
-              
-              <button
-                v-if="['expired', 'closed'].includes(job.status?.toLowerCase())"
-                class="p-2 hover:bg-primary/10 rounded-lg text-primary transition-colors"
-                title="Gia hạn/Đăng lại"
-                @click="$emit('extend', job)"
-              >
-                <span class="material-symbols-outlined text-xl">update</span>
-              </button>
-
-              <button
-                v-if="isEditable(job.status)"
-                class="p-2 hover:bg-primary/10 rounded-lg text-primary transition-colors"
-                title="Chỉnh sửa"
-                @click="$emit('edit', job)"
-              >
-                <span class="material-symbols-outlined text-xl">edit</span>
-              </button>
-
-              <button
-                v-if="job.status?.toLowerCase() === 'published'"
-                class="p-2 hover:bg-orange-100 dark:hover:bg-orange-900/30 rounded-lg text-orange-600 transition-colors"
-                title="Tạm dừng"
-                @click="$emit('pause', job)"
-              >
-                <span class="material-symbols-outlined text-xl">pause_circle</span>
-              </button>
-
-              <button
-                v-if="job.status?.toLowerCase() === 'paused'"
-                class="p-2 hover:bg-green-100 dark:hover:bg-green-900/30 rounded-lg text-green-600 transition-colors"
-                title="Mở lại"
-                @click="$emit('resume', job)"
-              >
-                <span class="material-symbols-outlined text-xl">play_circle</span>
-              </button>
-
-              <button
-                v-if="['published', 'paused', 'pending'].includes(job.status?.toLowerCase())"
-                class="p-2 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg text-red-600 transition-colors"
-                title="Đóng tin"
-                @click="$emit('close', job)"
-              >
-                <span class="material-symbols-outlined text-xl">cancel</span>
-              </button>
-
-              <button
-                class="p-2 hover:bg-primary/10 rounded-lg text-primary transition-colors"
-                title="Xem chi tiết"
-                @click="$emit('view', job)"
-              >
-                <span class="material-symbols-outlined text-xl">visibility</span>
-              </button>
-            </div>
-          </td>
+          :job="job"
+          @view="$emit('view', $event)"
+          @edit="$emit('edit', $event)"
+          @copy="$emit('copy', $event)"
+          @submit="$emit('submit', $event)"
+          @pause="$emit('pause', $event)"
+          @resume="$emit('resume', $event)"
+          @extend="$emit('extend', $event)"
+          @refresh="$emit('refresh', $event)"
+          @interview="$emit('interview', $event)"
+          @close="$emit('close', $event)"
+          @delete="$emit('delete', $event)"
+          @restore="$emit('restore', $event)"
+          @applications="$emit('applications', $event)"
+        />
+        <tr v-if="jobs.length === 0">
+          <td colspan="5" class="empty">Không có tin tuyển dụng nào.</td>
         </tr>
       </tbody>
     </table>
@@ -126,31 +38,58 @@
 </template>
 
 <script setup lang="ts">
-import type { ResJobPostingDetail, JobPostingStatus } from '@/types/jobPosting.types'
-import { JOB_POSTING_STATUS_BADGE, JOB_POSTING_STATUS_LABELS } from '@/constants/jobPosting.constants'
+import JobPostingTableRow from './JobPostingTableRow.vue'
+import type { JobPostingRow } from '@/types/employerJobPosting.types'
 
-defineProps<{
-  jobs: ResJobPostingDetail[]
-}>()
+defineProps<{ jobs: JobPostingRow[] }>()
 
 defineEmits<{
-  edit: [job: ResJobPostingDetail]
-  pause: [job: ResJobPostingDetail]
-  resume: [job: ResJobPostingDetail]
-  close: [job: ResJobPostingDetail]
-  extend: [job: ResJobPostingDetail]
-  view: [job: ResJobPostingDetail]
+  view:   [id: number]
+  edit:   [id: number]
+  copy:   [id: number]
+  submit: [id: number]
+  pause:  [id: number]
+  resume: [id: number]
+  extend: [id: number]
+  refresh: [id: number]
+  interview: [id: number]
+  close:  [id: number]
+  delete: [id: number]
+  restore: [id: number]
+  applications: [id: number]
 }>()
-
-function statusClass(status: string): string {
-  return JOB_POSTING_STATUS_BADGE[status?.toLowerCase() as JobPostingStatus] || 'bg-slate-100 text-slate-700'
-}
-
-function statusLabel(status: string): string {
-  return JOB_POSTING_STATUS_LABELS[status?.toLowerCase() as JobPostingStatus] || status
-}
-
-function isEditable(status: string) {
-  return ['draft', 'pending', 'published', 'paused', 'rejected'].includes(status?.toLowerCase())
-}
 </script>
+
+<style scoped>
+.table-wrapper { overflow-x: auto; }
+
+.job-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 700px;
+}
+.job-table thead tr { background: rgba(248,250,252,0.5); }
+.job-table th {
+  padding: 1rem 1.5rem;
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--color-on-surface-muted);
+  border-bottom: 1px solid #f1f5f9;
+  white-space: nowrap;
+}
+.col-center { text-align: center; }
+.col-right  { text-align: right; }
+.col-left  { text-align: left; }
+
+
+.job-table tbody tr + tr { border-top: 1px solid #f8fafc; }
+
+.empty {
+  padding: 3rem;
+  text-align: center;
+  color: var(--color-on-surface-muted);
+  font-size: 1rem;
+}
+</style>

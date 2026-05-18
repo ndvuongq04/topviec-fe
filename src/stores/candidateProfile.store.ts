@@ -5,6 +5,7 @@ import type {
     ResCandidateProfileDTO,
     ReqCreateCandidateProfileDTO,
     ReqUpdateCandidateProfileDTO,
+    ReqUpdateCandidateProfileVisibilityDTO,
 } from '@/types/candidateProfile.types'
 
 export const useCandidateProfileStore = defineStore('candidateProfile', () => {
@@ -63,6 +64,21 @@ export const useCandidateProfileStore = defineStore('candidateProfile', () => {
         }
     }
 
+    /** Cập nhật quyền riêng tư hiển thị thông tin */
+    async function updateVisibility(payload: ReqUpdateCandidateProfileVisibilityDTO) {
+        loading.value = true
+        error.value = null
+        try {
+            profile.value = await candidateProfileService.updateVisibility(payload)
+            return profile.value
+        } catch (err) {
+            setError(err)
+            throw err
+        } finally {
+            loading.value = false
+        }
+    }
+
     /** Xóa mềm profile */
     async function deleteProfile() {
         loading.value = true
@@ -94,6 +110,7 @@ export const useCandidateProfileStore = defineStore('candidateProfile', () => {
         fetchMyProfile,
         createProfile,
         updateProfile,
+        updateVisibility,
         deleteProfile,
         reset,
     }

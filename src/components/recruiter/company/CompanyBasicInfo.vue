@@ -1,7 +1,7 @@
 <template>
-  <section class="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
+  <section class="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800">
     <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-800">
-      <h3 class="font-bold text-lg">Thông tin cơ bản</h3>
+      <h3 class="font-bold text-[1.125rem]">Thông tin cơ bản</h3>
     </div>
     <div class="p-6 space-y-6">
 
@@ -29,7 +29,7 @@
             />
             <button
               v-if="coverUrl"
-              class="absolute bottom-4 right-4 bg-white/90 dark:bg-slate-900/90 p-2 rounded-lg text-primary shadow-sm hover:bg-white transition-colors"
+              class="absolute bottom-4 right-4 bg-white/90 dark:bg-slate-900/90 p-2 rounded-lg text-primary shadow-sm hover:bg-white transition-colors cursor-pointer"
               @click.stop="triggerCoverUpload"
             >
               <span class="material-symbols-outlined">edit</span>
@@ -63,50 +63,36 @@
           <input
             :value="companyName"
             type="text"
-            class="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-transparent focus:ring-2 focus:ring-primary focus:border-transparent outline-none text-sm trans-all"
+            class="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-transparent focus:ring-2 focus:ring-primary focus:border-transparent outline-none text-base trans-all"
             :class="{ '!border-red-500 !ring-red-500/20': errors?.companyName }"
             placeholder="Nhập tên công ty"
             @input="$emit('update:companyName', ($event.target as HTMLInputElement).value)"
           />
-          <p v-if="errors?.companyName" class="text-[11px] text-red-500 mt-1">{{ errors.companyName }}</p>
+          <p v-if="errors?.companyName" class="text-xs text-red-500 mt-1">{{ errors.companyName }}</p>
         </div>
 
         <!-- Lĩnh vực -->
         <div class="space-y-2">
           <label class="text-sm font-semibold text-slate-700 dark:text-slate-300">Lĩnh vực</label>
-          <select
-            :value="industry"
-            class="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 focus:ring-2 focus:ring-primary focus:border-transparent outline-none text-sm appearance-none trans-all"
-            :class="{ '!border-red-500 !ring-red-500/20': errors?.industry }"
-            @change="$emit('update:industry', ($event.target as HTMLSelectElement).value)"
-          >
-            <option value="">-- Chọn lĩnh vực --</option>
-            <option value="1">Phát triển phần mềm</option>
-            <option value="2">Dịch vụ tài chính</option>
-            <option value="3">Thương mại điện tử</option>
-            <option value="4">Công nghệ y tế</option>
-            <option value="5">Công nghệ giáo dục</option>
-            <option value="6">Sản xuất</option>
-          </select>
-          <p v-if="errors?.industry" class="text-[11px] text-red-500 mt-1">{{ errors.industry }}</p>
+          <SearchableSelect
+            :model-value="industry"
+            :options="industryOptions"
+            placeholder="-- Chọn lĩnh vực --"
+            @update:model-value="$emit('update:industry', $event.toString())"
+          />
+          <p v-if="errors?.industry" class="text-xs text-red-500 mt-1">{{ errors.industry }}</p>
         </div>
 
         <!-- Quy mȏ nhȃn sự -->
         <div class="space-y-2">
           <label class="text-sm font-semibold text-slate-700 dark:text-slate-300">Quy mô nhân sự</label>
-          <select
-            :value="companySize"
-            class="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 focus:ring-2 focus:ring-primary focus:border-transparent outline-none text-sm appearance-none trans-all"
-            :class="{ '!border-red-500 !ring-red-500/20': errors?.companySize }"
-            @change="$emit('update:companySize', ($event.target as HTMLSelectElement).value as CompanySize)"
-          >
-            <option value="">-- Chọn quy mô --</option>
-            <option value="1-50">1-50 nhân viên</option>
-            <option value="51-200">51-200 nhân viên</option>
-            <option value="201-500">201-500 nhân viên</option>
-            <option value="500+">Trên 500 nhân viên</option>
-          </select>
-          <p v-if="errors?.companySize" class="text-[11px] text-red-500 mt-1">{{ errors.companySize }}</p>
+          <SearchableSelect
+            :model-value="companySize"
+            :options="companySizeOptions"
+            placeholder="-- Chọn quy mô --"
+            @update:model-value="$emit('update:companySize', $event as CompanySize)"
+          />
+          <p v-if="errors?.companySize" class="text-xs text-red-500 mt-1">{{ errors.companySize }}</p>
         </div>
 
         <!-- Mã số thuế -->
@@ -115,12 +101,12 @@
           <input
             :value="taxCode"
             type="text"
-            class="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-transparent focus:ring-2 focus:ring-primary focus:border-transparent outline-none text-sm trans-all"
+            class="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-transparent focus:ring-2 focus:ring-primary focus:border-transparent outline-none text-base trans-all"
             :class="{ '!border-red-500 !ring-red-500/20': errors?.taxCode }"
             placeholder="Ví dụ: 0312xxxxxx"
             @input="$emit('update:taxCode', ($event.target as HTMLInputElement).value)"
           />
-          <p v-if="errors?.taxCode" class="text-[11px] text-red-500 mt-1">{{ errors.taxCode }}</p>
+          <p v-if="errors?.taxCode" class="text-xs text-red-500 mt-1">{{ errors.taxCode }}</p>
         </div>
 
         <!-- Năm thành lập -->
@@ -130,12 +116,12 @@
             :value="foundedYear"
             type="number"
             min="1900"
-            class="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-transparent focus:ring-2 focus:ring-primary focus:border-transparent outline-none text-sm trans-all"
+            class="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-transparent focus:ring-2 focus:ring-primary focus:border-transparent outline-none text-base trans-all"
             :class="{ '!border-red-500 !ring-red-500/20': errors?.foundedYear }"
             placeholder="Ví dụ: 2010"
             @input="$emit('update:foundedYear', Number(($event.target as HTMLInputElement).value))"
           />
-          <p v-if="errors?.foundedYear" class="text-[11px] text-red-500 mt-1">{{ errors.foundedYear }}</p>
+          <p v-if="errors?.foundedYear" class="text-xs text-red-500 mt-1">{{ errors.foundedYear }}</p>
         </div>
 
       </div>
@@ -145,8 +131,29 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { CompanySize } from '@/types/company.types'
+import SearchableSelect from '@/components/ui/SearchableSelect.vue'
+import { useIndustryStore } from '@/stores/industry.store'
+
+const industryStore = useIndustryStore()
+
+const industryOptions = computed(() => {
+  return industryStore.industries.map(i => ({ id: i.id.toString(), name: i.name }))
+})
+
+onMounted(() => {
+  if (industryStore.industries.length === 0) {
+    industryStore.fetchIndustries({ size: 100 })
+  }
+})
+
+const companySizeOptions = [
+  { id: '1-50', name: '1-50 nhân viên' },
+  { id: '51-200', name: '51-200 nhân viên' },
+  { id: '201-500', name: '201-500 nhân viên' },
+  { id: '500+', name: 'Trên 500 nhân viên' }
+]
 
 defineProps<{
   companyName: string

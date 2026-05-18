@@ -1,38 +1,6 @@
 <template>
   <div class="space-y-6">
 
-    <!-- CV Privacy -->
-    <section class="bg-white dark:bg-surface-dark p-6 md:p-8 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm">
-      <h3 class="text-lg font-bold text-text-main dark:text-white flex items-center gap-2 mb-6">
-        <span class="material-symbols-outlined text-primary">description</span>
-        CV Privacy
-      </h3>
-      <div class="space-y-4">
-
-        <label
-          v-for="option in cvPrivacyOptions"
-          :key="option.value"
-          class="flex items-start gap-4 p-4 rounded-2xl border cursor-pointer transition-all"
-          :class="cvPrivacy === option.value
-            ? 'border-primary bg-primary/5 dark:bg-primary/10'
-            : 'border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/50'"
-        >
-          <input v-model="cvPrivacy" type="radio" :value="option.value" class="sr-only" />
-          <div
-            class="mt-0.5 w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors"
-            :class="cvPrivacy === option.value ? 'border-primary' : 'border-slate-300 dark:border-slate-600'"
-          >
-            <div v-if="cvPrivacy === option.value" class="w-2.5 h-2.5 rounded-full bg-primary"></div>
-          </div>
-          <div>
-            <p class="text-sm font-bold text-text-main dark:text-white">{{ option.label }}</p>
-            <p class="text-xs text-text-muted mt-0.5">{{ option.desc }}</p>
-          </div>
-        </label>
-
-      </div>
-    </section>
-
     <!-- Information Visibility -->
     <section class="bg-white dark:bg-surface-dark p-6 md:p-8 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm">
       <h3 class="text-lg font-bold text-text-main dark:text-white flex items-center gap-2 mb-6">
@@ -50,16 +18,10 @@
             <p class="text-sm font-semibold text-text-main dark:text-white">{{ item.label }}</p>
             <p class="text-xs text-text-muted mt-0.5">{{ item.desc }}</p>
           </div>
-          <button
-            class="relative w-11 h-6 rounded-full transition-colors duration-200 focus:outline-none shrink-0"
-            :class="item.enabled ? 'bg-primary' : 'bg-slate-200 dark:bg-slate-700'"
-            @click="item.enabled = !item.enabled"
-          >
-            <span
-              class="absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform duration-200"
-              :class="item.enabled ? 'translate-x-6' : 'translate-x-1'"
-            ></span>
-          </button>
+          <ToggleSwitch
+            :model-value="item.enabled"
+            @update:model-value="(value) => handleToggle(item.key, value)"
+          />
         </div>
 
       </div>
@@ -88,11 +50,11 @@
               <p class="text-sm font-semibold" :class="action.danger ? 'text-red-500' : 'text-text-main dark:text-white'">
                 {{ action.label }}
               </p>
-              <p class="text-xs text-text-muted mt-0.5">{{ action.desc }}</p>
+              <p v-if="action.desc" class="text-xs text-text-muted mt-0.5">{{ action.desc }}</p>
             </div>
           </div>
           <button
-            class="text-sm font-bold px-4 py-2 rounded-xl transition-colors"
+            class="text-sm font-bold px-4 py-2 rounded-xl transition-colors cursor-pointer"
             :class="action.danger
               ? 'text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10'
               : 'text-primary hover:bg-primary/10'"
@@ -104,64 +66,30 @@
       </div>
     </section>
 
-    <!-- Save button -->
-    <div class="flex justify-end gap-3 pt-2">
-      <button
-        type="button"
-        class="px-6 py-2.5 rounded-2xl border border-slate-200 dark:border-slate-700 text-text-muted font-bold text-sm hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-      >
-        Hủy
-      </button>
-      <button
-        type="button"
-        class="px-6 py-2.5 rounded-2xl bg-primary hover:bg-primary-hover text-white font-bold text-sm shadow-lg shadow-blue-500/30 transition-colors"
-        @click="saveSettings"
-      >
-        Lưu thay đổi
-      </button>
-    </div>
-
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue'
+import { computed, reactive, ref, watch } from 'vue'
+import ToggleSwitch from '@/components/common/ToggleSwitch.vue'
+import { useCandidateProfileStore } from '@/stores/candidateProfile.store'
+import { useToast } from '@/composables/useToast'
 
-const cvPrivacy = ref<'public' | 'recruiters' | 'private'>('recruiters')
+const profileStore = useCandidateProfileStore()
+const toast = useToast()
+const isSaving = ref(false)
+const savingKey = ref<string | null>(null)
 
-const cvPrivacyOptions = [
-  {
-    value: 'public',
-    label: 'Công khai',
-    desc: 'Tất cả mọi người đều có thể xem CV của bạn.',
-  },
-  {
-    value: 'recruiters',
-    label: 'Chỉ nhà tuyển dụng',
-    desc: 'Chỉ nhà tuyển dụng đã đăng ký mới có thể xem CV.',
-  },
-  {
-    value: 'private',
-    label: 'Riêng tư',
-    desc: 'CV của bạn sẽ bị ẩn hoàn toàn khỏi tìm kiếm.',
-  },
-]
+type VisibilityKey = 'phone' | 'email' | 'birthday' | 'salary'
 
 const visibilityItems = reactive([
-  { key: 'phone',    label: 'Số điện thoại',    desc: 'Hiển thị số điện thoại trên hồ sơ công khai.',       enabled: false },
-  { key: 'email',    label: 'Địa chỉ email',     desc: 'Hiển thị email trên hồ sơ công khai.',               enabled: true  },
-  { key: 'birthday', label: 'Ngày sinh',          desc: 'Hiển thị ngày sinh trên hồ sơ công khai.',           enabled: false },
-  { key: 'salary',   label: 'Mức lương kỳ vọng', desc: 'Hiển thị mức lương mong muốn với nhà tuyển dụng.',   enabled: true  },
+  { key: 'phone',    label: 'Số điện thoại',    desc: 'Hiển thị số điện thoại trên hồ sơ công khai.',       enabled: true  },
+  { key: 'email',    label: 'Địa chỉ email',    desc: 'Hiển thị email trên hồ sơ công khai.',               enabled: true  },
+  { key: 'birthday', label: 'Ngày sinh',        desc: 'Hiển thị ngày sinh trên hồ sơ công khai.',           enabled: true  },
+  { key: 'salary',   label: 'Mức lương kỳ vọng', desc: 'Hiển thị mức lương mong muốn với nhà tuyển dụng.',  enabled: true  },
 ])
 
 const securityActions = [
-  {
-    icon: 'lock',
-    label: 'Đổi mật khẩu',
-    desc: 'Cập nhật mật khẩu định kỳ để bảo vệ tài khoản.',
-    cta: 'Đổi ngay',
-    danger: false,
-  },
   {
     icon: 'security',
     label: 'Xác thực 2 yếu tố',
@@ -185,7 +113,57 @@ const securityActions = [
   },
 ]
 
-function saveSettings() {
-  // TODO: gọi API lưu cài đặt privacy
+function syncVisibilityFromProfile() {
+  const profile = profileStore.profile
+  if (!profile) return
+
+  for (const item of visibilityItems) {
+    if (item.key === 'phone') item.enabled = !profile.hidePhone
+    if (item.key === 'email') item.enabled = !profile.hideEmail
+    if (item.key === 'birthday') item.enabled = !profile.hideDateOfBirth
+    if (item.key === 'salary') item.enabled = !profile.hideExpectedSalary
+  }
 }
+
+const payload = computed(() => ({
+  hidePhone: !visibilityItems.find((item) => item.key === 'phone')!.enabled,
+  hideEmail: !visibilityItems.find((item) => item.key === 'email')!.enabled,
+  hideDateOfBirth: !visibilityItems.find((item) => item.key === 'birthday')!.enabled,
+  hideExpectedSalary: !visibilityItems.find((item) => item.key === 'salary')!.enabled,
+}))
+
+async function handleToggle(key: VisibilityKey, value: boolean) {
+  const item = visibilityItems.find((entry) => entry.key === key)
+  if (!item || isSaving.value || savingKey.value) return
+
+  const previousValue = item.enabled
+  item.enabled = value
+
+  const profile = profileStore.profile
+  if (
+    profile &&
+    payload.value.hidePhone === profile.hidePhone &&
+    payload.value.hideEmail === profile.hideEmail &&
+    payload.value.hideDateOfBirth === profile.hideDateOfBirth &&
+    payload.value.hideExpectedSalary === profile.hideExpectedSalary
+  ) {
+    return
+  }
+
+  isSaving.value = true
+  savingKey.value = key
+  try {
+    await profileStore.updateVisibility(payload.value)
+    toast.success('Cập nhật thành công', 'Cài đặt quyền riêng tư đã được cập nhật.')
+  } catch (err: any) {
+    item.enabled = previousValue
+    const msg = err?.response?.data?.message ?? profileStore.error ?? 'Không thể cập nhật cài đặt quyền riêng tư.'
+    toast.error('Lỗi', msg)
+  } finally {
+    isSaving.value = false
+    savingKey.value = null
+  }
+}
+
+watch(() => profileStore.profile, syncVisibilityFromProfile, { immediate: true })
 </script>

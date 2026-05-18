@@ -21,6 +21,8 @@ export interface ReqCreateCandidateProfileDTO {
     isCvPublic?: boolean
     hidePhone?: boolean
     hideEmail?: boolean
+    hideDateOfBirth?: boolean
+    hideExpectedSalary?: boolean
 }
 
 export interface ReqUpdateCandidateProfileDTO {
@@ -42,6 +44,15 @@ export interface ReqUpdateCandidateProfileDTO {
     cvPublic?: boolean | null
     hidePhone?: boolean | null
     hideEmail?: boolean | null
+    hideDateOfBirth?: boolean | null
+    hideExpectedSalary?: boolean | null
+}
+
+export interface ReqUpdateCandidateProfileVisibilityDTO {
+    hidePhone: boolean
+    hideEmail: boolean
+    hideDateOfBirth: boolean
+    hideExpectedSalary: boolean
 }
 
 // ─── Response DTO ─────────────────────────────────────────────────────────────
@@ -68,6 +79,8 @@ export interface ResCandidateProfileDTO {
     isCvPublic: boolean
     hidePhone: boolean
     hideEmail: boolean
+    hideDateOfBirth: boolean
+    hideExpectedSalary: boolean
     createdAt: string                   // BE: LocalDateTime → ISO string
     updatedAt: string
 }

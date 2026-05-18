@@ -1,7 +1,7 @@
 <template>
   <section class="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800">
     <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-800">
-      <h3 class="font-bold text-lg">Liên hệ & Mạng xã hội</h3>
+      <h3 class="font-bold text-[1.125rem]">Liên hệ & Mạng xã hội</h3>
     </div>
     <div class="p-6 space-y-6">
 
@@ -13,12 +13,12 @@
           <input
             :value="email"
             type="email"
-            class="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-transparent focus:ring-2 focus:ring-primary focus:border-transparent outline-none text-sm trans-all"
+            class="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-transparent focus:ring-2 focus:ring-primary focus:border-transparent outline-none text-base trans-all"
             :class="{ '!border-red-500 !ring-red-500/20': errors?.email }"
-            placeholder="contact@company.com"
-            @input="emit('update:email', ($event.target as HTMLInputElement).value)"
+            placeholder="Ví dụ: hr@company.com"
+            @input="$emit('update:email', ($event.target as HTMLInputElement).value)"
           />
-          <p v-if="errors?.email" class="text-[11px] text-red-500 mt-1">{{ errors.email }}</p>
+          <p v-if="errors?.email" class="text-xs text-red-500 mt-1">{{ errors.email }}</p>
         </div>
 
         <!-- Phone -->
@@ -27,12 +27,12 @@
           <input
             :value="phone"
             type="tel"
-            class="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-transparent focus:ring-2 focus:ring-primary focus:border-transparent outline-none text-sm trans-all"
+            class="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-transparent focus:ring-2 focus:ring-primary focus:border-transparent outline-none text-base trans-all"
             :class="{ '!border-red-500 !ring-red-500/20': errors?.phone }"
-            placeholder="0123 456 789"
-            @input="emit('update:phone', ($event.target as HTMLInputElement).value)"
+            placeholder="Ví dụ: 028xxxxxxx"
+            @input="$emit('update:phone', ($event.target as HTMLInputElement).value)"
           />
-          <p v-if="errors?.phone" class="text-[11px] text-red-500 mt-1">{{ errors.phone }}</p>
+          <p v-if="errors?.phone" class="text-xs text-red-500 mt-1">{{ errors.phone }}</p>
         </div>
 
         <!-- Website -->
@@ -43,31 +43,24 @@
               https://
             </span>
             <input
-              :value="website"
-              type="text"
-              class="flex-1 px-4 py-2 rounded-r-lg border border-slate-300 dark:border-slate-700 bg-transparent focus:ring-2 focus:ring-primary focus:border-transparent outline-none text-sm"
-              placeholder="yourcompany.com"
-              @input="emit('update:website', ($event.target as HTMLInputElement).value)"
-            />
+            :value="website"
+            type="url"
+            class="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-transparent focus:ring-2 focus:ring-primary focus:border-transparent outline-none text-base trans-all"
+            placeholder="Ví dụ: https://company.com"
+            @input="$emit('update:website', ($event.target as HTMLInputElement).value)"
+          />
           </div>
         </div>
 
         <!-- Tỉnh/Thành phố -->
         <div class="space-y-2">
           <label class="text-sm font-semibold text-slate-700 dark:text-slate-300">Tỉnh/Thành phố</label>
-          <select
-            :value="provinceId"
-            class="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 focus:ring-2 focus:ring-primary focus:border-transparent outline-none text-sm appearance-none trans-all"
-            :class="{ '!border-red-500 !ring-red-500/20': errors?.provinceId }"
-            @change="emit('update:provinceId', Number(($event.target as HTMLSelectElement).value) || '')"
-          >
-            <option value="">-- Chọn tỉnh/thành phố --</option>
-            <option value="1">Hà Nội</option>
-            <option value="2">Hồ Chí Minh</option>
-            <option value="3">Đà Nẵng</option>
-            <option value="4">Cần Thơ</option>
-            <option value="5">Hải Phòng</option>
-          </select>
+          <SearchableSelect
+            :model-value="provinceId"
+            :options="locationOptions"
+            placeholder="-- Chọn tỉnh/thành phố --"
+            @update:model-value="emit('update:provinceId', Number($event) || '')"
+          />
           <p v-if="errors?.provinceId" class="text-[11px] text-red-500 mt-1">{{ errors.provinceId }}</p>
         </div>
 
@@ -77,12 +70,12 @@
           <input
             :value="address"
             type="text"
-            class="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-transparent focus:ring-2 focus:ring-primary focus:border-transparent outline-none text-sm trans-all"
+            class="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-transparent focus:ring-2 focus:ring-primary focus:border-transparent outline-none text-base trans-all"
             :class="{ '!border-red-500 !ring-red-500/20': errors?.address }"
-            placeholder="Số 123 Đường ABC, Phường X, Quận Y"
-            @input="emit('update:address', ($event.target as HTMLInputElement).value)"
+            placeholder="Số nhà, tên đường, phường/xã..."
+            @input="$emit('update:address', ($event.target as HTMLInputElement).value)"
           />
-          <p v-if="errors?.address" class="text-[11px] text-red-500 mt-1">{{ errors.address }}</p>
+          <p v-if="errors?.address" class="text-xs text-red-500 mt-1">{{ errors.address }}</p>
         </div>
 
       </div>
@@ -115,7 +108,21 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
+import SearchableSelect from '@/components/ui/SearchableSelect.vue'
+import { useLocationStore } from '@/stores/location.store'
+
+const locationStore = useLocationStore()
+
+const locationOptions = computed(() => {
+  return locationStore.locations.map(l => ({ id: l.id.toString(), name: l.name }))
+})
+
+onMounted(() => {
+  if (locationStore.locations.length === 0) {
+    locationStore.fetchLocations({ size: 100 })
+  }
+})
 
 type SocialKey = 'linkedin' | 'twitter' | 'facebook'
 

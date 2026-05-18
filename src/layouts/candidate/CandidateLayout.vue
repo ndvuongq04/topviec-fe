@@ -1,31 +1,38 @@
 <script setup lang="ts">
-// DefaultLayout: Layout bọc toàn bộ trang có auth
-// Bao gồm: CandidateHeader (top) + CandidateSidebar (left) + <slot> (main content) + AppBottomNav (mobile)
+import { computed } from "vue";
+import { useRoute } from "vue-router";
 import CandidateHeader from "@/components/candidate/layout/CandidateHeader.vue";
-import CandidateSidebar from "@/components/candidate/sidebar/CandidateSidebar.vue";
-// import CandidateBottomNav from "@/components/candidate/layout/CandidateBottomNav.vue";
-import { RouterView } from "vue-router";
+import CandidateFooter from "@/components/candidate/layout/CandidateFooter.vue";
+
+const route = useRoute();
+
+const isUnfixedHeaderPage = computed(() => {
+  return route.name === 'JobSearch';
+});
+
+const isFullscreenPage = computed(() => {
+  return route.name === 'CandidateMessages';
+});
 </script>
 
 <template>
   <div
-    class="bg-background-light dark:bg-background-dark font-display text-text-main dark:text-gray-100 min-h-screen flex flex-col overflow-x-hidden"
+    class="bg-background-light dark:bg-background-dark font-display text-text-main dark:text-gray-100 flex flex-col overflow-x-clip"
+    :class="isFullscreenPage ? 'h-screen overflow-hidden' : 'min-h-screen'"
   >
-    <!-- Header fixed top -->
-    <CandidateHeader />
+    <!-- Header -->
+    <CandidateHeader :unfixed="isUnfixedHeaderPage" />
 
-    <!-- Body: sidebar + nội dung chính — pt-[57px] để bù chiều cao header fixed -->
+    <!-- Main Content Area -->
     <div
-      class="layout-container flex grow flex-col md:flex-row max-w-[1440px] mx-auto w-full p-4 gap-6 pt-[73px]"
+      class="layout-container flex grow flex-col w-full"
+      :class="[isUnfixedHeaderPage ? '' : 'pt-[65px]', isFullscreenPage ? 'overflow-hidden' : 'pb-10']"
     >
-      <!-- Sidebar trái (ẩn trên mobile) -->
-      <!-- <CandidateSidebar /> -->
-
-      <!-- Nội dung trang (router-view hoặc slot) -->
+      <!-- Content (router-view) -->
       <RouterView />
     </div>
 
-    <!-- Bottom nav chỉ hiện trên mobile -->
-    <CandidateBottomNav />
+    <!-- Footer (ẩn trên trang fullscreen) -->
+    <CandidateFooter v-if="!isFullscreenPage" />
   </div>
 </template>

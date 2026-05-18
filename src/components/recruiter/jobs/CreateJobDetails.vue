@@ -38,7 +38,7 @@
       </div>
 
       <!-- Yêu cầu & Quyền lợi -->
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div class="space-y-6">
         <div>
           <label class="block text-sm font-semibold text-slate-900 dark:text-slate-100 mb-2">Yêu cầu công việc</label>
           <textarea

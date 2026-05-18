@@ -1,7 +1,7 @@
 <template>
   <section class="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800">
     <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
-      <h3 class="font-bold text-lg">Xác minh doanh nghiệp</h3>
+      <h3 class="font-bold text-[1.125rem]">Xác minh doanh nghiệp</h3>
       <span class="flex items-center gap-1 text-[10px] font-bold text-amber-600 bg-amber-50 dark:bg-amber-950 px-2 py-0.5 rounded uppercase">
         <span class="material-symbols-outlined text-xs">info</span>
         Bắt buộc
@@ -20,7 +20,7 @@
         <p class="font-bold text-sm mb-1">Tải lên giấy phép kinh doanh</p>
         <p class="text-xs text-slate-500 mb-4">Hỗ trợ: PDF, JPG, PNG (Tối đa 5MB)</p>
         <button
-          class="px-4 py-2 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-sm font-semibold shadow-sm hover:shadow-md transition-shadow"
+          class="px-4 py-2 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-sm font-semibold shadow-sm hover:shadow-md transition-shadow cursor-pointer"
           :disabled="uploading"
           @click.stop="triggerUpload"
         >
@@ -44,7 +44,7 @@
           <p class="text-[10px] text-slate-500">{{ licenseFile.size }} • Đã tải lên {{ licenseFile.uploadedAt }}</p>
         </div>
         <button
-          class="text-slate-400 hover:text-red-500 transition-colors shrink-0"
+          class="text-slate-400 hover:text-red-500 transition-colors shrink-0 cursor-pointer"
           @click="removeFile"
         >
           <span class="material-symbols-outlined">delete</span>

@@ -51,7 +51,7 @@
     </div>
 
     <!-- Content -->
-    <div v-else-if="admin" class="max-w-7xl mx-auto space-y-6">
+    <div v-else-if="admin" class="mx-auto space-y-6">
       <!-- Top Grid: Info & Security -->
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <AdminDetailInfo :admin="admin" />

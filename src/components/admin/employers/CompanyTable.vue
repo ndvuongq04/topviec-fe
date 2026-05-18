@@ -34,13 +34,25 @@
                   <span v-else class="material-symbols-outlined text-slate-400">corporate_fare</span>
                 </div>
                 <div>
-                  <div class="flex items-center gap-1">
-                    <p class="font-bold text-slate-900 dark:text-slate-100">{{ company.name }}</p>
+                  <div class="flex items-center gap-1.5">
+                    <!-- isTopEmployer — badge Top đầu tiên -->
                     <span
-                      v-if="company.verificationStatus === VerificationStatus.VERIFIED"
-                      class="material-symbols-outlined text-[#963131] text-lg"
-                      style="font-variation-settings: 'FILL' 1"
-                    >verified</span>
+                      v-if="company.isTopEmployer"
+                      class="text-[11px] font-semibold px-2 py-0.5 rounded-full border shrink-0"
+                      style="background:#fff7ed; color:#b45309; border-color:#fcd34d"
+                    >Top</span>
+                    <p class="font-bold text-slate-900 dark:text-slate-100">{{ company.name }}</p>
+                    <!-- isBrandVerified — tích xanh đồng bộ các trang khác -->
+                    <div v-if="company.isBrandVerified" class="relative flex items-center group/verified">
+                      <span
+                        class="material-symbols-outlined text-blue-600 text-[16px] cursor-default"
+                        style="font-variation-settings:'FILL' 1"
+                      >verified</span>
+                      <span class="pointer-events-none absolute bottom-[calc(100%+6px)] left-1/2 -translate-x-1/2 bg-blue-800 text-white text-[11px] font-medium whitespace-nowrap px-2.5 py-1 rounded-md opacity-0 group-hover/verified:opacity-100 transition-opacity z-10">
+                        Công ty đã xác minh
+                        <span class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-blue-800"></span>
+                      </span>
+                    </div>
                   </div>
                   <p class="text-xs text-slate-500">{{ company.email || '—' }}</p>
                 </div>

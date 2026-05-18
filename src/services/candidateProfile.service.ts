@@ -4,6 +4,7 @@ import type { RestResponse } from '@/types/common.types'
 import type {
     ReqCreateCandidateProfileDTO,
     ReqUpdateCandidateProfileDTO,
+    ReqUpdateCandidateProfileVisibilityDTO,
     ResCandidateProfileDTO,
 } from '@/types/candidateProfile.types'
 
@@ -34,6 +35,15 @@ const candidateProfileService = {
      */
     async updateProfile(payload: ReqUpdateCandidateProfileDTO): Promise<ResCandidateProfileDTO> {
         const res = await axiosInstance.put<RestResponse<ResCandidateProfileDTO>>(BASE_URL, payload)
+        return res.data.data
+    },
+
+    /**
+     * Cập nhật trạng thái ẩn/hiện thông tin nhạy cảm
+     * PATCH /candidate/profile/visibility
+     */
+    async updateVisibility(payload: ReqUpdateCandidateProfileVisibilityDTO): Promise<ResCandidateProfileDTO> {
+        const res = await axiosInstance.patch<RestResponse<ResCandidateProfileDTO>>(`${BASE_URL}/visibility`, payload)
         return res.data.data
     },
 

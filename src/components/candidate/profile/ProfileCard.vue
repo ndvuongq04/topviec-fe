@@ -13,7 +13,7 @@
           </div>
         </div>
         <button
-          class="absolute bottom-0 right-0 p-2 bg-primary text-white rounded-full shadow-lg hover:bg-primary-hover transition-colors"
+          class="absolute bottom-0 right-0 p-2 bg-primary text-white rounded-full shadow-lg hover:bg-primary-hover transition-colors cursor-pointer"
           title="Đổi ảnh đại diện"
           @click="triggerAvatarUpload"
         >
@@ -96,23 +96,18 @@
           <span class="material-symbols-outlined text-[20px]">language</span>
         </a>
       </div>
-
-      <div class="mt-6 w-full">
-        <button class="w-full py-2.5 px-4 bg-primary/10 text-primary font-bold text-sm rounded-2xl hover:bg-primary/20 transition-colors flex items-center justify-center gap-2">
-          <span class="material-symbols-outlined text-[18px]">visibility</span>
-          Xem hồ sơ công khai
-        </button>
-      </div>
     </div>
 
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useCandidateProfileStore } from '@/stores/candidateProfile.store'
 import { useToast } from '@/composables/useToast'
 import { JobSeekingStatus, PreferredWorkType } from '@/constants/candidateProfile.constants'
+import { locationService } from '@/services/location.service'
+import type { ResLocationDTO } from '@/types/masterData.types'
 
 const store = useCandidateProfileStore()
 const toast = useToast()
@@ -157,14 +152,18 @@ const workTypeLabel = computed(() => {
 })
 
 // ─── Location ─────────────────────────────────────────────────────────────────
-const LOCATION_MAP: Record<number, string> = {
-  1: 'Hồ Chí Minh',
-  2: 'Hà Nội',
-  3: 'Đà Nẵng',
-}
+const locationMap = ref<Record<number, string>>({})
+onMounted(async () => {
+  try {
+    const res = await locationService.getLocations({ size: 100 })
+    const map: Record<number, string> = {}
+    res.result.forEach((l: ResLocationDTO) => { map[l.id] = l.name })
+    locationMap.value = map
+  } catch {}
+})
 const locationLabel = computed(() =>
   profile.value?.preferredLocationId
-    ? LOCATION_MAP[profile.value.preferredLocationId] ?? ''
+    ? locationMap.value[profile.value.preferredLocationId] ?? ''
     : ''
 )
 

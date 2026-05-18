@@ -116,7 +116,7 @@ export const useAuthStore = defineStore('auth', () => {
       } catch {
         // Một số môi trường có thể chặn localStorage
       }
-      router.push({ name: 'login' })
+      router.push({ name: 'home' })
     }
   }
 

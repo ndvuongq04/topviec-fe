@@ -42,6 +42,7 @@ export interface ReqCreateJobPostingDTO {
     skills?: ReqJobPostSkillDTO[]
     isFeatured?: boolean
     isUrgent?: boolean
+    isHot?: boolean
 }
 
 /** PUT /employer/job-postings/{id} — cùng cấu trúc với Create */
@@ -63,16 +64,45 @@ export interface ReqRejectJobPostingDTO {
 
 export interface ResJobPostLocationDTO {
     id: number
-    provinceId: number
+    name: string
     addressDetail?: string
     isRemote: boolean
+    provinceId?: number
 }
 
 export interface ResJobPostSkillDTO {
     id: number
     skillId: number
+    skillName: string
     isRequired: boolean
     proficiencyMin?: number
+}
+
+export interface JobPostCompanyDTO {
+    id: number
+    name: string
+    slug: string
+    logoUrl?: string
+    isTopEmployer?: boolean
+    isBrandVerified?: boolean
+    address?: string
+}
+
+export interface JobPostIndustryDTO {
+    id: number
+    name: string
+}
+
+export interface JobPostLevelDTO {
+    id: number
+    name: string
+}
+
+export interface JobPostLocationDTO {
+    id: number
+    name: string
+    addressDetail?: string
+    isRemote?: boolean
 }
 
 
@@ -85,9 +115,9 @@ export interface ResJobPostingDetail {
     description: string
     requirements: string
     benefits?: string
-    companyId: number
-    industryId: number
-    levelId: number
+    company: JobPostCompanyDTO
+    industry: JobPostIndustryDTO
+    level: JobPostLevelDTO
     experienceYearsMin: number
     experienceYearsMax?: number
     salaryMin?: number
@@ -95,26 +125,31 @@ export interface ResJobPostingDetail {
     salaryNegotiable: boolean
     workType: string
     headcount: number
+    hiredCount?: number
     deadline: string
     status: JobPostingStatus
     isFeatured: boolean
     isUrgent: boolean
+    isHot: boolean
     viewCount: number
+    applicationCount: number
     editCount: number
     publishedAt?: string
     createdAt: string
     updatedAt: string
+    deletedAt?: string | null
     locations: ResJobPostLocationDTO[]
     skills: ResJobPostSkillDTO[]
+    interviewRoundsCount?: number
 }
 
 export interface ResJobPostingSummary {
     id: number
     title: string
     slug: string
-    companyId: number
-    industryId: number
-    levelId: number
+    company: JobPostCompanyDTO
+    industry: JobPostIndustryDTO
+    level: JobPostLevelDTO
     workType: string
     status: JobPostingStatus
     salaryMin?: number
@@ -122,10 +157,17 @@ export interface ResJobPostingSummary {
     salaryNegotiable: boolean
     isFeatured: boolean
     isUrgent: boolean
+    isHot: boolean
     viewCount: number
+    applicationCount: number
+    headcount: number
+    hiredCount: number
     deadline: string
     publishedAt?: string
     createdAt: string
+    deletedAt?: string | null
+    interviewRoundsCount: number
+    locations?: JobPostLocationDTO[]
 }
 
 
@@ -147,6 +189,7 @@ export interface JobPostingQueryParams {
     workType?: string
     isFeatured?: boolean
     isUrgent?: boolean
+    isHot?: boolean
     salaryMin?: number
     salaryMax?: number
     experienceYearsMin?: number
@@ -158,4 +201,33 @@ export interface JobPostingQueryParams {
 
 export interface EmployerJobPostingQueryParams extends JobPostingQueryParams {
     status?: JobPostingStatus
+}
+
+
+// ─── Utilities ────────────────────────────────────────────────────────────────
+
+export interface SalaryInfo {
+    salaryMin?: number
+    salaryMax?: number
+    salaryNegotiable: boolean
+}
+
+export function formatSalary(job: SalaryInfo): string {
+    if (job.salaryNegotiable) return 'Thỏa thuận'
+    if (job.salaryMin && job.salaryMax)
+        return `${(job.salaryMin / 1_000_000).toFixed(0)}–${(job.salaryMax / 1_000_000).toFixed(0)} triệu/tháng`
+    if (job.salaryMin) return `Từ ${(job.salaryMin / 1_000_000).toFixed(0)} triệu/tháng`
+    if (job.salaryMax) return `Đến ${(job.salaryMax / 1_000_000).toFixed(0)} triệu/tháng`
+    return 'Thỏa thuận'
+}
+
+const WORK_TYPE_LABELS: Record<string, string> = {
+    FULL_TIME: 'Toàn thời gian',
+    PART_TIME: 'Bán thời gian',
+    INTERN:    'Thực tập',
+    REMOTE:    'Remote',
+}
+
+export function formatWorkType(workType: string): string {
+    return WORK_TYPE_LABELS[workType] ?? workType
 }

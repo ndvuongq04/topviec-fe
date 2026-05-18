@@ -1,3 +1,4 @@
+import { JobPostingStatus } from '@/constants/jobPosting.constants'
 import type { ResultPaginationDTO } from './company.types'
 
 export interface ReqJobPostLocationDTO {
@@ -73,10 +74,11 @@ export interface ResJobPostingDetail {
   workType: string
   headcount: number
   deadline: string
-  status: 'draft' | 'pending' | 'published' | 'paused' | 'closed' | 'expired' | 'rejected'
+  status: 'draft' | 'pending_approval' | 'published' | 'hidden' | 'paused' | 'closed' | 'expired' | 'rejected'
   isFeatured: boolean
   isUrgent: boolean
   viewCount: number
+  applicationCount?: number
   editCount: number
   publishedAt?: string
   createdAt: string
@@ -86,3 +88,27 @@ export interface ResJobPostingDetail {
 }
 
 export type ResJobPostingPagination = ResultPaginationDTO<ResJobPostingDetail>
+
+export interface JobPostingStats {
+  total: number
+  active: number
+  pending: number
+  expiring: number
+}
+
+/** Represending a row in the job postings table */
+export interface JobPostingRow {
+  id: number
+  title: string
+  code: string
+  status: 'active' | 'pending' | 'expiring' | 'draft' | 'hidden' | 'closed' | 'expired' | 'paused' | 'rejected' | 'interviewing' | 'completed' | string
+  postedAt: string
+  deadline?: string
+  daysLeft?: number
+  views?: string | number
+  applicants?: string | number
+  editCount?: number
+  isUrgent?: boolean
+  isFeatured?: boolean
+  isHot?: boolean
+}

@@ -10,8 +10,8 @@
           <span class="material-symbols-outlined" :class="stat.iconColor">{{ stat.icon }}</span>
         </div>
         <div>
-          <p class="text-sm font-medium text-slate-500">{{ stat.label }}</p>
-          <h3 class="text-2xl font-bold">{{ stat.value }}</h3>
+          <p class="text-sm font-semibold text-slate-500">{{ stat.label }}</p>
+          <h3 class="text-[1.875rem] font-extrabold leading-tight">{{ stat.value }}</h3>
         </div>
       </div>
       <div class="mt-4 flex items-center gap-2">

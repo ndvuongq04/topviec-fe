@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { employerJobPostingService } from '@/services/jobPosting.service'
+import { employerJobPostingService } from '@/services/employerJobPosting.service'
 import type {
     ReqCreateJobPostingDTO,
     ReqUpdateJobPostingDTO,
@@ -100,6 +100,22 @@ export const useEmployerJobPostingStore = defineStore('employerJobPosting', () =
         }
     }
 
+    /** Gửi duyệt tin */
+    async function pendingApproval(id: number | string) {
+        loading.value = true
+        error.value = null
+        try {
+            const updated = await employerJobPostingService.pendingApproval(id)
+            _updateInList(updated)
+            if (selectedJob.value?.id === updated.id) selectedJob.value = updated
+        } catch (err) {
+            setError(err)
+            throw err
+        } finally {
+            loading.value = false
+        }
+    }
+
     /** Tạm dừng tin */
     async function pauseJob(id: number | string) {
         loading.value = true
@@ -180,6 +196,38 @@ export const useEmployerJobPostingStore = defineStore('employerJobPosting', () =
         }
     }
 
+    /** Xóa mềm tin tuyển dụng */
+    async function deleteJob(id: number | string) {
+        loading.value = true
+        error.value = null
+        try {
+            await employerJobPostingService.deleteJob(id)
+            jobs.value = jobs.value.filter(j => j.id !== Number(id))
+            if (selectedJob.value?.id === Number(id)) selectedJob.value = null
+        } catch (err) {
+            setError(err)
+            throw err
+        } finally {
+            loading.value = false
+        }
+    }
+
+    /** Khôi phục tin đã xóa mềm */
+    async function restoreJob(id: number | string) {
+        loading.value = true
+        error.value = null
+        try {
+            const updated = await employerJobPostingService.restoreJob(id)
+            _updateInList(updated)
+            if (selectedJob.value?.id === updated.id) selectedJob.value = updated
+        } catch (err) {
+            setError(err)
+            throw err
+        } finally {
+            loading.value = false
+        }
+    }
+
     /** Reset store (dùng khi logout) */
     function reset() {
         jobs.value = []
@@ -201,11 +249,14 @@ export const useEmployerJobPostingStore = defineStore('employerJobPosting', () =
         fetchJobs,
         fetchJobById,
         updateJob,
+        pendingApproval,
         pauseJob,
         resumeJob,
         closeJob,
         extendJob,
         refreshJob,
+        deleteJob,
+        restoreJob,
         reset,
     }
 })

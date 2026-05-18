@@ -35,6 +35,21 @@ const publicJobPostingService = {
         const res = await axiosInstance.get<RestResponse<ResJobPostingDetail>>(`/job-postings/${id}`)
         return res.data.data
     },
+
+    /**
+     * Lấy danh sách tin của một công ty cụ thể (public).
+     * GET /api/v1/job-postings/company/{companyId}
+     */
+    async getByCompany(
+        companyId: number | string,
+        params?: { keyword?: string; page?: number; size?: number; sort?: string },
+    ): Promise<ResJobPostingSummaryPagination> {
+        const res = await axiosInstance.get<RestResponse<ResJobPostingSummaryPagination>>(
+            `/job-postings/company/${companyId}`,
+            { params },
+        )
+        return res.data.data
+    },
 }
 
 // ─── Employer endpoints (/employer/job-postings) ─────────────────────────────

@@ -72,6 +72,15 @@ export const employerJobPostingService = {
   },
 
   /**
+   * PATCH /employer/job-postings/{id}/pending-approval
+   * Gửi duyệt tin tuyển dụng.
+   */
+  async pendingApproval(id: number | string): Promise<ResJobPostingDetail> {
+    const res = await axiosInstance.patch<RestResponse<ResJobPostingDetail>>(`${BASE_URL}/${id}/pending-approval`)
+    return res.data.data
+  },
+
+  /**
    * PATCH /api/v1/employer/job-postings/{id}/extend
    */
   async extendJob(id: number | string, payload: ReqExtendJobPostDTO): Promise<ResJobPostingDetail> {
@@ -85,6 +94,19 @@ export const employerJobPostingService = {
    */
   async refreshJob(id: number | string): Promise<ResJobPostingDetail> {
     const res = await axiosInstance.patch<RestResponse<ResJobPostingDetail>>(`${BASE_URL}/${id}/refresh`)
+    return res.data.data
+  },
+  /**
+   * DELETE /employer/job-postings/{id}
+   */
+  async deleteJob(id: number | string): Promise<void> {
+    await axiosInstance.delete(`${BASE_URL}/${id}`)
+  },
+  /**
+   * PATCH /employer/job-postings/{id}/restore
+   */
+  async restoreJob(id: number | string): Promise<ResJobPostingDetail> {
+    const res = await axiosInstance.patch<RestResponse<ResJobPostingDetail>>(`${BASE_URL}/${id}/restore`)
     return res.data.data
   },
 }
