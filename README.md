@@ -1,208 +1,239 @@
-# Chuyển đổi từ Cloudinary sang Local File Storage
+# TopViec Frontend
 
-## Mô tả
+Frontend của TopViec là Vue 3 SPA dành cho ứng viên, nhà tuyển dụng và quản trị viên. Ứng dụng kết nối với backend qua REST API, quản lý access token ở client và dùng refresh token qua cookie HttpOnly.
 
-Hiện tại dự án đang sử dụng Cloudinary để lưu trữ file (CV, avatar, ảnh bìa công ty). Mục tiêu là chuyển sang lưu file trực tiếp trên server (local filesystem), tổ chức thư mục rõ ràng theo module, và tạo util/service để dễ dàng sử dụng.
+## Tech Stack
 
-## Phân tích hiện trạng
+| Component | Version / Library |
+|---|---|
+| Vue | `3.5.x` |
+| Vite | `7.3.x` |
+| TypeScript | `5.9.x` |
+| State management | Pinia `3.0.x` |
+| Router | Vue Router `4.6.x` |
+| HTTP client | Axios `1.13.x` |
+| Server state | TanStack Vue Query |
+| Styling | SCSS, Tailwind CSS `4.2.x` |
+| Forms/validation | vee-validate, zod |
+| Rich text | TipTap |
+| Charts | Chart.js, vue-chartjs |
+| PDF preview | vue-pdf-embed |
+| Realtime client | socket.io-client |
 
-### Cloudinary đang được sử dụng ở đâu?
+## System Requirements
 
-| File | Mục đích | Chi tiết |
-|------|----------|----------|
-| [CloudinaryConfig.java](file:///d:/01_Workspace/TopViec/topviec-be/src/main/java/com/topviec/topviec_be/config/CloudinaryConfig.java) | Config bean Cloudinary | Đọc credentials từ env |
-| [CloudinaryService.java](file:///d:/01_Workspace/TopViec/topviec-be/src/main/java/com/topviec/topviec_be/service/CloudinaryService.java) | Interface `uploadFile()` + `deleteFile()` | 2 methods |
-| [CloudinaryServiceImpl.java](file:///d:/01_Workspace/TopViec/topviec-be/src/main/java/com/topviec/topviec_be/service/impl/CloudinaryServiceImpl.java) | Implementation upload/delete Cloudinary | Upload bytes, delete by publicId |
-| [CvServiceImpl.java](file:///d:/01_Workspace/TopViec/topviec-be/src/main/java/com/topviec/topviec_be/service/impl/CvServiceImpl.java#L60-L61) | Upload CV | `cloudinaryService.uploadFile(file, userId, FileUploadType.CV)` |
-| [CandidateProfileServiceImpl.java](file:///d:/01_Workspace/TopViec/topviec-be/src/main/java/com/topviec/topviec_be/service/impl/CandidateProfileServiceImpl.java#L57) | Lưu avatar URL | Nhận `avatarUrl` string từ FE (không upload qua BE) |
-| [CompanyServiceImpl.java](file:///d:/01_Workspace/TopViec/topviec-be/src/main/java/com/topviec/topviec_be/service/impl/CompanyServiceImpl.java#L259) | Lưu cover/logo URL | Nhận `coverUrl`, `logoUrl` string từ FE (không upload qua BE) |
+| Tool | Minimum | Recommended |
+|---|---|---|
+| Node.js | `20.19.0` | Node 20 LTS hoặc Node 22 LTS |
+| npm | 10.x | Version đi kèm Node LTS |
 
-> [!IMPORTANT]
-> Hiện chỉ có **CV upload** đi qua `CloudinaryService`. Avatar và Company Cover/Logo được FE truyền URL trực tiếp (có thể FE upload trực tiếp lên Cloudinary). Sau khi chuyển sang local storage, tất cả file upload sẽ đi qua BE.
+Repo có `package-lock.json` và workflow đang dùng `npm ci`, vì vậy README dùng npm làm package manager chính.
 
----
+## Local Setup
 
-## Cấu trúc thư mục lưu trữ
+Tạo file env:
 
-```
-uploads/                          ← Root folder (ngoài src, cùng cấp build.gradle)
-├── images/                       ← Tất cả file ảnh
-│   ├── avatars/                  ← Ảnh đại diện ứng viên
-│   │   └── user_{userId}/        ← Phân theo user
-│   ├── company-logos/            ← Logo công ty
-│   │   └── company_{companyId}/
-│   ├── company-covers/           ← Ảnh bìa công ty
-│   │   └── company_{companyId}/
-│   └── business-licenses/        ← Giấy phép kinh doanh
-│       └── company_{companyId}/
-├── files/                        ← Tất cả file tài liệu
-│   └── cvs/                      ← CV (PDF, DOCX)
-│       └── user_{userId}/
+```powershell
+cd topviec-fe
+Copy-Item .env.example .env
 ```
 
----
+Cập nhật `topviec-fe/.env`:
 
-## Proposed Changes
+```env
+VITE_API_URL=http://localhost:8080/api/v1
+```
 
-### 1. Configuration — `FileStorageConfig`
+Cài dependencies và chạy dev server:
 
-#### [NEW] [FileStorageConfig.java](file:///d:/01_Workspace/TopViec/topviec-be/src/main/java/com/topviec/topviec_be/config/FileStorageConfig.java)
+```powershell
+npm install
+npm run dev
+```
 
-- Config class đọc `app.storage.*` properties từ `application.yaml`
-- Properties: `upload-dir` (root path), `base-url` (URL prefix cho client truy cập)
-- Khởi tạo tự động thư mục lưu trữ khi app start (`@PostConstruct`)
+URL sau khi chạy:
 
-#### [MODIFY] [application.yaml](file:///d:/01_Workspace/TopViec/topviec-be/src/main/resources/application.yaml)
+- Frontend: `http://localhost:5173`
+- Backend API cần chạy ở: `http://localhost:8080/api/v1`
 
-- Thêm cấu hình `app.storage`:
-  ```yaml
-  app:
-    storage:
-      upload-dir: ${UPLOAD_DIR:uploads}
-      base-url: ${STORAGE_BASE_URL:http://localhost:8080/api/v1/files}
-  ```
+## Environment Configuration
 
----
+| Variable | Required | Example | Meaning |
+|---|---:|---|---|
+| `VITE_API_URL` | Yes | `http://localhost:8080/api/v1` | Base URL cho Axios instance |
 
-### 2. WebMvc — Serve static files
+Lưu ý: source hiện dùng `import.meta.env.VITE_API_URL` trong `src/services/axios.ts`.
 
-#### [NEW] [WebMvcConfig.java](file:///d:/01_Workspace/TopViec/topviec-be/src/main/java/com/topviec/topviec_be/config/WebMvcConfig.java)
+## Folder Structure
 
-- Implement `WebMvcConfigurer`, override `addResourceHandlers()`
-- Map URL `/files/**` → filesystem `uploads/`
-- Cho phép client truy cập file đã upload qua URL, ví dụ: `http://localhost:8080/api/v1/files/images/avatars/user_1/abc.jpg`
+```text
+topviec-fe/
+├── src/
+│   ├── assets/
+│   ├── components/
+│   ├── composables/
+│   ├── constants/
+│   ├── layouts/
+│   ├── pages/
+│   ├── router/
+│   ├── services/
+│   ├── stores/
+│   ├── styles/
+│   ├── types/
+│   └── utils/
+├── index.html
+├── package.json
+├── tsconfig.app.json
+└── vite.config.ts
+```
 
-#### [MODIFY] [SecurityConfig.java](file:///d:/01_Workspace/TopViec/topviec-be/src/main/java/com/topviec/topviec_be/config/SecurityConfig.java)
+Convention chính:
 
-- Thêm `/files/**` vào `PUBLIC_URLS` để cho phép truy cập file không cần auth
+- `pages`: màn hình theo domain và role: `candidate`, `recruiter`, `admin`, `auth`, `error`.
+- `layouts`: layout riêng cho candidate, recruiter và admin.
+- `components`: UI component dùng lại và component nghiệp vụ theo module.
+- `services`: wrapper gọi REST API bằng Axios.
+- `stores`: Pinia store theo module nghiệp vụ.
+- `composables`: logic dùng lại trong component.
+- `constants`: trạng thái, option, permission và mapping dùng chung.
+- `types`: TypeScript type tương ứng DTO request/response backend.
+- `router`: route definitions và navigation guards.
 
----
+## Main Routes
 
-### 3. Enum — Mở rộng `FileUploadType`
+### Auth
 
-#### [MODIFY] [FileUploadType.java](file:///d:/01_Workspace/TopViec/topviec-be/src/main/java/com/topviec/topviec_be/enums/cvs/FileUploadType.java)
+| Route | Page |
+|---|---|
+| `/login` | Đăng nhập |
+| `/register` | Đăng ký ứng viên |
+| `/recruiter/register` | Đăng ký nhà tuyển dụng |
+| `/verify-email` | Thông báo xác thực email |
+| `/verify-email/callback` | Callback xác thực email |
+| `/forgot-password` | Quên mật khẩu |
+| `/reset-password` | Đặt lại mật khẩu |
+| `/interview-confirm-update` | Xác nhận lịch phỏng vấn được cập nhật |
+| `/interview-select-slot` | Chọn slot phỏng vấn |
+| `/talent-pool-invite` | Xử lý lời mời Talent Pool |
 
-- Thêm các type mới: `COMPANY_LOGO`, `BUSINESS_LICENSE`
-- Thêm field `subDir` để map type → thư mục con tương ứng (ví dụ: `AVATAR → "images/avatars"`)
+### Candidate
 
----
+| Route | Page |
+|---|---|
+| `/` | Trang chủ |
+| `/search` | Tìm kiếm việc làm |
+| `/jobs/:id` | Chi tiết việc làm |
+| `/companies/:slug` | Chi tiết công ty |
+| `/profile` | Hồ sơ ứng viên |
+| `/applied-jobs` | Việc đã ứng tuyển |
+| `/saved-jobs` | Việc đã lưu |
+| `/interviews` | Lịch phỏng vấn |
+| `/interviews/detail/:id` | Chi tiết phỏng vấn |
+| `/messages` | Tin nhắn |
+| `/change-password` | Đổi mật khẩu |
+| `/my-complaints` | Khiếu nại/báo cáo của ứng viên |
 
-### 4. Service — `FileStorageService` (thay thế `CloudinaryService`)
+### Employer / Recruiter
 
-#### [NEW] [FileStorageService.java](file:///d:/01_Workspace/TopViec/topviec-be/src/main/java/com/topviec/topviec_be/service/FileStorageService.java)
+| Route | Page |
+|---|---|
+| `/recruiter` | Dashboard nhà tuyển dụng |
+| `/recruiter/company-profile` | Hồ sơ công ty |
+| `/recruiter/team` | Thành viên công ty |
+| `/recruiter/assignment` | Phân công recruiter |
+| `/recruiter/permissions` | Cấu hình quyền |
+| `/recruiter/permissions/log` | Lịch sử thay đổi quyền |
+| `/recruiter/jobs` | Danh sách tin tuyển dụng |
+| `/recruiter/jobs/create` | Tạo tin tuyển dụng |
+| `/recruiter/jobs/:id` | Chi tiết tin tuyển dụng |
+| `/recruiter/jobs/:id/edit` | Sửa tin tuyển dụng |
+| `/recruiter/jobs/:id/applications` | Ứng viên theo tin |
+| `/recruiter/interviews` | Quản lý phỏng vấn |
+| `/recruiter/services` | Dịch vụ hiện có |
+| `/recruiter/services/shop` | Cửa hàng dịch vụ |
+| `/recruiter/pricing` | Bảng giá |
+| `/recruiter/billing` | Lịch sử thanh toán |
+| `/recruiter/offers` | Quản lý offer |
+| `/recruiter/talent-pool` | Talent Pool |
+| `/recruiter/messages` | Tin nhắn |
+| `/recruiter/complaints` | Báo cáo/khiếu nại |
+| `/recruiter/activity-log` | Nhật ký hoạt động |
+| `/recruiter/checkout` | Checkout |
+| `/payment/result` | Kết quả thanh toán |
 
-- Interface mới, methods giống `CloudinaryService` nhưng generic hơn:
-  - `String uploadFile(MultipartFile file, Long ownerId, FileUploadType type)` → trả về URL đầy đủ
-  - `void deleteFile(String fileUrl, FileUploadType type)` → xóa file từ filesystem
-  - `Resource loadFile(String fileUrl)` → load file để download (tuỳ chọn)
+### Admin
 
-#### [NEW] [FileStorageServiceImpl.java](file:///d:/01_Workspace/TopViec/topviec-be/src/main/java/com/topviec/topviec_be/service/impl/FileStorageServiceImpl.java)
+| Route | Page |
+|---|---|
+| `/admin` | Dashboard admin |
+| `/admin/employers` | Quản lý nhà tuyển dụng |
+| `/admin/employers/:id` | Chi tiết nhà tuyển dụng |
+| `/admin/candidates` | Quản lý ứng viên |
+| `/admin/candidates/:id` | Chi tiết ứng viên |
+| `/admin/admins` | Quản lý admin |
+| `/admin/moderation` | Kiểm duyệt tin tuyển dụng |
+| `/admin/service-packages` | Quản lý gói dịch vụ |
+| `/admin/individual-services` | Quản lý dịch vụ lẻ |
+| `/admin/services/create` | Tạo dịch vụ |
+| `/admin/orders` | Quản lý đơn hàng |
+| `/admin/employer-monitor` | Theo dõi nhà tuyển dụng |
+| `/admin/reports` | Quản lý báo cáo/khiếu nại |
+| `/admin/settings/permissions` | Cấu hình phân quyền |
+| `/admin/audit-logs` | Audit log |
 
-- Implementation lưu file vào filesystem:
-  - Tạo thư mục nếu chưa tồn tại
-  - Generate unique filename: `UUID + original extension`
-  - Lưu file vào đường dẫn: `{upload-dir}/{subDir}/{ownerPrefix}_{ownerId}/{uuid}.{ext}`
-  - Trả về URL: `{base-url}/{subDir}/{ownerPrefix}_{ownerId}/{uuid}.{ext}`
-  - Delete: parse URL → resolve path → xóa file
+## API Integration
 
----
+Axios instance nằm ở `src/services/axios.ts`.
 
-### 5. Controller — Upload endpoint tổng hợp
+- `baseURL`: lấy từ `VITE_API_URL`.
+- `withCredentials`: bật để gửi refresh cookie.
+- Request interceptor tự gắn `Authorization: Bearer <accessToken>`.
+- Response interceptor tự gọi `authStore.refreshToken()` khi API trả `401`.
+- Public auth endpoints được bỏ qua refresh interceptor.
 
-#### [NEW] [FileUploadController.java](file:///d:/01_Workspace/TopViec/topviec-be/src/main/java/com/topviec/topviec_be/controller/FileUploadController.java)
+## Common Commands
 
-- Endpoint: `POST /files/upload`
-- Nhận `MultipartFile file` + `FileUploadType type`
-- Validate file (dùng `FileValidator` hiện có)
-- Upload qua `FileStorageService`
-- Trả về URL cho FE sử dụng
-- Hỗ trợ cả authenticated user (UV upload avatar) và employer (upload logo, cover)
+```powershell
+cd topviec-fe
 
----
+# Install dependencies
+npm install
 
-### 6. Cập nhật các service đang dùng Cloudinary
+# Run dev server
+npm run dev
 
-#### [MODIFY] [CvServiceImpl.java](file:///d:/01_Workspace/TopViec/topviec-be/src/main/java/com/topviec/topviec_be/service/impl/CvServiceImpl.java)
+# Type check
+npm run typecheck
 
-- Thay `CloudinaryService` → `FileStorageService`
-- `cloudinaryService.uploadFile(...)` → `fileStorageService.uploadFile(...)`
+# Build production assets
+npm run build
 
----
+# Preview production build
+npm run preview
+```
 
-### 7. Cập nhật `FileValidator`
+Hiện repo chưa có script `lint`, `format` hoặc `test`.
 
-#### [MODIFY] [FileValidator.java](file:///d:/01_Workspace/TopViec/topviec-be/src/main/java/com/topviec/topviec_be/util/FileValidator.java)
+## Build and Deployment
 
-- Thêm validation cho `COMPANY_LOGO` và `BUSINESS_LICENSE` (MIME types, size limits, extensions)
+Workflow: `.github/workflows/deploy-fe.yml`
 
----
+- Trigger: push vào `main` hoặc `develop`.
+- Setup Node.js 20.
+- Install bằng `npm ci`.
+- Build bằng `npm run build` với `VITE_API_URL` từ GitHub Secrets.
+- Sync `dist` lên AWS S3 bucket `topviec-frontend`.
 
-### 8. Cleanup Cloudinary (tùy chọn)
+Demo hiện tại:
 
-> [!WARNING]
-> Sau khi chuyển sang local storage thành công, các file Cloudinary cũ cần:
-> - Giữ lại dependency `cloudinary-http44` tạm thời nếu cần backward-compatible
-> - Hoặc xóa hẳn dependency + config nếu không cần
+```text
+http://topviec-frontend.s3-website-ap-northeast-1.amazonaws.com/
+```
 
-#### [DELETE] [CloudinaryConfig.java](file:///d:/01_Workspace/TopViec/topviec-be/src/main/java/com/topviec/topviec_be/config/CloudinaryConfig.java)
-#### [DELETE] [CloudinaryService.java](file:///d:/01_Workspace/TopViec/topviec-be/src/main/java/com/topviec/topviec_be/service/CloudinaryService.java)
-#### [DELETE] [CloudinaryServiceImpl.java](file:///d:/01_Workspace/TopViec/topviec-be/src/main/java/com/topviec/topviec_be/service/impl/CloudinaryServiceImpl.java)
+## Known Issues
 
-#### [MODIFY] [build.gradle](file:///d:/01_Workspace/TopViec/topviec-be/build.gradle)
-- Xóa dependency `com.cloudinary:cloudinary-http44`
-
-#### [MODIFY] [application.yaml](file:///d:/01_Workspace/TopViec/topviec-be/src/main/resources/application.yaml)
-- Xóa block `app.cloudinary.*`
-
-#### [MODIFY] [.gitignore](file:///d:/01_Workspace/TopViec/topviec-be/.gitignore)
-- Thêm `uploads/` để không commit file upload lên git
-
----
-
-## Open Questions
-
-> [!IMPORTANT]
-> **1. Xóa Cloudinary ngay hay giữ lại?**
-> Bạn muốn xóa hẳn Cloudinary (dependency, config, service) ngay lập tức? Hay giữ lại tạm thời để backward-compatible với các URL ảnh cũ đã lưu trong DB?
-
-> [!IMPORTANT]
-> **2. Avatar & Company Logo/Cover — Upload flow**
-> Hiện tại FE đang truyền `avatarUrl`, `logoUrl`, `coverUrl` dưới dạng string URL (có thể đang upload trực tiếp lên Cloudinary từ FE). Sau khi chuyển sang local storage:
-> - **Phương án A**: FE gọi `POST /files/upload` trước → nhận URL → gửi URL khi update profile/company (giống flow hiện tại, chỉ đổi endpoint upload)
-> - **Phương án B**: Nhúng upload file vào API update profile/company luôn (multipart/form-data)
-> 
-> Tôi sẽ triển khai **Phương án A** (tạo endpoint upload riêng) vì ít thay đổi nhất. Bạn có đồng ý không?
-
----
-
-## Verification Plan
-
-### Build & Compile
-- Chạy `./gradlew build` để đảm bảo compile thành công
-
-### Manual Verification
-1. Start server → kiểm tra thư mục `uploads/` được tạo tự động
-2. Upload CV qua API → kiểm tra file xuất hiện đúng thư mục `uploads/files/cvs/user_{id}/`
-3. Upload avatar qua `POST /files/upload` → kiểm tra `uploads/images/avatars/user_{id}/`
-4. Truy cập URL file → kiểm tra trả về đúng file
-5. Xóa file → kiểm tra file bị xóa khỏi filesystem
-
-### Tổng kết file thay đổi
-
-| Action | File |
-|--------|------|
-| **NEW** | `FileStorageConfig.java` |
-| **NEW** | `WebMvcConfig.java` |
-| **NEW** | `FileStorageService.java` |
-| **NEW** | `FileStorageServiceImpl.java` |
-| **NEW** | `FileUploadController.java` |
-| **MODIFY** | `application.yaml` |
-| **MODIFY** | `SecurityConfig.java` |
-| **MODIFY** | `FileUploadType.java` |
-| **MODIFY** | `FileValidator.java` |
-| **MODIFY** | `CvServiceImpl.java` |
-| **MODIFY** | `.gitignore` |
-| **MODIFY** | `build.gradle` |
-| **DELETE** | `CloudinaryConfig.java` |
-| **DELETE** | `CloudinaryService.java` |
-| **DELETE** | `CloudinaryServiceImpl.java` |
+- `.env.example` hiện chỉ là placeholder, cần bổ sung `VITE_API_URL`.
+- Chưa có script lint/format/test trong `package.json`.
+- Một số module phát triển sau vẫn còn route hoặc dependency trong source, nhưng chưa đưa vào danh sách route chính của README.
+- Workflow FE nằm trong thư mục con; nếu chạy theo monorepo root, cần chuyển workflow về `.github/workflows` ở root.
+- Cần đảm bảo backend bật CORS cho đúng origin frontend, ví dụ `http://localhost:5173`.
