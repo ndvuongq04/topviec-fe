@@ -140,6 +140,7 @@ export const useEmployerTalentPoolStore = defineStore('employerTalentPool', () =
       searchMeta.value = data.meta;
     } catch (err) {
       setError(err);
+      throw err;
     } finally {
       searchLoading.value = false;
     }

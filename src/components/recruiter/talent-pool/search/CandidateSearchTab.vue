@@ -49,16 +49,24 @@ function handleViewDetail(candidate: ResCandidateSearchResultDTO) {
 async function handleSearch(locationId: number) {
   currentLocationId.value = locationId
   hasSearched.value = true
-  await talentPoolStore.searchCandidates({ locationId, page: 0, size: 10 })
+  try {
+    await talentPoolStore.searchCandidates({ locationId, page: 0, size: 10 })
+  } catch {
+    toast.error('Tìm kiếm thất bại', talentPoolStore.error ?? 'Vui lòng thử lại.')
+  }
 }
 
 async function handlePageChange(page: number) {
   if (currentLocationId.value === null) return
-  await talentPoolStore.searchCandidates({
-    locationId: currentLocationId.value,
-    page,
-    size: 10,
-  })
+  try {
+    await talentPoolStore.searchCandidates({
+      locationId: currentLocationId.value,
+      page,
+      size: 10,
+    })
+  } catch {
+    toast.error('Tìm kiếm thất bại', talentPoolStore.error ?? 'Vui lòng thử lại.')
+  }
 }
 
 async function handleSave(candidate: ResCandidateSearchResultDTO) {

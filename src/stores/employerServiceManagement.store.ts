@@ -79,6 +79,31 @@ export const useEmployerServiceManagementStore = defineStore('employerServiceMan
 
     // ─── Apply addon to job post ──────────────────────────────────────────────
 
+    async function refreshServiceQuotas() {
+        loading.value = true
+        error.value = null
+        const [subscriptionResult, addonsResult] = await Promise.allSettled([
+            employerServiceManagementService.getMySubscription(),
+            employerServiceManagementService.getMyAddons(),
+        ])
+
+        if (subscriptionResult.status === 'fulfilled') {
+            subscription.value = subscriptionResult.value
+        }
+
+        if (addonsResult.status === 'fulfilled') {
+            addons.value = addonsResult.value
+        }
+
+        const failed = [subscriptionResult, addonsResult].find(
+            result => result.status === 'rejected',
+        )
+        if (failed?.status === 'rejected') {
+            error.value = extractErrorMessage(failed.reason)
+        }
+        loading.value = false
+    }
+
     async function applyAddonToJobPost(
         jobPostingId: number,
         payload: ReqApplyAddonDTO,
@@ -91,13 +116,7 @@ export const useEmployerServiceManagementStore = defineStore('employerServiceMan
                 payload,
             )
             // Trừ quantity_remaining trên addon vừa được áp dụng (cập nhật local state)
-            const addonIdx = addons.value.findIndex(a => a.id === payload.companyAddonId)
-            if (addonIdx !== -1) {
-                addons.value[addonIdx] = {
-                    ...addons.value[addonIdx],
-                    quantityRemaining: addons.value[addonIdx].quantityRemaining - 1,
-                }
-            }
+            await refreshServiceQuotas()
             return result
         } catch (err) {
             error.value = extractErrorMessage(err)
@@ -113,7 +132,9 @@ export const useEmployerServiceManagementStore = defineStore('employerServiceMan
         loading.value = true
         error.value   = null
         try {
-            return await employerServiceManagementService.applyBrandingToCompany(payload)
+            const result = await employerServiceManagementService.applyBrandingToCompany(payload)
+            await refreshServiceQuotas()
+            return result
         } catch (err) {
             error.value = extractErrorMessage(err)
             throw err
@@ -143,6 +164,7 @@ export const useEmployerServiceManagementStore = defineStore('employerServiceMan
         fetchMySubscription,
         renewSubscription,
         fetchMyAddons,
+        refreshServiceQuotas,
         applyAddonToJobPost,
         applyBrandingToCompany,
         reset,

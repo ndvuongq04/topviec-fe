@@ -55,7 +55,7 @@
                 :key="detail.id"
                 class="text-xs text-slate-600 dark:text-slate-300 whitespace-nowrap"
               >
-                {{ detail.serviceName }}: {{ detail.quantity }}<template v-if="detail.serviceUnit"> {{ detail.serviceUnit }}</template>
+                {{ detail.serviceName }}: {{ detail.quantity }}<template v-if="detail.serviceUnit"> {{ detail.serviceUnit }}</template><template v-if="detail.durationDays"> · {{ detail.durationDays }} ngày</template>
               </span>
             </div>
             <span v-else class="text-sm text-slate-400">—</span>
