@@ -28,7 +28,6 @@ const sort = ref('publishedAt,desc')
 const showMobileFilter = ref(false)
 
 // ─── Đọc filter từ URL ───────────────────────────────────────────────────────
-const keyword = computed(() => (route.query.keyword as string) || '')
 
 /** Map experience key → { experienceYearsMin, experienceYearsMax } */
 function parseExperience(exp: string | undefined): { experienceYearsMin?: number; experienceYearsMax?: number } {
@@ -42,13 +41,25 @@ function parseExperience(exp: string | undefined): { experienceYearsMin?: number
   }
 }
 
+function normalizeWorkType(value: string | undefined) {
+  const map: Record<string, string> = {
+    FULL_TIME: 'full_time',
+    PART_TIME: 'part_time',
+    INTERN: 'intern',
+    REMOTE: 'remote',
+  }
+  return value ? map[value] ?? value : undefined
+}
+
 /** Initial values cho AdvancedFilter từ URL (khi reload hoặc link trực tiếp) */
 const initialSidebarFilters = computed(() => ({
   initialIndustryId: route.query.industryId ? Number(route.query.industryId) : undefined,
+  initialLevelId:    route.query.levelId    ? Number(route.query.levelId)    : undefined,
   initialSalaryMin:  route.query.salaryMin  ? Number(route.query.salaryMin)  : undefined,
   initialSalaryMax:  route.query.salaryMax  ? Number(route.query.salaryMax)  : undefined,
   initialFeatured:   route.query.isFeatured === 'true',
   initialUrgent:     route.query.isUrgent   === 'true',
+  initialHot:        route.query.isHot      === 'true',
 }))
 
 // ─── Quick View ──────────────────────────────────────────────────────────────
@@ -105,13 +116,17 @@ async function fetchJobs() {
     const q = route.query
     const params = {
       keyword:     (q.keyword  as string) || undefined,
-      workType:    (q.workType as string) || undefined,
+      companyId:   q.companyId  ? Number(q.companyId)  : undefined,
+      locationId:  q.locationId ? Number(q.locationId) : q.provinceId ? Number(q.provinceId) : undefined,
+      workType:    normalizeWorkType(q.workType as string | undefined),
       ...parseExperience(q.experience as string),
       industryId:  q.industryId ? Number(q.industryId) : undefined,
+      levelId:     q.levelId    ? Number(q.levelId)    : undefined,
       salaryMin:   q.salaryMin  ? Number(q.salaryMin)  : undefined,
       salaryMax:   q.salaryMax  ? Number(q.salaryMax)  : undefined,
       isFeatured:  q.isFeatured === 'true' ? true : undefined,
       isUrgent:    q.isUrgent   === 'true' ? true : undefined,
+      isHot:       q.isHot      === 'true' ? true : undefined,
       page: currentPage.value,
       size: 10,
       sort: sort.value || undefined,
@@ -133,16 +148,17 @@ async function fetchJobs() {
 // ─── Handlers ───────────────────────────────────────────────────────────────
 
 function onFilterChange(filters: SearchFilters) {
-  sidebarFilters.value = filters
   // Đẩy sidebar params lên URL → watcher sẽ tự gọi fetchJobs
   router.replace({
     query: {
       ...route.query,
       industryId: filters.industryId?.toString()      || undefined,
+      levelId:    filters.levelId?.toString()         || undefined,
       salaryMin:  filters.salaryMin?.toString()       || undefined,
       salaryMax:  filters.salaryMax?.toString()       || undefined,
       isFeatured: filters.isFeatured ? 'true'         : undefined,
       isUrgent:   filters.isUrgent   ? 'true'         : undefined,
+      isHot:      filters.isHot      ? 'true'         : undefined,
     },
   })
 }

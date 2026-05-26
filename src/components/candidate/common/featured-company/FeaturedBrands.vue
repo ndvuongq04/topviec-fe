@@ -8,37 +8,62 @@
         <FeaturedBrandCard v-for="c in store.companies" :key="c.id" :company="c" />
       </div>
 
-      <div class="featured-brands__footer">
-        <button class="featured-brands__view-all">
-          Xem tất cả
-          <span class="material-symbols-outlined">arrow_forward</span>
-        </button>
-      </div>
+      <FeaturedJobsPagination
+        v-if="totalPages > 1"
+        :current="currentPage"
+        :total="totalPages"
+        @prev="loadPage(currentPage - 1)"
+        @next="loadPage(currentPage + 1)"
+      />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import FeaturedBrandsHeader from './FeaturedBrandsHeader.vue'
 import FeaturedBrandsFilter from './FeaturedBrandsFilter.vue'
 import FeaturedBrandCard from './FeaturedBrandCard.vue'
+import FeaturedJobsPagination from '../featured-jobs/FeaturedJobsPagination.vue'
 import { useCandidateCompanyStore } from '@/stores/candidateCompany.store'
 import { useIndustryStore } from '@/stores/industry.store'
 
 const store = useCandidateCompanyStore()
 const industryStore = useIndustryStore()
+const PAGE_SIZE = 9
+const ALL_CATEGORY = 'Tất cả'
 
-const activeCategory = ref('Tất cả')
+const activeCategory = ref(ALL_CATEGORY)
 
 const categories = computed(() => [
-  'Tất cả',
+  ALL_CATEGORY,
   ...industryStore.industries.map(i => i.name),
 ])
 
-onMounted(() => {
-  industryStore.fetchIndustries({ size: 100 })
-  store.fetchPublicCompanies({ isTopEmployer: true, size: 6, page: 0 })
+const selectedIndustryId = computed(() => {
+  if (activeCategory.value === ALL_CATEGORY) return undefined
+  return industryStore.industries.find(i => i.name === activeCategory.value)?.id
+})
+
+const currentPage = computed(() => store.meta.page)
+const totalPages = computed(() => store.meta.pages)
+
+function loadPage(page = 0) {
+  return store.fetchPublicCompanies({
+    isTopEmployer: true,
+    industryId: selectedIndustryId.value,
+    size: PAGE_SIZE,
+    page,
+  })
+}
+
+watch(activeCategory, () => {
+  loadPage(0)
+})
+
+onMounted(async () => {
+  await industryStore.fetchIndustries({ size: 100 })
+  await loadPage(0)
 })
 </script>
 
@@ -61,16 +86,4 @@ onMounted(() => {
 @media (max-width: 1024px) { .featured-brands__cards { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 640px) { .featured-brands__cards { grid-template-columns: 1fr; } }
 
-.featured-brands__footer { display: flex; justify-content: center; padding-bottom: 8px; margin-top: 1.5rem; }
-.featured-brands__view-all {
-  display: flex; align-items: center; gap: 8px;
-  padding: 10px 32px;
-  border: 1px solid #005ea4; border-radius: 999px;
-  background: none; color: #005ea4;
-  font-size: 0.875rem; font-weight: 600; cursor: pointer;
-  font-family: 'Inter', sans-serif;
-  transition: background 0.2s, color 0.2s;
-}
-.featured-brands__view-all:hover { background: #005ea4; color: #fff; }
-.featured-brands__view-all .material-symbols-outlined { font-size: 18px; }
 </style>
