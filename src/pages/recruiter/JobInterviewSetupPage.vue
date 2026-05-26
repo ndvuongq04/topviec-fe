@@ -416,8 +416,16 @@ function mapInterviewType(type: string): { label: string; formatType: 'online' |
   return { label: 'Trực tiếp', formatType: 'offline' }
 }
 
-function formatDateLabel(iso: string): string {
+function hasActualSchedule(schedule: ResInterviewScheduleDTO): boolean {
+  return !schedule.isDefault && schedule.status !== INTERVIEW_STATUS.PENDING && Boolean(schedule.scheduledAt)
+}
+
+function formatDateLabel(iso?: string | null): string {
+  if (!iso) return 'Chưa lên lịch'
+
   const scheduled = new Date(iso)
+  if (Number.isNaN(scheduled.getTime())) return 'Chưa lên lịch'
+
   const today     = new Date()
   const diffDays  = Math.floor(
     (new Date(scheduled).setHours(0,0,0,0) - new Date(today).setHours(0,0,0,0)) / 86_400_000
@@ -429,11 +437,22 @@ function formatDateLabel(iso: string): string {
   return scheduled.toLocaleDateString('vi-VN', { day: 'numeric', month: 'long' }) + `, ${time}`
 }
 
+function formatDateValue(iso?: string | null): string {
+  if (!iso) return 'Cần đặt lịch phỏng vấn'
+
+  const scheduled = new Date(iso)
+  if (Number.isNaN(scheduled.getTime())) return 'Cần đặt lịch phỏng vấn'
+
+  return scheduled.toLocaleDateString('vi-VN', {
+    day: 'numeric', month: 'long', year: 'numeric',
+  })
+}
+
 function getInitials(name: string): string {
   const parts = name.trim().split(' ')
-  return parts.length >= 2
-    ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
-    : name.slice(0, 2).toUpperCase()
+  const first = parts[0]?.[0] ?? ''
+  const last = parts.length >= 2 ? parts[parts.length - 1]?.[0] ?? '' : ''
+  return (last ? `${first}${last}` : name.slice(0, 2)).toUpperCase()
 }
 
 function mapToCandidate(
@@ -442,6 +461,7 @@ function mapToCandidate(
   isFinalRound: boolean = false
 ) {
   const firstInterviewer = interviewers[0]
+  const actualSchedule = hasActualSchedule(schedule)
   const { label, formatType } = mapInterviewType(schedule.interviewType)
   return {
     id:        schedule.applicationId,
@@ -451,13 +471,11 @@ function mapToCandidate(
     interviewer: firstInterviewer
       ? { id: firstInterviewer.id, name: firstInterviewer.name, initials: getInitials(firstInterviewer.name) }
       : { id: 0, name: '—', initials: '?' },
-    hasSchedule:    true,
+    hasSchedule:    actualSchedule,
     scheduleStatus: schedule.status,
-    dateLabel:      formatDateLabel(schedule.scheduledAt),
-    dateFormatted:  new Date(schedule.scheduledAt).toLocaleDateString('vi-VN', {
-      day: 'numeric', month: 'long', year: 'numeric',
-    }),
-    format:     schedule.interviewType === INTERVIEW_TYPE.ONLINE && schedule.meetingLink
+    dateLabel:      actualSchedule ? formatDateLabel(schedule.scheduledAt) : 'Chưa lên lịch',
+    dateFormatted:  actualSchedule ? formatDateValue(schedule.scheduledAt) : 'Cần đặt lịch phỏng vấn',
+    format:     !actualSchedule ? 'Chưa xác định' : schedule.interviewType === INTERVIEW_TYPE.ONLINE && schedule.meetingLink
       ? (schedule.meetingLink.includes('meet.google') ? 'Google Meet' : 'Trực tuyến')
       : label,
     formatType,
@@ -471,8 +489,9 @@ function mapToCandidate(
 async function fetchRounds() {
   try {
     rounds.value = await employerInterviewService.getRounds(jobId.value)
-    if (rounds.value.length > 0 && activeStageId.value === null) {
-      activeStageId.value = rounds.value[0].id
+    const firstRound = rounds.value[0]
+    if (firstRound && activeStageId.value === null) {
+      activeStageId.value = firstRound.id
     }
   } catch (err: any) {
     toast.error('Lỗi', err?.response?.data?.message ?? 'Không thể tải danh sách vòng phỏng vấn.')
@@ -541,13 +560,14 @@ function setRescheduleType(type: 'online' | 'onsite') {
 
 function handleReschedule(applicationId: number) {
   const schedule = roundSchedules.value.find(s => s.applicationId === applicationId)
-  if (!schedule) return
+  if (!schedule || !hasActualSchedule(schedule)) return
 
   const dt = new Date(schedule.scheduledAt)
   rescheduleScheduleId.value = schedule.id
   rescheduleCandidate.value  = { name: schedule.candidateName }
+  const date = dt.toISOString().split('T')[0] ?? ''
   rescheduleForm.value = {
-    date:          dt.toISOString().split('T')[0],
+    date,
     time:          dt.toTimeString().slice(0, 5),
     interviewType: schedule.interviewType,
     meetingLink:   schedule.meetingLink ?? '',
@@ -612,7 +632,7 @@ async function confirmReschedule() {
 
 async function handleRemind(applicationId: number) {
   const schedule = roundSchedules.value.find(s => s.applicationId === applicationId)
-  if (!schedule) return
+  if (!schedule || !hasActualSchedule(schedule)) return
 
   try {
     await employerInterviewService.remindConfirmSchedule(schedule.id)
@@ -624,7 +644,7 @@ async function handleRemind(applicationId: number) {
 
 async function handleCancel(applicationId: number) {
   const schedule = roundSchedules.value.find(s => s.applicationId === applicationId)
-  if (!schedule) return
+  if (!schedule || !hasActualSchedule(schedule)) return
 
   const ok = await confirm({
     title: 'Hủy lịch phỏng vấn',
@@ -653,7 +673,7 @@ function handleSchedule(applicationId: number) {
 
 function handleEvaluate(applicationId: number) {
   const schedule = roundSchedules.value.find(s => s.applicationId === applicationId)
-  if (!schedule) return
+  if (!schedule || !hasActualSchedule(schedule)) return
 
   evaluateScheduleId.value = schedule.id
   evaluateCandidate.value  = { name: schedule.candidateName, candidateUserId: schedule.candidateUserId }
@@ -696,7 +716,7 @@ async function confirmEvaluate() {
 
 function handleOffer(applicationId: number) {
   const schedule = roundSchedules.value.find(s => s.applicationId === applicationId)
-  if (!schedule) return
+  if (!schedule || !hasActualSchedule(schedule)) return
 
   offerApplicationId.value = applicationId
   offerCandidate.value     = { name: schedule.candidateName }
@@ -754,7 +774,7 @@ async function handleDeleteStage(stageId: number) {
     const deleted = rounds.value.find(r => r.id === stageId)
     rounds.value = rounds.value.filter(r => r.id !== stageId)
     if (activeStageId.value === stageId) {
-      activeStageId.value = rounds.value.length > 0 ? rounds.value[0].id : null
+      activeStageId.value = rounds.value[0]?.id ?? null
     }
     toast.success('Đã xóa!', `Vòng phỏng vấn "${deleted?.roundName ?? ''}" đã được xóa.`)
   } catch (err: any) {

@@ -168,6 +168,15 @@
               class="w-24 px-3 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm outline-none focus:ring-4 focus:ring-[#963131]/10 focus:border-[#963131] transition-all"
             />
 
+            <input
+              v-model.number="detail.durationDays"
+              type="number"
+              min="1"
+              placeholder="Ngày"
+              title="Thời hạn mỗi lượt, để trống để dùng mặc định BE"
+              class="w-28 px-3 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm outline-none focus:ring-4 focus:ring-[#963131]/10 focus:border-[#963131] transition-all"
+            />
+
             <!-- Xóa row -->
             <button
               type="button"
@@ -275,8 +284,9 @@ const computedCode = computed(() =>
 )
 
 interface DetailRow {
-  serviceId: number | null
-  quantity:  number
+  serviceId:     number | null
+  quantity:      number
+  durationDays:  number | null
 }
 
 const form = reactive({
@@ -296,7 +306,7 @@ const errors = reactive({
 })
 
 function addDetail() {
-  form.details.push({ serviceId: null, quantity: 1 })
+  form.details.push({ serviceId: null, quantity: 1, durationDays: null })
 }
 
 function removeDetail(idx: number) {
@@ -353,7 +363,11 @@ function handleSubmit() {
 
   const details: ReqServicePackageDetailItem[] = form.details
     .filter(d => d.serviceId !== null)
-    .map(d => ({ serviceId: d.serviceId as number, quantity: d.quantity }))
+    .map(d => ({
+      serviceId: d.serviceId as number,
+      quantity: d.quantity,
+      durationDays: d.durationDays || undefined,
+    }))
 
   const payload: ReqServicePackageDTO = {
     name:         SERVICE_PACKAGE_TIER_LABELS[form.tier as ServicePackageTier],

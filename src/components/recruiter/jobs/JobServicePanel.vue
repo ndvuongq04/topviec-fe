@@ -1,10 +1,14 @@
 <template>
   <section class="service-panel">
-    <!-- Header -->
     <div class="service-panel__header">
       <div class="service-panel__header-left">
         <h3 class="service-panel__title">Dịch vụ đang áp dụng</h3>
-        <span class="material-symbols-outlined service-panel__info-icon" title="Dịch vụ lẻ áp dụng cho tin tuyển dụng này">info</span>
+        <span
+          class="material-symbols-outlined service-panel__info-icon"
+          title="Dịch vụ có thể dùng từ gói subscription hoặc dịch vụ lẻ"
+        >
+          info
+        </span>
       </div>
       <router-link :to="{ name: 'recruiter-service-shop' }" class="service-panel__add-btn">
         <span class="material-symbols-outlined">add</span>
@@ -13,49 +17,46 @@
     </div>
 
     <div class="service-panel__body">
-
-      <!-- TODO: Hiển thị dịch vụ đang chạy trên tin này sau khi BE bổ sung -->
-      <!-- GET /employer/services/job-posts/{jobPostingId}/addons -->
-
-      <!-- Loading -->
       <div v-if="store.loading" class="service-panel__loading">
         <div class="service-panel__skeleton" v-for="n in 2" :key="n" />
       </div>
 
       <template v-else>
-        <!-- Không có addon nào thuộc nhóm JOB_POSTING -->
-        <div v-if="!availableAddons.length && !depletedAddons.length" class="service-panel__empty">
+        <div v-if="!availableServices.length && !depletedAddons.length" class="service-panel__empty">
           <span class="material-symbols-outlined">inventory_2</span>
-          <p>Bạn chưa có dịch vụ lẻ nào cho tin tuyển dụng.</p>
+          <p>Bạn chưa có quota dịch vụ nào cho tin tuyển dụng.</p>
           <router-link :to="{ name: 'recruiter-service-shop' }" class="service-panel__empty-link">
             Mua ngay
           </router-link>
         </div>
 
-        <!-- Banner xanh: addon còn lượt — mỗi addon 1 banner -->
         <div
-          v-for="addon in availableAddons"
-          :key="addon.id"
+          v-for="option in availableServices"
+          :key="option.key"
           class="service-banner service-banner--blue"
         >
           <div class="service-banner__left">
-            <div class="service-banner__icon">{{ ADDON_CODE_EMOJI[addon.addonCode ?? ''] ?? '✨' }}</div>
+            <div class="service-banner__icon">
+              <span class="material-symbols-outlined">{{ option.icon }}</span>
+            </div>
             <div>
               <h4 class="service-banner__title">Tăng hiệu quả tuyển dụng</h4>
               <p class="service-banner__desc">
                 Bạn còn
-                <strong class="service-banner__highlight">{{ addon.quantityRemaining }} lượt {{ addon.addonName }}</strong>
-                <span v-if="addon.expiredAt"> • Hết hạn {{ formatDate(addon.expiredAt) }}</span>
+                <strong class="service-banner__highlight">
+                  {{ option.sourceSummary }} {{ option.name }}
+                </strong>
+                <span v-if="option.expiredAt"> · Hết hạn {{ formatDate(option.expiredAt) }}</span>
               </p>
             </div>
           </div>
           <div class="service-banner__actions">
             <button
               class="service-banner__btn service-banner__btn--primary"
-              :disabled="applyingIds.has(addon.id)"
-              @click="applyAddon(addon.id)"
+              :disabled="applyingKeys.has(option.key)"
+              @click="applyService(option)"
             >
-              <span v-if="applyingIds.has(addon.id)" class="service-banner__spinner" />
+              <span v-if="applyingKeys.has(option.key)" class="service-banner__spinner" />
               <span v-else>Áp dụng ngay</span>
             </button>
             <router-link :to="{ name: 'recruiter-services' }" class="service-banner__btn service-banner__btn--ghost">
@@ -64,16 +65,17 @@
           </div>
         </div>
 
-        <!-- Banner cam: addon hết lượt -->
         <div v-if="depletedAddons.length" class="service-banner service-banner--amber">
           <div class="service-banner__left">
-            <div class="service-banner__icon">⚠️</div>
+            <div class="service-banner__icon">
+              <span class="material-symbols-outlined">warning</span>
+            </div>
             <div>
               <h4 class="service-banner__title service-banner__title--amber">
-                Hết lượt: {{ depletedAddons.map(a => a.addonName).join(', ') }}
+                Hết lượt: {{ depletedAddons.map(a => a.addonName ?? a.serviceName ?? a.addonCode).join(', ') }}
               </h4>
               <p class="service-banner__desc service-banner__desc--amber">
-                Nâng cấp gói hoặc mua lẻ để tiếp tục tiếp cận ứng viên tiềm năng.
+                Nâng cấp gói hoặc mua lẻ để tiếp tục dùng dịch vụ tuyển dụng.
               </p>
             </div>
           </div>
@@ -91,70 +93,190 @@ import { computed, onMounted, ref } from 'vue'
 import dayjs from 'dayjs'
 import { useEmployerServiceManagementStore } from '@/stores/employerServiceManagement.store'
 import { useToast } from '@/composables/useToast'
-import { SubscriptionStatus } from '@/constants/servicePackage.constants'
+import {
+  JOB_POSTING_SERVICE_CODES,
+  SERVICE_CODE_LABELS,
+  SERVICE_CODES,
+  SubscriptionStatus,
+} from '@/constants/servicePackage.constants'
 import { ServiceCategory } from '@/constants/serviceCatalog.constants'
+import type {
+  ResJobPostAddonDTO,
+  ResSubscriptionUsageDTO,
+} from '@/types/servicePackage.types'
 
 const props = defineProps<{ jobPostingId: number }>()
 
 const store = useEmployerServiceManagementStore()
 const toast = useToast()
 
-// ─── Emoji map theo addonCode ─────────────────────────────────────────────────
-const ADDON_CODE_EMOJI: Record<string, string> = {
-    HOT_JOB_7D:     '🔥',
-    URGENT_JOB_7D:  '⚡',
-    EXTEND_JOB_7D:  '📅',
-    EXTEND_JOB_14D: '📅',
-    CV_ACCESS:      '🔓',
-    PROFILE_BOOST:  '🚀',
-    BRAND_BANNER:   '🏆',
-    BRAND_POST:     '📝',
+const ADDON_CODE_ICON: Record<string, string> = {
+  HOT_JOB_7D: 'local_fire_department',
+  URGENT_JOB_7D: 'priority_high',
+  EXTEND_JOB_7D: 'event_repeat',
+  EXTEND_JOB_14D: 'event_repeat',
+  CV_ACCESS: 'person_search',
+  PROFILE_BOOST: 'rocket_launch',
+  BRAND_BANNER: 'workspace_premium',
+  BRAND_POST: 'edit_note',
 }
 
-// ─── Chỉ lấy addon thuộc nhóm JOB_POSTING ────────────────────────────────────
+interface ServiceApplyOption {
+  key: string
+  serviceCode: string | null
+  companyAddonId?: number
+  name: string
+  icon: string
+  sourceSummary: string
+  expiredAt: string | null
+}
+
+interface MutableServiceApplyOption extends Omit<ServiceApplyOption, 'sourceSummary' | 'expiredAt'> {
+  sourceParts: string[]
+  expiryDates: string[]
+}
+
 const jobPostingAddons = computed(() =>
-    store.addons.filter(a => a.serviceCategory === ServiceCategory.JOB_POSTING),
+  store.addons.filter(a => a.serviceCategory === ServiceCategory.JOB_POSTING),
 )
 
-// Còn lượt: ACTIVE + quantityRemaining > 0 + chưa hết hạn
+const jobPostingSubscriptionUsages = computed(() =>
+  (store.subscription?.usages ?? []).filter(isSupportedJobPostingUsage),
+)
+
 const availableAddons = computed(() =>
-    jobPostingAddons.value.filter(a =>
-        a.status === SubscriptionStatus.ACTIVE &&
-        a.quantityRemaining > 0 &&
-        (!a.expiredAt || dayjs(a.expiredAt).isAfter(dayjs())),
-    ),
+  jobPostingAddons.value.filter(a =>
+    a.status === SubscriptionStatus.ACTIVE &&
+    a.quantityRemaining > 0 &&
+    (!a.expiredAt || dayjs(a.expiredAt).isAfter(dayjs())),
+  ),
 )
 
-// Hết lượt hoặc hết hạn
+const availableServices = computed<ServiceApplyOption[]>(() => {
+  const options = new Map<string, MutableServiceApplyOption>()
+
+  for (const usage of jobPostingSubscriptionUsages.value) {
+    const option = ensureOption(options, usage.featureCode, {
+      serviceCode: usage.featureCode,
+      name: usage.featureName ?? getServiceCodeLabel(usage.featureCode),
+      icon: getJobServiceIcon(usage.featureCode),
+    })
+    option.sourceParts.push(
+      usage.quantityTotal === -1 ? 'không giới hạn trong gói' : `${usage.quantityRemaining} lượt trong gói`,
+    )
+    if (usage.resetAt) option.expiryDates.push(usage.resetAt)
+  }
+
+  for (const addon of availableAddons.value) {
+    if (addon.serviceCode === SERVICE_CODES.JOB_POSTING_REFRESH) continue
+
+    const key = addon.serviceCode ?? `addon-${addon.id}`
+    const option = ensureOption(options, key, {
+      serviceCode: addon.serviceCode,
+      companyAddonId: addon.id,
+      name: addon.addonName ?? addon.serviceName ?? getServiceCodeLabel(addon.serviceCode),
+      icon: ADDON_CODE_ICON[addon.addonCode ?? ''] ?? getJobServiceIcon(addon.serviceCode),
+    })
+    option.sourceParts.push(`${addon.quantityRemaining} lượt mua lẻ`)
+    if (addon.expiredAt) option.expiryDates.push(addon.expiredAt)
+  }
+
+  return Array.from(options.values()).map(option => ({
+    key: option.key,
+    serviceCode: option.serviceCode,
+    companyAddonId: option.companyAddonId,
+    name: option.name,
+    icon: option.icon,
+    sourceSummary: option.sourceParts.join(' + '),
+    expiredAt: option.expiryDates.sort()[0] ?? null,
+  }))
+})
+
 const depletedAddons = computed(() =>
-    jobPostingAddons.value.filter(a =>
-        a.quantityRemaining === 0 || a.status !== SubscriptionStatus.ACTIVE,
-    ),
+  jobPostingAddons.value.filter(a =>
+    a.quantityRemaining === 0 ||
+    a.status !== SubscriptionStatus.ACTIVE ||
+    (!!a.expiredAt && dayjs(a.expiredAt).isBefore(dayjs())),
+  ),
 )
 
-// ─── Apply addon ──────────────────────────────────────────────────────────────
-const applyingIds = ref<Set<number>>(new Set())
+const applyingKeys = ref<Set<string>>(new Set())
 
-async function applyAddon(companyAddonId: number) {
-    applyingIds.value = new Set([...applyingIds.value, companyAddonId])
-    try {
-        await store.applyAddonToJobPost(props.jobPostingId, { companyAddonId })
-        toast.success('Áp dụng thành công', 'Dịch vụ đã được kích hoạt cho tin tuyển dụng này.')
-    } catch {
-        toast.error('Áp dụng thất bại', store.error ?? 'Vui lòng thử lại.')
-    } finally {
-        applyingIds.value = new Set([...applyingIds.value].filter(id => id !== companyAddonId))
-    }
+async function applyService(option: ServiceApplyOption) {
+  applyingKeys.value = new Set([...applyingKeys.value, option.key])
+  try {
+    const result = await store.applyAddonToJobPost(
+      props.jobPostingId,
+      option.serviceCode ? { serviceCode: option.serviceCode } : { companyAddonId: option.companyAddonId },
+    )
+    toast.success('Áp dụng thành công', getUsageSourceMessage(result))
+  } catch {
+    toast.error('Áp dụng thất bại', store.error ?? 'Vui lòng thử lại.')
+  } finally {
+    applyingKeys.value = new Set([...applyingKeys.value].filter(key => key !== option.key))
+  }
+}
+
+function isSupportedJobPostingUsage(usage: ResSubscriptionUsageDTO): boolean {
+  return isSupportedJobPostingCode(usage.featureCode) &&
+    (usage.quantityTotal === -1 || usage.quantityRemaining > 0)
+}
+
+function isSupportedJobPostingCode(code?: string | null): code is string {
+  return !!code &&
+    code !== SERVICE_CODES.JOB_POSTING_REFRESH &&
+    (JOB_POSTING_SERVICE_CODES as readonly string[]).includes(code)
+}
+
+function ensureOption(
+  options: Map<string, MutableServiceApplyOption>,
+  key: string,
+  defaults: Omit<MutableServiceApplyOption, 'key' | 'sourceParts' | 'expiryDates'>,
+): MutableServiceApplyOption {
+  const existing = options.get(key)
+  if (existing) {
+    existing.companyAddonId ??= defaults.companyAddonId
+    return existing
+  }
+
+  const option: MutableServiceApplyOption = {
+    key,
+    ...defaults,
+    sourceParts: [],
+    expiryDates: [],
+  }
+  options.set(key, option)
+  return option
+}
+
+function getServiceCodeLabel(code?: string | null): string {
+  return code && code in SERVICE_CODE_LABELS
+    ? SERVICE_CODE_LABELS[code as keyof typeof SERVICE_CODE_LABELS]
+    : 'Dịch vụ tuyển dụng'
+}
+
+function getJobServiceIcon(code?: string | null): string {
+  if (code === SERVICE_CODES.JOB_POSTING_HOT) return 'local_fire_department'
+  if (code === SERVICE_CODES.JOB_POSTING_URGENT) return 'priority_high'
+  return 'bolt'
+}
+
+function getUsageSourceMessage(result: ResJobPostAddonDTO): string {
+  if (result.usageSourceType === 'SUBSCRIPTION') {
+    return 'Đã dùng 1 lượt trong gói.'
+  }
+  if (result.usageSourceType === 'ADDON') {
+    return 'Đã dùng 1 lượt dịch vụ lẻ.'
+  }
+  return 'Dịch vụ đã được kích hoạt cho tin tuyển dụng này.'
 }
 
 function formatDate(date: string) {
-    return dayjs(date).format('DD/MM/YYYY')
+  return dayjs(date).format('DD/MM/YYYY')
 }
 
 onMounted(() => {
-    if (!store.addons.length) {
-        store.fetchMyAddons()
-    }
+  store.refreshServiceQuotas()
 })
 </script>
 
@@ -167,7 +289,6 @@ onMounted(() => {
   overflow: hidden;
 }
 
-/* Header */
 .service-panel__header {
   display: flex; align-items: center; justify-content: space-between;
   padding: 1.25rem 1.5rem;
@@ -187,10 +308,8 @@ onMounted(() => {
 .service-panel__add-btn:hover { background: rgba(219,234,254,0.3); }
 .service-panel__add-btn .material-symbols-outlined { font-size: 0.9rem; }
 
-/* Body */
 .service-panel__body { padding: 1.25rem 1.5rem; display: flex; flex-direction: column; gap: 1rem; }
 
-/* Loading */
 .service-panel__loading { display: flex; flex-direction: column; gap: 12px; }
 .service-panel__skeleton {
   height: 88px; border-radius: 0.75rem;
@@ -202,7 +321,6 @@ onMounted(() => {
   50%       { opacity: 0.5; }
 }
 
-/* Empty */
 .service-panel__empty {
   display: flex; flex-direction: column; align-items: center;
   gap: 8px; padding: 2rem 1rem; text-align: center;
@@ -213,7 +331,6 @@ onMounted(() => {
   font-size: 0.875rem; font-weight: 700; color: #4B9AF6; text-decoration: none;
 }
 
-/* Banner */
 .service-banner {
   display: flex; align-items: center; justify-content: space-between;
   gap: 1rem; padding: 1.25rem;
@@ -227,9 +344,10 @@ onMounted(() => {
   width: 44px; height: 44px; flex-shrink: 0;
   background: #fff; border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
-  font-size: 1.375rem;
+  color: #4B9AF6;
   box-shadow: 0 1px 4px rgba(0,0,0,0.08);
 }
+.service-banner__icon .material-symbols-outlined { font-size: 1.375rem; }
 
 .service-banner__title { font-weight: 700; color: #0f172a; font-size: 0.875rem; }
 .service-banner__title--amber { color: #78350f; }
@@ -239,7 +357,6 @@ onMounted(() => {
 
 .service-banner__actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
 
-/* Buttons */
 .service-banner__btn {
   padding: 8px 18px; border-radius: 0.625rem;
   font-size: 0.8125rem; font-weight: 700;
@@ -258,7 +375,6 @@ onMounted(() => {
 .service-banner__btn--amber  { background: #fef3c7; color: #b45309; }
 .service-banner__btn--amber:hover  { background: #fde68a; }
 
-/* Spinner */
 .service-banner__spinner {
   width: 14px; height: 14px;
   border: 2px solid rgba(255,255,255,0.4);

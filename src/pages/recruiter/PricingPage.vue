@@ -65,7 +65,8 @@ function mapDetails(details: import('@/types/serviceCatalog.types').ResServicePa
   return details.map(d => {
     const qty   = d.quantity >= 999 ? 'Không giới hạn' : String(d.quantity)
     const unit  = d.serviceUnit ? ` ${d.serviceUnit}` : ''
-    return { label: `${qty}${unit} ${d.serviceName}`.trim(), active: true }
+    const duration = d.durationDays ? ` / ${d.durationDays} ngày` : ''
+    return { label: `${qty}${unit} ${d.serviceName}${duration}`.trim(), active: true }
   })
 }
 

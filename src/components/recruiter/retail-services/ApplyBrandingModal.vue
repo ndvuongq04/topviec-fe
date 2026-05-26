@@ -2,72 +2,65 @@
   <Teleport to="body">
     <div v-if="visible" class="backdrop" @click.self="$emit('close')">
       <div class="modal" role="dialog" aria-modal="true">
-        <!-- Header -->
         <div class="modal-header">
           <div class="header-icon">
             <span class="material-symbols-outlined">verified</span>
           </div>
           <div>
-            <h3 class="modal-title">Áp dụng dịch vụ đang chạy</h3>
-            <p class="modal-sub">Chọn một dịch vụ branding đang hoạt động để áp dụng cho công ty</p>
+            <h3 class="modal-title">Áp dụng dịch vụ branding</h3>
+            <p class="modal-sub">Chọn quota branding từ gói subscription hoặc dịch vụ lẻ.</p>
           </div>
           <button class="close-btn" @click="$emit('close')">
             <span class="material-symbols-outlined">close</span>
           </button>
         </div>
 
-        <!-- Body -->
         <div class="modal-body">
           <div v-if="serviceStore.loading" class="state-center">
             <span class="material-symbols-outlined spin">progress_activity</span>
             <span>Đang tải danh sách dịch vụ...</span>
           </div>
 
-          <div v-else-if="eligibleAddons.length === 0" class="state-center empty">
+          <div v-else-if="eligibleOptions.length === 0" class="state-center empty">
             <span class="material-symbols-outlined">inventory_2</span>
-            <span>Bạn không có dịch vụ branding nào đang hoạt động.</span>
+            <span>Bạn không có quota branding nào đang hoạt động.</span>
           </div>
 
           <div v-else class="addon-list">
             <label
-              v-for="addon in eligibleAddons"
-              :key="addon.id"
+              v-for="option in eligibleOptions"
+              :key="option.key"
               class="addon-item"
-              :class="{ selected: selectedId === addon.id, depleted: addon.quantityRemaining <= 0 }"
+              :class="{ selected: selectedKey === option.key }"
             >
               <input
                 type="radio"
-                :value="addon.id"
-                v-model="selectedId"
-                :disabled="addon.quantityRemaining <= 0"
+                :value="option.key"
+                v-model="selectedKey"
                 class="sr-only"
               />
               <div class="addon-check">
-                <span v-if="selectedId === addon.id" class="material-symbols-outlined check-icon">check_circle</span>
+                <span v-if="selectedKey === option.key" class="material-symbols-outlined check-icon">check_circle</span>
                 <span v-else class="material-symbols-outlined check-icon unset">radio_button_unchecked</span>
               </div>
               <div class="addon-info">
-                <span class="addon-name">{{ addon.addonName ?? addon.addonCode }}</span>
+                <span class="addon-name">{{ option.name }}</span>
                 <div class="addon-meta">
-                  <span class="badge" :class="addon.quantityRemaining > 0 ? 'badge-green' : 'badge-red'">
-                    Còn {{ addon.quantityRemaining }} lượt
-                  </span>
-                  <span v-if="addon.expiredAt" class="meta-date">
-                    · HSD: {{ formatDate(addon.expiredAt) }}
+                  <span class="badge badge-green">{{ option.sourceSummary }}</span>
+                  <span v-if="option.expiredAt" class="meta-date">
+                    · HSD: {{ formatDate(option.expiredAt) }}
                   </span>
                 </div>
               </div>
-              <span v-if="addon.quantityRemaining <= 0" class="depleted-label">Hết lượt</span>
             </label>
           </div>
         </div>
 
-        <!-- Footer -->
         <div class="modal-footer">
           <button class="btn-cancel" @click="$emit('close')">Hủy</button>
           <button
             class="btn-apply"
-            :disabled="!selectedId || applying"
+            :disabled="!selectedOption || applying"
             @click="handleApply"
           >
             <span class="material-symbols-outlined spin-icon" v-if="applying">progress_activity</span>
@@ -84,34 +77,89 @@
 import { ref, computed, watch } from 'vue'
 import dayjs from 'dayjs'
 import { useEmployerServiceManagementStore } from '@/stores/employerServiceManagement.store'
+import { useEmployerCompanyStore } from '@/stores/employercompany.store'
 import { useToast } from '@/composables/useToast'
 import { ServiceCategory } from '@/constants/serviceCatalog.constants'
-import { SubscriptionStatus } from '@/constants/servicePackage.constants'
+import {
+  BRANDING_SERVICE_CODES,
+  SERVICE_CODE_LABELS,
+  SubscriptionStatus,
+} from '@/constants/servicePackage.constants'
 
 const props = defineProps<{ visible: boolean }>()
 const emit  = defineEmits<{ close: []; applied: [] }>()
 
+interface BrandingOption {
+  key: string
+  serviceCode: string | null
+  companyAddonId?: number
+  name: string
+  sourceSummary: string
+  expiredAt: string | null
+}
+
 const serviceStore = useEmployerServiceManagementStore()
+const companyStore = useEmployerCompanyStore()
 const toast        = useToast()
 
-const selectedId = ref<number | null>(null)
+const selectedKey = ref<string | null>(null)
 const applying   = ref(false)
 
-const eligibleAddons = computed(() =>
-  serviceStore.addons.filter(
-    a => a.serviceCategory !== ServiceCategory.JOB_POSTING
-      && a.status === SubscriptionStatus.ACTIVE,
-  )
+const eligibleOptions = computed<BrandingOption[]>(() => {
+  const options = new Map<string, BrandingOption>()
+
+  for (const usage of serviceStore.subscription?.usages ?? []) {
+    if (!(BRANDING_SERVICE_CODES as readonly string[]).includes(usage.featureCode)) continue
+    if (usage.quantityTotal !== -1 && usage.quantityRemaining <= 0) continue
+
+    options.set(usage.featureCode, {
+      key: usage.featureCode,
+      serviceCode: usage.featureCode,
+      name: usage.featureName ?? getServiceCodeLabel(usage.featureCode),
+      sourceSummary: usage.quantityTotal === -1 ? 'Không giới hạn trong gói' : `Gói: còn ${usage.quantityRemaining} lượt`,
+      expiredAt: usage.resetAt,
+    })
+  }
+
+  for (const addon of serviceStore.addons) {
+    if (addon.serviceCategory !== ServiceCategory.BRANDING) continue
+    if (addon.status !== SubscriptionStatus.ACTIVE || addon.quantityRemaining <= 0) continue
+    if (addon.expiredAt && dayjs(addon.expiredAt).isBefore(dayjs())) continue
+
+    const key = addon.serviceCode ?? `addon-${addon.id}`
+    const existing = options.get(key)
+    if (existing) {
+      existing.companyAddonId ??= addon.id
+      existing.sourceSummary += ` + Mua lẻ: còn ${addon.quantityRemaining} lượt`
+      if (!existing.expiredAt || (addon.expiredAt && addon.expiredAt < existing.expiredAt)) {
+        existing.expiredAt = addon.expiredAt
+      }
+      continue
+    }
+
+    options.set(key, {
+      key,
+      serviceCode: addon.serviceCode,
+      companyAddonId: addon.id,
+      name: addon.addonName ?? addon.serviceName ?? getServiceCodeLabel(addon.serviceCode),
+      sourceSummary: `Mua lẻ: còn ${addon.quantityRemaining} lượt`,
+      expiredAt: addon.expiredAt,
+    })
+  }
+
+  return Array.from(options.values())
+})
+
+const selectedOption = computed(() =>
+  eligibleOptions.value.find(option => option.key === selectedKey.value) ?? null,
 )
 
 watch(
   () => props.visible,
   (val) => {
     if (val) {
-      selectedId.value = null
-      if (serviceStore.addons.length === 0) {
-        serviceStore.fetchMyAddons()
-      }
+      selectedKey.value = null
+      serviceStore.refreshServiceQuotas()
     }
   },
 )
@@ -121,10 +169,15 @@ function formatDate(iso: string) {
 }
 
 async function handleApply() {
-  if (!selectedId.value) return
+  if (!selectedOption.value) return
   applying.value = true
   try {
-    await serviceStore.applyBrandingToCompany({ companyAddonId: selectedId.value })
+    await serviceStore.applyBrandingToCompany(
+      selectedOption.value.serviceCode
+        ? { serviceCode: selectedOption.value.serviceCode }
+        : { companyAddonId: selectedOption.value.companyAddonId },
+    )
+    await companyStore.fetchMyCompany()
     toast.success('Áp dụng dịch vụ thành công!')
     emit('applied')
     emit('close')
@@ -133,6 +186,12 @@ async function handleApply() {
   } finally {
     applying.value = false
   }
+}
+
+function getServiceCodeLabel(code?: string | null): string {
+  return code && code in SERVICE_CODE_LABELS
+    ? SERVICE_CODE_LABELS[code as keyof typeof SERVICE_CODE_LABELS]
+    : 'Dịch vụ branding'
 }
 </script>
 
@@ -211,9 +270,8 @@ async function handleApply() {
   transition: border-color 0.15s, background 0.15s;
   user-select: none;
 }
-.addon-item:hover:not(.depleted) { border-color: #9333ea; background: #fdf4ff; }
+.addon-item:hover { border-color: #9333ea; background: #fdf4ff; }
 .addon-item.selected  { border-color: #9333ea; background: #fdf4ff; }
-.addon-item.depleted  { opacity: 0.5; cursor: not-allowed; }
 
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); }
 
@@ -226,9 +284,7 @@ async function handleApply() {
 .addon-meta { display: flex; align-items: center; gap: 4px; margin-top: 4px; flex-wrap: wrap; }
 .badge { font-size: 0.7rem; font-weight: 600; padding: 2px 7px; border-radius: 99px; }
 .badge-green { background: #dcfce7; color: #16a34a; }
-.badge-red   { background: #fee2e2; color: #dc2626; }
 .meta-date   { font-size: 0.75rem; color: #94a3b8; }
-.depleted-label { font-size: 0.7rem; color: #ef4444; font-weight: 600; flex-shrink: 0; }
 
 .modal-footer {
   display: flex; justify-content: flex-end; gap: 10px;
@@ -255,6 +311,7 @@ async function handleApply() {
 .btn-apply:disabled { opacity: 0.5; cursor: not-allowed; }
 .btn-apply .material-symbols-outlined { font-size: 16px; }
 
+.spin,
 .spin-icon {
   animation: spin 0.8s linear infinite;
   display: inline-block;

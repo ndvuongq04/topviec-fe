@@ -1,7 +1,7 @@
 <template>
   <section class="sal-section">
     <div class="sal-header">
-      <h3 class="sal-title">Dịch vụ lẻ đang chạy</h3>
+      <h3 class="sal-title">Dịch vụ có thể áp dụng</h3>
       <span class="sal-count">{{ services.length }}</span>
     </div>
     <div class="sal-list">
@@ -22,18 +22,18 @@
           </div>
           <div class="sal-divider" />
           <div class="sal-meta">
-            <span class="sal-meta-label">Tình trạng</span>
+            <span class="sal-meta-label">Nguồn quota</span>
             <span class="sal-meta-val">{{ svc.remaining }}</span>
           </div>
           <div class="sal-meta">
             <span class="sal-meta-label">Hết hạn</span>
-            <span class="sal-meta-val">{{ svc.expireDate ?? '—' }}</span>
+            <span class="sal-meta-val">{{ svc.expireDate ?? '-' }}</span>
           </div>
         </div>
 
         <div class="sal-item-right">
           <span class="sal-status" :class="svc.status">
-            {{ svc.status === 'expired' ? 'Hết hạn' : 'Đang chạy' }}
+            {{ svc.status === 'expired' ? 'Hết lượt' : 'Sẵn sàng' }}
           </span>
           <button
             v-if="svc.status === 'active'"
@@ -56,16 +56,18 @@
 
 <script setup lang="ts">
 export interface ActiveService {
-  id:          number
-  name:        string
-  description: string | null
-  icon:        string
-  iconBg:      string
-  iconColor:   string
-  remaining:   string
-  expireDate:  string | null
-  status:      'active' | 'expired'
-  category:    string
+  id:             string | number
+  serviceCode:    string | null
+  companyAddonId?: number
+  name:           string
+  description:    string | null
+  icon:           string
+  iconBg:         string
+  iconColor:      string
+  remaining:      string
+  expireDate:     string | null
+  status:         'active' | 'expired'
+  category:       string
 }
 
 defineProps<{ services: ActiveService[] }>()
@@ -94,8 +96,8 @@ defineEmits<{ apply: [service: ActiveService] }>()
   transition: box-shadow 0.2s;
 }
 .sal-item:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
-.sal-item-left { display: flex; align-items: center; gap: 24px; }
-.sal-svc-info { display: flex; align-items: center; gap: 16px; }
+.sal-item-left { display: flex; align-items: center; gap: 24px; min-width: 0; }
+.sal-svc-info { display: flex; align-items: center; gap: 16px; min-width: 220px; }
 .sal-icon {
   width: 40px; height: 40px;
   border-radius: 10px;
@@ -152,4 +154,14 @@ defineEmits<{ apply: [service: ActiveService] }>()
   text-decoration: none;
 }
 .sal-cta:hover { color: #4B9AF6; border-color: #4B9AF6; background: rgba(75,154,246,0.05); }
+
+@media (max-width: 900px) {
+  .sal-item,
+  .sal-item-left {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .sal-divider { display: none; }
+  .sal-item-right { width: 100%; justify-content: space-between; }
+}
 </style>

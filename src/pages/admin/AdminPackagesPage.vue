@@ -164,7 +164,11 @@ async function onToggle(pkg: ResServicePackageDTO) {
       code:         pkg.code,
       billingCycle: pkg.billingCycle,
       price:        pkg.price,
-      details:      (pkg.details ?? []).map(d => ({ serviceId: d.serviceId, quantity: d.quantity })),
+      details:      (pkg.details ?? []).map(d => ({
+        serviceId: d.serviceId,
+        quantity: d.quantity,
+        durationDays: d.durationDays ?? undefined,
+      })),
       description:  pkg.description,
       isActive:     !pkg.isActive,
       sortOrder:    pkg.sortOrder,
