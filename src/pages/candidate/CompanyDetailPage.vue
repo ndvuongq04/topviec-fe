@@ -50,6 +50,14 @@ function handleSearch() {
   fetchCompanyJobs(company.value.id, 0);
 }
 
+function clearSearch() {
+  if (!company.value?.id) return;
+  searchInput.value = "";
+  if (!keyword.value) return;
+  keyword.value = "";
+  fetchCompanyJobs(company.value.id, 0);
+}
+
 function goToPage(page: number) {
   if (!company.value?.id) return;
   fetchCompanyJobs(company.value.id, page);
@@ -267,30 +275,57 @@ async function toggleFollow() {
         <!-- Job Openings -->
         <section class="rounded-2xl bg-surface-light dark:bg-surface-dark border border-gray-100 dark:border-gray-800 p-6 sm:p-8 shadow-sm">
           <!-- Title -->
-          <h2 class="text-2xl font-extrabold text-text-main dark:text-white tracking-tight mb-5">
-            Tuyển dụng
-            <span v-if="jobsMeta.totals > 0" class="ml-2 text-base font-semibold text-text-muted">({{ jobsMeta.totals }})</span>
-          </h2>
+          <div class="mb-5 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p class="text-xs font-bold uppercase tracking-wider text-primary">Việc làm tại công ty</p>
+              <h2 class="mt-1 text-2xl font-extrabold text-text-main dark:text-white tracking-tight">
+                Tuyển dụng
+                <span v-if="jobsMeta.totals > 0" class="ml-2 text-base font-semibold text-text-muted">({{ jobsMeta.totals }})</span>
+              </h2>
+            </div>
+          </div>
 
           <!-- Search bar -->
-          <form @submit.prevent="handleSearch" class="flex gap-0 mb-5 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm">
-            <div class="flex items-center flex-1 px-3 gap-2 bg-background-light dark:bg-background-dark">
-              <span class="material-symbols-outlined text-text-muted text-[20px] shrink-0">search</span>
-              <input
-                v-model="searchInput"
-                type="text"
-                placeholder="Tên công việc, vị trí ứng tuyển..."
-                class="flex-1 h-11 bg-transparent text-sm text-text-main dark:text-white placeholder-text-muted focus:outline-none"
-              />
+          <div class="mb-5 rounded-2xl border border-gray-200 bg-gray-50/80 p-2 dark:border-gray-700 dark:bg-gray-800/40">
+            <form @submit.prevent="handleSearch" class="flex flex-col gap-2 sm:flex-row">
+              <div class="flex min-w-0 flex-1 items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 transition-colors focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/15 dark:border-gray-700 dark:bg-surface-dark">
+                <span class="material-symbols-outlined shrink-0 text-[20px] text-text-muted">search</span>
+                <input
+                  v-model="searchInput"
+                  type="text"
+                  placeholder="Tìm vị trí trong công ty này..."
+                  class="h-11 min-w-0 flex-1 border-0 bg-transparent px-0 text-sm text-text-main placeholder-text-muted focus:ring-0 dark:text-white"
+                />
+                <button
+                  v-if="searchInput"
+                  type="button"
+                  class="flex size-7 shrink-0 items-center justify-center rounded-lg text-text-muted transition-colors hover:bg-gray-100 hover:text-text-main dark:hover:bg-gray-700 dark:hover:text-white"
+                  aria-label="Xóa từ khóa tìm kiếm"
+                  @click="clearSearch"
+                >
+                  <span class="material-symbols-outlined text-[17px]">close</span>
+                </button>
+              </div>
+              <button
+                type="submit"
+                class="h-11 shrink-0 cursor-pointer rounded-xl bg-primary px-5 text-sm font-bold text-white transition-colors hover:bg-primary-dark sm:min-w-28"
+              >
+                Tìm việc
+              </button>
+            </form>
+
+            <div v-if="keyword" class="mt-2 flex flex-wrap items-center gap-2 px-1 text-xs text-text-muted">
+              <span>Đang lọc theo: <strong class="font-semibold text-text-main dark:text-white">"{{ keyword }}"</strong></span>
+              <button
+                type="button"
+                class="inline-flex items-center gap-1 rounded-full px-2 py-1 font-semibold text-primary transition-colors hover:bg-primary/10"
+                @click="clearSearch"
+              >
+                <span class="material-symbols-outlined text-[14px]">close</span>
+                Xóa lọc
+              </button>
             </div>
-            <button
-              type="submit"
-              class="h-11 px-5 bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors flex items-center gap-1.5 shrink-0"
-            >
-              <span class="material-symbols-outlined text-[18px]">search</span>
-              Tìm kiếm
-            </button>
-          </form>
+          </div>
 
           <!-- Loading -->
           <div v-if="jobsLoading" class="flex justify-center py-10">
