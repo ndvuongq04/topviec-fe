@@ -1,29 +1,36 @@
 <script setup lang="ts">
 import { ref, watch, onMounted, computed } from 'vue'
 import { useIndustryStore } from '@/stores/industry.store'
+import { useLevelStore } from '@/stores/level.store'
 
 export interface SearchFilters {
   industryId?: number
+  levelId?: number
   salaryMin?: number
   salaryMax?: number
   isFeatured?: boolean
   isUrgent?: boolean
+  isHot?: boolean
 }
 
 const props = withDefaults(defineProps<{
   initialIndustryId?: number
+  initialLevelId?: number
   initialSalaryMin?: number
   initialSalaryMax?: number
   initialFeatured?: boolean
   initialUrgent?: boolean
+  initialHot?: boolean
 }>(), {
   initialFeatured: false,
   initialUrgent: false,
+  initialHot: false,
 })
 
 const emit = defineEmits<{ change: [filters: SearchFilters] }>()
 
 const industryStore = useIndustryStore()
+const levelStore = useLevelStore()
 
 const SALARY_PRESETS = [
   { label: 'Tất cả' },
@@ -37,9 +44,12 @@ const SALARY_PRESETS = [
 ]
 
 const selectedIndustryId = ref<number | undefined>(props.initialIndustryId)
+const selectedLevelId = ref<number | undefined>(props.initialLevelId)
 const showIndustryDropdown = ref(false)
+const showLevelDropdown = ref(false)
 const isFeatured = ref(props.initialFeatured)
 const isUrgent = ref(props.initialUrgent)
+const isHot = ref(props.initialHot)
 
 // Khởi tạo salary preset từ initialSalaryMin/Max
 function findSalaryPresetIdx(min?: number, max?: number): number {
@@ -87,7 +97,10 @@ const canApplyCustom = computed(() =>
 )
 
 onMounted(async () => {
-  await industryStore.fetchIndustries({ size: 50 })
+  await Promise.all([
+    industryStore.fetchIndustries({ size: 50 }),
+    levelStore.fetchLevels({ size: 50 }),
+  ])
 })
 
 function buildFilters(): SearchFilters {
@@ -96,8 +109,10 @@ function buildFilters(): SearchFilters {
 
   if (selectedSalaryIdx.value !== -1) {
     const preset = SALARY_PRESETS[selectedSalaryIdx.value]
-    salaryMin = preset.min
-    salaryMax = preset.max
+    if (preset) {
+      salaryMin = preset.min
+      salaryMax = preset.max
+    }
   } else if (canApplyCustom.value) {
     salaryMin = customSalaryMin.value * 1_000_000
     salaryMax = customSalaryMax.value * 1_000_000
@@ -105,10 +120,12 @@ function buildFilters(): SearchFilters {
 
   return {
     industryId: selectedIndustryId.value,
+    levelId: selectedLevelId.value,
     salaryMin,
     salaryMax,
     isFeatured: isFeatured.value || undefined,
     isUrgent: isUrgent.value || undefined,
+    isHot: isHot.value || undefined,
   }
 }
 
@@ -119,6 +136,12 @@ function emitFilters() {
 function selectIndustry(id: number | undefined) {
   selectedIndustryId.value = id
   showIndustryDropdown.value = false
+  emitFilters()
+}
+
+function selectLevel(id: number | undefined) {
+  selectedLevelId.value = id
+  showLevelDropdown.value = false
   emitFilters()
 }
 
@@ -146,15 +169,17 @@ function applyCustomSalary() {
 
 function clearAll() {
   selectedIndustryId.value = undefined
+  selectedLevelId.value = undefined
   selectedSalaryIdx.value = 0
   customSalaryMinStr.value = ''
   customSalaryMaxStr.value = ''
   isFeatured.value = false
   isUrgent.value = false
+  isHot.value = false
   emitFilters()
 }
 
-watch([isFeatured, isUrgent], emitFilters)
+watch([isFeatured, isUrgent, isHot], emitFilters)
 </script>
 
 <template>
@@ -215,6 +240,55 @@ watch([isFeatured, isUrgent], emitFilters)
               : 'text-text-muted dark:text-slate-300'"
             @click="selectIndustry(ind.id)"
           >{{ ind.name }}</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="mb-4 pb-4 border-b border-slate-200 dark:border-slate-700">
+      <p class="text-sm font-bold text-text-main dark:text-white mb-2.5">Cấp bậc</p>
+      <div class="relative">
+        <button
+          type="button"
+          class="w-full flex items-center gap-2 px-3 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-surface-dark text-sm text-text-muted hover:border-primary transition-colors cursor-pointer"
+          @click="showLevelDropdown = !showLevelDropdown"
+        >
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="shrink-0 text-slate-400">
+            <path d="M12 2l7 4v5c0 5-3 9-7 11-4-2-7-6-7-11V6l7-4z" />
+          </svg>
+          <span class="flex-1 text-left truncate text-sm"
+            :class="selectedLevelId ? 'text-text-main dark:text-white font-medium' : 'text-text-muted'">
+            {{
+              selectedLevelId
+                ? levelStore.levels.find(level => level.id === selectedLevelId)?.name ?? 'Tất cả cấp bậc'
+                : 'Tất cả cấp bậc'
+            }}
+          </span>
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+            class="shrink-0 text-slate-400 transition-transform" :class="showLevelDropdown ? 'rotate-180' : ''">
+            <polyline points="6 9 12 15 18 9" />
+          </svg>
+        </button>
+
+        <div
+          v-if="showLevelDropdown"
+          class="absolute z-20 top-full mt-1 w-full bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-600 rounded-lg shadow-lg max-h-52 overflow-y-auto"
+        >
+          <button
+            type="button"
+            class="w-full text-left px-3 py-2 text-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+            :class="!selectedLevelId ? 'text-primary font-semibold' : 'text-text-muted dark:text-slate-300'"
+            @click="selectLevel(undefined)"
+          >Tất cả cấp bậc</button>
+          <button
+            v-for="level in levelStore.levels"
+            :key="level.id"
+            type="button"
+            class="w-full text-left px-3 py-2 text-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+            :class="selectedLevelId === level.id
+              ? 'text-primary font-semibold bg-blue-50 dark:bg-blue-900/20'
+              : 'text-text-muted dark:text-slate-300'"
+            @click="selectLevel(level.id)"
+          >{{ level.name }}</button>
         </div>
       </div>
     </div>
@@ -295,7 +369,18 @@ watch([isFeatured, isUrgent], emitFilters)
           <span class="text-sm" :class="isFeatured ? 'text-primary font-semibold' : 'text-text-muted dark:text-slate-400'">
             Tin nổi bật
           </span>
-          <span class="ml-auto text-[10px] px-1.5 py-0.5 rounded-full bg-yellow-100 text-yellow-700 font-semibold">HOT</span>
+          <span class="ml-auto text-[10px] px-1.5 py-0.5 rounded-full bg-yellow-100 text-yellow-700 font-semibold">Nổi bật</span>
+        </label>
+        <label class="flex items-center gap-2.5 cursor-pointer group">
+          <input
+            type="checkbox"
+            v-model="isHot"
+            class="accent-primary w-4 h-4 rounded cursor-pointer"
+          />
+          <span class="text-sm" :class="isHot ? 'text-primary font-semibold' : 'text-text-muted dark:text-slate-400'">
+            Tin hot
+          </span>
+          <span class="ml-auto text-[10px] px-1.5 py-0.5 rounded-full bg-orange-100 text-orange-700 font-semibold">HOT</span>
         </label>
         <label class="flex items-center gap-2.5 cursor-pointer group">
           <input

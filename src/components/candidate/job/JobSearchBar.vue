@@ -1,32 +1,44 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import BannerSelect from './BannerSelect.vue'
-import { WorkType } from '@/constants/jobPosting.constants'
+import { useLocationStore } from '@/stores/location.store'
 
 const router = useRouter()
 const route = useRoute()
+const locationStore = useLocationStore()
+
+function normalizeWorkType(value: string | undefined) {
+  const map: Record<string, string> = {
+    FULL_TIME: 'full_time',
+    PART_TIME: 'part_time',
+    INTERN: 'intern',
+    REMOTE: 'remote',
+  }
+  return value ? map[value] ?? value : ''
+}
 
 // ── Khởi tạo từ URL ──────────────────────────────────────────────────────────
-const keyword  = ref((route.query.keyword  as string) || '')
-const location = ref((route.query.location as string) || '')
-const workType = ref((route.query.workType as string) || '')
+const keyword    = ref((route.query.keyword    as string) || '')
+const locationId = ref<string | number | null>(
+  (route.query.locationId as string) || (route.query.provinceId as string) || ''
+)
+const workType   = ref(normalizeWorkType(route.query.workType as string | undefined))
 const experience = ref((route.query.experience as string) || '')
 
 // ── Options ──────────────────────────────────────────────────────────────────
-const locations = [
-  { id: 'hcm',    name: 'TP. Hồ Chí Minh' },
-  { id: 'hn',     name: 'Hà Nội' },
-  { id: 'dn',     name: 'Đà Nẵng' },
-  { id: 'remote', name: 'Làm việc từ xa' },
-  { id: 'other',  name: 'Tỉnh thành khác' },
-]
+const locations = computed(() =>
+  locationStore.locations.map(location => ({
+    id: location.id,
+    name: location.name,
+  }))
+)
 
 const WORK_TYPE_OPTIONS = [
-  { id: WorkType.FULL_TIME, name: 'Toàn thời gian' },
-  { id: WorkType.PART_TIME, name: 'Bán thời gian' },
-  { id: WorkType.INTERN,    name: 'Thực tập' },
-  { id: WorkType.REMOTE,    name: 'Remote' },
+  { id: 'full_time', name: 'Toàn thời gian' },
+  { id: 'part_time', name: 'Bán thời gian' },
+  { id: 'intern',    name: 'Thực tập' },
+  { id: 'remote',    name: 'Remote' },
 ]
 
 const EXPERIENCE_OPTIONS = [
@@ -40,9 +52,11 @@ const EXPERIENCE_OPTIONS = [
 // ── Query builder ─────────────────────────────────────────────────────────────
 function buildQuery() {
   return {
-    keyword:    keyword.value    || undefined,
-    location:   location.value   || undefined,
-    workType:   workType.value   || undefined,
+    keyword:    keyword.value     || undefined,
+    locationId: locationId.value  || undefined,
+    provinceId: undefined,
+    location:   undefined,
+    workType:   workType.value    || undefined,
     experience: experience.value || undefined,
   }
 }
@@ -68,10 +82,16 @@ watch(experience, updateInPlace)
 // Khi navigate về trang search từ nơi khác → đồng bộ lại local state
 watch(() => route.query, (q) => {
   keyword.value    = (q.keyword    as string) || ''
-  location.value   = (q.location   as string) || ''
-  workType.value   = (q.workType   as string) || ''
+  locationId.value = (q.locationId as string) || (q.provinceId as string) || ''
+  workType.value   = normalizeWorkType(q.workType as string | undefined)
   experience.value = (q.experience as string) || ''
 }, { deep: true })
+
+onMounted(() => {
+  if (locationStore.locations.length === 0) {
+    locationStore.fetchLocations({ size: 100 })
+  }
+})
 
 // ── Clear ─────────────────────────────────────────────────────────────────────
 const hasActiveFilters = () => workType.value || experience.value
@@ -101,7 +121,7 @@ function clearFilters() {
       <div class="flex-1 lg:max-w-55 flex items-center px-3 gap-1 py-1 lg:border-r border-slate-100">
         <span class="material-symbols-outlined text-gray-400 text-[20px] shrink-0">location_on</span>
         <BannerSelect
-          v-model="location"
+          v-model="locationId"
           :options="locations"
           placeholder="Địa điểm"
           variant="bar"

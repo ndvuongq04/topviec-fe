@@ -184,6 +184,7 @@ export type ResJobPostingSummaryPagination = ResultPaginationDTO<ResJobPostingSu
 export interface JobPostingQueryParams {
     keyword?: string
     companyId?: number
+    locationId?: number
     industryId?: number
     levelId?: number
     workType?: string
@@ -241,6 +242,10 @@ const WORK_TYPE_LABELS: Record<string, string> = {
     PART_TIME: 'Bán thời gian',
     INTERN:    'Thực tập',
     REMOTE:    'Remote',
+    full_time: 'Toàn thời gian',
+    part_time: 'Bán thời gian',
+    intern:    'Thực tập',
+    remote:    'Remote',
 }
 
 export function formatWorkType(workType: string): string {
