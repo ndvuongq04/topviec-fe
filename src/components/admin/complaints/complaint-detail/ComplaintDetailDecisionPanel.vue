@@ -27,10 +27,6 @@
       </div>
     </div>
 
-      <div class="cd-decision__note">
-        API xử lý hiện chỉ nhận `decision` và `resolutionNote`. Các cấu hình như nhóm vi phạm,
-        điểm phạt hoặc biện pháp xử lý không còn được gửi từ form này.
-      </div>
     </template>
 
     <div class="cd-decision__field">
@@ -260,16 +256,6 @@ async function onSubmit() {
   white-space: pre-wrap;
   color: #574240;
   overflow-y: auto;
-}
-
-.cd-decision__note {
-  border-radius: 0.75rem;
-  background: #fff8e8;
-  border: 1px solid #f5dec2;
-  color: #8a5b18;
-  padding: 0.875rem 1rem;
-  font-size: 0.8125rem;
-  line-height: 1.5;
 }
 
 .cd-decision__footer {

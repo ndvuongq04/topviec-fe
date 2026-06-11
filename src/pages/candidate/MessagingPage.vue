@@ -15,10 +15,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import ConversationList from '@/components/candidate/messaging/ConversationList.vue'
 import ChatWindow from '@/components/candidate/messaging/ChatWindow.vue'
+import { useToast } from '@/composables/useToast'
 
+const toast = useToast()
 const activeConversationId = ref(1)
 
 const conversations = ref([
@@ -128,6 +130,9 @@ function handleSend(text: string) {
     id: Date.now(), type: 'sent', time: 'Vừa xong', text, seen: false,
   })
 }
+onMounted(() => {
+  toast.info('Chức năng này đang phát triển')
+})
 </script>
 
 <style scoped>
