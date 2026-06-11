@@ -8,7 +8,8 @@
         <p class="text-slate-500 text-sm mt-1">Quản lý các gói subscription và cấu hình đặc quyền cho từng cấp độ người dùng</p>
       </div>
       <button
-        class="bg-[#963131] hover:bg-[#963131]/90 text-white px-5 py-2.5 rounded-lg font-bold text-sm flex items-center gap-2 shadow-lg shadow-[#963131]/20 transition-all"
+        v-if="can('package.create')"
+        class="bg-[#963131] hover:bg-[#963131]/90 text-white px-5 py-2.5 rounded-lg font-bold text-sm flex items-center gap-2 shadow-lg shadow-[#963131]/20 transition-all cursor-pointer"
         @click="showCreateModal = true"
       >
         <span class="material-symbols-outlined text-lg">add</span>
@@ -17,7 +18,7 @@
     </div>
 
     <!-- KPI Cards -->
-    <PackageKpiCards />
+    <PackageKpiCards v-if="can('package.detail')" />
 
     <!-- Filter -->
     <PackageFilters :packages="store.servicePackages" @filter="onFilter" />
@@ -38,7 +39,7 @@
         <span class="material-symbols-outlined text-4xl">error</span>
         <p class="text-sm font-semibold">{{ fetchError }}</p>
         <button
-          class="mt-2 text-xs text-slate-500 hover:text-slate-700 underline"
+          class="mt-2 text-xs text-slate-500 hover:text-slate-700 underline cursor-pointer"
           @click="loadPackages"
         >
           Thử lại
@@ -74,19 +75,23 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { useAdminPermission } from '@/composables/useAdminPermission'
 import PackageFilters from '@/components/admin/packages/PackageFilters.vue'
 import PackageTable from '@/components/admin/packages/PackageTable.vue'
 import PackageKpiCards from '@/components/admin/packages/PackageKpiCards.vue'
 import ServicePackageCreateModal from '@/components/admin/packages/ServicePackageCreateModal.vue'
 import ServicePackageEditModal from '@/components/admin/packages/ServicePackageEditModal.vue'
 import { useServicePackageStore } from '@/stores/servicePackage.store'
+import { useServiceCatalogStore } from '@/stores/serviceCatalog.store'
 import { useToast } from '@/composables/useToast'
 import { serviceCatalogService } from '@/services/serviceCatalog.service'
 import type { ReqServicePackageDTO, ResServicePackageDTO } from '@/types/servicePackage.types'
 import type { ResServiceDTO } from '@/types/serviceCatalog.types'
 
 const store = useServicePackageStore()
+const catalogStore = useServiceCatalogStore()
 const toast = useToast()
+const { can } = useAdminPermission()
 
 const showCreateModal = ref(false)
 const creating        = ref(false)
@@ -128,6 +133,7 @@ async function loadServices() {
 onMounted(() => {
   loadPackages()
   loadServices()
+  catalogStore.fetchStatistics()
 })
 
 const onFilter = (f: typeof filterState.value) => { filterState.value = f }
@@ -158,7 +164,11 @@ async function onToggle(pkg: ResServicePackageDTO) {
       code:         pkg.code,
       billingCycle: pkg.billingCycle,
       price:        pkg.price,
-      details:      (pkg.details ?? []).map(d => ({ serviceId: d.serviceId, quantity: d.quantity })),
+      details:      (pkg.details ?? []).map(d => ({
+        serviceId: d.serviceId,
+        quantity: d.quantity,
+        durationDays: d.durationDays ?? undefined,
+      })),
       description:  pkg.description,
       isActive:     !pkg.isActive,
       sortOrder:    pkg.sortOrder,

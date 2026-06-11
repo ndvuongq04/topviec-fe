@@ -1,7 +1,5 @@
 <template>
   <div class="space-y-6">
-
-    <!-- Avatar + Tên + Trạng thái -->
     <div class="bg-white dark:bg-surface-dark p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col items-center text-center">
       <div class="relative mb-4">
         <div
@@ -22,12 +20,10 @@
         <input ref="avatarInput" type="file" accept="image/*" class="hidden" @change="onAvatarChange" />
       </div>
 
-      <!-- Tên -->
       <h2 class="text-xl font-bold text-text-main dark:text-white">
         {{ profile?.fullName || 'Chưa cập nhật' }}
       </h2>
 
-      <!-- Trạng thái tìm việc -->
       <span
         v-if="profile?.jobSeekingStatus"
         class="mt-2 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold"
@@ -37,32 +33,27 @@
         {{ jobStatusLabel }}
       </span>
 
-      <!-- Số điện thoại -->
       <p v-if="profile?.phoneDisplay && !profile?.hidePhone" class="text-text-muted text-sm mt-2 flex items-center gap-1">
         <span class="material-symbols-outlined text-[14px]">phone</span>
         {{ profile.phoneDisplay }}
       </p>
 
-      <!-- Địa điểm mong muốn -->
       <div v-if="locationLabel" class="flex items-center gap-1 text-text-muted text-xs mt-1">
         <span class="material-symbols-outlined text-[14px]">location_on</span>
         {{ locationLabel }}
       </div>
 
-      <!-- Hình thức làm việc -->
       <div v-if="workTypeLabel" class="flex items-center gap-1 text-text-muted text-xs mt-1">
         <span class="material-symbols-outlined text-[14px]">work</span>
         {{ workTypeLabel }}
       </div>
 
-      <!-- Mức lương -->
       <div v-if="salaryLabel" class="flex items-center gap-1 text-text-muted text-xs mt-1">
         <span class="material-symbols-outlined text-[14px]">payments</span>
         <span>{{ salaryLabel }}</span>
         <span v-if="profile?.salaryNegotiable" class="text-primary">(thương lượng)</span>
       </div>
 
-      <!-- Links mạng xã hội -->
       <div class="flex items-center gap-3 mt-4">
         <a
           v-if="profile?.linkedinUrl"
@@ -97,95 +88,111 @@
         </a>
       </div>
     </div>
-
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
-import { useCandidateProfileStore } from '@/stores/candidateProfile.store'
+import { computed, onMounted, ref } from 'vue'
 import { useToast } from '@/composables/useToast'
 import { JobSeekingStatus, PreferredWorkType } from '@/constants/candidateProfile.constants'
 import { locationService } from '@/services/location.service'
+import { useCandidateProfileStore } from '@/stores/candidateProfile.store'
 import type { ResLocationDTO } from '@/types/masterData.types'
 
 const store = useCandidateProfileStore()
 const toast = useToast()
 
 defineEmits(['switch-tab'])
-const profile = computed(() => store.profile)
 
-// ─── Avatar ───────────────────────────────────────────────────────────────────
-const localAvatarPreview = ref<string | null>(null)
-const avatarPreview = computed(
-  () => localAvatarPreview.value || profile.value?.avatarUrl || null
+const profile = computed(() => store.profile)
+const avatarInput = ref<HTMLInputElement | null>(null)
+const locationMap = ref<Record<number, string>>({})
+
+const avatarPreview = computed(() =>
+  store.pendingAvatarPreviewUrl || profile.value?.avatarUrl || null,
 )
 
-// ─── Job seeking status ───────────────────────────────────────────────────────
 const jobStatusLabel = computed(() => {
   switch (profile.value?.jobSeekingStatus) {
-    case JobSeekingStatus.ACTIVE:      return 'Đang tìm việc gấp'
-    case JobSeekingStatus.PASSIVE:     return 'Sẵn sàng nếu có cơ hội'
-    case JobSeekingStatus.NOT_LOOKING: return 'Không tìm việc'
-    default: return ''
+    case JobSeekingStatus.ACTIVE:
+      return 'Đang tìm việc gấp'
+    case JobSeekingStatus.PASSIVE:
+      return 'Sẵn sàng nếu có cơ hội'
+    case JobSeekingStatus.NOT_LOOKING:
+      return 'Không tìm việc'
+    default:
+      return ''
   }
 })
 
 const jobStatusStyle = computed(() => {
   switch (profile.value?.jobSeekingStatus) {
-    case JobSeekingStatus.ACTIVE:      return 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
-    case JobSeekingStatus.PASSIVE:     return 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
-    case JobSeekingStatus.NOT_LOOKING: return 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400'
-    default: return ''
+    case JobSeekingStatus.ACTIVE:
+      return 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+    case JobSeekingStatus.PASSIVE:
+      return 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
+    case JobSeekingStatus.NOT_LOOKING:
+      return 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400'
+    default:
+      return ''
   }
 })
 
-// ─── Work type ────────────────────────────────────────────────────────────────
 const workTypeLabel = computed(() => {
   switch (profile.value?.preferredWorkType) {
-    case PreferredWorkType.FULL_TIME: return 'Toàn thời gian'
-    case PreferredWorkType.PART_TIME: return 'Bán thời gian'
-    case PreferredWorkType.REMOTE:    return 'Làm việc từ xa'
-    case PreferredWorkType.HYBRID:    return 'Kết hợp'
-    default: return ''
+    case PreferredWorkType.FULL_TIME:
+      return 'Toàn thời gian'
+    case PreferredWorkType.PART_TIME:
+      return 'Bán thời gian'
+    case PreferredWorkType.REMOTE:
+      return 'Làm việc từ xa'
+    case PreferredWorkType.HYBRID:
+      return 'Kết hợp'
+    default:
+      return ''
   }
 })
 
-// ─── Location ─────────────────────────────────────────────────────────────────
-const locationMap = ref<Record<number, string>>({})
+const locationLabel = computed(() =>
+  profile.value?.preferredLocationId
+    ? locationMap.value[profile.value.preferredLocationId] ?? ''
+    : '',
+)
+
+const salaryLabel = computed(() => {
+  const min = profile.value?.expectedSalaryMin
+  const max = profile.value?.expectedSalaryMax
+
+  if (min && max) return `$${min.toLocaleString()} – $${max.toLocaleString()}/tháng`
+  if (min) return `Từ $${min.toLocaleString()}/tháng`
+  if (max) return `Đến $${max.toLocaleString()}/tháng`
+  return ''
+})
+
 onMounted(async () => {
   try {
     const res = await locationService.getLocations({ size: 100 })
     const map: Record<number, string> = {}
-    res.result.forEach((l: ResLocationDTO) => { map[l.id] = l.name })
+    res.result.forEach((location: ResLocationDTO) => {
+      map[location.id] = location.name
+    })
     locationMap.value = map
-  } catch {}
-})
-const locationLabel = computed(() =>
-  profile.value?.preferredLocationId
-    ? locationMap.value[profile.value.preferredLocationId] ?? ''
-    : ''
-)
-
-// ─── Salary ───────────────────────────────────────────────────────────────────
-const salaryLabel = computed(() => {
-  const min = profile.value?.expectedSalaryMin
-  const max = profile.value?.expectedSalaryMax
-  if (min && max) return `$${min.toLocaleString()} – $${max.toLocaleString()}/tháng`
-  if (min)        return `Từ $${min.toLocaleString()}/tháng`
-  if (max)        return `Đến $${max.toLocaleString()}/tháng`
-  return ''
+  } catch {
+    // Optional sidebar metadata.
+  }
 })
 
-// ─── Avatar Upload ────────────────────────────────────────────────────────────
-const avatarInput = ref<HTMLInputElement | null>(null)
+function triggerAvatarUpload() {
+  avatarInput.value?.click()
+}
 
-function triggerAvatarUpload() { avatarInput.value?.click() }
-
-function onAvatarChange(e: Event) {
-  const file = (e.target as HTMLInputElement).files?.[0]
+function onAvatarChange(event: Event) {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
   if (!file) return
-  localAvatarPreview.value = URL.createObjectURL(file)
-  // TODO: upload file lên server → lấy URL → store.updateProfile({ avatarUrl })
+
+  store.setPendingAvatar(file, URL.createObjectURL(file))
+  input.value = ''
+  toast.success('Đã chọn ảnh', 'Ảnh sẽ được lưu khi bạn bấm "Lưu thay đổi".')
 }
 </script>

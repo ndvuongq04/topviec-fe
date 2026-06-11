@@ -51,7 +51,7 @@
         </div>
       </div>
 
-      <div v-if="!isResolved" class="cd-appeal__card cd-appeal__card--action">
+      <div v-if="!isResolved && canUnsuspend" class="cd-appeal__card cd-appeal__card--action">
         <div class="cd-appeal__action-head">
           <div>
             <span class="cd-appeal__label">Trạng thái xử lý kháng cáo</span>
@@ -103,6 +103,7 @@ const props = defineProps<{
   violationScore: number
   isSuspended: boolean
   loading?: boolean
+  canUnsuspend?: boolean
 }>()
 
 const emit = defineEmits<{

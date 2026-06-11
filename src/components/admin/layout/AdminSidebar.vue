@@ -124,6 +124,7 @@
 import { ref, computed, watch, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth.store'
+import { useAdminPermission } from '@/composables/useAdminPermission'
 import GlobalDropdown from '@/components/ui/GlobalDropdown.vue'
 import GlobalDropdownItem from '@/components/ui/GlobalDropdownItem.vue'
 import ChangePasswordModal from '@/components/admin/profile/ChangePasswordModal.vue'
@@ -136,6 +137,7 @@ const authStore = useAuthStore()
 const route = useRoute()
 const showPasswordModal = ref(false)
 const showProfileModal = ref(false)
+const { canAccessRoute, init: initPermission } = useAdminPermission()
 
 const profile = ref<ResAdminUser | null>(null)
 
@@ -146,6 +148,8 @@ const roleLabel = computed(() =>
 const avatarInitial = computed(() => displayName.value.charAt(0).toUpperCase())
 
 onMounted(async () => {
+  // Khởi tạo permission cache (gọi cùng API, composable sẽ dedup)
+  await initPermission()
   try {
     profile.value = await adminUserService.getMyProfile()
   } catch {
@@ -153,19 +157,20 @@ onMounted(async () => {
   }
 })
 
-type SubItem = { to: string; icon: string; label: string }
+type SubItem = { to: string; icon: string; label: string; routeName?: string }
 type Group   = { label: string; items: SubItem[] }
 type NavItem =
-  | { to: string;  icon: string; label: string; children?: undefined }
+  | { to: string; icon: string; label: string; routeName?: string; children?: undefined }
   | { to?: undefined; icon: string; label: string; children: Group[] }
 
-const navItems: NavItem[] = [
-  { to: '/admin',            icon: 'dashboard',            label: 'Dashboard' },
-  { to: '/admin/admins',     icon: 'admin_panel_settings', label: 'Quản lý Admin' },
-  { to: '/admin/employers',  icon: 'corporate_fare',       label: 'Quản lý Nhà Tuyển Dụng' },
-  { to: '/admin/candidates', icon: 'group',                label: 'Quản lý Ứng Viên' },
-  { to: '/admin/moderation', icon: 'fact_check',           label: 'Kiểm duyệt Nội dung' },
-  { to: '/admin/reports',    icon: 'report',               label: 'Khiếu nại' },
+const allNavItems: NavItem[] = [
+  { to: '/admin',            icon: 'dashboard',            label: 'Dashboard',                  routeName: 'admin-home' },
+  { to: '/admin/admins',     icon: 'admin_panel_settings', label: 'Quản lý Admin',               routeName: 'admin-manage-admins' },
+  { to: '/admin/employers',  icon: 'corporate_fare',       label: 'Quản lý Nhà Tuyển Dụng',     routeName: 'admin-employers' },
+  { to: '/admin/candidates', icon: 'group',                label: 'Quản lý Ứng Viên',           routeName: 'admin-candidates' },
+  { to: '/admin/cv-templates', icon: 'description',        label: 'Quản lý CV',                 routeName: 'admin-cv-templates' },
+  { to: '/admin/moderation', icon: 'fact_check',           label: 'Kiểm duyệt Nội dung',        routeName: 'admin-moderation' },
+  { to: '/admin/reports',    icon: 'report',               label: 'Khiếu nại',                  routeName: 'admin-complaints' },
   {
     icon: 'payments',
     label: 'Gói dịch vụ & Thanh toán',
@@ -173,21 +178,21 @@ const navItems: NavItem[] = [
       {
         label: 'Định nghĩa dịch vụ',
         items: [
-          { to: '/admin/service-packages',     icon: 'inventory_2',  label: 'Gói dịch vụ' },
-          { to: '/admin/individual-services',  icon: 'add_box',      label: 'Dịch vụ lẻ' },
-          { to: '/admin/services/create',      icon: 'add_circle',   label: 'Tạo dịch vụ' },
+          { to: '/admin/service-packages',     icon: 'inventory_2',  label: 'Gói dịch vụ',   routeName: 'admin-service-packages' },
+          { to: '/admin/individual-services',  icon: 'add_box',      label: 'Dịch vụ lẻ',    routeName: 'admin-individual-services' },
+          { to: '/admin/services/create',      icon: 'add_circle',   label: 'Tạo dịch vụ',   routeName: 'admin-service-create' },
         ],
       },
       {
         label: 'Vận hành',
         items: [
-          { to: '/admin/orders',           icon: 'receipt_long',   label: 'Đơn hàng' },
-          { to: '/admin/employer-monitor', icon: 'monitor_heart',  label: 'Giám sát NTT' },
+          { to: '/admin/orders',           icon: 'receipt_long',   label: 'Đơn hàng',      routeName: 'admin-orders' },
+          { to: '/admin/employer-monitor', icon: 'monitor_heart',  label: 'Giám sát NTT',  routeName: 'admin-employer-monitor' },
         ],
       },
     ],
   },
-  { to: '/admin/statistics', icon: 'bar_chart', label: 'Thống kê' },
+  { to: '/admin/statistics', icon: 'bar_chart', label: 'Thống kê', routeName: 'admin-statistics' },
   {
     icon: 'settings',
     label: 'Cài đặt',
@@ -195,20 +200,49 @@ const navItems: NavItem[] = [
       {
         label: 'Hệ thống',
         items: [
-          { to: '/admin/settings/permissions', icon: 'admin_panel_settings', label: 'Cài đặt quyền' },
+          { to: '/admin/settings/permissions', icon: 'admin_panel_settings', label: 'Cài đặt quyền',    routeName: 'admin-settings-permissions' },
+          { to: '/admin/audit-logs',           icon: 'history',              label: 'Nhật kí hệ thống', routeName: 'admin-audit-logs' },
         ],
       },
     ],
   },
 ]
 
+// Lọc menu theo quyền
+const navItems = computed<NavItem[]>(() => {
+  return allNavItems
+    .map(item => {
+      if (item.children) {
+        // Lọc items trong từng group
+        const filteredChildren = item.children
+          .map(group => ({
+            ...group,
+            items: group.items.filter(sub =>
+              !sub.routeName || canAccessRoute(sub.routeName)
+            ),
+          }))
+          .filter(group => group.items.length > 0)
+
+        if (filteredChildren.length === 0) return null
+        return { ...item, children: filteredChildren }
+      }
+      // Item đơn
+      if (item.routeName && !canAccessRoute(item.routeName)) return null
+      return item
+    })
+    .filter((item): item is NavItem => item !== null)
+})
+
 // Collect all sub-routes belonging to dropdown items
-const dropdownRoutes = new Map<string, string[]>()
-for (const item of navItems) {
-  if (item.children) {
-    dropdownRoutes.set(item.label, item.children.flatMap(g => g.items.map(i => i.to)))
+const dropdownRoutes = computed(() => {
+  const map = new Map<string, string[]>()
+  for (const item of navItems.value) {
+    if (item.children) {
+      map.set(item.label, item.children.flatMap(g => g.items.map(i => i.to)))
+    }
   }
-}
+  return map
+})
 
 const openDropdowns = ref<Set<string>>(new Set())
 
@@ -224,7 +258,7 @@ function toggleDropdown(label: string) {
 
 function isDropdownActive(item: NavItem): boolean {
   if (!item.children) return false
-  const routes = dropdownRoutes.get(item.label) ?? []
+  const routes = dropdownRoutes.value.get(item.label) ?? []
   return routes.some(r => route.path.startsWith(r))
 }
 
@@ -232,7 +266,7 @@ function isDropdownActive(item: NavItem): boolean {
 watch(
   () => route.path,
   (path) => {
-    for (const [label, routes] of dropdownRoutes) {
+    for (const [label, routes] of dropdownRoutes.value) {
       if (routes.some(r => path.startsWith(r))) {
         openDropdowns.value = new Set([...openDropdowns.value, label])
       }
@@ -245,3 +279,4 @@ async function handleLogout() {
   await authStore.logout()
 }
 </script>
+

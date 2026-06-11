@@ -125,7 +125,7 @@
           </div>
           <button
             type="button"
-            class="flex items-center gap-1 text-xs font-semibold text-[#963131] hover:text-[#7a2828] transition-colors"
+            class="flex items-center gap-1 text-xs font-semibold text-[#963131] hover:text-[#7a2828] transition-colors cursor-pointer"
             @click="addDetail"
           >
             <span class="material-symbols-outlined text-[16px]">add</span>
@@ -166,9 +166,18 @@
               class="w-24 px-3 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm outline-none focus:ring-4 focus:ring-[#963131]/10 focus:border-[#963131] transition-all"
             />
 
+            <input
+              v-model.number="detail.durationDays"
+              type="number"
+              min="1"
+              placeholder="Ngày"
+              title="Thời hạn mỗi lượt, để trống để dùng mặc định BE"
+              class="w-28 px-3 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm outline-none focus:ring-4 focus:ring-[#963131]/10 focus:border-[#963131] transition-all"
+            />
+
             <button
               type="button"
-              class="p-1.5 text-slate-400 hover:text-red-500 transition-colors shrink-0"
+              class="p-1.5 text-slate-400 hover:text-red-500 transition-colors shrink-0 cursor-pointer"
               @click="removeDetail(idx)"
             >
               <span class="material-symbols-outlined text-[18px]">delete</span>
@@ -199,7 +208,7 @@
               type="button"
               role="switch"
               :aria-checked="form.isActive"
-              class="relative w-11 h-6 rounded-full transition-colors duration-200 shrink-0 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#963131]"
+              class="relative w-11 h-6 rounded-full transition-colors duration-200 shrink-0 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#963131] cursor-pointer"
               :class="form.isActive ? 'bg-[#963131]' : 'bg-slate-200 dark:bg-slate-700'"
               @click="form.isActive = !form.isActive"
             >
@@ -283,8 +292,9 @@ function extractBillingCycle(code: string): BillingCycle | '' {
 }
 
 interface DetailRow {
-  serviceId: number | null
-  quantity:  number
+  serviceId:     number | null
+  quantity:      number
+  durationDays:  number | null
 }
 
 const form = reactive({
@@ -304,7 +314,7 @@ const errors = reactive({
 })
 
 function addDetail() {
-  form.details.push({ serviceId: null, quantity: 1 })
+  form.details.push({ serviceId: null, quantity: 1, durationDays: null })
 }
 
 function removeDetail(idx: number) {
@@ -320,8 +330,9 @@ watch(() => props.package, (pkg) => {
   form.isActive     = pkg.isActive
   form.sortOrder    = pkg.sortOrder ?? null
   form.details      = (pkg.details ?? []).map(d => ({
-    serviceId: d.serviceId,
-    quantity:  d.quantity,
+    serviceId:     d.serviceId,
+    quantity:      d.quantity,
+    durationDays:  d.durationDays ?? null,
   }))
   errors.tier         = ''
   errors.billingCycle = ''
@@ -361,7 +372,11 @@ function handleSubmit() {
 
   const details: ReqServicePackageDetailItem[] = form.details
     .filter(d => d.serviceId !== null)
-    .map(d => ({ serviceId: d.serviceId as number, quantity: d.quantity }))
+    .map(d => ({
+      serviceId: d.serviceId as number,
+      quantity: d.quantity,
+      durationDays: d.durationDays || undefined,
+    }))
 
   const payload: ReqServicePackageDTO = {
     name:         SERVICE_PACKAGE_TIER_LABELS[form.tier as ServicePackageTier],

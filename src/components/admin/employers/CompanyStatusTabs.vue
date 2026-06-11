@@ -6,7 +6,7 @@
       <button
         v-for="tab in statusTabs"
         :key="tab.value"
-        class="px-6 py-4 text-sm font-medium transition-colors whitespace-nowrap"
+        class="px-6 py-4 text-sm font-medium transition-colors whitespace-nowrap cursor-pointer"
         :class="activeTab === tab.value
           ? 'font-bold border-b-2 border-[#963131] text-[#963131] bg-[#963131]/5'
           : 'text-slate-500 hover:text-[#963131]'"
@@ -23,7 +23,7 @@
     <!-- Search + Filter VerificationStatus -->
     <div class="p-4 flex gap-4">
       <div class="flex-1 flex items-center bg-slate-50 dark:bg-white/5 rounded-lg px-4 border border-[#963131]/5 focus-within:ring-2 focus-within:ring-[#963131]/20 transition-all">
-        <button class="flex items-center justify-center p-1 -ml-1 hover:bg-[#963131]/10 rounded-md transition-colors" @click="triggerSearch">
+        <button class="flex items-center justify-center p-1 -ml-1 hover:bg-[#963131]/10 rounded-md transition-colors cursor-pointer" @click="triggerSearch">
           <span class="material-symbols-outlined text-slate-400 hover:text-[#963131] transition-colors">search</span>
         </button>
         <input

@@ -15,12 +15,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import ConversationList from '@/components/recruiter/messages/ConversationList.vue'
 import ChatHeader from '@/components/recruiter/messages/ChatHeader.vue'
 import ChatMessages from '@/components/recruiter/messages/ChatMessages.vue'
 import ChatInput from '@/components/recruiter/messages/ChatInput.vue'
+import { useToast } from '@/composables/useToast'
 
+const toast = useToast()
 const activeId = ref<number | null>(null)
 
 const conversations = ref([
@@ -51,6 +53,10 @@ const messages = ref([
   { id: 2, mine: true,  text: 'Chào Mai, cảm ơn bạn đã quan tâm. Bạn có thể gửi thêm link portfolio các dự án SaaS bạn đã làm để team tham khảo được không?', time: '10:35', avatar: '' },
   { id: 3, mine: false, text: 'Dạ vâng, em cảm ơn anh/chị ạ. Đây là link behance của em: behance.net/nguyenmai', time: '10:42', avatar: conversations.value[0].avatar },
 ])
+
+onMounted(() => {
+  toast.info('Chức năng này đang phát triển')
+})
 </script>
 
 <style scoped>

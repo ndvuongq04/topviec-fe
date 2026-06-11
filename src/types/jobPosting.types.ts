@@ -184,6 +184,7 @@ export type ResJobPostingSummaryPagination = ResultPaginationDTO<ResJobPostingSu
 export interface JobPostingQueryParams {
     keyword?: string
     companyId?: number
+    locationId?: number
     industryId?: number
     levelId?: number
     workType?: string
@@ -201,6 +202,21 @@ export interface JobPostingQueryParams {
 
 export interface EmployerJobPostingQueryParams extends JobPostingQueryParams {
     status?: JobPostingStatus
+}
+
+/** GET /employer/company/job-statistics */
+export interface ResEmployerJobStatisticsDTO {
+    /** Tổng số tin tuyển dụng (chưa xóa mềm) của công ty */
+    totalJobPosts: number
+
+    /** Tổng số tin đang hoạt động (trạng thái 'published' hoặc 'interviewing') */
+    activeJobPosts: number
+
+    /** Tổng số tin đang chờ duyệt (trạng thái 'pending_approval') */
+    pendingJobPosts: number
+
+    /** Tổng số tin sắp hết hạn (còn <= 7 ngày, đang trong trạng thái hoạt động) */
+    expiringJobPosts: number
 }
 
 
@@ -226,6 +242,10 @@ const WORK_TYPE_LABELS: Record<string, string> = {
     PART_TIME: 'Bán thời gian',
     INTERN:    'Thực tập',
     REMOTE:    'Remote',
+    full_time: 'Toàn thời gian',
+    part_time: 'Bán thời gian',
+    intern:    'Thực tập',
+    remote:    'Remote',
 }
 
 export function formatWorkType(workType: string): string {

@@ -51,8 +51,9 @@ export interface AdminAddonPackageQueryParams {
 // ─── Service Package ─────────────────────────────────────────────────────────
 
 export interface ReqServicePackageDetailItem {
-    serviceId: number
-    quantity:  number
+    serviceId:     number
+    quantity:      number
+    durationDays?: number
 }
 
 export interface ReqServicePackageDTO {
@@ -92,7 +93,8 @@ export interface AdminServicePackageQueryParams {
 // ─── Employer Service Management ─────────────────────────────────────────────
 
 export interface ReqApplyAddonDTO {
-    companyAddonId: number
+    serviceCode?:    string
+    companyAddonId?: number
 }
 
 export interface ReqRenewSubscriptionDTO {
@@ -140,29 +142,36 @@ export interface ResCompanyAddonDTO {
     createdAt:           string
 }
 
+export type UsageSourceType = 'SUBSCRIPTION' | 'ADDON'
+
 export interface ResJobPostAddonDTO {
-    id:             number
-    jobPostingId:   number
-    companyAddonId: number
-    addonServiceId: number
-    addonName:      string | null
-    status:         JobPostAddonStatus
-    startedAt:      string | null
-    expiredAt:      string | null
-    createdAt:      string
+    id:                  number
+    jobPostingId:        number
+    companyAddonId:      number | null
+    addonServiceId:      number | null
+    subscriptionUsageId: number | null
+    serviceCode:         string | null
+    usageSourceType:     UsageSourceType | null
+    addonName:           string | null
+    status:              JobPostAddonStatus
+    startedAt:           string | null
+    expiredAt:           string | null
+    createdAt:           string
 }
 
 export interface ResCompanyBrandingDTO {
-    id:             number
-    companyId:      number
-    companyAddonId: number
-    addonServiceId: number
-    addonName:      string | null
-    serviceCode:    string | null
-    status:         BrandingAddonStatus
-    startedAt:      string | null
-    expiredAt:      string | null
-    createdAt:      string
+    id:                  number
+    companyId:           number
+    companyAddonId:      number | null
+    addonServiceId:      number | null
+    subscriptionUsageId: number | null
+    addonName:           string | null
+    serviceCode:         string | null
+    usageSourceType:     UsageSourceType | null
+    status:              BrandingAddonStatus
+    startedAt:           string | null
+    expiredAt:           string | null
+    createdAt:           string
 }
 
 export interface ResSubscriptionRenewalUsageDTO {

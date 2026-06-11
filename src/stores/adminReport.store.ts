@@ -10,6 +10,7 @@ import type {
   ReqProcessReport,
   ResReportDetail,
   ResReportSummary,
+  ResAdminReportStatisticsDTO,
 } from '@/types/report.types';
 
 export const useAdminReportStore = defineStore('adminReport', () => {
@@ -20,6 +21,7 @@ export const useAdminReportStore = defineStore('adminReport', () => {
   const relatedMeta = ref<PaginationMeta>({ page: 0, pageSize: 10, pages: 0, totals: 0 });
   const currentReport = ref<ResReportDetail | null>(null);
   const currentAppeal = ref<ResAppeal | null>(null);
+  const reportStatistics = ref<ResAdminReportStatisticsDTO | null>(null);
   const loading = ref(false);
   const error = ref<string | null>(null);
 
@@ -136,6 +138,18 @@ export const useAdminReportStore = defineStore('adminReport', () => {
     }
   }
 
+  async function fetchStatistics() {
+    loading.value = true;
+    error.value = null;
+    try {
+      reportStatistics.value = await adminReportService.getStatistics();
+    } catch (err) {
+      setError(err);
+    } finally {
+      loading.value = false;
+    }
+  }
+
   function reset() {
     reports.value = [];
     meta.value = { page: 0, pageSize: 10, pages: 0, totals: 0 };
@@ -143,6 +157,7 @@ export const useAdminReportStore = defineStore('adminReport', () => {
     relatedMeta.value = { page: 0, pageSize: 10, pages: 0, totals: 0 };
     currentReport.value = null;
     currentAppeal.value = null;
+    reportStatistics.value = null;
     loading.value = false;
     error.value = null;
   }
@@ -154,6 +169,7 @@ export const useAdminReportStore = defineStore('adminReport', () => {
     relatedMeta,
     currentReport,
     currentAppeal,
+    reportStatistics,
     loading,
     error,
     fetchAll,
@@ -162,6 +178,7 @@ export const useAdminReportStore = defineStore('adminReport', () => {
     processReport,
     confirmReport,
     fetchReportsByComplaint,
+    fetchStatistics,
     reset,
   };
 });

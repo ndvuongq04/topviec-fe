@@ -15,11 +15,22 @@ export type { PaginationMeta, ResultPaginationDTO }
 
 // ─── Request DTOs ─────────────────────────────────────────────────────────────
 
+export interface ReqCreateOrderItemDTO {
+    packageId: number
+    quantity:  number
+}
+
 export interface ReqCreateOrderDTO {
     type:          OrderType
-    packageId:     number
-    quantity:      number
+    packageId?:    number            // Legacy single-item (backward compat)
+    quantity?:     number            // Legacy single-item (backward compat)
+    items?:        ReqCreateOrderItemDTO[]  // New multi-item support
     paymentMethod: PaymentMethod
+    payNow?:       boolean
+}
+
+export interface ReqRefundOrderDTO {
+    reason: string
 }
 
 export interface ReqUpdateOrderStatusDTO {
@@ -57,11 +68,18 @@ export interface ResOrderDTO {
     status:               OrderStatus
     paymentMethod:        PaymentMethod
     paymentTransactionId: string | null
+    paymentUrl?:          string | null
     paidAt:               string | null
     note:                 string | null
     createdAt:            string
     items:                ResOrderItemDTO[]
     company:              ResOrderCompanyInfo | null
+
+    // Refund fields
+    refundEligible?:    boolean
+    refundReason?:      string | null
+    refundRequestedAt?: string | null
+    refundApprovedAt?:  string | null
 }
 
 export type ResOrderPagination = ResultPaginationDTO<ResOrderDTO>
@@ -95,4 +113,23 @@ export interface EmployerOrderQueryParams {
 
 export interface EmployerAddonPackageQueryParams {
     category?: string
+}
+
+/** GET /admin/orders/statistics */
+export interface ResAdminOrderStatisticsDTO {
+    /** Tổng số đơn hàng trong hệ thống */
+    totalOrders: number
+
+    /** Tổng đơn hàng đã thanh toán (status = PAID) */
+    paidOrders: number
+
+    /** Tổng đơn hàng đang chờ xử lý (status = PENDING) */
+    pendingOrders: number
+
+    /** Tổng giá trị tất cả đơn hàng đã thanh toán */
+    totalRevenue: number
+}
+
+export interface ResPaymentUrlDTO {
+    paymentUrl: string
 }

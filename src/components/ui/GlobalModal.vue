@@ -17,7 +17,7 @@
             </div>
             <div>
               <h3 class="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">{{ title }}</h3>
-              <p v-if="subtitle" class="text-sm text-slate-500 mt-0.5">{{ subtitle }}</p>
+              <p v-if="subtitle" class="text-sm text-slate-500 mt-0.5" v-html="subtitle"></p>
             </div>
           </div>
           <button

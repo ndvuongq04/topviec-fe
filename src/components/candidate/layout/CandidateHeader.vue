@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import { useAuthStore } from "@/stores/auth.store";
-import { useRouter } from "vue-router";
 import { ref, computed, onMounted, onUnmounted } from "vue";
+import { useToast } from "@/composables/useToast";
 
 const props = defineProps<{
   unfixed?: boolean;
 }>();
 
 const authStore = useAuthStore();
-const router = useRouter();
+const toast = useToast();
 
 const isDropdownOpen = ref(false);
 const dropdownRef = ref<HTMLElement | null>(null);
@@ -39,6 +39,14 @@ function toggleDropdown() {
 
 function closeDropdown() {
   isDropdownOpen.value = false;
+}
+
+function showDevelopingFeatureToast() {
+  toast.info("Chức năng này đang phát triển");
+}
+
+function handleCvOnlineClick() {
+  showDevelopingFeatureToast();
 }
 
 function handleClickOutside(event: MouseEvent) {
@@ -111,7 +119,7 @@ async function handleLogout() {
         <!-- CV Online button -->
         <button
           class="flex items-center justify-center rounded-3xl h-10 px-5 bg-primary hover:bg-blue-600 text-white text-base font-bold transition-colors shadow-lg shadow-blue-500/30 cursor-pointer"
-          @click="router.push('/my-cvs')"
+          @click="handleCvOnlineClick"
         >
           CV online
         </button>

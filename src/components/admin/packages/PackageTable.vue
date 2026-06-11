@@ -55,7 +55,7 @@
                 :key="detail.id"
                 class="text-xs text-slate-600 dark:text-slate-300 whitespace-nowrap"
               >
-                {{ detail.serviceName }}: {{ detail.quantity }}<template v-if="detail.serviceUnit"> {{ detail.serviceUnit }}</template>
+                {{ detail.serviceName }}: {{ detail.quantity }}<template v-if="detail.serviceUnit"> {{ detail.serviceUnit }}</template><template v-if="detail.durationDays"> · {{ detail.durationDays }} ngày</template>
               </span>
             </div>
             <span v-else class="text-sm text-slate-400">—</span>
@@ -65,6 +65,7 @@
           <td class="px-6 py-4">
             <div class="flex items-center gap-2.5">
               <button
+                v-if="can('package.update')"
                 type="button"
                 role="switch"
                 :aria-checked="pkg.isActive"
@@ -90,7 +91,8 @@
           <!-- Thao tác -->
           <td class="px-6 py-4 text-right">
             <button
-              class="p-1.5 text-slate-400 hover:text-[#963131] transition-colors"
+              v-if="can('package.update')"
+              class="p-1.5 text-slate-400 hover:text-[#963131] transition-colors cursor-pointer"
               title="Chỉnh sửa"
               @click="$emit('edit', pkg)"
             >
@@ -114,6 +116,9 @@
 <script setup lang="ts">
 import { BILLING_CYCLE_LABELS } from '@/constants/servicePackage.constants'
 import type { ResServicePackageDTO } from '@/types/servicePackage.types'
+import { useAdminPermission } from '@/composables/useAdminPermission'
+
+const { can } = useAdminPermission()
 
 defineProps<{
   packages:   ResServicePackageDTO[]

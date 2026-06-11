@@ -97,8 +97,8 @@
           <GlobalDropdownItem
             icon="notifications"
             label="Nhắc nhở chọn lịch"
-            :disabled="candidate.scheduleStatus !== 'scheduled'"
-            :tooltip="candidate.scheduleStatus !== 'scheduled' ? (candidate.scheduleStatus === 'confirmed' ? 'Ứng viên đã xác nhận lịch' : 'Lịch chưa được xếp hoặc đã kết thúc') : ''"
+            :disabled="!candidate.hasSchedule || candidate.scheduleStatus !== 'scheduled'"
+            :tooltip="!candidate.hasSchedule ? 'Ứng viên chưa có lịch phỏng vấn' : (candidate.scheduleStatus !== 'scheduled' ? (candidate.scheduleStatus === 'confirmed' ? 'Ứng viên đã xác nhận lịch' : 'Lịch chưa được xếp hoặc đã kết thúc') : '')"
             @click="handleAction('remind', close)"
           />
 
@@ -106,8 +106,8 @@
           <GlobalDropdownItem
             icon="event_repeat"
             label="Đổi lịch phỏng vấn"
-            :disabled="candidate.status === 'completed'"
-            :tooltip="candidate.status === 'completed' ? 'Phỏng vấn đã kết thúc, không thể đổi lịch' : ''"
+            :disabled="!candidate.hasSchedule || candidate.status === 'completed'"
+            :tooltip="!candidate.hasSchedule ? 'Ứng viên chưa có lịch phỏng vấn' : (candidate.status === 'completed' ? 'Phỏng vấn đã kết thúc, không thể đổi lịch' : '')"
             @click="handleAction('reschedule', close)"
           />
 
@@ -115,8 +115,8 @@
           <GlobalDropdownItem
             icon="rate_review"
             label="Đánh giá phỏng vấn"
-            :disabled="candidate.scheduleStatus !== 'confirmed'"
-            :tooltip="candidate.scheduleStatus !== 'confirmed' ? 'Chỉ đánh giá được khi ứng viên đã xác nhận lịch' : ''"
+            :disabled="!candidate.hasSchedule || candidate.scheduleStatus !== 'confirmed'"
+            :tooltip="!candidate.hasSchedule ? 'Ứng viên chưa có lịch phỏng vấn' : (candidate.scheduleStatus !== 'confirmed' ? 'Chỉ đánh giá được khi ứng viên đã xác nhận lịch' : '')"
             @click="handleAction('evaluate', close)"
           />
 
@@ -126,8 +126,8 @@
           <GlobalDropdownItem
             icon="card_giftcard"
             label="Phát hành Offer"
-            :disabled="!candidate.isFinalRound || candidate.scheduleStatus !== 'completed' || ['offered', 'hired', 'rejected', 'completed'].includes(candidate.applicationStatus || '')"
-            :tooltip="!candidate.isFinalRound ? 'Chỉ được offer ở vòng phỏng vấn cuối' : (candidate.scheduleStatus !== 'completed' ? 'Cần hoàn thành phỏng vấn trước khi offer' : (['offered', 'hired', 'rejected', 'completed'].includes(candidate.applicationStatus || '') ? 'Ứng viên đã có kết quả offer hoặc đã kết thúc quy trình' : ''))"
+            :disabled="!candidate.hasSchedule || !candidate.isFinalRound || candidate.scheduleStatus !== 'completed' || ['offered', 'hired', 'rejected', 'completed'].includes(candidate.applicationStatus || '')"
+            :tooltip="!candidate.hasSchedule ? 'Ứng viên chưa có lịch phỏng vấn' : (!candidate.isFinalRound ? 'Chỉ được offer ở vòng phỏng vấn cuối' : (candidate.scheduleStatus !== 'completed' ? 'Cần hoàn thành phỏng vấn trước khi offer' : (['offered', 'hired', 'rejected', 'completed'].includes(candidate.applicationStatus || '') ? 'Ứng viên đã có kết quả offer hoặc đã kết thúc quy trình' : '')))"
             @click="handleAction('offer', close)"
           />
 
@@ -145,8 +145,8 @@
             icon="cancel"
             label="Hủy lịch phỏng vấn"
             danger
-            :disabled="candidate.status === 'overdue'"
-            :tooltip="candidate.status === 'overdue' ? 'Lịch đã quá hạn, không cần hủy' : ''"
+            :disabled="!candidate.hasSchedule || candidate.status === 'overdue'"
+            :tooltip="!candidate.hasSchedule ? 'Ứng viên chưa có lịch phỏng vấn' : (candidate.status === 'overdue' ? 'Lịch đã quá hạn, không cần hủy' : '')"
             @click="handleAction('cancel', close)"
           />
         </template>

@@ -1,4 +1,5 @@
 import { CompanySize, CompanyStatus, VerificationStatus } from '@/constants/company.constants'
+import { BillingCycle, SubscriptionStatus } from '@/constants/servicePackage.constants'
 import type { PaginationMeta, ResultPaginationDTO } from '@/types/common.types'
 
 // Re-export để các file khác chỉ cần import từ 1 chỗ
@@ -141,7 +142,86 @@ export interface ResCompanyDTO {
     updatedAt: string
 }
 
+/** GET /admin/companies/{id}/statistics */
+export interface ResAdminCompanyStatisticsDTO {
+    /** Tổng số tin tuyển dụng đã đăng (chưa bị xóa mềm) */
+    totalJobPostings: number
 
+    /** Tổng số CV/đơn ứng tuyển đã nhận (chưa bị xóa mềm) */
+    totalApplicationsReceived: number
+
+    /** Danh sách gói dịch vụ đang sử dụng (status = ACTIVE) */
+    activeSubscriptions: ActiveSubscriptionDTO[]
+}
+
+export interface ActiveSubscriptionDTO {
+    subscriptionId: number
+    servicePackageId: number
+    packageName: string
+    packageCode: string
+    billingCycle: BillingCycle
+    status: SubscriptionStatus
+    startedAt: string
+    expiredAt: string
+}
+
+/** GET /admin/companies/{id}/plan */
+export interface UsageDTO {
+    featureCode: string
+    featureName: string
+    total: number
+    used: number
+}
+
+export interface CurrentPackageDTO {
+    subscriptionId: number
+    servicePackageId: number
+    packageName: string
+    packageCode: string
+    billingCycle: string
+    status: string
+    startedAt: string
+    expiredAt: string
+    orderId: number
+    orderCode: string
+    usages: UsageDTO[]
+}
+
+export interface CurrentAddonDTO {
+    addonId: number
+    addonServiceId: number
+    addonName: string
+    addonCode: string
+    serviceCategory: string
+    serviceCategoryName: string
+    status: string
+    total: number
+    used: number
+    startedAt: string
+    expiredAt: string
+    orderId: number
+    orderCode: string
+}
+
+export interface ResCompanyPlanDTO {
+    currentPackage: CurrentPackageDTO | null
+    currentAddons: CurrentAddonDTO[]
+}
+
+export interface ResSubscriptionHistoryDTO {
+    subscriptionId: number
+    companyId: number
+    orderId: number
+    servicePackageId: number
+    packageName: string
+    packageCode: string
+    status: string
+    billingCycle: string
+    startedAt: string
+    expiredAt: string
+    purchasedAt: string
+    packagePrice: number
+}
 
 export type { PaginationMeta, ResultPaginationDTO }
 

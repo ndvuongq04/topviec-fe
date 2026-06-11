@@ -5,6 +5,7 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import router from '@/router'
 import authService from '@/services/auth.service'
+import { resetAdminRoleCache } from '@/router/guards'
 import type { ReqLoginDTO, ReqRegisterCandidateDTO, ReqRegisterEmployerDTO, UserInfo } from '@/types/auth.types'
 
 /** Đọc accessToken từ localStorage an toàn (tránh lỗi khi SSR hoặc storage bị tắt) */
@@ -116,6 +117,8 @@ export const useAuthStore = defineStore('auth', () => {
       } catch {
         // Một số môi trường có thể chặn localStorage
       }
+      // Reset adminRole cache để tránh dữ liệu cũ khi đăng nhập lại
+      resetAdminRoleCache()
       router.push({ name: 'home' })
     }
   }

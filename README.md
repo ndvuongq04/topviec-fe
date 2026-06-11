@@ -1,379 +1,239 @@
-package com.topviec.topviec_be.controller;
+# TopViec Frontend
 
-import com.topviec.topviec_be.dto.request.ReqAdjustViolationScoreDTO;
-import com.topviec.topviec_be.dto.request.ReqResetViolationScoreDTO;
-import com.topviec.topviec_be.dto.response.ResAppealDTO;
-import com.topviec.topviec_be.dto.response.ResViolationScoreDTO;
-import com.topviec.topviec_be.enums.adminUsers.AdminRoleConstants;
-import com.topviec.topviec_be.service.AppealService;
-import com.topviec.topviec_be.service.ViolationScoreService;
-import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.oauth2.jwt.Jwt;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+Frontend của TopViec là Vue 3 SPA dành cho ứng viên, nhà tuyển dụng và quản trị viên. Ứng dụng kết nối với backend qua REST API, quản lý access token ở client và dùng refresh token qua cookie HttpOnly.
 
-import java.util.List;
+## Tech Stack
 
-/**
- * Admin quản lý điểm vi phạm của NTD.
- * Base URL: /admin/employers/{employerId}/violation-score
- */
-@RestController
-@RequestMapping("/admin/employers")
-@RequiredArgsConstructor
-@PreAuthorize("hasRole('ADMIN')")
-public class AdminViolationScoreController {
+| Component | Version / Library |
+|---|---|
+| Vue | `3.5.x` |
+| Vite | `7.3.x` |
+| TypeScript | `5.9.x` |
+| State management | Pinia `3.0.x` |
+| Router | Vue Router `4.6.x` |
+| HTTP client | Axios `1.13.x` |
+| Server state | TanStack Vue Query |
+| Styling | SCSS, Tailwind CSS `4.2.x` |
+| Forms/validation | vee-validate, zod |
+| Rich text | TipTap |
+| Charts | Chart.js, vue-chartjs |
+| PDF preview | vue-pdf-embed |
+| Realtime client | socket.io-client |
 
-    private final ViolationScoreService violationScoreService;
-    private final AppealService appealService;
+## System Requirements
 
-    /**
-     * GET /admin/employers/{employerId}/violation-score
-     * Xem tổng điểm vi phạm hiện tại và lịch sử vi phạm của NTD.
-     */
-    @GetMapping("/{employerId}/violation-score")
-    @PreAuthorize("@adminSecurity.hasAnyRole(authentication, '"
-            + AdminRoleConstants.SUPER_ADMIN + "', '"
-            + AdminRoleConstants.CONTENT_MODERATOR + "', '"
-            + AdminRoleConstants.SUPPORT_ADMIN + "')")
-    public ResponseEntity<ResViolationScoreDTO> getScore(@PathVariable Long employerId) {
-        return ResponseEntity.ok(violationScoreService.getScore(employerId));
-    }
+| Tool | Minimum | Recommended |
+|---|---|---|
+| Node.js | `20.19.0` | Node 20 LTS hoặc Node 22 LTS |
+| npm | 10.x | Version đi kèm Node LTS |
 
-    /**
-     * POST /admin/employers/{employerId}/violation-score/reset
-     * Reset điểm về 0.
-     * Điều kiện: NTD không tái phạm nhóm B trong vòng 6 tháng gần nhất.
-     */
-    @PostMapping("/{employerId}/violation-score/reset")
-    @PreAuthorize("@adminSecurity.hasAnyRole(authentication, '"
-            + AdminRoleConstants.SUPER_ADMIN + "', '"
-            + AdminRoleConstants.CONTENT_MODERATOR + "')")
-    public ResponseEntity<ResViolationScoreDTO> resetScore(
-            @AuthenticationPrincipal Jwt jwt,
-            @PathVariable Long employerId,
-            @Valid @RequestBody ReqResetViolationScoreDTO request) {
+Repo có `package-lock.json` và workflow đang dùng `npm ci`, vì vậy README dùng npm làm package manager chính.
 
-        return ResponseEntity.ok(violationScoreService.resetScore(extractUserId(jwt), employerId, request));
-    }
+## Local Setup
 
-    /**
-     * PATCH /admin/employers/{employerId}/violation-score/adjust
-     * Giảm điểm vi phạm thủ công khi NTD chủ động khắc phục hậu quả.
-     */
-    @PatchMapping("/{employerId}/violation-score/adjust")
-    @PreAuthorize("@adminSecurity.hasAnyRole(authentication, '"
-            + AdminRoleConstants.SUPER_ADMIN + "', '"
-            + AdminRoleConstants.CONTENT_MODERATOR + "')")
-    public ResponseEntity<ResViolationScoreDTO> adjustScore(
-            @AuthenticationPrincipal Jwt jwt,
-            @PathVariable Long employerId,
-            @Valid @RequestBody ReqAdjustViolationScoreDTO request) {
+Tạo file env:
 
-        return ResponseEntity.ok(violationScoreService.adjustScore(extractUserId(jwt), employerId, request));
-    }
+```powershell
+cd topviec-fe
+Copy-Item .env.example .env
+```
 
-    /**
-     * GET /admin/employers/{employerId}/appeals
-     * Xem toàn bộ danh sách kháng cáo của một NTD.
-     */
-    @GetMapping("/{employerId}/appeals")
-    @PreAuthorize("@adminSecurity.hasAnyRole(authentication, '"
-            + AdminRoleConstants.SUPER_ADMIN + "', '"
-            + AdminRoleConstants.CONTENT_MODERATOR + "', '"
-            + AdminRoleConstants.SUPPORT_ADMIN + "')")
-    public ResponseEntity<List<ResAppealDTO>> getAppeals(@PathVariable Long employerId) {
-        return ResponseEntity.ok(appealService.getByEmployer(employerId));
-    }
+Cập nhật `topviec-fe/.env`:
 
-    private Long extractUserId(Jwt jwt) {
-        return Long.parseLong(jwt.getSubject());
-    }
-}
-package com.topviec.topviec_be.controller;
+```env
+VITE_API_URL=http://localhost:8080/api/v1
+```
 
-import com.topviec.topviec_be.dto.request.ReqCreateAppealDTO;
-import com.topviec.topviec_be.dto.response.ResAppealDTO;
-import com.topviec.topviec_be.service.AppealService;
-import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.oauth2.jwt.Jwt;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+Cài dependencies và chạy dev server:
 
-/**
- * NTD nộp kháng cáo sau khi bị xử lý vi phạm nhóm B.
- * Base URL: /employer/appeals
- */
-@RestController
-@RequestMapping("/employer/appeals")
-@RequiredArgsConstructor
-@PreAuthorize("hasRole('EMPLOYER')")
-public class EmployerAppealController {
+```powershell
+npm install
+npm run dev
+```
 
-    private final AppealService appealService;
+URL sau khi chạy:
 
-    /**
-     * POST /employer/appeals
-     * NTD nộp kháng cáo cho một báo cáo nhóm B đã bị xử lý (resolved).
-     * Chỉ được kháng cáo 1 lần mỗi báo cáo.
-     */
-    @PostMapping
-    public ResponseEntity<ResAppealDTO> create(
-            @AuthenticationPrincipal Jwt jwt,
-            @Valid @RequestBody ReqCreateAppealDTO request) {
+- Frontend: `http://localhost:5173`
+- Backend API cần chạy ở: `http://localhost:8080/api/v1`
 
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(appealService.create(extractUserId(jwt), request));
-    }
+## Environment Configuration
 
-    private Long extractUserId(Jwt jwt) {
-        return Long.parseLong(jwt.getSubject());
-    }
-}
-package com.topviec.topviec_be.dto.request;
+| Variable | Required | Example | Meaning |
+|---|---:|---|---|
+| `VITE_API_URL` | Yes | `http://localhost:8080/api/v1` | Base URL cho Axios instance |
 
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+Lưu ý: source hiện dùng `import.meta.env.VITE_API_URL` trong `src/services/axios.ts`.
 
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-public class ReqAdjustViolationScoreDTO {
+## Folder Structure
 
-    @NotNull(message = "Số điểm giảm không được để trống")
-    @Min(value = 1, message = "Số điểm giảm phải lớn hơn 0")
-    private Integer pointsToDecrease;
+```text
+topviec-fe/
+├── src/
+│   ├── assets/
+│   ├── components/
+│   ├── composables/
+│   ├── constants/
+│   ├── layouts/
+│   ├── pages/
+│   ├── router/
+│   ├── services/
+│   ├── stores/
+│   ├── styles/
+│   ├── types/
+│   └── utils/
+├── index.html
+├── package.json
+├── tsconfig.app.json
+└── vite.config.ts
+```
 
-    @NotBlank(message = "Lý do giảm điểm không được để trống")
-    @Size(max = 500, message = "Lý do không được vượt quá 500 ký tự")
-    private String note;
-}
-package com.topviec.topviec_be.dto.request;
+Convention chính:
 
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+- `pages`: màn hình theo domain và role: `candidate`, `recruiter`, `admin`, `auth`, `error`.
+- `layouts`: layout riêng cho candidate, recruiter và admin.
+- `components`: UI component dùng lại và component nghiệp vụ theo module.
+- `services`: wrapper gọi REST API bằng Axios.
+- `stores`: Pinia store theo module nghiệp vụ.
+- `composables`: logic dùng lại trong component.
+- `constants`: trạng thái, option, permission và mapping dùng chung.
+- `types`: TypeScript type tương ứng DTO request/response backend.
+- `router`: route definitions và navigation guards.
 
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-public class ReqCreateAppealDTO {
+## Main Routes
 
-    @NotNull(message = "ID báo cáo không được để trống")
-    private Long complaintId;
+### Auth
 
-    @NotBlank(message = "Nội dung kháng cáo không được để trống")
-    @Size(max = 2000, message = "Nội dung kháng cáo không được vượt quá 2000 ký tự")
-    private String content;
-}
-package com.topviec.topviec_be.dto.request;
+| Route | Page |
+|---|---|
+| `/login` | Đăng nhập |
+| `/register` | Đăng ký ứng viên |
+| `/recruiter/register` | Đăng ký nhà tuyển dụng |
+| `/verify-email` | Thông báo xác thực email |
+| `/verify-email/callback` | Callback xác thực email |
+| `/forgot-password` | Quên mật khẩu |
+| `/reset-password` | Đặt lại mật khẩu |
+| `/interview-confirm-update` | Xác nhận lịch phỏng vấn được cập nhật |
+| `/interview-select-slot` | Chọn slot phỏng vấn |
+| `/talent-pool-invite` | Xử lý lời mời Talent Pool |
 
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+### Candidate
 
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-public class ReqResetViolationScoreDTO {
+| Route | Page |
+|---|---|
+| `/` | Trang chủ |
+| `/search` | Tìm kiếm việc làm |
+| `/jobs/:id` | Chi tiết việc làm |
+| `/companies/:slug` | Chi tiết công ty |
+| `/profile` | Hồ sơ ứng viên |
+| `/applied-jobs` | Việc đã ứng tuyển |
+| `/saved-jobs` | Việc đã lưu |
+| `/interviews` | Lịch phỏng vấn |
+| `/interviews/detail/:id` | Chi tiết phỏng vấn |
+| `/messages` | Tin nhắn |
+| `/change-password` | Đổi mật khẩu |
+| `/my-complaints` | Khiếu nại/báo cáo của ứng viên |
 
-    @NotBlank(message = "Lý do reset không được để trống")
-    @Size(max = 500, message = "Lý do không được vượt quá 500 ký tự")
-    private String note;
-}
-package com.topviec.topviec_be.dto.response;
+### Employer / Recruiter
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+| Route | Page |
+|---|---|
+| `/recruiter` | Dashboard nhà tuyển dụng |
+| `/recruiter/company-profile` | Hồ sơ công ty |
+| `/recruiter/team` | Thành viên công ty |
+| `/recruiter/assignment` | Phân công recruiter |
+| `/recruiter/permissions` | Cấu hình quyền |
+| `/recruiter/permissions/log` | Lịch sử thay đổi quyền |
+| `/recruiter/jobs` | Danh sách tin tuyển dụng |
+| `/recruiter/jobs/create` | Tạo tin tuyển dụng |
+| `/recruiter/jobs/:id` | Chi tiết tin tuyển dụng |
+| `/recruiter/jobs/:id/edit` | Sửa tin tuyển dụng |
+| `/recruiter/jobs/:id/applications` | Ứng viên theo tin |
+| `/recruiter/interviews` | Quản lý phỏng vấn |
+| `/recruiter/services` | Dịch vụ hiện có |
+| `/recruiter/services/shop` | Cửa hàng dịch vụ |
+| `/recruiter/pricing` | Bảng giá |
+| `/recruiter/billing` | Lịch sử thanh toán |
+| `/recruiter/offers` | Quản lý offer |
+| `/recruiter/talent-pool` | Talent Pool |
+| `/recruiter/messages` | Tin nhắn |
+| `/recruiter/complaints` | Báo cáo/khiếu nại |
+| `/recruiter/activity-log` | Nhật ký hoạt động |
+| `/recruiter/checkout` | Checkout |
+| `/payment/result` | Kết quả thanh toán |
 
-import java.time.LocalDateTime;
+### Admin
 
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
-public class ResAppealDTO {
+| Route | Page |
+|---|---|
+| `/admin` | Dashboard admin |
+| `/admin/employers` | Quản lý nhà tuyển dụng |
+| `/admin/employers/:id` | Chi tiết nhà tuyển dụng |
+| `/admin/candidates` | Quản lý ứng viên |
+| `/admin/candidates/:id` | Chi tiết ứng viên |
+| `/admin/admins` | Quản lý admin |
+| `/admin/moderation` | Kiểm duyệt tin tuyển dụng |
+| `/admin/service-packages` | Quản lý gói dịch vụ |
+| `/admin/individual-services` | Quản lý dịch vụ lẻ |
+| `/admin/services/create` | Tạo dịch vụ |
+| `/admin/orders` | Quản lý đơn hàng |
+| `/admin/employer-monitor` | Theo dõi nhà tuyển dụng |
+| `/admin/reports` | Quản lý báo cáo/khiếu nại |
+| `/admin/settings/permissions` | Cấu hình phân quyền |
+| `/admin/audit-logs` | Audit log |
 
-    private Long id;
-    private Long employerId;
+## API Integration
 
-    /** Thông tin báo cáo bị kháng cáo */
-    private ComplaintInfo complaint;
+Axios instance nằm ở `src/services/axios.ts`.
 
-    private String content;
+- `baseURL`: lấy từ `VITE_API_URL`.
+- `withCredentials`: bật để gửi refresh cookie.
+- Request interceptor tự gắn `Authorization: Bearer <accessToken>`.
+- Response interceptor tự gọi `authStore.refreshToken()` khi API trả `401`.
+- Public auth endpoints được bỏ qua refresh interceptor.
 
-    /**
-     * Trạng thái kháng cáo.
-     * Giá trị hợp lệ: {@code pending} | {@code approved} | {@code rejected}
-     */
-    private String status;
+## Common Commands
 
-    /** Ghi chú Admin khi xử lý kháng cáo. NULL nếu chưa xử lý */
-    private String adminNote;
+```powershell
+cd topviec-fe
 
-    /** Admin đã xử lý kháng cáo */
-    private AdminInfo reviewedByAdmin;
+# Install dependencies
+npm install
 
-    private LocalDateTime reviewedAt;
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
+# Run dev server
+npm run dev
 
-    @Getter
-    @Setter
-    @NoArgsConstructor
-    @AllArgsConstructor
-    @Builder
-    public static class ComplaintInfo {
-        private Long id;
-        private String reportCode;
-        /** Giá trị hợp lệ: {@code fraudulent} | {@code payment_issue} | ... */
-        private String complaintType;
-        /** Giá trị hợp lệ: {@code A} | {@code B} */
-        private String violationGroup;
-        private String status;
-        private Long jobPostId;
-        private String jobPostTitle;
-        private String companyName;
-        private LocalDateTime createdAt;
-    }
+# Type check
+npm run typecheck
 
-    @Getter
-    @Setter
-    @NoArgsConstructor
-    @AllArgsConstructor
-    @Builder
-    public static class AdminInfo {
-        private Long adminUserId;
-        private String fullName;
-    }
-}
-package com.topviec.topviec_be.dto.response;
+# Build production assets
+npm run build
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+# Preview production build
+npm run preview
+```
 
-import java.time.LocalDateTime;
-import java.util.List;
+Hiện repo chưa có script `lint`, `format` hoặc `test`.
 
-/**
- * Response trả về khi Admin xem điểm vi phạm của một NTD.
- * Bao gồm thông tin tổng hợp và lịch sử từng lần vi phạm.
- */
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
-public class ResViolationScoreDTO {
+## Build and Deployment
 
-    private Long employerId;
-    private String employerEmail;
+Workflow: `.github/workflows/deploy-fe.yml`
 
-    private CompanyInfo company;
-    private ScoreInfo score;
+- Trigger: push vào `main` hoặc `develop`.
+- Setup Node.js 20.
+- Install bằng `npm ci`.
+- Build bằng `npm run build` với `VITE_API_URL` từ GitHub Secrets.
+- Sync `dist` lên AWS S3 bucket `topviec-frontend`.
 
-    /** Lịch sử vi phạm sắp xếp mới nhất trước */
-    private List<ViolationLogInfo> history;
+Demo hiện tại:
 
-    @Getter
-    @Setter
-    @NoArgsConstructor
-    @AllArgsConstructor
-    @Builder
-    public static class CompanyInfo {
-        private Long id;
-        private String name;
-        private String logoUrl;
-        /** Giá trị hợp lệ: {@code pending} | {@code active} | {@code suspended} | {@code deleted} */
-        private String status;
-    }
+```text
+http://topviec-frontend.s3-website-ap-northeast-1.amazonaws.com/
+```
 
-    @Getter
-    @Setter
-    @NoArgsConstructor
-    @AllArgsConstructor
-    @Builder
-    public static class ScoreInfo {
-        private Integer totalScore;
+## Known Issues
 
-        /**
-         * Mức độ vi phạm hiện tại dựa trên tổng điểm.
-         * Giá trị: {@code normal} (0–19) | {@code limited} (20–49) | {@code suspended} (≥50)
-         */
-        private String scoreLevel;
-
-        /** Thời điểm vi phạm nhóm B gần nhất — dùng để kiểm tra điều kiện reset 6 tháng */
-        private LocalDateTime lastGroupBViolationAt;
-
-        /** Thời điểm Admin reset điểm về 0 gần nhất */
-        private LocalDateTime lastResetAt;
-
-        /** Tên Admin đã thực hiện reset gần nhất */
-        private String resetByAdminName;
-
-        /**
-         * Admin có thể reset điểm về 0 không.
-         * true nếu chưa từng vi phạm nhóm B hoặc vi phạm nhóm B gần nhất đã qua 6 tháng.
-         */
-        private Boolean canResetScore;
-    }
-
-    @Getter
-    @Setter
-    @NoArgsConstructor
-    @AllArgsConstructor
-    @Builder
-    public static class ViolationLogInfo {
-        private Long id;
-        /** Khớp với {@code complaint_type}: fraudulent | spam | wrong_info | ... */
-        private String violationType;
-        private Integer points;
-        /** Nguồn phát hiện: {@code admin} | {@code system} | {@code complaint} */
-        private String source;
-        /** ID báo cáo liên quan. NULL nếu vi phạm do system phát hiện */
-        private Long complaintId;
-        private String note;
-        /** Tên Admin tạo log. NULL nếu do system */
-        private String createdByAdminName;
-        private LocalDateTime createdAt;
-    }
-}
+- `.env.example` hiện chỉ là placeholder, cần bổ sung `VITE_API_URL`.
+- Chưa có script lint/format/test trong `package.json`.
+- Một số module phát triển sau vẫn còn route hoặc dependency trong source, nhưng chưa đưa vào danh sách route chính của README.
+- Workflow FE nằm trong thư mục con; nếu chạy theo monorepo root, cần chuyển workflow về `.github/workflows` ở root.
+- Cần đảm bảo backend bật CORS cho đúng origin frontend, ví dụ `http://localhost:5173`.

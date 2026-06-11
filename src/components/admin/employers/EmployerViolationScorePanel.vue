@@ -88,7 +88,7 @@
             </div>
           </section>
 
-          <section class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+          <section v-if="can('violation.reset')" class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
             <h3 class="text-lg font-black tracking-tight text-slate-900">Tác vụ quản trị</h3>
 
             <div class="mt-5 space-y-5">
@@ -267,6 +267,9 @@ import {
 import { useConfirm } from '@/composables/useConfirm'
 import { useToast } from '@/composables/useToast'
 import { useAdminViolationScoreStore } from '@/stores/adminViolationScore.store'
+import { useAdminPermission } from '@/composables/useAdminPermission'
+
+const { can } = useAdminPermission()
 
 const props = defineProps<{
   employerId: number | null

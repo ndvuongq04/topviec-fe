@@ -80,7 +80,7 @@
           <div>
             <h4 class="text-base font-bold text-text-main dark:text-white mb-2">Hồ sơ và CV</h4>
             <ul class="flex flex-col gap-1.5 list-none">
-              <li><router-link to="/my-cvs" class="text-sm text-text-secondary dark:text-slate-400 hover:text-primary transition-colors">Quản lý CV của bạn</router-link></li>
+              <li><router-link to="/cv-templates" class="text-sm text-text-secondary dark:text-slate-400 hover:text-primary transition-colors">Quản lý CV của bạn</router-link></li>
               <li><router-link to="#" class="text-sm text-text-secondary dark:text-slate-400 hover:text-primary transition-colors">Hướng dẫn viết CV</router-link></li>
               <li><router-link to="#" class="text-sm text-text-secondary dark:text-slate-400 hover:text-primary transition-colors">Thư viện CV theo ngành nghề</router-link></li>
               <li><router-link to="#" class="text-sm text-text-secondary dark:text-slate-400 hover:text-primary transition-colors">Review CV</router-link></li>
