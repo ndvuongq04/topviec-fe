@@ -21,8 +21,10 @@ export interface ResCv {
     id: number;
     title: string;
     cvType: CvType;
-    fileUrl: string;
-    pdfUrl: string;
+    fileUrl: string | null;
+    pdfUrl: string | null;
+    pdfDirty?: boolean;
+    templateId?: number | null;
     isDefault: boolean;
     visibility: CvVisibility;
     shareToken: string | null;
@@ -34,4 +36,9 @@ export interface ResCv {
     createdBy: number;
     createdAt: string; // ISO 8601
     updatedAt: string; // ISO 8601
+}
+
+export type ResCvPdfExport = Partial<ResCv> & {
+    pdfUrl: string | null;
+    pdfDirty?: boolean;
 }

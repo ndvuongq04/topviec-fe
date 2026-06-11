@@ -13,6 +13,9 @@
       <div class="flex flex-col">
         <span class="text-[1.125rem] font-bold text-slate-900 dark:text-slate-100 leading-tight">{{ template.name }}</span>
         <span class="text-[0.75rem] font-mono text-slate-400 mt-1">{{ template.code }}</span>
+        <span v-if="template.versionTag" class="mt-2 inline-flex w-fit rounded-full bg-slate-100 px-2.5 py-1 font-mono text-[0.7rem] font-bold text-slate-600">
+          {{ template.versionTag }}
+        </span>
       </div>
     </td>
 
@@ -90,6 +93,7 @@
 defineProps<{
   template: {
     id: number; thumbnail: string; name: string; code: string
+    versionTag?: string | null
     categories: string; features: string[]
     tier: string; tierLabel: string
     status: string; statusLabel: string

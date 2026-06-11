@@ -2,7 +2,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import cvsService from '@/services/cvs.service'
-import type { ResCv, ReqRenameCv, ReqShareCv, ReqUploadCv } from '@/types/cvs.types'
+import type { ResCv, ReqRenameCv, ReqShareCv, ReqUploadCv, ResCvPdfExport } from '@/types/cvs.types'
 
 export const useCvsStore = defineStore('cvs', () => {
     // ─── State ──────────────────────────────────────────────────────────────────
@@ -85,7 +85,8 @@ export const useCvsStore = defineStore('cvs', () => {
         error.value = null
         try {
             const duplicated = await cvsService.duplicateCv(id)
-            cvs.value.push(duplicated)
+            cvs.value.unshift(duplicated)
+            return duplicated
         } catch (err) {
             setError(err)
             throw err
@@ -149,6 +150,39 @@ export const useCvsStore = defineStore('cvs', () => {
         }
     }
 
+    /** Tao/cap nhat PDF cho CV online khi user xem truoc */
+    async function exportPdf(id: number) {
+        loading.value = true
+        error.value = null
+        try {
+            const exported = await cvsService.exportPdf(id)
+            _patchPdfState(id, exported)
+            return exported
+        } catch (err) {
+            setError(err)
+            throw err
+        } finally {
+            loading.value = false
+        }
+    }
+
+    async function downloadPdf(id: number) {
+        loading.value = true
+        error.value = null
+        try {
+            const blob = await cvsService.downloadPdf(id)
+            const existingCv = cvs.value.find((cv) => cv.id === id)
+            const currentPdfUrl = currentCv.value?.id === id ? currentCv.value.pdfUrl : existingCv?.pdfUrl ?? null
+            _patchPdfState(id, { pdfUrl: currentPdfUrl, pdfDirty: false })
+            return blob
+        } catch (err) {
+            setError(err)
+            throw err
+        } finally {
+            loading.value = false
+        }
+    }
+
     /** Reset store (dùng khi logout) */
     function reset() {
         cvs.value = []
@@ -163,6 +197,20 @@ export const useCvsStore = defineStore('cvs', () => {
     function _replaceInList(updated: ResCv) {
         const idx = cvs.value.findIndex((cv) => cv.id === updated.id)
         if (idx !== -1) cvs.value[idx] = updated
+    }
+
+    function _patchPdfState(id: number, exported: ResCvPdfExport) {
+        const patch = {
+            pdfUrl: exported.pdfUrl ?? null,
+            pdfDirty: exported.pdfDirty ?? false,
+            ...(exported.updatedAt ? { updatedAt: exported.updatedAt } : {}),
+        }
+
+        cvs.value = cvs.value.map((cv) => (cv.id === id ? { ...cv, ...patch } : cv))
+
+        if (currentCv.value?.id === id) {
+            currentCv.value = { ...currentCv.value, ...patch }
+        }
     }
 
     return {
@@ -181,6 +229,8 @@ export const useCvsStore = defineStore('cvs', () => {
         shareCv,
         getPublicCv,
         fetchCvById,
+        exportPdf,
+        downloadPdf,
         reset,
     }
 })

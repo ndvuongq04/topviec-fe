@@ -7,14 +7,27 @@
     <div class="grid gap-5 lg:grid-cols-[minmax(0,1fr)_220px]">
       <div class="space-y-5">
         <label class="space-y-2">
-          <span class="text-sm font-semibold text-slate-700 dark:text-slate-200">Thumbnail URL</span>
+          <span class="text-sm font-semibold text-slate-700 dark:text-slate-200">
+            {{ allowUpload ? 'Thumbnail Image' : 'Thumbnail URL' }}
+          </span>
           <input
+            v-if="allowUpload"
+            type="file"
+            accept="image/*"
+            class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-[1rem] text-slate-900 outline-none transition file:mr-4 file:rounded-lg file:border-0 file:bg-[#963131]/10 file:px-3 file:py-2 file:font-semibold file:text-[#963131] focus:border-[#963131] focus:ring-4 focus:ring-[#963131]/10 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+            @change="handleFileChange"
+          >
+          <input
+            v-else
             :value="form.thumbnail"
             type="url"
             placeholder="https://..."
             class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-[1rem] text-slate-900 outline-none transition focus:border-[#963131] focus:ring-4 focus:ring-[#963131]/10 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
             @input="update('thumbnail', ($event.target as HTMLInputElement).value)"
           >
+          <p class="text-xs text-slate-500">
+            {{ allowUpload ? 'Chon anh tu may tinh de gui cung request tao template.' : 'Giữ URL thumbnail hiện tại hoặc thay bằng URL mới nếu backend hỗ trợ.' }}
+          </p>
         </label>
 
         <div class="grid gap-4 md:grid-cols-2">
@@ -82,13 +95,20 @@ export type CvTemplateFormMedia = {
 
 defineProps<{
   form: CvTemplateFormMedia
+  allowUpload?: boolean
 }>()
 
 const emit = defineEmits<{
   update: [field: keyof CvTemplateFormMedia, value: string]
+  'select-file': [file: File | null]
 }>()
 
 function update(field: keyof CvTemplateFormMedia, value: string) {
   emit('update', field, value)
+}
+
+function handleFileChange(event: Event) {
+  const file = (event.target as HTMLInputElement).files?.[0] ?? null
+  emit('select-file', file)
 }
 </script>
