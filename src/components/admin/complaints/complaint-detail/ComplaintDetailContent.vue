@@ -11,18 +11,17 @@
     <!-- Evidence -->
     <div class="cd-content__section">
       <p class="cd-content__label">Bằng chứng đính kèm</p>
-      <div class="cd-content__evidences">
-        <div
+      <div v-if="content.evidences.length" class="cd-content__evidences">
+        <a
           v-for="(src, i) in content.evidences" :key="i"
+          :href="src"
+          target="_blank"
           class="cd-content__evidence-img"
         >
           <img :alt="`Bang chung ${i + 1}`" :src="src" />
-        </div>
-        <div class="cd-content__evidence-add">
-          <span class="material-symbols-outlined">add_photo_alternate</span>
-          <span class="cd-content__evidence-add-label">Thêm tệp</span>
-        </div>
+        </a>
       </div>
+      <p v-else class="cd-content__no-evidence">Không có bằng chứng đính kèm.</p>
     </div>
 
     <!-- Auto-check -->
@@ -78,18 +77,17 @@ defineProps<{
   border: 1px solid #e4e2dc; overflow: hidden;
   cursor: pointer; transition: opacity 0.15s;
 }
+.cd-content__evidence-img {
+  display: block;
+}
 .cd-content__evidence-img:hover { opacity: 0.9; }
 .cd-content__evidence-img img { width: 100%; height: 100%; object-fit: cover; }
 
-.cd-content__evidence-add {
-  width: 96px; height: 96px; border-radius: 0.5rem;
-  border: 1px dashed #ddc0be; background: #f6f4ec;
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  cursor: pointer; color: #574240; gap: 4px; transition: background 0.15s;
+.cd-content__no-evidence {
+  font-size: 0.875rem;
+  color: #94a3b8;
+  font-style: italic;
 }
-.cd-content__evidence-add:hover { background: #f0eee7; }
-.cd-content__evidence-add .material-symbols-outlined { font-size: 24px; }
-.cd-content__evidence-add-label { font-size: 10px; font-weight: 700; }
 
 /* Auto check */
 .cd-content__auto-checks { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }

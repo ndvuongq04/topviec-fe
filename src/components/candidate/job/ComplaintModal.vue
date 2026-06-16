@@ -233,6 +233,8 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import candidateReportService from '@/services/candidateReport.service'
+import fileUploadService from '@/services/fileUpload.service'
+import { FILE_UPLOAD_TYPE } from '@/constants/fileUpload.constants'
 import { useToast } from '@/composables/useToast'
 import type { ResViolationReason } from '@/types/report.types'
 
@@ -325,11 +327,19 @@ async function handleSubmit() {
 
   submitting.value = true
   try {
+    // Upload files trước, lấy URLs
+    const evidenceItems: { fileUrl: string; fileType: string }[] = []
+    for (const f of files.value) {
+      const res = await fileUploadService.uploadFile(f, FILE_UPLOAD_TYPE.COMPLAINT_EVIDENCE as any)
+      const fileType = f.type.startsWith('image/') ? 'image' : 'pdf'
+      evidenceItems.push({ fileUrl: res.fileUrl, fileType })
+    }
+
     await candidateReportService.create({
       jobPostId: props.jobPostId,
       complaintType: selectedCode.value as any,
       description: description.value.trim() || undefined,
-      evidences: [],
+      evidences: evidenceItems as any,
     })
 
     toast.success('Gửi khiếu nại thành công', 'Chúng tôi sẽ xem xét và phản hồi trong thời gian sớm nhất.')

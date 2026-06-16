@@ -8,7 +8,7 @@
     <div v-else-if="complaint" class="complaint-detail__content">
       <ComplaintDetailHeader
         :complaint="complaint"
-        :show-actions="can('report.confirm')"
+        :show-actions="can('report.confirm') && store.currentReport?.status === 'pending'"
         @reject="onReject"
         @confirm="onConfirm"
       />

@@ -36,10 +36,10 @@
         </div>
 
         <div v-if="uploadedFiles.length" class="cd-form__file-list">
-          <div v-for="f in uploadedFiles" :key="f.name" class="cd-form__file-item">
+          <div v-for="(f, i) in uploadedFiles" :key="f.name + i" class="cd-form__file-item">
             <span class="material-symbols-outlined">attach_file</span>
             <span class="cd-form__file-name">{{ f.name }}</span>
-            <button class="cd-form__file-remove" type="button" @click="removeFile(f.name)">
+            <button class="cd-form__file-remove" type="button" @click="removeFile(i)">
               <span class="material-symbols-outlined">close</span>
             </button>
           </div>
@@ -96,9 +96,19 @@
 
         <div class="cd-form__field">
           <p class="cd-form__label">Bằng chứng đính kèm</p>
-          <p class="cd-form__submitted-meta">
-            API hiện tại chưa trả về danh sách file bằng chứng.
-          </p>
+          <div v-if="currentAppeal.evidences && currentAppeal.evidences.length" class="cd-form__evidence-list">
+            <a
+              v-for="ev in currentAppeal.evidences"
+              :key="ev.id"
+              :href="ev.fileUrl"
+              target="_blank"
+              class="cd-form__evidence-link"
+            >
+              <span class="material-symbols-outlined">description</span>
+              <span>Xem bằng chứng</span>
+            </a>
+          </div>
+          <p v-else class="cd-form__submitted-meta">Không có bằng chứng đính kèm.</p>
         </div>
 
         <div v-if="currentAppeal.adminNote" class="cd-form__field">
@@ -114,16 +124,19 @@
 <script setup lang="ts">
 import { computed, reactive, ref } from 'vue'
 import { APPEAL_STATUS_OPTIONS } from '@/constants/complaints.constants'
+import fileUploadService from '@/services/fileUpload.service'
+import { FILE_UPLOAD_TYPE } from '@/constants/fileUpload.constants'
 import { useToast } from '@/composables/useToast'
 import { useEmployerAppealStore } from '@/stores/employerAppeal.store'
 import { useEmployerReportStore } from '@/stores/employerReport.store'
+import type { EvidenceItem } from '@/types/appeal.types'
 
 const toast = useToast()
 const reportStore = useEmployerReportStore()
 const appealStore = useEmployerAppealStore()
 
 const form = reactive({ explanation: '', confirmed: false })
-const uploadedFiles = ref<{ name: string }[]>([])
+const uploadedFiles = ref<File[]>([])
 const fileInput = ref<HTMLInputElement>()
 const submitting = ref(false)
 
@@ -148,25 +161,25 @@ function formatDateTime(value?: string | null) {
 const triggerUpload = () => fileInput.value?.click()
 
 const onFileChange = (e: Event) => {
-  const files = (e.target as HTMLInputElement).files
-  if (!files) return
-  Array.from(files).forEach((f) => {
-    if (!uploadedFiles.value.find((x) => x.name === f.name)) {
-      uploadedFiles.value.push({ name: f.name })
+  const fileList = (e.target as HTMLInputElement).files
+  if (!fileList) return
+  Array.from(fileList).forEach((f) => {
+    if (!uploadedFiles.value.find((x) => x.name === f.name && x.size === f.size)) {
+      uploadedFiles.value.push(f)
     }
   })
 }
 
 const onDrop = (e: DragEvent) => {
   Array.from(e.dataTransfer?.files ?? []).forEach((f) => {
-    if (!uploadedFiles.value.find((x) => x.name === f.name)) {
-      uploadedFiles.value.push({ name: f.name })
+    if (!uploadedFiles.value.find((x) => x.name === f.name && x.size === f.size)) {
+      uploadedFiles.value.push(f)
     }
   })
 }
 
-const removeFile = (name: string) => {
-  uploadedFiles.value = uploadedFiles.value.filter((f) => f.name !== name)
+const removeFile = (index: number) => {
+  uploadedFiles.value.splice(index, 1)
 }
 
 async function onSubmitAppeal() {
@@ -182,7 +195,18 @@ async function onSubmitAppeal() {
 
   submitting.value = true
   try {
-    await appealStore.createAppeal(report.id, { content: form.explanation.trim() })
+    // Upload files trước, lấy URLs
+    const evidences: EvidenceItem[] = []
+    for (const f of uploadedFiles.value) {
+      const res = await fileUploadService.uploadFile(f, FILE_UPLOAD_TYPE.APPEAL_EVIDENCE as any)
+      const fileType: 'image' | 'pdf' = f.type.startsWith('image/') ? 'image' : 'pdf'
+      evidences.push({ fileUrl: res.fileUrl, fileType })
+    }
+
+    await appealStore.createAppeal(report.id, {
+      content: form.explanation.trim(),
+      evidences,
+    })
     form.explanation = ''
     form.confirmed = false
     uploadedFiles.value = []
@@ -526,6 +550,36 @@ async function onSubmitAppeal() {
   margin: 0;
   font-size: 0.875rem;
   line-height: 1.6;
+}
+
+.cd-form__evidence-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.cd-form__evidence-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #4b9af6;
+  text-decoration: none;
+  padding: 0.5rem 0.75rem;
+  background: #eff6ff;
+  border-radius: 0.5rem;
+  width: fit-content;
+  transition: background 0.15s;
+}
+
+.cd-form__evidence-link:hover {
+  background: #dbeafe;
+  text-decoration: underline;
+}
+
+.cd-form__evidence-link .material-symbols-outlined {
+  font-size: 1rem;
 }
 
 @media (max-width: 768px) {

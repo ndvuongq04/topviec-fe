@@ -45,6 +45,22 @@
           <p>{{ appeal?.content ?? 'Chưa có kháng cáo nào từ nhà tuyển dụng cho báo cáo này.' }}</p>
         </div>
 
+        <!-- Appeal evidence -->
+        <div v-if="appeal?.evidences?.length" class="cd-appeal__content">
+          <span class="cd-appeal__label">Bằng chứng đính kèm</span>
+          <div class="cd-appeal__evidences">
+            <a
+              v-for="ev in appeal.evidences"
+              :key="ev.id"
+              :href="ev.fileUrl"
+              target="_blank"
+              class="cd-appeal__evidence-img"
+            >
+              <img :alt="`Bang chung khang cao`" :src="ev.fileUrl" />
+            </a>
+          </div>
+        </div>
+
         <div v-if="appeal?.adminNote" class="cd-appeal__content">
           <span class="cd-appeal__label">Ghi chú admin</span>
           <p>{{ appeal.adminNote }}</p>
@@ -338,5 +354,32 @@ function onUnsuspend() {
 .cd-appeal__btn:disabled {
   opacity: 0.55;
   cursor: not-allowed;
+}
+
+/* Appeal evidence */
+.cd-appeal__evidences {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.cd-appeal__evidence-img {
+  display: block;
+  width: 96px;
+  height: 96px;
+  border-radius: 0.5rem;
+  border: 1px solid #e4e2dc;
+  overflow: hidden;
+  transition: opacity 0.15s;
+}
+
+.cd-appeal__evidence-img:hover {
+  opacity: 0.85;
+}
+
+.cd-appeal__evidence-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 </style>
