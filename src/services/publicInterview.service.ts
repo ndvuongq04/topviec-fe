@@ -93,6 +93,18 @@ const publicInterviewService = {
   },
 
   /**
+   * UV đã đăng nhập lấy token để mở trang chọn slot (không cần vào email).
+   * POST /interview-schedules/generate-slot-token
+   */
+  async generateSlotToken(applicationId: number, roundId: number): Promise<{ token: string }> {
+    const res = await axiosInstance.post<RestResponse<{ token: string }>>(
+      `${BASE_URL}/generate-slot-token`,
+      { applicationId, roundId }
+    );
+    return res.data.data;
+  },
+
+  /**
    * Lấy thông tin chi tiết 1 vòng phỏng vấn
    * GET /interview-schedules/interview-rounds/:roundId
    */

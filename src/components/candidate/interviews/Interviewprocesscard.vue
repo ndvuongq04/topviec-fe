@@ -63,6 +63,7 @@
         :round="round"
         :is-last="idx === process.rounds.length - 1"
         @showDetail="$emit('showDetail', round)"
+        @selectSlot="$emit('selectSlot', round)"
       />
     </div>
   </section>
@@ -91,6 +92,7 @@ defineEmits<{
   (e: 'toggle'): void
   (e: 'showHistory'): void
   (e: 'showDetail', round: any): void
+  (e: 'selectSlot', round: any): void
 }>()
 
 const statusOption = computed(() =>

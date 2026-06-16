@@ -46,6 +46,14 @@
           <button class="round-item__view-btn" @click="$emit('showDetail', round)">
             <span class="material-symbols-outlined">visibility</span>
           </button>
+          <button
+            v-if="round.applicationStatus === 'schedule_pending'"
+            class="round-item__select-slot-btn"
+            @click="$emit('selectSlot', round)"
+          >
+            <span class="material-symbols-outlined">event_available</span>
+            Chọn lịch
+          </button>
           <button v-if="round.status === 'PENDING_CONFIRMATION'" class="round-item__confirm-btn" @click="$emit('showDetail', round)">
             Xác nhận lịch
           </button>
@@ -67,12 +75,14 @@ defineProps<{
     scheduledDate?: string
     scheduledTime?: string
     mode?: string
+    applicationStatus?: string
   }
   isLast: boolean
 }>()
 
 defineEmits<{
   (e: 'showDetail', round: any): void
+  (e: 'selectSlot', round: any): void
 }>()
 </script>
 
@@ -328,6 +338,32 @@ defineEmits<{
 }
 
 .round-item__confirm-btn:active {
+  transform: scale(0.95);
+}
+
+.round-item__select-slot-btn {
+  background: #f59e0b;
+  color: #fff;
+  padding: 0.625rem 1.25rem;
+  border-radius: 0.75rem;
+  font-weight: 700;
+  font-size: 0.875rem;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  box-shadow: 0 4px 6px rgba(245, 158, 11, 0.2);
+  transition: all 0.2s;
+}
+
+.round-item__select-slot-btn:hover {
+  background: #d97706;
+  box-shadow: 0 6px 12px rgba(245, 158, 11, 0.3);
+  transform: translateY(-1px);
+}
+
+.round-item__select-slot-btn:active {
   transform: scale(0.95);
 }
 

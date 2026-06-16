@@ -24,6 +24,7 @@
         @toggle="toggleExpand(process.id)"
         @showHistory="openHistory(process)"
         @showDetail="openDetail"
+        @selectSlot="handleSelectSlot"
       />
     </div>
 
@@ -48,6 +49,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import InterviewProcessCard from '@/components/candidate/interviews/Interviewprocesscard.vue'
 import InterviewFab from '@/components/candidate/interviews/Interviewfab.vue'
 import InterviewHistoryModal from '@/components/candidate/interviews/Interviewhistorymodal.vue'
@@ -58,11 +60,12 @@ import type { ResInterviewScheduleDTO } from '@/types/interview.types'
 
 const applicationStore = useApplicationStore()
 const publicInterviewStore = usePublicInterviewStore()
+const router = useRouter()
 
 // Cache rounds đã load, key là applicationId
 const interviewsMap = ref<Record<number, any[]>>({})
 
-function mapToRound(interview: ResInterviewScheduleDTO) {
+function mapToRound(interview: ResInterviewScheduleDTO, applicationId: number) {
   const statusMap: Record<string, string> = {
     pending: 'PENDING',
     scheduled: 'PENDING_CONFIRMATION',
@@ -98,6 +101,8 @@ function mapToRound(interview: ResInterviewScheduleDTO) {
     location: interview.location,
     meetingLink: interview.meetingLink,
     interviewerNote: interview.interviewerNote,
+    applicationId,
+    applicationStatus: interview.applicationStatus,
   }
 }
 
@@ -136,7 +141,7 @@ const toggleExpand = async (id: number) => {
   if (!interviewsMap.value[id]) {
     try {
       await publicInterviewStore.fetchMyInterviews(id)
-      interviewsMap.value[id] = publicInterviewStore.myInterviews.map(mapToRound)
+      interviewsMap.value[id] = publicInterviewStore.myInterviews.map((i) => mapToRound(i, id))
     } catch {
       interviewsMap.value[id] = []
     }
@@ -151,6 +156,20 @@ const openHistory = (process: any) => {
 const openDetail = (round: any) => {
   selectedRound.value = round
   isDetailModalOpen.value = true
+}
+
+const selectingSlot = ref(false)
+const handleSelectSlot = async (round: any) => {
+  if (selectingSlot.value) return
+  selectingSlot.value = true
+  try {
+    const token = await publicInterviewStore.fetchSlotToken(round.applicationId, round.roundId)
+    router.push({ name: 'InterviewSelectSlot', query: { token } })
+  } catch {
+    // Lỗi đã được set trong store
+  } finally {
+    selectingSlot.value = false
+  }
 }
 
 const onRoundConfirmed = (scheduleId: number) => {

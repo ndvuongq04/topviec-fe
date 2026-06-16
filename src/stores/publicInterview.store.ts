@@ -126,6 +126,21 @@ export const usePublicInterviewStore = defineStore('publicInterview', () => {
         }
     }
 
+    /** UV đã đăng nhập lấy token để mở trang chọn slot */
+    async function fetchSlotToken(applicationId: number, roundId: number): Promise<string> {
+        loading.value = true
+        error.value = null
+        try {
+            const res = await publicInterviewService.generateSlotToken(applicationId, roundId)
+            return res.token
+        } catch (err) {
+            setError(err)
+            throw err
+        } finally {
+            loading.value = false
+        }
+    }
+
     /** UV xác nhận lịch phỏng vấn đã cập nhật qua link email (không cần đăng nhập) */
     async function confirmUpdatedSchedule(token: string) {
         loading.value = true
@@ -168,6 +183,7 @@ export const usePublicInterviewStore = defineStore('publicInterview', () => {
         confirmSlot,
         confirmUpdatedSchedule,
         confirmScheduleByCandidate,
+        fetchSlotToken,
         reset,
     }
 })
